@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase, clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
+import { supabase, clientBusinessFunctions, clientQueries, clientSupabaseHelpers } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
 import { Property, Unit } from '../../../../lib/types/database'
@@ -34,11 +34,20 @@ export default function PropertiesPage() {
     try {
       setLoading(true)
       setError(null)
-      
-      // For now, using mock landlord ID - in real app, this would come from user profile
-      const mockLandlordId = '11111111-1111-1111-1111-111111111111'
-      
-      const { data: propertiesData, error: propertiesError } = await clientQueries.getPropertiesByLandlord(mockLandlordId)
+
+      // Get the user's landlord IDs
+      const { data: landlordIds, error: landlordError } = await clientSupabaseHelpers.getUserLandlordIds()
+
+      if (landlordError || !landlordIds || landlordIds.length === 0) {
+        setError('Unable to load properties. Please ensure you have proper landlord permissions.')
+        setLoading(false)
+        return
+      }
+
+      // For now, use the first landlord ID (most users will have only one)
+      const landlordId = landlordIds[0]
+
+      const { data: propertiesData, error: propertiesError } = await clientQueries.getPropertiesByLandlord(landlordId)
       
       if (propertiesError) {
         setError('Failed to load properties')

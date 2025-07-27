@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase, handleSupabaseError } from '../../lib/supabase-client'
+import { supabase, handleSupabaseError, clientSupabaseHelpers } from '../../lib/supabase-client'
 
 interface PropertyFormData {
   name: string
@@ -65,13 +65,22 @@ export default function PropertyForm({ onSuccess, onCancel, isOpen }: PropertyFo
     setLoading(true)
 
     try {
-      // For now, using mock landlord ID - in real app, this would come from user profile
-      const mockLandlordId = '11111111-1111-1111-1111-111111111111'
+      // Get the user's landlord IDs
+      const { data: landlordIds, error: landlordError } = await clientSupabaseHelpers.getUserLandlordIds()
+
+      if (landlordError || !landlordIds || landlordIds.length === 0) {
+        setError('Unable to determine your landlord access. Please ensure you have proper permissions.')
+        setLoading(false)
+        return
+      }
+
+      // Use the first landlord ID (in most cases, users will have only one)
+      const landlordId = landlordIds[0]
 
       const { data, error: createError } = await supabase
         .from('properties')
         .insert({
-          landlord_id: mockLandlordId,
+          landlord_id: landlordId,
           name: formData.name.trim(),
           physical_address: formData.physicalAddress.trim(),
           lat: formData.lat,
