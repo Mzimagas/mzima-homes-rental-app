@@ -425,12 +425,12 @@ export default function OccupancyReports() {
       .gte('start_date', startDate.toISOString().split('T')[0])
 
     // Get total units count (assuming it doesn't change much)
-    const { data: properties } = await supabase
+    const { data: propertiesWithUnits } = await supabase
       .from('properties')
       .select('units(id)')
       .eq('landlord_id', landlordId)
 
-    const totalUnits = properties?.reduce((sum, p) => sum + p.units.length, 0) || 0
+    const totalUnits = propertiesWithUnits?.reduce((sum, p) => sum + p.units.length, 0) || 0
 
     // Group by month
     const monthlyData: { [key: string]: any } = {}
