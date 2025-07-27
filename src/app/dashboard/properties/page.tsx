@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase, clientBusinessFunctions, clientQueries, clientSupabaseHelpers } from '../../../lib/supabase-client'
+import { supabase, clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
 import { Property, Unit } from '../../../../lib/types/database'
@@ -36,7 +36,7 @@ export default function PropertiesPage() {
       setError(null)
 
       // Get the user's landlord IDs
-      const { data: landlordIds, error: landlordError } = await clientSupabaseHelpers.getUserLandlordIds()
+      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds()
 
       if (landlordError || !landlordIds || landlordIds.length === 0) {
         setError('Unable to load properties. Please ensure you have proper landlord permissions.')

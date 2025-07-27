@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase, handleSupabaseError, clientSupabaseHelpers } from '../../lib/supabase-client'
+import { supabase, handleSupabaseError, clientBusinessFunctions } from '../../lib/supabase-client'
 
 interface PropertyFormData {
   name: string
@@ -66,7 +66,7 @@ export default function PropertyForm({ onSuccess, onCancel, isOpen }: PropertyFo
 
     try {
       // Get the user's landlord IDs
-      const { data: landlordIds, error: landlordError } = await clientSupabaseHelpers.getUserLandlordIds()
+      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds()
 
       if (landlordError || !landlordIds || landlordIds.length === 0) {
         setError('Unable to determine your landlord access. Please ensure you have proper permissions.')
