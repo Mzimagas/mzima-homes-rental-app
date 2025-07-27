@@ -65,8 +65,8 @@ export default function PropertyForm({ onSuccess, onCancel, isOpen }: PropertyFo
     setLoading(true)
 
     try {
-      // Get the user's landlord IDs
-      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds()
+      // Get the user's landlord IDs with auto-setup enabled
+      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds(true)
 
       if (landlordError || !landlordIds || landlordIds.length === 0) {
         setError('Unable to determine your landlord access. Please ensure you have proper permissions.')

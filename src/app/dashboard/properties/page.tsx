@@ -35,8 +35,8 @@ export default function PropertiesPage() {
       setLoading(true)
       setError(null)
 
-      // Get the user's landlord IDs
-      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds()
+      // Get the user's landlord IDs with auto-setup enabled
+      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds(true)
 
       if (landlordError || !landlordIds || landlordIds.length === 0) {
         setError('Unable to load properties. Please ensure you have proper landlord permissions.')
