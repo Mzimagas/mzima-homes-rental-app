@@ -383,6 +383,30 @@ export default function OccupancyReports() {
 
   const calculateOccupancyTrends = async (landlordId: string, startDate: Date, endDate: Date) => {
 
+    // First get all properties for the landlord
+    const { data: properties } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('landlord_id', landlordId)
+
+    if (!properties || properties.length === 0) {
+      return []
+    }
+
+    const propertyIds = properties.map(p => p.id)
+
+    // Get units for these properties
+    const { data: units } = await supabase
+      .from('units')
+      .select('id')
+      .in('property_id', propertyIds)
+
+    if (!units || units.length === 0) {
+      return []
+    }
+
+    const unitIds = units.map(u => u.id)
+
     // Get tenancy agreements for move-ins and move-outs
     const { data: tenancies } = await supabase
       .from('tenancy_agreements')
@@ -391,12 +415,13 @@ export default function OccupancyReports() {
         end_date,
         status,
         units (
+          unit_label,
           properties (
-            landlord_id
+            name
           )
         )
       `)
-      .eq('units.properties.landlord_id', landlordId)
+      .in('unit_id', unitIds)
       .gte('start_date', startDate.toISOString().split('T')[0])
 
     // Get total units count (assuming it doesn't change much)
@@ -502,6 +527,30 @@ export default function OccupancyReports() {
   }
 
   const calculateTenancyAnalysis = async (landlordId: string, startDate: Date, endDate: Date) => {
+    // First get all properties for the landlord
+    const { data: properties } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('landlord_id', landlordId)
+
+    if (!properties || properties.length === 0) {
+      return { averageTenancyLength: 0, turnoverRate: 0, renewalRate: 0 }
+    }
+
+    const propertyIds = properties.map(p => p.id)
+
+    // Get units for these properties
+    const { data: units } = await supabase
+      .from('units')
+      .select('id')
+      .in('property_id', propertyIds)
+
+    if (!units || units.length === 0) {
+      return { averageTenancyLength: 0, turnoverRate: 0, renewalRate: 0 }
+    }
+
+    const unitIds = units.map(u => u.id)
+
     // Get all tenancy agreements
     const { data: tenancies } = await supabase
       .from('tenancy_agreements')
@@ -510,12 +559,13 @@ export default function OccupancyReports() {
         end_date,
         status,
         units (
+          unit_label,
           properties (
-            landlord_id
+            name
           )
         )
       `)
-      .eq('units.properties.landlord_id', landlordId)
+      .in('unit_id', unitIds)
 
     // Calculate average tenancy length
     const completedTenancies = tenancies?.filter(t => t.end_date) || []

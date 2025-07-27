@@ -375,6 +375,30 @@ export default function TenantAnalytics() {
 
   const calculatePaymentBehavior = async (landlordId: string, startDate: Date, endDate: Date) => {
 
+    // First get all properties for the landlord
+    const { data: properties } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('landlord_id', landlordId)
+
+    if (!properties || properties.length === 0) {
+      return { onTimePayments: 0, latePayments: 0, averageDaysLate: 0, paymentMethods: [] }
+    }
+
+    const propertyIds = properties.map(p => p.id)
+
+    // Get units for these properties
+    const { data: units } = await supabase
+      .from('units')
+      .select('id')
+      .in('property_id', propertyIds)
+
+    if (!units || units.length === 0) {
+      return { onTimePayments: 0, latePayments: 0, averageDaysLate: 0, paymentMethods: [] }
+    }
+
+    const unitIds = units.map(u => u.id)
+
     // Get invoices and payments for the period
     const { data: invoices } = await supabase
       .from('rent_invoices')
@@ -385,15 +409,16 @@ export default function TenantAnalytics() {
         amount_paid_kes,
         status,
         units (
+          unit_label,
           properties (
-            landlord_id
+            name
           )
         ),
         payments (
           payment_date
         )
       `)
-      .eq('units.properties.landlord_id', landlordId)
+      .in('unit_id', unitIds)
       .gte('due_date', startDate.toISOString().split('T')[0])
       .lte('due_date', endDate.toISOString().split('T')[0])
 

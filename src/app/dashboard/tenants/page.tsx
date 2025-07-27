@@ -33,14 +33,40 @@ export default function TenantsPage() {
       // For now, using mock landlord ID - in real app, this would come from user profile
       const mockLandlordId = '11111111-1111-1111-1111-111111111111'
       
-      // Get all tenants for properties owned by the landlord
+      // First get all properties for the landlord
+      const { data: properties } = await supabase
+        .from('properties')
+        .select('id')
+        .eq('landlord_id', mockLandlordId)
+
+      if (!properties || properties.length === 0) {
+        setTenants([])
+        return
+      }
+
+      const propertyIds = properties.map(p => p.id)
+
+      // Get units for these properties
+      const { data: units } = await supabase
+        .from('units')
+        .select('id')
+        .in('property_id', propertyIds)
+
+      if (!units || units.length === 0) {
+        setTenants([])
+        return
+      }
+
+      const unitIds = units.map(u => u.id)
+
+      // Get all tenants for these units
       const { data: tenantsData, error: tenantsError } = await supabase
         .from('tenants')
         .select(`
           *,
           units (
             *,
-            properties!inner (
+            properties (
               id,
               name,
               physical_address,
@@ -48,7 +74,7 @@ export default function TenantsPage() {
             )
           )
         `)
-        .eq('units.properties.landlord_id', mockLandlordId)
+        .in('current_unit_id', unitIds)
         .order('full_name')
 
       if (tenantsError) {

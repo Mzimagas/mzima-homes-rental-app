@@ -380,6 +380,30 @@ export default function FinancialReports() {
       .gte('payment_date', startDate.toISOString().split('T')[0])
       .lte('payment_date', endDate.toISOString().split('T')[0])
 
+    // First get all properties for the landlord
+    const { data: properties } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('landlord_id', landlordId)
+
+    if (!properties || properties.length === 0) {
+      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, outstandingAmount: 0 }
+    }
+
+    const propertyIds = properties.map(p => p.id)
+
+    // Get units for these properties
+    const { data: units } = await supabase
+      .from('units')
+      .select('id')
+      .in('property_id', propertyIds)
+
+    if (!units || units.length === 0) {
+      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, outstandingAmount: 0 }
+    }
+
+    const unitIds = units.map(u => u.id)
+
     // Get invoices data for outstanding amounts
     const { data: invoices } = await supabase
       .from('rent_invoices')
@@ -389,12 +413,13 @@ export default function FinancialReports() {
         amount_paid_kes,
         status,
         units (
+          unit_label,
           properties (
-            landlord_id
+            name
           )
         )
       `)
-      .eq('units.properties.landlord_id', landlordId)
+      .in('unit_id', unitIds)
       .gte('period_start', startDate.toISOString().split('T')[0])
       .lte('period_start', endDate.toISOString().split('T')[0])
 
@@ -447,20 +472,58 @@ export default function FinancialReports() {
     const startOfYear = `${year}-01-01`
     const endOfYear = `${year}-12-31`
 
+    // First get all properties for the landlord
+    const { data: properties } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('landlord_id', landlordId)
+
+    if (!properties || properties.length === 0) {
+      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, collectionRate: 0, outstandingAmount: 0 }
+    }
+
+    const propertyIds = properties.map(p => p.id)
+
+    // Get units for these properties
+    const { data: units } = await supabase
+      .from('units')
+      .select('id')
+      .in('property_id', propertyIds)
+
+    if (!units || units.length === 0) {
+      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, collectionRate: 0, outstandingAmount: 0 }
+    }
+
+    const unitIds = units.map(u => u.id)
+
+    // Get tenants for these units
+    const { data: tenants } = await supabase
+      .from('tenants')
+      .select('id')
+      .in('current_unit_id', unitIds)
+
+    if (!tenants || tenants.length === 0) {
+      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, collectionRate: 0, outstandingAmount: 0 }
+    }
+
+    const tenantIds = tenants.map(t => t.id)
+
     // Get total payments for the year
     const { data: payments } = await supabase
       .from('payments')
       .select(`
         amount_kes,
         tenants (
+          full_name,
           units (
+            unit_label,
             properties (
-              landlord_id
+              name
             )
           )
         )
       `)
-      .eq('tenants.units.properties.landlord_id', landlordId)
+      .in('tenant_id', tenantIds)
       .gte('payment_date', startOfYear)
       .lte('payment_date', endOfYear)
 
@@ -492,12 +555,13 @@ export default function FinancialReports() {
         amount_due_kes,
         amount_paid_kes,
         units (
+          unit_label,
           properties (
-            landlord_id
+            name
           )
         )
       `)
-      .eq('units.properties.landlord_id', landlordId)
+      .in('unit_id', unitIds)
       .gte('period_start', startOfYear)
       .lte('period_start', endOfYear)
 

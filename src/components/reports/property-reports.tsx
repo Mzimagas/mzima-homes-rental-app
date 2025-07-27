@@ -661,20 +661,38 @@ export default function PropertyReports() {
 
       const previousMonth = previousPayments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0
 
+      // Get units for this property
+      const { data: propertyUnits } = await supabase
+        .from('units')
+        .select('id')
+        .eq('property_id', property.id)
+
+      const propertyUnitIds = propertyUnits?.map(u => u.id) || []
+
+      // Get tenants for these units
+      const { data: propertyTenants } = await supabase
+        .from('tenants')
+        .select('id')
+        .in('current_unit_id', propertyUnitIds)
+
+      const propertyTenantIds = propertyTenants?.map(t => t.id) || []
+
       // Get year to date revenue
       const { data: ytdPayments } = await supabase
         .from('payments')
         .select(`
           amount_kes,
           tenants (
+            full_name,
             units (
+              unit_label,
               properties (
-                id
+                name
               )
             )
           )
         `)
-        .eq('tenants.units.properties.id', property.id)
+        .in('tenant_id', propertyTenantIds)
         .gte('payment_date', yearStart.toISOString().split('T')[0])
 
       const yearToDate = ytdPayments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0

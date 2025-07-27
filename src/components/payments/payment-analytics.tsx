@@ -75,6 +75,61 @@ export default function PaymentAnalytics() {
       // For now, using mock landlord ID - in real app, this would come from user profile
       const mockLandlordId = '11111111-1111-1111-1111-111111111111'
 
+      // First get all properties for the landlord
+      const { data: properties } = await supabase
+        .from('properties')
+        .select('id')
+        .eq('landlord_id', mockLandlordId)
+
+      if (!properties || properties.length === 0) {
+        setAnalytics({
+          monthlyTrends: [],
+          methodBreakdown: [],
+          dailyAverages: [],
+          topTenants: []
+        })
+        return
+      }
+
+      const propertyIds = properties.map(p => p.id)
+
+      // Get units for these properties
+      const { data: units } = await supabase
+        .from('units')
+        .select('id')
+        .in('property_id', propertyIds)
+
+      if (!units || units.length === 0) {
+        setAnalytics({
+          monthlyTrends: [],
+          methodBreakdown: [],
+          dailyAverages: [],
+          topTenants: []
+        })
+        return
+      }
+
+      const unitIds = units.map(u => u.id)
+
+      // Get tenants for these units
+      const { data: tenants } = await supabase
+        .from('tenants')
+        .select('id')
+        .in('current_unit_id', unitIds)
+
+      if (!tenants || tenants.length === 0) {
+        setAnalytics({
+          monthlyTrends: [],
+          methodBreakdown: [],
+          dailyAverages: [],
+          topTenants: []
+        })
+        return
+      }
+
+      const tenantIds = tenants.map(t => t.id)
+
+      // Now get payments for these tenants
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
         .select(`
@@ -82,13 +137,14 @@ export default function PaymentAnalytics() {
           tenants (
             full_name,
             units (
+              unit_label,
               properties (
-                landlord_id
+                name
               )
             )
           )
         `)
-        .eq('tenants.units.properties.landlord_id', mockLandlordId)
+        .in('tenant_id', tenantIds)
         .gte('payment_date', startDate.toISOString().split('T')[0])
         .lte('payment_date', endDate.toISOString().split('T')[0])
         .order('payment_date', { ascending: false })
