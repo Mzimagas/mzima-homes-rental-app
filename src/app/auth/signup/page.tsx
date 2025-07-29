@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
+import { supabase } from '../../../lib/supabase-client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { logEmailSuccess, logEmailFailure, logEmailBounce } from '../../../lib/email-monitoring'
+import { preflightEmailCheck, suggestEmailCorrection } from '../../../lib/email-verification'
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -15,6 +18,8 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [emailWarnings, setEmailWarnings] = useState<string[]>([])
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null)
   const { signUp, user } = useAuth()
   const router = useRouter()
 
@@ -24,11 +29,79 @@ export default function SignupPage() {
     }
   }, [user, router])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }))
+
+    // Real-time email validation and suggestions
+    if (name === 'email' && value) {
+      setEmailWarnings([])
+      setEmailSuggestion(null)
+
+      // Check for typos and suggest corrections
+      const suggestion = suggestEmailCorrection(value)
+      if (suggestion) {
+        setEmailSuggestion(suggestion)
+      }
+
+      // Perform preflight check after user stops typing
+      setTimeout(async () => {
+        if (value.length > 5) { // Only check if email looks substantial
+          try {
+            const preflightResult = await preflightEmailCheck(value)
+            if (preflightResult.suggestions) {
+              setEmailWarnings(preflightResult.suggestions)
+            }
+          } catch (err) {
+            // Ignore preflight errors for now
+          }
+        }
+      }, 1000)
+    }
+  }
+
+  const validateEmail = (email: string): string | null => {
+    // Basic format check
+    const basicEmailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+    if (!basicEmailRegex.test(email)) {
+      return 'Please enter a valid email address format'
+    }
+
+    // Check for common invalid patterns that cause bounces
+    const invalidPatterns = [
+      /^.*@example\.com$/i,
+      /^.*@test\..*$/i,
+      /^test@.*$/i,
+      /^admin@.*$/i,
+      /^noreply@example\..*$/i,
+      /^.*@localhost$/i,
+      /^.*@.*\.local$/i,
+      /^.*@.*\.test$/i,
+      /^.*@.*\.invalid$/i,
+      /^.*@.*\.example$/i
+    ]
+
+    for (const pattern of invalidPatterns) {
+      if (pattern.test(email)) {
+        return 'Please use a valid, deliverable email address. Test emails and example domains are not allowed.'
+      }
+    }
+
+    // Check for valid TLD (at least 2 characters)
+    const tldMatch = email.match(/\.([a-zA-Z]{2,})$/)
+    if (!tldMatch || tldMatch[1].length < 2) {
+      return 'Please enter an email with a valid domain extension'
+    }
+
+    // Check for consecutive dots or other invalid patterns
+    if (email.includes('..') || email.startsWith('.') || email.endsWith('.')) {
+      return 'Email address contains invalid characters'
+    }
+
+    return null
   }
 
   const validateForm = () => {
@@ -44,9 +117,9 @@ export default function SignupPage() {
       return 'Password must be at least 6 characters long'
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      return 'Please enter a valid email address'
+    const emailError = validateEmail(formData.email)
+    if (emailError) {
+      return emailError
     }
 
     return null
@@ -64,18 +137,122 @@ export default function SignupPage() {
       return
     }
 
-    const { error } = await signUp(formData.email, formData.password, formData.fullName)
-    
-    if (error) {
-      if (error.includes('check your email')) {
-        setSuccess(true)
-      } else {
-        setError(error)
+    try {
+      console.log('🔐 Enhanced signup process starting...')
+
+      // Step 1: Pre-flight email verification
+      console.log('🔍 Performing pre-flight email verification...')
+      const preflightResult = await preflightEmailCheck(formData.email)
+
+      if (!preflightResult.canProceed) {
+        setError(preflightResult.message)
+        if (preflightResult.suggestions) {
+          setEmailWarnings(preflightResult.suggestions)
+        }
+        setIsLoading(false)
+        return
       }
-    } else {
-      setSuccess(true)
+
+      // Step 2: Create user with Supabase
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+          }
+        }
+      })
+
+      if (signUpError) {
+        console.error('❌ Signup error:', signUpError)
+
+        // Log the email failure for monitoring
+        if (signUpError.message.includes('bounce') || signUpError.message.includes('invalid email')) {
+          logEmailBounce(formData.email, 'signup', signUpError.message)
+        } else {
+          logEmailFailure(formData.email, 'signup', signUpError.message)
+        }
+
+        // Handle specific email-related errors
+        if (signUpError.message.includes('email') && signUpError.message.includes('invalid')) {
+          setError('Please enter a valid, deliverable email address. Avoid using test or example email domains.')
+        } else if (signUpError.message.includes('email') && signUpError.message.includes('already')) {
+          setError('An account with this email already exists. Please sign in instead or use a different email.')
+        } else if (signUpError.message.includes('rate limit')) {
+          setError('Too many signup attempts. Please wait a few minutes before trying again.')
+        } else {
+          setError(signUpError.message)
+        }
+
+        setIsLoading(false)
+        return
+      }
+
+      console.log('✅ User created:', signUpData.user?.email)
+
+      // Log successful email sending for monitoring
+      logEmailSuccess(formData.email, 'signup')
+
+      // Step 2: Auto-confirm user in development
+      if (!signUpData.user?.email_confirmed_at) {
+        console.log('🔧 Auto-confirming user for development...')
+
+        try {
+          // Use API endpoint to confirm user
+          const response = await fetch('/api/auth/confirm-user', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: signUpData.user?.id,
+              email: signUpData.user?.email
+            })
+          })
+
+          if (response.ok) {
+            console.log('✅ User auto-confirmed')
+
+            // Step 3: Sign in the user immediately
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: formData.email,
+              password: formData.password
+            })
+
+            if (signInError) {
+              console.error('❌ Auto sign-in failed:', signInError)
+              setError('Account created but auto sign-in failed. Please try logging in.')
+            } else {
+              console.log('✅ User auto-signed in, redirecting to dashboard...')
+              // The auth context will handle the redirect
+              return
+            }
+          } else {
+            console.log('⚠️ Auto-confirmation failed, showing email confirmation message')
+            setSuccess(true)
+          }
+        } catch (err) {
+          console.error('❌ Auto-confirmation error:', err)
+          setSuccess(true) // Fall back to email confirmation
+        }
+      } else {
+        // User was already confirmed, try to sign them in
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password
+        })
+
+        if (signInError) {
+          setSuccess(true) // Fall back to email confirmation message
+        }
+        // If successful, auth context will handle redirect
+      }
+    } catch (err) {
+      console.error('❌ Enhanced signup error:', err)
+      setError('An unexpected error occurred during registration.')
     }
-    
+
     setIsLoading(false)
   }
 
@@ -90,21 +267,25 @@ export default function SignupPage() {
               </svg>
             </div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Check your email
+              Account Created Successfully!
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              We've sent a confirmation link to <strong>{formData.email}</strong>
+              Your account has been created with email <strong>{formData.email}</strong>
             </p>
             <p className="mt-4 text-center text-sm text-gray-600">
-              Please check your email and click the confirmation link to activate your account.
+              If you don't see a confirmation email, you can try logging in directly.
+              Your account may already be activated.
             </p>
-            <div className="mt-6">
+            <div className="mt-6 space-y-3">
               <Link
                 href="/auth/login"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Return to login
+                Try Logging In
               </Link>
+              <p className="text-center text-xs text-gray-500">
+                If you have issues, please contact support
+              </p>
             </div>
           </div>
         </div>
@@ -165,6 +346,37 @@ export default function SignupPage() {
                 onChange={handleChange}
                 disabled={isLoading}
               />
+
+              {/* Email suggestion */}
+              {emailSuggestion && (
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    Did you mean{' '}
+                    <button
+                      type="button"
+                      className="font-medium text-yellow-900 underline hover:text-yellow-700"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, email: emailSuggestion }))
+                        setEmailSuggestion(null)
+                      }}
+                    >
+                      {emailSuggestion}
+                    </button>
+                    ?
+                  </p>
+                </div>
+              )}
+
+              {/* Email warnings */}
+              {emailWarnings.length > 0 && (
+                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                  {emailWarnings.map((warning, index) => (
+                    <p key={index} className="text-sm text-blue-800">
+                      💡 {warning}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
             
             <div>

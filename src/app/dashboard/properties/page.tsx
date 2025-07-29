@@ -247,9 +247,12 @@ export default function PropertiesPage() {
                   >
                     View Details
                   </Link>
-                  <button className="flex-1 bg-gray-100 text-gray-700 text-center py-2 px-3 rounded-md text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                  <Link
+                    href={`/dashboard/properties/${property.id}`}
+                    className="flex-1 bg-gray-100 text-gray-700 text-center py-2 px-3 rounded-md text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
                     Manage Units
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

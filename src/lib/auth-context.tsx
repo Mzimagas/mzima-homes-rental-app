@@ -1,55 +1,10 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session, createClient } from '@supabase/supabase-js'
+import { User, Session } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-
-// Create client-side Supabase client with enhanced error handling
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:', {
-    url: !!supabaseUrl,
-    key: !!supabaseAnonKey,
-    nodeEnv: process.env.NODE_ENV
-  })
-  throw new Error('Missing Supabase environment variables')
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    retryAttempts: 3,
-    timeout: 30000
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'voi-rental-app-auth@1.0.0'
-    },
-    fetch: (url, options = {}) => {
-      console.log('🔐 Auth fetch:', url)
-
-      return fetch(url, {
-        ...options,
-        signal: AbortSignal.timeout(30000)
-      }).catch(error => {
-        console.error('🚨 Auth fetch error:', error)
-
-        if (error.name === 'AbortError') {
-          throw new Error('Authentication request timeout - please check your internet connection')
-        }
-        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-          throw new Error('Network error during authentication - please check your internet connection and try again')
-        }
-
-        throw error
-      })
-    }
-  }
-})
+import { supabase } from '../../lib/supabase-client'
+import { validateEmailSimple } from './email-validation'
 
 interface AuthContextType {
   user: User | null
@@ -71,26 +26,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Get initial session with enhanced error handling
+    // Get initial session
     const getInitialSession = async () => {
       try {
-        console.log('🔐 Getting initial session...')
+        console.log('🔐 AuthProvider: Getting initial session')
         const { data: { session }, error } = await supabase.auth.getSession()
-
+        
         if (error) {
-          console.error('❌ Error getting session:', error)
-          // Don't throw here, just log and continue
+          console.error('❌ AuthProvider: Error getting session:', error)
         } else {
-          console.log('✅ Initial session retrieved:', session?.user?.email || 'No user')
+          console.log('🔐 AuthProvider: Initial session:', session?.user?.email || 'No session')
           setSession(session)
           setUser(session?.user ?? null)
         }
-      } catch (error) {
-        console.error('❌ Exception getting initial session:', error)
-        // Handle network errors gracefully
-        if (error instanceof Error && error.message.includes('Network error')) {
-          console.warn('⚠️ Network error during session initialization - will retry on next interaction')
-        }
+      } catch (err) {
+        console.error('❌ AuthProvider: Exception getting session:', err)
       } finally {
         setLoading(false)
       }
@@ -98,49 +48,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getInitialSession()
 
-    // Listen for auth changes with error handling
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        try {
-          console.log('🔐 Auth state changed:', event, session?.user?.email || 'No user')
-          setSession(session)
-          setUser(session?.user ?? null)
-          setLoading(false)
+        console.log('🔐 AuthProvider: Auth state change:', event, session?.user?.email || 'No session')
+        
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
 
-          // Enhanced redirect logic
-          if (event === 'SIGNED_IN' && session) {
-            const redirectTo = new URLSearchParams(window.location.search).get('redirectTo')
-            router.push(redirectTo || '/dashboard')
-          } else if (event === 'SIGNED_OUT') {
-            console.log('🚪 SIGNED_OUT event received, redirecting to login...')
-
-            // Ensure state is cleared
-            setSession(null)
-            setUser(null)
-
-            // Clear any cached data or local storage if needed
-            if (typeof window !== 'undefined') {
-              // Clear any application-specific cached data
-              localStorage.removeItem('supabase.auth.token')
-              sessionStorage.clear()
-            }
-
-            // Redirect to login
-            router.push('/auth/login')
-          }
-        } catch (error) {
-          console.error('❌ Error in auth state change handler:', error)
-          setLoading(false)
+        // Handle different auth events
+        if (event === 'SIGNED_IN') {
+          console.log('✅ AuthProvider: User signed in, redirecting to dashboard')
+          router.push('/dashboard')
+        } else if (event === 'SIGNED_OUT') {
+          console.log('👋 AuthProvider: User signed out, redirecting to login')
+          router.push('/auth/login')
         }
       }
     )
 
     return () => {
-      try {
-        subscription.unsubscribe()
-      } catch (error) {
-        console.error('❌ Error unsubscribing from auth changes:', error)
-      }
+      subscription.unsubscribe()
     }
   }, [router])
 
@@ -149,16 +78,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔐 AuthContext signIn called:', { email, password: '***' })
       setLoading(true)
 
+      // Use Supabase auth signInWithPassword
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password
       })
 
-      console.log('🔐 Supabase signIn result:', { data: data?.user?.email, error })
+      console.log('🔐 Enhanced signIn result:', { data: data?.user?.email, error })
 
       if (error) {
-        console.error('❌ Supabase signIn error:', error)
+        console.error('❌ Enhanced signIn error:', error)
 
+        // Handle email confirmation specifically
+        if (error.message.includes('email_not_confirmed') || error.message.includes('Email not confirmed')) {
+          return { error: 'Please check your email and click the confirmation link. If you don\'t see the email, check your spam folder or contact support.' }
+        }
+        
         // Provide more user-friendly error messages
         if (error.message.includes('Invalid login credentials')) {
           return { error: 'Invalid email or password. Please check your credentials and try again.' }
@@ -173,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: error.message }
       }
 
-      console.log('✅ Supabase signIn successful')
+      console.log('✅ Enhanced signIn successful')
       return { error: null }
     } catch (err) {
       console.error('❌ SignIn exception:', err)
@@ -186,6 +121,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (err.message.includes('timeout')) {
           return { error: 'Sign in request timeout. Please check your internet connection and try again.' }
         }
+        if (err.message.includes('email_not_confirmed')) {
+          return { error: 'Please check your email and click the confirmation link to complete your registration.' }
+        }
       }
 
       return { error: 'An unexpected error occurred during sign in. Please try again.' }
@@ -196,30 +134,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
+      console.log('🔐 AuthContext signUp called:', { email, fullName, password: '***' })
       setLoading(true)
+
+      // Validate email before attempting signup
+      const emailError = validateEmailSimple(email)
+      if (emailError) {
+        console.error('❌ Email validation failed:', emailError)
+        return { error: emailError }
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          }
         }
       })
 
+      console.log('🔐 Supabase signUp result:', { data: data?.user?.email, error })
+
       if (error) {
+        console.error('❌ Supabase signUp error:', error)
+
+        // Provide more user-friendly error messages
+        if (error.message.includes('User already registered')) {
+          return { error: 'An account with this email already exists. Please sign in instead.' }
+        }
+        if (error.message.includes('Password should be at least')) {
+          return { error: 'Password should be at least 6 characters long.' }
+        }
+        if (error.message.includes('Invalid email')) {
+          return { error: 'Please enter a valid, deliverable email address. Avoid test or example domains.' }
+        }
+        if (error.message.includes('rate limit') || error.message.includes('too many')) {
+          return { error: 'Too many signup attempts. Please wait a few minutes before trying again.' }
+        }
+        if (error.message.includes('email') && error.message.includes('bounce')) {
+          return { error: 'Email delivery failed. Please verify your email address and try again.' }
+        }
+
         return { error: error.message }
       }
 
-      // If signup successful but email confirmation required
-      if (data.user && !data.session) {
-        return { error: 'Please check your email to confirm your account' }
-      }
-
+      console.log('✅ Supabase signUp successful')
       return { error: null }
     } catch (err) {
-      return { error: 'An unexpected error occurred' }
+      console.error('❌ SignUp exception:', err)
+      return { error: 'An unexpected error occurred during sign up. Please try again.' }
     } finally {
       setLoading(false)
     }
@@ -227,49 +191,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      console.log('🚪 Starting signOut process...')
+      console.log('🔐 AuthContext signOut called')
       setLoading(true)
 
-      // Call Supabase signOut with explicit scope
-      const { error } = await supabase.auth.signOut({ scope: 'global' })
+      const { error } = await supabase.auth.signOut()
 
       if (error) {
-        console.error('❌ Supabase signOut failed:', error)
+        console.error('❌ Supabase signOut error:', error)
         return { error: error.message }
       }
 
       console.log('✅ Supabase signOut successful')
-
-      // Explicitly clear local state immediately
-      setSession(null)
-      setUser(null)
-
-      // Verify signOut was successful
-      try {
-        const { data: sessionCheck } = await supabase.auth.getSession()
-        if (sessionCheck.session) {
-          console.warn('⚠️ Session still exists after signOut, forcing clear...')
-          // Force clear any remaining session data
-          setSession(null)
-          setUser(null)
-        } else {
-          console.log('✅ Session successfully cleared')
-        }
-      } catch (sessionError) {
-        console.log('✅ Session check failed as expected after signOut')
-      }
-
       return { error: null }
     } catch (err) {
       console.error('❌ SignOut exception:', err)
-
-      // Even if there's an error, try to clear local state
-      setSession(null)
-      setUser(null)
-
-      return {
-        error: err instanceof Error ? err.message : 'An unexpected error occurred during sign out'
-      }
+      return { error: 'An unexpected error occurred during sign out. Please try again.' }
     } finally {
       setLoading(false)
     }
@@ -277,37 +213,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     try {
-      const redirectTo = typeof window !== 'undefined'
-        ? `${window.location.origin}/auth/reset-password`
-        : 'http://localhost:3004/auth/reset-password'
+      console.log('🔐 AuthContext resetPassword called:', { email })
+      setLoading(true)
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo,
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       })
 
       if (error) {
+        console.error('❌ Supabase resetPassword error:', error)
         return { error: error.message }
       }
 
+      console.log('✅ Supabase resetPassword successful')
       return { error: null }
     } catch (err) {
-      return { error: 'An unexpected error occurred' }
+      console.error('❌ ResetPassword exception:', err)
+      return { error: 'An unexpected error occurred during password reset. Please try again.' }
+    } finally {
+      setLoading(false)
     }
   }
 
   const updatePassword = async (password: string) => {
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      })
+      console.log('🔐 AuthContext updatePassword called')
+      setLoading(true)
+
+      const { error } = await supabase.auth.updateUser({ password })
 
       if (error) {
+        console.error('❌ Supabase updatePassword error:', error)
         return { error: error.message }
       }
 
+      console.log('✅ Supabase updatePassword successful')
       return { error: null }
     } catch (err) {
-      return { error: 'An unexpected error occurred' }
+      console.error('❌ UpdatePassword exception:', err)
+      return { error: 'An unexpected error occurred during password update. Please try again.' }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -335,32 +281,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
-}
-
-// Higher-order component for protecting routes
-export function withAuth<P extends object>(Component: React.ComponentType<P>) {
-  return function AuthenticatedComponent(props: P) {
-    const { user, loading } = useAuth()
-    const router = useRouter()
-
-    useEffect(() => {
-      if (!loading && !user) {
-        router.push('/auth/login')
-      }
-    }, [user, loading, router])
-
-    if (loading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-        </div>
-      )
-    }
-
-    if (!user) {
-      return null
-    }
-
-    return <Component {...props} />
-  }
 }

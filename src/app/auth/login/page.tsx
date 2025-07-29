@@ -43,7 +43,14 @@ function LoginForm() {
       console.log('🔐 Login result:', { error })
 
       if (error) {
-        setError(error)
+        // Handle email confirmation errors specifically
+        if (error.includes('email_not_confirmed') || error.includes('Email not confirmed')) {
+          setError('Please check your email and click the confirmation link. If you don\'t see the email, check your spam folder or contact support.')
+        } else if (error.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.')
+        } else {
+          setError(error)
+        }
         console.error('❌ Login error:', error)
       } else {
         console.log('✅ Login successful!')

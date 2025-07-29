@@ -65,34 +65,44 @@ export default function PropertyForm({ onSuccess, onCancel, isOpen }: PropertyFo
     setLoading(true)
 
     try {
-      // Get the user's landlord IDs with auto-setup enabled
-      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds(true)
-
-      if (landlordError || !landlordIds || landlordIds.length === 0) {
-        setError('Unable to determine your landlord access. Please ensure you have proper permissions.')
+      // Ensure user is authenticated
+      const { data: user } = await supabase.auth.getUser()
+      if (!user.user) {
+        setError('Please log in to create a property')
         setLoading(false)
         return
       }
 
-      // Use the first landlord ID (in most cases, users will have only one)
-      const landlordId = landlordIds[0]
-
-      const { data, error: createError } = await supabase
-        .from('properties')
-        .insert({
-          landlord_id: landlordId,
-          name: formData.name.trim(),
-          physical_address: formData.physicalAddress.trim(),
-          lat: formData.lat,
-          lng: formData.lng,
-          notes: formData.notes?.trim() || null
-        })
-        .select()
-        .single()
+      // Use the new helper function to create property with owner
+      const { data: propertyId, error: createError } = await supabase.rpc('create_property_with_owner', {
+        property_name: formData.name.trim(),
+        property_address: formData.physicalAddress.trim(),
+        property_type: 'APARTMENT', // Default type since table doesn't have type column
+        owner_user_id: user.user.id
+      })
 
       if (createError) {
-        setError(handleSupabaseError(createError))
+        setError(`Failed to create property: ${createError.message}`)
+        setLoading(false)
         return
+      }
+
+      // If we have lat/lng or notes, update the property with those details
+      if (formData.lat || formData.lng || formData.notes?.trim()) {
+        const updateData: any = {}
+        if (formData.lat) updateData.lat = formData.lat
+        if (formData.lng) updateData.lng = formData.lng
+        if (formData.notes?.trim()) updateData.notes = formData.notes.trim()
+
+        const { error: updateError } = await supabase
+          .from('properties')
+          .update(updateData)
+          .eq('id', propertyId)
+
+        if (updateError) {
+          console.warn('Failed to update property details:', updateError.message)
+          // Don't throw error here since property was created successfully
+        }
       }
 
       // Reset form
@@ -104,7 +114,7 @@ export default function PropertyForm({ onSuccess, onCancel, isOpen }: PropertyFo
         notes: ''
       })
 
-      onSuccess?.(data.id)
+      onSuccess?.(propertyId)
     } catch (err) {
       setError('An unexpected error occurred')
       console.error('Property creation error:', err)

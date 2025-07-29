@@ -2,14 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { supabase, handleSupabaseError } from '../../lib/supabase-client'
+import { usePropertyAccess } from '../../hooks/usePropertyAccess'
+import { validateEmailSimple } from '../../lib/email-validation'
 
 interface TenantFormData {
   fullName: string
   phone: string
   email?: string
-  idNumber?: string
+  nationalId?: string
   emergencyContactName?: string
   emergencyContactPhone?: string
+  emergencyContactRelationship?: string
+  emergencyContactEmail?: string
   unitId?: string
 }
 
@@ -33,9 +37,11 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
     fullName: '',
     phone: '',
     email: '',
-    idNumber: '',
+    nationalId: '',
     emergencyContactName: '',
     emergencyContactPhone: '',
+    emergencyContactRelationship: '',
+    emergencyContactEmail: '',
     unitId: ''
   })
   const [availableUnits, setAvailableUnits] = useState<Unit[]>([])
@@ -43,45 +49,28 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
   const [loadingUnits, setLoadingUnits] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Use multi-user property access
+  const { properties, currentProperty, canManageTenants } = usePropertyAccess()
+
   const loadAvailableUnits = async () => {
     try {
       setLoadingUnits(true)
 
-      // For now, using mock landlord ID - in real app, this would come from user profile
-      const mockLandlordId = '11111111-1111-1111-1111-111111111111'
-
-      // First, get all properties for the landlord
-      const { data: properties, error: propertiesError } = await supabase
-        .from('properties')
-        .select('id, name')
-        .eq('landlord_id', mockLandlordId)
-
-      if (propertiesError) {
-        console.error('Error loading properties:', propertiesError)
-        return
-      }
-
-      if (!properties || properties.length === 0) {
-        console.log('No properties found for landlord')
+      if (!currentProperty) {
         setAvailableUnits([])
         return
       }
 
-      const propertyIds = properties.map(p => p.id)
-
-      // Get vacant units for these properties
+      // Get units for the current property only
       const { data: unitsData, error: unitsError } = await supabase
         .from('units')
         .select(`
           id,
           unit_label,
           monthly_rent_kes,
-          property_id,
-          properties (
-            name
-          )
+          property_id
         `)
-        .in('property_id', propertyIds)
+        .eq('property_id', currentProperty.property_id)
         .eq('is_active', true)
 
       if (unitsError) {
@@ -102,11 +91,20 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
 
       const occupiedUnitIds = activeTenancies?.map(t => t.unit_id).filter(Boolean) || []
 
-      const availableUnits = (unitsData || []).filter(unit =>
+      // Filter available units and add property names
+      const availableUnitsFiltered = (unitsData || []).filter(unit =>
         !occupiedUnitIds.includes(unit.id)
       )
 
-      setAvailableUnits(availableUnits)
+      // Add property names to units
+      const availableUnitsWithProperties = availableUnitsFiltered.map(unit => ({
+        ...unit,
+        properties: [{
+          name: currentProperty.property_name
+        }]
+      }))
+
+      setAvailableUnits(availableUnitsWithProperties)
     } catch (err) {
       console.error('Error loading available units:', err)
     } finally {
@@ -115,10 +113,10 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
   }
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && currentProperty) {
       loadAvailableUnits()
     }
-  }, [isOpen])
+  }, [isOpen, currentProperty])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -135,9 +133,30 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
     if (!formData.phone.trim()) {
       return 'Phone number is required'
     }
-    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-      return 'Please enter a valid email address'
+    if (formData.email) {
+      const emailError = validateEmailSimple(formData.email)
+      if (emailError) {
+        return emailError
+      }
     }
+
+    // Emergency contact validation
+    if (formData.emergencyContactName && !formData.emergencyContactPhone) {
+      return 'Emergency contact phone is required when emergency contact name is provided'
+    }
+    if (formData.emergencyContactPhone && !formData.emergencyContactName) {
+      return 'Emergency contact name is required when emergency contact phone is provided'
+    }
+    if (formData.emergencyContactPhone && !/^\+?[0-9\s\-\(\)]+$/.test(formData.emergencyContactPhone)) {
+      return 'Please enter a valid emergency contact phone number'
+    }
+    if (formData.emergencyContactEmail) {
+      const emailError = validateEmailSimple(formData.emergencyContactEmail)
+      if (emailError) {
+        return `Emergency contact email: ${emailError}`
+      }
+    }
+
     return null
   }
 
@@ -161,9 +180,11 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
           full_name: formData.fullName.trim(),
           phone: formData.phone.trim(),
           email: formData.email?.trim() || null,
-          id_number: formData.idNumber?.trim() || null,
+          national_id: formData.nationalId?.trim() || null,
           emergency_contact_name: formData.emergencyContactName?.trim() || null,
           emergency_contact_phone: formData.emergencyContactPhone?.trim() || null,
+          emergency_contact_relationship: formData.emergencyContactRelationship?.trim() || null,
+          emergency_contact_email: formData.emergencyContactEmail?.trim() || null,
           status: 'ACTIVE'
         })
         .select()
@@ -183,8 +204,9 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
             .insert({
               tenant_id: tenantData.id,
               unit_id: formData.unitId,
-              monthly_rent_kes: selectedUnit.monthly_rent_kes,
+              rent_kes: selectedUnit.monthly_rent_kes,
               start_date: new Date().toISOString().split('T')[0], // Today
+              billing_day: 1, // Default to 1st of month
               status: 'ACTIVE'
             })
 
@@ -200,9 +222,11 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
         fullName: '',
         phone: '',
         email: '',
-        idNumber: '',
+        nationalId: '',
         emergencyContactName: '',
         emergencyContactPhone: '',
+        emergencyContactRelationship: '',
+        emergencyContactEmail: '',
         unitId: ''
       })
 
@@ -232,6 +256,24 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
               </svg>
             </button>
           </div>
+
+          {/* Permission check */}
+          {!currentProperty && (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                Please select a property to add tenants to.
+              </p>
+            </div>
+          )}
+
+          {currentProperty && !canManageTenants(currentProperty.property_id) && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-800">
+                You don't have permission to manage tenants for this property.
+                Contact the property owner to request access.
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -282,18 +324,94 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
             </div>
 
             <div>
-              <label htmlFor="idNumber" className="block text-sm font-medium text-gray-700">
-                ID Number
+              <label htmlFor="nationalId" className="block text-sm font-medium text-gray-700">
+                National ID
               </label>
               <input
                 type="text"
-                id="idNumber"
-                name="idNumber"
-                value={formData.idNumber}
+                id="nationalId"
+                name="nationalId"
+                value={formData.nationalId}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="12345678"
               />
+            </div>
+
+            {/* Emergency Contact Section */}
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Emergency Contact / Next of Kin</h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="emergencyContactName" className="block text-sm font-medium text-gray-700">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    id="emergencyContactName"
+                    name="emergencyContactName"
+                    value={formData.emergencyContactName}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Jane Doe"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="emergencyContactPhone" className="block text-sm font-medium text-gray-700">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="emergencyContactPhone"
+                    name="emergencyContactPhone"
+                    value={formData.emergencyContactPhone}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="+254 700 000 001"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="emergencyContactRelationship" className="block text-sm font-medium text-gray-700">
+                    Relationship
+                  </label>
+                  <select
+                    id="emergencyContactRelationship"
+                    name="emergencyContactRelationship"
+                    value={formData.emergencyContactRelationship}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select relationship</option>
+                    <option value="Mother">Mother</option>
+                    <option value="Father">Father</option>
+                    <option value="Sister">Sister</option>
+                    <option value="Brother">Brother</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Child">Child</option>
+                    <option value="Friend">Friend</option>
+                    <option value="Colleague">Colleague</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="emergencyContactEmail" className="block text-sm font-medium text-gray-700">
+                    Email (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    id="emergencyContactEmail"
+                    name="emergencyContactEmail"
+                    value={formData.emergencyContactEmail}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="jane@example.com"
+                  />
+                </div>
+              </div>
             </div>
 
             <div>
@@ -320,39 +438,7 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
               )}
             </div>
 
-            <div className="border-t pt-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Emergency Contact</h4>
-              
-              <div>
-                <label htmlFor="emergencyContactName" className="block text-sm font-medium text-gray-700">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="emergencyContactName"
-                  name="emergencyContactName"
-                  value={formData.emergencyContactName}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Jane Doe"
-                />
-              </div>
 
-              <div className="mt-3">
-                <label htmlFor="emergencyContactPhone" className="block text-sm font-medium text-gray-700">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  id="emergencyContactPhone"
-                  name="emergencyContactPhone"
-                  value={formData.emergencyContactPhone}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="+254 700 000 001"
-                />
-              </div>
-            </div>
 
             {error && (
               <div className="rounded-md bg-red-50 p-4">
@@ -379,7 +465,7 @@ export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormPr
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !currentProperty || !canManageTenants(currentProperty?.property_id || '')}
                 className="flex-1 bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (

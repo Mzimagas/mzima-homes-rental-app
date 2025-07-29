@@ -83,9 +83,13 @@ export interface Database {
           unit_label: string
           monthly_rent_kes: number
           deposit_kes: number
-          meter_type: 'TOKEN' | 'POSTPAID' | 'ANALOG' | 'NONE'
+          meter_type: 'PREPAID' | 'POSTPAID_ANALOGUE'
           kplc_account: string | null
           water_included: boolean
+          water_meter_type: 'DIRECT_TAVEVO' | 'INTERNAL_SUBMETER' | null
+          water_meter_number: string | null
+          shared_meter_id: string | null
+          shared_meter_type: 'KPLC' | 'WATER' | null
           is_active: boolean
           created_at: string
           updated_at: string
@@ -96,9 +100,13 @@ export interface Database {
           unit_label: string
           monthly_rent_kes: number
           deposit_kes?: number
-          meter_type?: 'TOKEN' | 'POSTPAID' | 'ANALOG' | 'NONE'
+          meter_type?: 'PREPAID' | 'POSTPAID_ANALOGUE'
           kplc_account?: string | null
           water_included?: boolean
+          water_meter_type?: 'DIRECT_TAVEVO' | 'INTERNAL_SUBMETER' | null
+          water_meter_number?: string | null
+          shared_meter_id?: string | null
+          shared_meter_type?: 'KPLC' | 'WATER' | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -109,12 +117,71 @@ export interface Database {
           unit_label?: string
           monthly_rent_kes?: number
           deposit_kes?: number
-          meter_type?: 'TOKEN' | 'POSTPAID' | 'ANALOG' | 'NONE'
+          meter_type?: 'PREPAID' | 'POSTPAID_ANALOGUE'
           kplc_account?: string | null
           water_included?: boolean
+          water_meter_type?: 'DIRECT_TAVEVO' | 'INTERNAL_SUBMETER' | null
+          water_meter_number?: string | null
+          shared_meter_id?: string | null
+          shared_meter_type?: 'KPLC' | 'WATER' | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
+        }
+      }
+      shared_meters: {
+        Row: {
+          id: string
+          property_id: string
+          meter_type: 'KPLC_PREPAID' | 'KPLC_POSTPAID_ANALOGUE' | 'WATER_DIRECT_TAVEVO' | 'WATER_INTERNAL_SUBMETER'
+          meter_number: string | null
+          description: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          property_id: string
+          meter_type: 'KPLC_PREPAID' | 'KPLC_POSTPAID_ANALOGUE' | 'WATER_DIRECT_TAVEVO' | 'WATER_INTERNAL_SUBMETER'
+          meter_number?: string | null
+          description?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          property_id?: string
+          meter_type?: 'KPLC_PREPAID' | 'KPLC_POSTPAID_ANALOGUE' | 'WATER_DIRECT_TAVEVO' | 'WATER_INTERNAL_SUBMETER'
+          meter_number?: string | null
+          description?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      unit_shared_meters: {
+        Row: {
+          id: string
+          unit_id: string
+          shared_meter_id: string
+          allocation_percentage: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          unit_id: string
+          shared_meter_id: string
+          allocation_percentage?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          unit_id?: string
+          shared_meter_id?: string
+          allocation_percentage?: number
+          created_at?: string
         }
       }
       tenants: {
@@ -125,6 +192,10 @@ export interface Database {
           phone: string
           national_id: string | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          emergency_contact_email: string | null
           start_date: string | null
           end_date: string | null
           status: 'ACTIVE' | 'INACTIVE' | 'TERMINATED'
@@ -138,6 +209,10 @@ export interface Database {
           phone: string
           national_id?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          emergency_contact_email?: string | null
           start_date?: string | null
           end_date?: string | null
           status?: 'ACTIVE' | 'INACTIVE' | 'TERMINATED'
@@ -151,6 +226,10 @@ export interface Database {
           phone?: string
           national_id?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          emergency_contact_email?: string | null
           start_date?: string | null
           end_date?: string | null
           status?: 'ACTIVE' | 'INACTIVE' | 'TERMINATED'
@@ -355,6 +434,138 @@ export interface Database {
         Returns: string
       }
     }
+    property_users: {
+      Row: {
+        id: string
+        property_id: string
+        user_id: string
+        role: 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+        permissions: Json
+        invited_by: string | null
+        invited_at: string
+        accepted_at: string | null
+        status: 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REVOKED'
+        created_at: string
+        updated_at: string
+      }
+      Insert: {
+        id?: string
+        property_id: string
+        user_id: string
+        role?: 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+        permissions?: Json
+        invited_by?: string | null
+        invited_at?: string
+        accepted_at?: string | null
+        status?: 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REVOKED'
+        created_at?: string
+        updated_at?: string
+      }
+      Update: {
+        id?: string
+        property_id?: string
+        user_id?: string
+        role?: 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+        permissions?: Json
+        invited_by?: string | null
+        invited_at?: string
+        accepted_at?: string | null
+        status?: 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REVOKED'
+        created_at?: string
+        updated_at?: string
+      }
+    }
+    user_invitations: {
+      Row: {
+        id: string
+        property_id: string
+        email: string
+        role: 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+        permissions: Json
+        invited_by: string
+        invitation_token: string
+        expires_at: string
+        accepted_at: string | null
+        accepted_by: string | null
+        status: 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REVOKED'
+        created_at: string
+        updated_at: string
+      }
+      Insert: {
+        id?: string
+        property_id: string
+        email: string
+        role?: 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+        permissions?: Json
+        invited_by: string
+        invitation_token?: string
+        expires_at?: string
+        accepted_at?: string | null
+        accepted_by?: string | null
+        status?: 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REVOKED'
+        created_at?: string
+        updated_at?: string
+      }
+      Update: {
+        id?: string
+        property_id?: string
+        email?: string
+        role?: 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+        permissions?: Json
+        invited_by?: string
+        invitation_token?: string
+        expires_at?: string
+        accepted_at?: string | null
+        accepted_by?: string | null
+        status?: 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REVOKED'
+        created_at?: string
+        updated_at?: string
+      }
+    }
+    user_property_access: {
+      Row: {
+        user_id: string
+        property_id: string
+        property_name: string
+        role: 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+        status: 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REVOKED'
+        permissions: Json
+        accepted_at: string | null
+        is_owner: boolean
+        can_edit_property: boolean
+        can_manage_tenants: boolean
+        can_manage_maintenance: boolean
+        can_create_data: boolean
+      }
+      Insert: {
+        user_id?: string
+        property_id?: string
+        property_name?: string
+        role?: 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+        status?: 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REVOKED'
+        permissions?: Json
+        accepted_at?: string | null
+        is_owner?: boolean
+        can_edit_property?: boolean
+        can_manage_tenants?: boolean
+        can_manage_maintenance?: boolean
+        can_create_data?: boolean
+      }
+      Update: {
+        user_id?: string
+        property_id?: string
+        property_name?: string
+        role?: 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+        status?: 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REVOKED'
+        permissions?: Json
+        accepted_at?: string | null
+        is_owner?: boolean
+        can_edit_property?: boolean
+        can_manage_tenants?: boolean
+        can_manage_maintenance?: boolean
+        can_create_data?: boolean
+      }
+    }
   }
 }
 
@@ -362,6 +573,8 @@ export interface Database {
 export type Landlord = Database['public']['Tables']['landlords']['Row']
 export type Property = Database['public']['Tables']['properties']['Row']
 export type Unit = Database['public']['Tables']['units']['Row']
+export type SharedMeter = Database['public']['Tables']['shared_meters']['Row']
+export type UnitSharedMeter = Database['public']['Tables']['unit_shared_meters']['Row']
 export type Tenant = Database['public']['Tables']['tenants']['Row']
 export type TenancyAgreement = Database['public']['Tables']['tenancy_agreements']['Row']
 export type RentInvoice = Database['public']['Tables']['rent_invoices']['Row']

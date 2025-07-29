@@ -86,8 +86,8 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
     try {
       setLoadingUnits(true)
       
-      // For now, using mock landlord ID - in real app, this would come from user profile
-      const mockLandlordId = '11111111-1111-1111-1111-111111111111'
+      // For now, using actual landlord ID from database - in real app, this would come from user profile
+      const mockLandlordId = '78664634-fa3c-4b1e-990e-513f5b184fa6' // Test Landlord with actual properties
 
       const { data: unitsData, error: unitsError } = await supabase
         .from('units')

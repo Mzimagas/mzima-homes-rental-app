@@ -240,6 +240,33 @@ export default function TenantDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Emergency Contact Information */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Emergency Contact</h3>
+          {tenant.emergency_contact_name || tenant.emergency_contact_phone ? (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-gray-600">Name</p>
+                <p className="font-medium">{tenant.emergency_contact_name || 'Not provided'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Phone</p>
+                <p className="font-medium">{tenant.emergency_contact_phone || 'Not provided'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Relationship</p>
+                <p className="font-medium">{tenant.emergency_contact_relationship || 'Not specified'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="font-medium">{tenant.emergency_contact_email || 'Not provided'}</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-500">No emergency contact information provided</p>
+          )}
+        </div>
       </div>
 
       {/* Payment History */}

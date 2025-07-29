@@ -1000,12 +1000,7 @@ export const clientQueries = {
           id,
           unit_label,
           monthly_rent_kes,
-          is_active,
-          tenants (
-            id,
-            full_name,
-            status
-          )
+          is_active
         )
       `)
       .eq('landlord_id', landlordId)

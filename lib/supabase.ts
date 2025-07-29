@@ -3,7 +3,6 @@ import { Database } from './types/database'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
@@ -18,17 +17,25 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Admin client for server-side operations (bypasses RLS)
-export const supabaseAdmin = createClient<Database>(
-  supabaseUrl, 
-  supabaseServiceKey,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
+// Function to create admin client only when needed (server-side)
+export function createSupabaseAdmin() {
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+  if (!supabaseServiceKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations')
   }
-)
+
+  return createClient<Database>(
+    supabaseUrl,
+    supabaseServiceKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
+}
 
 // Helper function to handle Supabase errors
 export function handleSupabaseError(error: any) {
@@ -56,30 +63,21 @@ export async function callRPC<T = any>(
   useAdmin = false
 ): Promise<{ data: T | null; error: string | null }> {
   try {
-    const client = useAdmin ? supabaseAdmin : supabase
+    const client = useAdmin ? createSupabaseAdmin() : supabase
     const { data, error } = await client.rpc(functionName, params)
-    
+
     if (error) {
       return { data: null, error: handleSupabaseError(error) }
     }
-    
+
     return { data, error: null }
   } catch (err) {
     return { data: null, error: handleSupabaseError(err) }
   }
 }
 
-// Business logic function wrappers
+// Client-side business logic function wrappers (using regular supabase client with RLS)
 export const businessFunctions = {
-  // Generate monthly rent invoices
-  async runMonthlyRent(periodStart: string, dueDate?: string) {
-    return callRPC<{ invoices_created: number; total_amount_kes: number }[]>(
-      'run_monthly_rent',
-      { p_period_start: periodStart, p_due_date: dueDate },
-      true // Use admin client for this operation
-    )
-  },
-
   // Apply payment to tenant account
   async applyPayment(
     tenantId: string,
@@ -119,28 +117,6 @@ export const businessFunctions = {
     }[]>('get_property_stats', { p_property_id: propertyId })
   },
 
-  // Terminate tenancy
-  async terminateTenancy(
-    tenancyAgreementId: string,
-    terminationDate: string,
-    reason?: string
-  ) {
-    return callRPC<string>(
-      'terminate_tenancy',
-      {
-        p_tenancy_agreement_id: tenancyAgreementId,
-        p_termination_date: terminationDate,
-        p_reason: reason
-      },
-      true // Use admin client
-    )
-  },
-
-  // Mark overdue invoices
-  async markOverdueInvoices() {
-    return callRPC<number>('mark_overdue_invoices', {}, true)
-  },
-
   // Get tenant payment history
   async getTenantPaymentHistory(tenantId: string, limit = 50) {
     return callRPC<{
@@ -153,9 +129,14 @@ export const businessFunctions = {
   }
 }
 
-// Utility functions for common queries
+// Client-side utility functions for common queries (respects RLS)
 export const queries = {
-  // Get all properties for a landlord
+  // Get accessible properties for current user (using multi-user system)
+  async getAccessibleProperties() {
+    return supabase.rpc('get_user_accessible_properties')
+  },
+
+  // Get properties for a specific user (legacy support)
   async getPropertiesByLandlord(landlordId: string) {
     return supabase
       .from('properties')
@@ -213,7 +194,7 @@ export const queries = {
       .order('due_date')
   },
 
-  // Get recent payments for a property
+  // Get recent payments for accessible properties
   async getRecentPayments(propertyId: string, limit = 20) {
     return supabase
       .from('payments')
@@ -229,5 +210,23 @@ export const queries = {
       .eq('tenants.units.property_id', propertyId)
       .order('payment_date', { ascending: false })
       .limit(limit)
+  },
+
+  // Get property users (for user management)
+  async getPropertyUsers(propertyId: string) {
+    return supabase
+      .from('property_users')
+      .select('*')
+      .eq('property_id', propertyId)
+      .eq('status', 'ACTIVE')
+  },
+
+  // Get pending invitations for a property
+  async getPendingInvitations(propertyId: string) {
+    return supabase
+      .from('user_invitations')
+      .select('*')
+      .eq('property_id', propertyId)
+      .eq('status', 'PENDING')
   }
 }
