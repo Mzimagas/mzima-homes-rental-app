@@ -221,7 +221,7 @@ export default function FinancialReports() {
       // Monthly trends table
       const monthlyTrendsTable: TableData = {
         headers: ['Month', 'Revenue', 'Expenses', 'Net Income', 'Collections', 'Outstanding'],
-        rows: data.monthlyRevenue.map(month => [
+        rows: (Array.isArray(data.monthlyRevenue) ? data.monthlyRevenue : []).map(month => [
           month.month,
           formatCurrency(month.revenue),
           formatCurrency(month.expenses),
@@ -313,7 +313,7 @@ export default function FinancialReports() {
       // Monthly trends sheet
       const monthlyTrendsTable: TableData = {
         headers: ['Month', 'Revenue', 'Expenses', 'Net Income', 'Collections', 'Outstanding'],
-        rows: data.monthlyRevenue.map(month => [
+        rows: (Array.isArray(data.monthlyRevenue) ? data.monthlyRevenue : []).map(month => [
           month.month,
           month.revenue,
           month.expenses,
@@ -387,7 +387,22 @@ export default function FinancialReports() {
       .eq('landlord_id', landlordId)
 
     if (!properties || properties.length === 0) {
-      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, outstandingAmount: 0 }
+      const months: any[] = []
+      {
+        const current = new Date(startDate)
+        while (current <= endDate) {
+          months.push({
+            month: current.toLocaleDateString('en-KE', { year: 'numeric', month: 'short' }),
+            revenue: 0,
+            expenses: 0,
+            netIncome: 0,
+            collections: 0,
+            outstanding: 0
+          })
+          current.setMonth(current.getMonth() + 1)
+        }
+      }
+      return months
     }
 
     const propertyIds = properties.map(p => p.id)
@@ -399,7 +414,22 @@ export default function FinancialReports() {
       .in('property_id', propertyIds)
 
     if (!units || units.length === 0) {
-      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, outstandingAmount: 0 }
+      const months: any[] = []
+      {
+        const current = new Date(startDate)
+        while (current <= endDate) {
+          months.push({
+            month: current.toLocaleDateString('en-KE', { year: 'numeric', month: 'short' }),
+            revenue: 0,
+            expenses: 0,
+            netIncome: 0,
+            collections: 0,
+            outstanding: 0
+          })
+          current.setMonth(current.getMonth() + 1)
+        }
+      }
+      return months
     }
 
     const unitIds = units.map(u => u.id)
@@ -916,7 +946,7 @@ export default function FinancialReports() {
           )}
         </h4>
         <div className="space-y-4">
-          {data.monthlyRevenue.map((month, index) => (
+          {(Array.isArray(data.monthlyRevenue) ? data.monthlyRevenue : []).map((month, index) => (
             <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <div className="font-medium text-gray-900">{month.month}</div>

@@ -7,6 +7,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { logEmailSuccess, logEmailFailure, logEmailBounce } from '../../../lib/email-monitoring'
 import { preflightEmailCheck, suggestEmailCorrection } from '../../../lib/email-verification'
+import { validateEmailSimple } from '../../../lib/email-validation'
+
+import dynamic from 'next/dynamic'
+const PasswordStrength = dynamic(() => import('../../../components/PasswordStrength'), { ssr: false })
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -64,44 +68,7 @@ export default function SignupPage() {
   }
 
   const validateEmail = (email: string): string | null => {
-    // Basic format check
-    const basicEmailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-    if (!basicEmailRegex.test(email)) {
-      return 'Please enter a valid email address format'
-    }
-
-    // Check for common invalid patterns that cause bounces
-    const invalidPatterns = [
-      /^.*@example\.com$/i,
-      /^.*@test\..*$/i,
-      /^test@.*$/i,
-      /^admin@.*$/i,
-      /^noreply@example\..*$/i,
-      /^.*@localhost$/i,
-      /^.*@.*\.local$/i,
-      /^.*@.*\.test$/i,
-      /^.*@.*\.invalid$/i,
-      /^.*@.*\.example$/i
-    ]
-
-    for (const pattern of invalidPatterns) {
-      if (pattern.test(email)) {
-        return 'Please use a valid, deliverable email address. Test emails and example domains are not allowed.'
-      }
-    }
-
-    // Check for valid TLD (at least 2 characters)
-    const tldMatch = email.match(/\.([a-zA-Z]{2,})$/)
-    if (!tldMatch || tldMatch[1].length < 2) {
-      return 'Please enter an email with a valid domain extension'
-    }
-
-    // Check for consecutive dots or other invalid patterns
-    if (email.includes('..') || email.startsWith('.') || email.endsWith('.')) {
-      return 'Email address contains invalid characters'
-    }
-
-    return null
+    return validateEmailSimple(email)
   }
 
   const validateForm = () => {
@@ -113,8 +80,18 @@ export default function SignupPage() {
       return 'Passwords do not match'
     }
 
-    if (formData.password.length < 6) {
-      return 'Password must be at least 6 characters long'
+    // Stronger password policy: min 10, 3 of 4 classes
+    const strongPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{10,}$/
+    const atLeastThreeClasses = (pw: string) => {
+      let classes = 0
+      if (/[a-z]/.test(pw)) classes++
+      if (/[A-Z]/.test(pw)) classes++
+      if (/[0-9]/.test(pw)) classes++
+      if (/[^A-Za-z0-9]/.test(pw)) classes++
+      return pw.length >= 10 && classes >= 3
+    }
+    if (!atLeastThreeClasses(formData.password)) {
+      return 'Password must be at least 10 characters and include a mix of letters, numbers, and symbols.'
     }
 
     const emailError = validateEmail(formData.email)
@@ -199,11 +176,13 @@ export default function SignupPage() {
         console.log('🔧 Auto-confirming user for development...')
 
         try {
-          // Use API endpoint to confirm user
+          // Use API endpoint to confirm user (with CSRF header)
+          const csrf = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('csrf-token='))?.split('=')[1]
           const response = await fetch('/api/auth/confirm-user', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'x-csrf-token': csrf || ''
             },
             body: JSON.stringify({
               userId: signUpData.user?.id,
@@ -309,7 +288,7 @@ export default function SignupPage() {
             Join Voi Rental Management System
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -329,7 +308,7 @@ export default function SignupPage() {
                 disabled={isLoading}
               />
             </div>
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email Address
@@ -378,25 +357,33 @@ export default function SignupPage() {
                 </div>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Create a password (min. 6 characters)"
-                value={formData.password}
-                onChange={handleChange}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm pr-10"
+                  placeholder="Create a strong password (min 10 chars, 3 types)"
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                />
+                <button type="button" aria-label="Show password" className="absolute inset-y-0 right-0 px-3 text-gray-500">
+                  👁️
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Minimum 10 characters and at least 3 of: lowercase, uppercase, number, symbol.</p>
+              {/* Strength meter */}
+              <PasswordStrength value={formData.password} />
             </div>
-            
+
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                 Confirm Password

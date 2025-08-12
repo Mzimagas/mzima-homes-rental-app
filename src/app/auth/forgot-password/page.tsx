@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { validateEmailSimple } from '../../../lib/email-validation'
+import { Turnstile } from '@marsidev/react-turnstile'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -19,6 +21,8 @@ export default function ForgotPasswordPage() {
     }
   }, [user, router])
 
+  const [token, setToken] = useState<string | null>(null)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -30,15 +34,43 @@ export default function ForgotPasswordPage() {
       return
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address')
+    // Use shared email validation
+    const emailError = validateEmailSimple(email)
+    if (emailError) {
+      setError(emailError)
       setIsLoading(false)
       return
     }
 
     try {
+      // CSRF + CAPTCHA + rate-limit precheck
+      const csrf = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('csrf-token='))?.split('=')[1] || ''
+      if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && token) {
+        const vRes = await fetch('/api/security/turnstile-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        })
+        if (!vRes.ok) {
+          setError('Please complete the verification challenge and try again.')
+          setIsLoading(false)
+          return
+        }
+      }
+      const rlRes = await fetch('/api/security/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf,
+        },
+        body: JSON.stringify({ action: 'forgot', email }),
+      })
+      if (!rlRes.ok) {
+        setError('Too many attempts. Please wait a minute and try again.')
+        setIsLoading(false)
+        return
+      }
+
       const { error } = await resetPassword(email)
 
       if (error) {
@@ -148,7 +180,8 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
-          <div>
+          <div className="space-y-4">
+            <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string} />
             <button
               type="submit"
               disabled={isLoading}

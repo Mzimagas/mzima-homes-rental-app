@@ -3,8 +3,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../../lib/supabase-client'
+import { supabase } from './supabase-client'
 import { validateEmailSimple } from './email-validation'
+import { logger, shouldLogAuth, redactEmail } from './logger'
 
 interface AuthContextType {
   user: User | null
@@ -29,18 +30,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session
     const getInitialSession = async () => {
       try {
-        console.log('🔐 AuthProvider: Getting initial session')
+        if (shouldLogAuth()) logger.info('AuthProvider: Getting initial session')
         const { data: { session }, error } = await supabase.auth.getSession()
-        
+
         if (error) {
-          console.error('❌ AuthProvider: Error getting session:', error)
+          logger.error('AuthProvider: Error getting session', error)
         } else {
-          console.log('🔐 AuthProvider: Initial session:', session?.user?.email || 'No session')
+          if (shouldLogAuth()) logger.debug('AuthProvider: Initial session', redactEmail(session?.user?.email || ''))
           setSession(session)
           setUser(session?.user ?? null)
         }
       } catch (err) {
-        console.error('❌ AuthProvider: Exception getting session:', err)
+        logger.error('AuthProvider: Exception getting session', err)
       } finally {
         setLoading(false)
       }
@@ -51,18 +52,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 AuthProvider: Auth state change:', event, session?.user?.email || 'No session')
-        
+        if (shouldLogAuth()) logger.info('AuthProvider: Auth state change', event, redactEmail(session?.user?.email || ''))
+
         setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
 
         // Handle different auth events
         if (event === 'SIGNED_IN') {
-          console.log('✅ AuthProvider: User signed in, redirecting to dashboard')
+          if (shouldLogAuth()) logger.info('AuthProvider: User signed in, redirecting to dashboard')
           router.push('/dashboard')
         } else if (event === 'SIGNED_OUT') {
-          console.log('👋 AuthProvider: User signed out, redirecting to login')
+          if (shouldLogAuth()) logger.info('AuthProvider: User signed out, redirecting to login')
           router.push('/auth/login')
         }
       }
@@ -75,28 +76,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('🔐 AuthContext signIn called:', { email, password: '***' })
+      if (shouldLogAuth()) logger.info('AuthContext signIn called', { email: redactEmail(email) })
       setLoading(true)
 
-      // Use Supabase auth signInWithPassword
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-      console.log('🔐 Enhanced signIn result:', { data: data?.user?.email, error })
+      if (shouldLogAuth()) logger.debug('AuthContext signIn result', { user: redactEmail(data?.user?.email || '') })
 
       if (error) {
-        console.error('❌ Enhanced signIn error:', error)
+        logger.warn('AuthContext signIn error', { message: error.message })
 
-        // Handle email confirmation specifically
-        if (error.message.includes('email_not_confirmed') || error.message.includes('Email not confirmed')) {
-          return { error: 'Please check your email and click the confirmation link. If you don\'t see the email, check your spam folder or contact support.' }
+        // Handle MFA required (surface as generic error; login page will prompt for OTP)
+        if (error.name === 'AuthApiError' && (error as any).status === 400 && error.message?.includes('mfa')) {
+          return { error: 'MFA_REQUIRED' }
         }
-        
-        // Provide more user-friendly error messages
+
+        if (error.message.includes('email_not_confirmed') || error.message.includes('Email not confirmed')) {
+          return { error: 'If the email or password is incorrect or your email is not confirmed, please try again or check your inbox.' }
+        }
         if (error.message.includes('Invalid login credentials')) {
-          return { error: 'Invalid email or password. Please check your credentials and try again.' }
+          return { error: 'If the email or password is incorrect or your email is not confirmed, please try again or check your inbox.' }
         }
         if (error.message.includes('Network error')) {
           return { error: 'Network error. Please check your internet connection and try again.' }
@@ -105,27 +104,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { error: 'Request timeout. Please check your internet connection and try again.' }
         }
 
-        return { error: error.message }
+        return { error: 'If the email or password is incorrect or your email is not confirmed, please try again or check your inbox.' }
       }
 
-      console.log('✅ Enhanced signIn successful')
+      if (shouldLogAuth()) logger.info('AuthContext signIn successful')
       return { error: null }
     } catch (err) {
-      console.error('❌ SignIn exception:', err)
-
-      // Handle specific error types
-      if (err instanceof Error) {
-        if (err.message.includes('Network error')) {
-          return { error: 'Network error during sign in. Please check your internet connection and try again.' }
-        }
-        if (err.message.includes('timeout')) {
-          return { error: 'Sign in request timeout. Please check your internet connection and try again.' }
-        }
-        if (err.message.includes('email_not_confirmed')) {
-          return { error: 'Please check your email and click the confirmation link to complete your registration.' }
-        }
-      }
-
+      logger.error('AuthContext signIn exception', err)
       return { error: 'An unexpected error occurred during sign in. Please try again.' }
     } finally {
       setLoading(false)
@@ -134,13 +119,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      console.log('🔐 AuthContext signUp called:', { email, fullName, password: '***' })
+      if (shouldLogAuth()) logger.info('AuthContext signUp called', { email: redactEmail(email) })
       setLoading(true)
 
       // Validate email before attempting signup
       const emailError = validateEmailSimple(email)
       if (emailError) {
-        console.error('❌ Email validation failed:', emailError)
+        logger.warn('AuthContext email validation failed', { email: redactEmail(email), error: emailError })
         return { error: emailError }
       }
 
@@ -148,26 +133,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         options: {
-          data: {
-            full_name: fullName,
-          }
+          data: { full_name: fullName }
         }
       })
 
-      console.log('🔐 Supabase signUp result:', { data: data?.user?.email, error })
+      if (shouldLogAuth()) logger.debug('AuthContext signUp result', { user: redactEmail(data?.user?.email || '') })
 
       if (error) {
-        console.error('❌ Supabase signUp error:', error)
+        logger.warn('AuthContext signUp error', { message: error.message })
 
-        // Provide more user-friendly error messages
         if (error.message.includes('User already registered')) {
           return { error: 'An account with this email already exists. Please sign in instead.' }
         }
         if (error.message.includes('Password should be at least')) {
-          return { error: 'Password should be at least 6 characters long.' }
+          return { error: 'Password does not meet the required strength.' }
         }
         if (error.message.includes('Invalid email')) {
-          return { error: 'Please enter a valid, deliverable email address. Avoid test or example domains.' }
+          return { error: 'Please enter a valid, deliverable email address.' }
         }
         if (error.message.includes('rate limit') || error.message.includes('too many')) {
           return { error: 'Too many signup attempts. Please wait a few minutes before trying again.' }
@@ -176,13 +158,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { error: 'Email delivery failed. Please verify your email address and try again.' }
         }
 
-        return { error: error.message }
+        return { error: 'Unable to sign up at this time. Please try again.' }
       }
 
-      console.log('✅ Supabase signUp successful')
+      if (shouldLogAuth()) logger.info('AuthContext signUp successful')
       return { error: null }
     } catch (err) {
-      console.error('❌ SignUp exception:', err)
+      logger.error('AuthContext signUp exception', err)
       return { error: 'An unexpected error occurred during sign up. Please try again.' }
     } finally {
       setLoading(false)
@@ -191,20 +173,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      console.log('🔐 AuthContext signOut called')
+      if (shouldLogAuth()) logger.info('AuthContext signOut called')
       setLoading(true)
 
       const { error } = await supabase.auth.signOut()
 
       if (error) {
-        console.error('❌ Supabase signOut error:', error)
-        return { error: error.message }
+        logger.warn('AuthContext signOut error', { message: error.message })
+        return { error: 'Unable to sign out at this time. Please try again.' }
       }
 
-      console.log('✅ Supabase signOut successful')
+      if (shouldLogAuth()) logger.info('AuthContext signOut successful')
       return { error: null }
     } catch (err) {
-      console.error('❌ SignOut exception:', err)
+      logger.error('AuthContext signOut exception', err)
       return { error: 'An unexpected error occurred during sign out. Please try again.' }
     } finally {
       setLoading(false)
@@ -213,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     try {
-      console.log('🔐 AuthContext resetPassword called:', { email })
+      if (shouldLogAuth()) logger.info('AuthContext resetPassword called', { email: redactEmail(email) })
       setLoading(true)
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -221,14 +203,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
-        console.error('❌ Supabase resetPassword error:', error)
-        return { error: error.message }
+        logger.warn('AuthContext resetPassword error', { message: error.message })
+        return { error: 'If the email exists, a reset link will be sent.' }
       }
 
-      console.log('✅ Supabase resetPassword successful')
+      if (shouldLogAuth()) logger.info('AuthContext resetPassword successful')
       return { error: null }
     } catch (err) {
-      console.error('❌ ResetPassword exception:', err)
+      logger.error('AuthContext resetPassword exception', err)
       return { error: 'An unexpected error occurred during password reset. Please try again.' }
     } finally {
       setLoading(false)
@@ -237,20 +219,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updatePassword = async (password: string) => {
     try {
-      console.log('🔐 AuthContext updatePassword called')
+      if (shouldLogAuth()) logger.info('AuthContext updatePassword called')
       setLoading(true)
 
       const { error } = await supabase.auth.updateUser({ password })
 
       if (error) {
-        console.error('❌ Supabase updatePassword error:', error)
-        return { error: error.message }
+        logger.warn('AuthContext updatePassword error', { message: error.message })
+        return { error: 'Unable to update password at this time. Please try again.' }
       }
 
-      console.log('✅ Supabase updatePassword successful')
+      if (shouldLogAuth()) logger.info('AuthContext updatePassword successful')
       return { error: null }
     } catch (err) {
-      console.error('❌ UpdatePassword exception:', err)
+      logger.error('AuthContext updatePassword exception', err)
       return { error: 'An unexpected error occurred during password update. Please try again.' }
     } finally {
       setLoading(false)

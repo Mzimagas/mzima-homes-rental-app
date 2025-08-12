@@ -4,6 +4,9 @@ import { useState, useEffect, Suspense } from 'react'
 import { useAuth } from '../../../lib/auth-context'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Turnstile } from '@marsidev/react-turnstile'
+import { supabase } from '../../../lib/supabase-client'
+import MfaChallenge from './mfa-challenge'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
@@ -13,13 +16,15 @@ function LoginForm() {
   const { signIn, user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [showMfa, setShowMfa] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState('')
+
+  const [token, setToken] = useState<string | null>(null)
 
   const redirectTo = searchParams.get('redirectTo') || '/dashboard'
 
   useEffect(() => {
-    console.log('🔐 Login page useEffect - user:', user)
     if (user) {
-      console.log('🔐 User found, redirecting to:', redirectTo)
       router.push(redirectTo)
     }
   }, [user, router, redirectTo])
@@ -29,8 +34,6 @@ function LoginForm() {
     setError('')
     setIsLoading(true)
 
-    console.log('🔐 Login attempt:', { email, password: '***' })
-
     if (!email || !password) {
       setError('Please fill in all fields')
       setIsLoading(false)
@@ -38,25 +41,76 @@ function LoginForm() {
     }
 
     try {
+      // Soft lockout via localStorage
+      const lockKey = `lockout:${email.slice(0,3)}`
+      const until = localStorage.getItem(lockKey)
+      if (until && Date.now() < Number(until)) {
+        setError('Too many attempts. Please wait and try again.')
+        setIsLoading(false)
+        return
+      }
+
+      // CSRF + rate-limit + CAPTCHA prechecks
+      const csrf = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('csrf-token='))?.split('=')[1] || ''
+      if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && token) {
+        const vRes = await fetch('/api/security/turnstile-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        })
+        if (!vRes.ok) {
+          setError('Please complete the verification challenge and try again.')
+          setIsLoading(false)
+          return
+        }
+      }
+      const rlRes = await fetch('/api/security/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf,
+        },
+        body: JSON.stringify({ action: 'login', email }),
+      })
+      if (!rlRes.ok) {
+        setError('Too many attempts. Please wait a minute and try again.')
+        setIsLoading(false)
+        return
+      }
+
       const { error } = await signIn(email, password)
 
-      console.log('🔐 Login result:', { error })
-
       if (error) {
-        // Handle email confirmation errors specifically
-        if (error.includes('email_not_confirmed') || error.includes('Email not confirmed')) {
-          setError('Please check your email and click the confirmation link. If you don\'t see the email, check your spam folder or contact support.')
-        } else if (error.includes('Invalid login credentials')) {
-          setError('Invalid email or password. Please check your credentials and try again.')
-        } else {
-          setError(error)
-        }
-        console.error('❌ Login error:', error)
+        // Exponential backoff soft lockout
+        const attemptKey = `attempts:${email.slice(0,3)}`
+        const attempts = Number(localStorage.getItem(attemptKey) || '0') + 1
+        localStorage.setItem(attemptKey, String(attempts))
+        const backoffMs = Math.min(5 * 60_000, 5000 * attempts)
+        localStorage.setItem(lockKey, String(Date.now() + backoffMs))
+        // Notify server lockout tracker
+        fetch('/api/security/lockout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', identifier: email, success: false }) })
+        fetch('/api/security/audit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'login_failed', identifier: email }) })
+        setError('Invalid email or password. Please try again.')
       } else {
-        console.log('✅ Login successful!')
+        localStorage.removeItem(lockKey)
+        localStorage.removeItem(`attempts:${email.slice(0,3)}`)
+      if (error === 'MFA_REQUIRED') {
+        setPendingEmail(email)
+        setShowMfa(true)
+        setIsLoading(false)
+        return
       }
-    } catch (err) {
-      console.error('❌ Login exception:', err)
+
+        fetch('/api/security/lockout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', identifier: email, success: true }) })
+      if (error === 'MFA_REQUIRED') {
+        // Redirect to dedicated MFA route
+        router.push('/auth/mfa')
+        setIsLoading(false)
+        return
+      }
+
+      }
+    } catch {
       setError('An unexpected error occurred during login')
     }
 
@@ -79,7 +133,7 @@ function LoginForm() {
             Voi Rental Management System
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
@@ -115,6 +169,31 @@ function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
+
+              {showMfa && (
+                <div className="border rounded p-3 mt-3">
+                  <h3 className="font-medium mb-2">Multi-factor authentication required</h3>
+                  <MfaChallenge
+                    onVerify={async (code)=>{
+                      setIsLoading(true)
+                      try {
+                        const { data: factors } = await supabase.auth.mfa.listFactors()
+                        const factor = factors.totp?.find(f=>f.status==='verified') || factors.totp?.[0]
+                        if (factor) {
+                          const { data, error } = await supabase.auth.mfa.verify({ factorId: factor.id, code })
+                          if (!error) {
+                            setShowMfa(false)
+                            router.push('/dashboard')
+                          }
+                        }
+                      } finally {
+                        setIsLoading(false)
+                      }
+                    }}
+                    onCancel={()=>setShowMfa(false)}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -135,12 +214,13 @@ function LoginForm() {
             </div>
           )}
 
-          <div className="flex items-center justify-between">
+          <div className="space-y-4">
             <div className="text-sm">
               <Link href="/auth/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
                 Forgot your password?
               </Link>
             </div>
+            <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string} onSuccess={setToken} />
           </div>
 
           <div>

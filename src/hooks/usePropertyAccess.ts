@@ -1,6 +1,6 @@
 // Hook for managing multi-user property access
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase-client'
+import { supabase } from '../lib/supabase-client'
 
 export type UserRole = 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
 
@@ -20,6 +20,7 @@ export interface PropertyAccess {
   loading: boolean
   error: string | null
   currentProperty: AccessibleProperty | null
+  userRole: string | null
   setCurrentProperty: (property: AccessibleProperty | null) => void
   refreshAccess: () => Promise<void>
   hasPermission: (propertyId: string, permission: string) => boolean
@@ -61,7 +62,16 @@ export function usePropertyAccess(): PropertyAccess {
         throw new Error(`Failed to fetch accessible properties: ${propertiesError.message}`)
       }
 
-      const accessibleProperties: AccessibleProperty[] = data || []
+      // The function now returns the correct format, use it directly
+      const accessibleProperties: AccessibleProperty[] = (data || []).map(item => ({
+        property_id: item.property_id,
+        property_name: item.property_name,
+        user_role: item.user_role,
+        can_manage_users: item.can_manage_users,
+        can_edit_property: item.can_edit_property,
+        can_manage_tenants: item.can_manage_tenants,
+        can_manage_maintenance: item.can_manage_maintenance
+      }))
       setProperties(accessibleProperties)
 
       // Set current property if none is set and we have properties
@@ -134,6 +144,7 @@ export function usePropertyAccess(): PropertyAccess {
     loading,
     error,
     currentProperty,
+    userRole: currentProperty?.user_role || null,
     setCurrentProperty,
     refreshAccess,
     hasPermission,

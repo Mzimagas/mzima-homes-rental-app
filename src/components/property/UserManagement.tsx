@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '../../../lib/supabase-client'
+import { supabase } from '../../lib/supabase-client'
 import { usePropertyAccess, getRoleDisplayName, getRoleDescription, type UserRole } from '../../hooks/usePropertyAccess'
 import { PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { UserManagementDenied } from '../common/PermissionDenied'
 
 interface PropertyUser {
   id: string
@@ -25,7 +26,7 @@ interface UserInvitation {
 }
 
 export default function UserManagement() {
-  const { currentProperty, canManageUsers } = usePropertyAccess()
+  const { currentProperty, canManageUsers, userRole } = usePropertyAccess()
   const [users, setUsers] = useState<PropertyUser[]>([])
   const [invitations, setInvitations] = useState<UserInvitation[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,8 +40,13 @@ export default function UserManagement() {
 
   useEffect(() => {
     if (currentProperty) {
-      loadUsers()
-      loadInvitations()
+      // Add a small delay to ensure authentication is ready
+      const timer = setTimeout(() => {
+        loadUsers()
+        loadInvitations()
+      }, 100)
+
+      return () => clearTimeout(timer)
     }
   }, [currentProperty])
 
@@ -76,21 +82,180 @@ export default function UserManagement() {
     }
   }
 
-  const loadInvitations = async () => {
-    if (!currentProperty) return
+  const loadInvitations = async (retryCount = 0) => {
+    if (!currentProperty) {
+      console.log('❌ loadInvitations: No current property')
+      return
+    }
+
+    console.log('🔍 loadInvitations: Starting invitation load process (attempt', retryCount + 1, ')')
+    console.log('📍 Property ID:', currentProperty.property_id)
+    console.log('🔑 Supabase client type:', supabase.supabaseUrl ? 'Configured' : 'Not configured')
 
     try {
+      // Check authentication state first
+      console.log('🔐 Checking authentication state...')
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+      if (authError) {
+        // Extract full error details for debugging
+        const authErrorInfo = {
+          message: authError.message || 'No message',
+          name: authError.name || 'No name',
+          status: authError.status || 'No status',
+          code: authError.code || 'No code',
+          isAuthError: authError.__isAuthError || false,
+          errorString: String(authError)
+        }
+
+        console.error('❌ Authentication error details:', authErrorInfo)
+
+        // Handle specific authentication errors
+        if (authError.message?.includes('Auth session missing') || authError.__isAuthError) {
+          // Try to refresh the session if this is the first attempt
+          if (retryCount === 0) {
+            console.log('🔄 Attempting to refresh session...')
+            try {
+              const { error: refreshError } = await supabase.auth.refreshSession()
+              if (!refreshError) {
+                console.log('✅ Session refreshed, retrying...')
+                return loadInvitations(retryCount + 1)
+              } else {
+                console.log('❌ Session refresh failed:', refreshError)
+              }
+            } catch (refreshErr) {
+              console.log('❌ Session refresh exception:', refreshErr)
+            }
+          }
+
+          // Provide clear guidance to the user
+          setError('Authentication required: Please sign in to access user management features. Click here to go to login page.')
+          return
+        }
+
+        if (authError.message?.includes('JWT')) {
+          setError('Your session has expired. Please sign in again to continue.')
+          return
+        }
+
+        setError(`Authentication error: ${authError.message || 'Please sign in to continue'}`)
+        return
+      }
+
+      if (!user) {
+        console.error('❌ No authenticated user found')
+        setError('Please sign in to access user management features')
+        return
+      }
+
+      console.log('✅ User authenticated:', user.id, user.email)
+
+      // Check user's property access
+      console.log('🏠 Checking property access...')
+      const { data: propertyAccess, error: accessError } = await supabase
+        .from('property_users')
+        .select('role, status')
+        .eq('user_id', user.id)
+        .eq('property_id', currentProperty.property_id)
+        .eq('status', 'ACTIVE')
+        .single()
+
+      if (accessError) {
+        console.error('❌ Property access check error:', accessError)
+        // Don't throw here, continue with the invitation query
+      } else {
+        console.log('✅ Property access confirmed:', propertyAccess)
+      }
+
+      console.log('📨 Executing invitation query...')
+      const queryStart = Date.now()
+
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
         .eq('property_id', currentProperty.property_id)
         .eq('status', 'PENDING')
 
-      if (error) throw error
+      const queryTime = Date.now() - queryStart
+      console.log(`⏱️ Query completed in ${queryTime}ms`)
 
+      if (error) {
+        // Extract error properties properly (some are non-enumerable)
+        const errorInfo = {
+          message: error.message || 'No message',
+          details: error.details || 'No details',
+          hint: error.hint || 'No hint',
+          code: error.code || 'No code',
+          status: error.status || 'No status',
+          name: error.name || 'No name',
+          // Use getOwnPropertyNames to get non-enumerable properties
+          allProperties: Object.getOwnPropertyNames(error),
+          // Convert to string to get full error representation
+          errorString: String(error),
+          // Check if it's an auth error
+          isAuthError: error.__isAuthError || false
+        }
+
+        console.error('❌ Supabase query error:', errorInfo)
+
+        // Set user-friendly error message
+        if (error.__isAuthError) {
+          setError(`Authentication error: ${error.message || 'Please sign in again'}`)
+          return
+        }
+
+        if (error.code === '42501') {
+          setError('Access denied: You do not have permission to view invitations for this property')
+          return
+        }
+
+        setError(`Database error: ${error.message || 'Unknown error occurred'}`)
+        return
+      }
+
+      console.log('✅ Invitations loaded successfully:', {
+        count: data?.length || 0,
+        data: data
+      })
       setInvitations(data || [])
+
     } catch (err) {
-      console.error('Error loading invitations:', err)
+      // Comprehensive error extraction that handles non-enumerable properties
+      const errorInfo = {
+        errorType: typeof err,
+        errorConstructor: err?.constructor?.name,
+        errorMessage: err?.message,
+        errorDetails: err?.details,
+        errorCode: err?.code,
+        errorHint: err?.hint,
+        errorStatus: err?.status,
+        errorName: err?.name,
+        isAuthError: err?.__isAuthError,
+        // Get all properties including non-enumerable ones
+        allProperties: err ? Object.getOwnPropertyNames(err) : [],
+        // Convert to string representation
+        errorString: String(err),
+        // Proper JSON serialization
+        errorJSON: err ? JSON.stringify(err, Object.getOwnPropertyNames(err)) : 'null'
+      }
+
+      console.error('❌ Error in loadInvitations:', errorInfo)
+
+      // Extract meaningful error message
+      let errorMessage = 'Unknown error occurred'
+
+      if (err?.message) {
+        errorMessage = err.message
+      } else if (err?.toString && typeof err.toString === 'function') {
+        errorMessage = err.toString()
+      } else if (typeof err === 'string') {
+        errorMessage = err
+      }
+
+      // Don't set error state if we already handled it above (auth errors, permission errors)
+      if (!error) {
+        setError(`Failed to load invitations: ${errorMessage}`)
+      }
     } finally {
       setLoading(false)
     }
@@ -132,8 +297,13 @@ export default function UserManagement() {
       alert(`Invitation sent to ${inviteEmail}`)
 
     } catch (err) {
-      console.error('Error inviting user:', err)
-      setError('Failed to send invitation')
+      console.error('Error inviting user:', {
+        error: err,
+        message: err instanceof Error ? err.message : 'Unknown error',
+        details: err?.details,
+        code: err?.code
+      })
+      setError(`Failed to send invitation: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setInviting(false)
     }
@@ -146,12 +316,22 @@ export default function UserManagement() {
         .update({ status: 'REVOKED' })
         .eq('id', invitationId)
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error revoking invitation:', {
+          message: error.message,
+          details: error.details,
+          code: error.code
+        })
+        throw error
+      }
 
       setInvitations(prev => prev.filter(inv => inv.id !== invitationId))
     } catch (err) {
-      console.error('Error revoking invitation:', err)
-      setError('Failed to revoke invitation')
+      console.error('Error revoking invitation:', {
+        error: err,
+        message: err instanceof Error ? err.message : 'Unknown error'
+      })
+      setError(`Failed to revoke invitation: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
@@ -181,11 +361,13 @@ export default function UserManagement() {
     )
   }
 
-  if (!canManageUsers(currentProperty.property_id)) {
+  // Check if user has permission to manage users
+  if (!canManageUsers || !currentProperty.can_manage_users) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600">You don't have permission to manage users for this property</p>
-      </div>
+      <UserManagementDenied
+        currentRole={userRole || 'Unknown'}
+        className="mx-auto max-w-2xl"
+      />
     )
   }
 
@@ -215,7 +397,31 @@ export default function UserManagement() {
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-sm text-red-800">{error}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-red-800">{error}</p>
+            <div className="flex space-x-2">
+              {error.includes('Authentication required') || error.includes('sign in') ? (
+                <button
+                  onClick={() => {
+                    window.location.href = `/auth/login?redirectTo=${encodeURIComponent(window.location.pathname)}`
+                  }}
+                  className="inline-flex items-center px-3 py-1 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
+                >
+                  Sign In
+                </button>
+              ) : null}
+              <button
+                onClick={() => {
+                  setError(null)
+                  loadInvitations()
+                  loadUsers()
+                }}
+                className="inline-flex items-center px-3 py-1 border border-red-300 text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

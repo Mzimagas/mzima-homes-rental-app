@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
-import { supabase, clientBusinessFunctions, clientQueries } from '../../lib/supabase-client'
+import { withAuth } from '../../lib/withAuth'
+import { supabase, clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
 import PropertyForm from '../../components/properties/property-form'
@@ -20,8 +21,8 @@ interface DashboardStats {
   overdueAmount: number
 }
 
-export default function DashboardPage() {
-  const { user } = useAuth()
+function DashboardPage() {
+  const { user, loading: authLoading } = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,51 +34,316 @@ export default function DashboardPage() {
   const [generatingInvoices, setGeneratingInvoices] = useState(false)
 
   const loadDashboardStats = async () => {
+    console.log('🚀 Dashboard loadDashboardStats - Version 2.1-enhanced starting...')
     try {
       setLoading(true)
       setError(null)
 
-      // For now, we'll use a mock landlord ID since we haven't implemented landlord creation yet
-      // In a real app, this would come from the user's profile
-      const mockLandlordId = '11111111-1111-1111-1111-111111111111'
-
-      // Get all properties for landlord
-      const { data: properties, error: propertiesError } = await clientQueries.getPropertiesByLandlord(mockLandlordId)
-
-      if (propertiesError) {
-        setError('Failed to load properties')
+      // Ensure user is authenticated
+      if (!user?.id) {
+        console.log('Dashboard: No authenticated user found')
+        setError('Please log in to view your dashboard')
         return
       }
 
+      console.log('Loading dashboard for user:', user.email, '- Version 2.1 with authentication fix')
+
+      // Double-check authentication with Supabase
+      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser()
+
+      if (authError || !currentUser) {
+        console.log('Dashboard: Authentication verification failed:', authError?.message || 'No current user')
+        setError('Authentication expired. Please log in again.')
+        return
+      }
+
+      if (currentUser.id !== user.id) {
+        console.log('Dashboard: User ID mismatch - session may be stale')
+        setError('Session expired. Please refresh and log in again.')
+        return
+      }
+
+      // Use the new helper function to get accessible properties (avoiding RLS recursion and type mismatch)
+      const { data: accessibleProperties, error: accessError } = await supabase.rpc('get_user_properties_simple')
+
+      if (accessError) {
+        // Enhanced error handling to prevent empty error objects
+        let errorMessage = 'Unknown error occurred'
+        let errorDetails = {}
+
+        // Log the raw error first for debugging
+        console.log('🔍 Raw accessError detected:', {
+          error: accessError,
+          type: typeof accessError,
+          keys: Object.keys(accessError || {}),
+          isAuthError: accessError?.__isAuthError,
+          message: accessError?.message,
+          code: accessError?.code
+        })
+
+        try {
+          // Check for authentication-related errors first
+          if (accessError?.message?.includes('Auth session missing') ||
+              accessError?.message?.includes('session_missing') ||
+              accessError?.code === 'PGRST301' ||
+              accessError?.__isAuthError) {
+            errorMessage = 'Authentication session expired. Please log in again.'
+            console.log('✅ Detected authentication error, showing login prompt')
+            setError(errorMessage)
+            return
+          }
+
+          // Check for function not found errors
+          if (accessError?.message?.includes('does not exist') ||
+              accessError?.message?.includes('function') ||
+              accessError?.code === '42883') {
+            errorMessage = 'Database function not found. Please contact support.'
+          }
+          // Check for no data errors (this is actually OK)
+          else if (accessError?.code === 'PGRST116') {
+            console.log('Dashboard: No accessible properties found for user (this is normal for new users)')
+            // Set empty stats for users with no properties
+            setStats({
+              totalProperties: 0,
+              totalUnits: 0,
+              occupiedUnits: 0,
+              vacantUnits: 0,
+              occupancyRate: 0,
+              monthlyRentPotential: 0,
+              monthlyRentActual: 0,
+              overdueAmount: 0
+            })
+            return
+          }
+          // Handle other errors
+          else if (accessError?.message) {
+            errorMessage = accessError.message
+          } else if (accessError?.details) {
+            errorMessage = accessError.details
+          } else if (typeof accessError === 'string') {
+            errorMessage = accessError
+          } else if (accessError && typeof accessError === 'object') {
+            errorMessage = JSON.stringify(accessError)
+            if (errorMessage === '{}') {
+              errorMessage = 'Empty error object from database - please check your authentication'
+            }
+          }
+
+          errorDetails = {
+            errorType: typeof accessError,
+            hasMessage: !!accessError?.message,
+            hasDetails: !!accessError?.details,
+            errorKeys: accessError ? Object.keys(accessError) : [],
+            errorCode: accessError?.code,
+            isAuthError: !!accessError?.__isAuthError,
+            userEmail: currentUser.email,
+            timestamp: new Date().toISOString()
+          }
+        } catch (parseError) {
+          errorMessage = 'Error parsing database error'
+          errorDetails.parseError = parseError.message
+        }
+
+        // Use console.warn instead of console.error to avoid Next.js interception
+        console.warn('🚨 DASHBOARD ERROR - Accessible properties loading failed:', {
+          message: errorMessage,
+          details: errorDetails,
+          originalError: accessError,
+          timestamp: new Date().toISOString(),
+          version: '2.1-enhanced'
+        })
+
+        // Also log a clear message
+        console.log(`❌ Dashboard Error: ${errorMessage}`)
+        console.log('📋 Error Details:', errorDetails)
+
+        setError(`Failed to load your properties: ${errorMessage}`)
+        return
+      }
+
+      if (!accessibleProperties || accessibleProperties.length === 0) {
+        console.log('No accessible properties found for user')
+        // Set empty stats for users with no properties
+        setStats({
+          totalProperties: 0,
+          totalUnits: 0,
+          occupiedUnits: 0,
+          vacantUnits: 0,
+          occupancyRate: 0,
+          monthlyRentPotential: 0,
+          monthlyRentActual: 0,
+          overdueAmount: 0
+        })
+        return
+      }
+
+      console.log(`Found ${accessibleProperties.length} accessible properties`)
+
+      // Get property IDs and validate them
+      const propertyIds = accessibleProperties
+        .map(p => p.property_id)
+        .filter(id => id && typeof id === 'string')
+
+      if (propertyIds.length === 0) {
+        console.warn('No valid property IDs found in accessible properties')
+        setStats({
+          totalProperties: 0,
+          totalUnits: 0,
+          occupiedUnits: 0,
+          vacantUnits: 0,
+          occupancyRate: 0,
+          monthlyRentPotential: 0,
+          monthlyRentActual: 0,
+          overdueAmount: 0
+        })
+        return
+      }
+
+      // Get full property details (with tenants join - enhanced error logging active)
+      const { data: properties, error: propertiesError } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          name,
+          physical_address,
+          units (
+            id,
+            unit_label,
+            monthly_rent_kes,
+            is_active,
+            tenants (
+              id,
+              full_name,
+              status
+            )
+          )
+        `)
+        .in('id', propertyIds)
+
+      if (propertiesError) {
+        console.error("❌ Supabase query failed:");
+        console.dir(propertiesError, { depth: null });
+
+        console.error("❌ Supabase error (stringified):", JSON.stringify(propertiesError, null, 2));
+
+        // If it's a fetch error or generic JS error
+        if (propertiesError instanceof Error) {
+          console.error("❌ JS Error:", propertiesError.message);
+        }
+
+        // If it's a Supabase error structure
+        if ('message' in propertiesError || 'code' in propertiesError) {
+          console.error("🔎 Supabase Error Details:", {
+            message: propertiesError.message,
+            code: propertiesError.code,
+            hint: propertiesError.hint,
+            details: propertiesError.details,
+          });
+        }
+
+        // Additional context for debugging
+        console.error("❌ Error context:", {
+          propertyIds: propertyIds,
+          userEmail: user.email,
+          timestamp: new Date().toISOString(),
+          errorType: typeof propertiesError,
+          errorKeys: propertiesError ? Object.keys(propertiesError) : []
+        })
+
+        // Additional debugging for empty error objects
+        let errorMessage = 'Unknown error occurred'
+        let errorDetails = {}
+
+        try {
+          if (propertiesError?.message) {
+            errorMessage = propertiesError.message
+          } else if (propertiesError?.details) {
+            errorMessage = propertiesError.details
+          } else if (typeof propertiesError === 'string') {
+            errorMessage = propertiesError
+          } else if (propertiesError && typeof propertiesError === 'object') {
+            errorMessage = JSON.stringify(propertiesError)
+            if (errorMessage === '{}') {
+              errorMessage = 'Empty error object from database - check RLS policies'
+            }
+          }
+
+          errorDetails = {
+            errorType: typeof propertiesError,
+            hasMessage: !!propertiesError?.message,
+            hasDetails: !!propertiesError?.details,
+            errorKeys: propertiesError ? Object.keys(propertiesError) : [],
+            propertyIds: propertyIds,
+            userEmail: user.email,
+            timestamp: new Date().toISOString()
+          }
+        } catch (parseError) {
+          errorMessage = 'Error parsing database error'
+          errorDetails.parseError = parseError.message
+        }
+
+        console.error('DASHBOARD ERROR - Property details loading failed:', {
+          message: errorMessage,
+          details: errorDetails,
+          originalError: propertiesError
+        })
+
+        setError(`Failed to load property details: ${errorMessage}`)
+        return
+      }
+
+      // Calculate stats with safety checks
       let totalUnits = 0
       let occupiedUnits = 0
       let totalRentPotential = 0
       let totalRentActual = 0
 
-      // Calculate stats from properties
-      if (properties) {
+      if (properties && Array.isArray(properties)) {
         for (const property of properties) {
-          const { data: propertyStats } = await clientBusinessFunctions.getPropertyStats((property as any).id)
-          if (propertyStats && propertyStats.length > 0) {
-            const stat = propertyStats[0]
-            totalUnits += stat.total_units
-            occupiedUnits += stat.occupied_units
-            totalRentPotential += stat.monthly_rent_potential
-            totalRentActual += stat.monthly_rent_actual
+          try {
+            const units = property.units || []
+            const activeUnits = units.filter(unit => unit && unit.is_active === true)
+
+            totalUnits += activeUnits.length
+
+            for (const unit of activeUnits) {
+              const rentAmount = Number(unit.monthly_rent_kes) || 0
+              totalRentPotential += rentAmount
+
+              const activeTenants = unit.tenants?.filter(tenant => tenant && tenant.status === 'ACTIVE') || []
+              if (activeTenants.length > 0) {
+                occupiedUnits++
+                totalRentActual += rentAmount
+              }
+            }
+          } catch (unitError) {
+            console.warn(`Error processing property ${property.id}:`, unitError)
+            // Continue processing other properties
           }
         }
       }
 
-      // Get overdue amount
-      const { data: overdueInvoices } = await supabase
+      // Get overdue invoices (using correct rent_invoices table)
+      const { data: overdueInvoices, error: overdueError } = await supabase
         .from('rent_invoices')
-        .select('amount_due_kes, amount_paid_kes')
-        .eq('status', 'OVERDUE' as any)
+        .select(`
+          amount_due_kes,
+          amount_paid_kes,
+          units!inner(property_id)
+        `)
+        .in('units.property_id', propertyIds)
+        .eq('status', 'OVERDUE')
 
-      const overdueAmount = overdueInvoices?.reduce(
-        (sum, invoice) => sum + ((invoice as any).amount_due_kes - (invoice as any).amount_paid_kes),
-        0
-      ) || 0
+      let overdueAmount = 0
+      if (overdueError) {
+        console.warn('Could not load overdue invoices:', overdueError?.message || overdueError)
+        // Don't fail the entire dashboard for overdue invoice errors
+      } else {
+        overdueAmount = overdueInvoices?.reduce(
+          (sum, invoice) => sum + ((invoice.amount_due_kes || 0) - (invoice.amount_paid_kes || 0)),
+          0
+        ) || 0
+      }
 
       setStats({
         totalProperties: properties?.length || 0,
@@ -91,16 +357,27 @@ export default function DashboardPage() {
       })
 
     } catch (err) {
-      setError('Failed to load dashboard statistics')
-      console.error('Dashboard stats error:', err)
+      const errorMessage = err instanceof Error ? err.message : (typeof err === 'string' ? err : JSON.stringify(err))
+      console.error('Dashboard stats error:', {
+        error: err,
+        message: errorMessage,
+        user: user?.email,
+        stack: err instanceof Error ? err.stack : undefined
+      })
+      setError(`Failed to load dashboard statistics: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadDashboardStats()
-  }, [])
+    if (!authLoading && user) {
+      loadDashboardStats()
+    } else if (!authLoading && !user) {
+      setError('Please log in to view your dashboard')
+      setLoading(false)
+    }
+  }, [user, authLoading])
 
   // Quick action handlers
   const handleAddProperty = () => {
@@ -164,6 +441,36 @@ export default function DashboardPage() {
     return `${Math.round(value)}%`
   }
 
+  // Show loading state while auth is loading
+  if (authLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">Loading...</p>
+        </div>
+        <LoadingStats />
+      </div>
+    )
+  }
+
+  // Show authentication error
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+        </div>
+        <ErrorCard
+          title="Authentication Required"
+          message="Please log in to view your dashboard"
+          onRetry={() => window.location.href = '/auth/login'}
+        />
+      </div>
+    )
+  }
+
+  // Show loading state
   if (loading) {
     return (
       <div className="space-y-6">
@@ -182,13 +489,17 @@ export default function DashboardPage() {
     )
   }
 
+  // Show error state
   if (error) {
     return (
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Welcome back, {user?.user_metadata?.full_name || user?.email}
+          </p>
         </div>
-        <ErrorCard 
+        <ErrorCard
           title="Failed to load dashboard"
           message={error}
           onRetry={loadDashboardStats}
@@ -309,8 +620,8 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Revenue Efficiency</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {stats?.monthlyRentPotential ? 
-                    formatPercentage((stats.monthlyRentActual / stats.monthlyRentPotential) * 100) : 
+                  {stats?.monthlyRentPotential ?
+                    formatPercentage((stats.monthlyRentActual / stats.monthlyRentPotential) * 100) :
                     '0%'
                   }
                 </span>
@@ -386,20 +697,41 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Empty State for No Properties */}
+      {stats?.totalProperties === 0 && (
+        <div className="text-center py-12">
+          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No properties</h3>
+          <p className="mt-1 text-sm text-gray-500">Get started by adding your first property.</p>
+          <div className="mt-6">
+            <button
+              onClick={handleAddProperty}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              Add Property
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Recent Activity Placeholder */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
-            Latest payments, tenant updates, and property changes
-          </p>
+      {stats?.totalProperties > 0 && (
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <div className="px-4 py-5 sm:px-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">
+              Latest payments, tenant updates, and property changes
+            </p>
+          </div>
+          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <p className="text-sm text-gray-500 text-center py-8">
+              Recent activity will appear here once you start managing properties and tenants.
+            </p>
+          </div>
         </div>
-        <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-          <p className="text-sm text-gray-500 text-center py-8">
-            Recent activity will appear here once you start managing properties and tenants.
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Modal Forms */}
       <PropertyForm
@@ -431,3 +763,5 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+export default withAuth(DashboardPage)

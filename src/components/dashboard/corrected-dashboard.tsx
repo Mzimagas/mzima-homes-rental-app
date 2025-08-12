@@ -124,11 +124,15 @@ export default function CorrectedDashboard() {
         }
       }
 
-      // Get overdue invoices (simplified for now)
+      // Get overdue invoices (using correct rent_invoices table)
       const { data: overdueInvoices } = await supabase
-        .from('invoices')
-        .select('amount_due_kes, amount_paid_kes')
-        .in('property_id', propertyIds)
+        .from('rent_invoices')
+        .select(`
+          amount_due_kes,
+          amount_paid_kes,
+          units!inner(property_id)
+        `)
+        .in('units.property_id', propertyIds)
         .eq('status', 'OVERDUE')
 
       const overdueAmount = overdueInvoices?.reduce(

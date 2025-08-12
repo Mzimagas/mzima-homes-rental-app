@@ -7,6 +7,9 @@ import { LoadingStats, LoadingCard } from '../../../../components/ui/loading'
 import { ErrorCard } from '../../../../components/ui/error'
 import { Property, Unit, Tenant } from '../../../../../lib/types/database'
 import UnitForm from '../../../../components/properties/unit-form'
+import UserManagement from '../../../../components/property/UserManagement'
+import { PropertySelectorCompact } from '../../../../components/property/PropertySelector'
+import { usePropertyAccess } from '../../../../hooks/usePropertyAccess'
 
 interface PropertyWithUnits extends Property {
   units: (Unit & {
@@ -27,6 +30,7 @@ export default function PropertyDetailPage() {
   const params = useParams()
   const router = useRouter()
   const propertyId = params.id as string
+  const { properties } = usePropertyAccess()
 
   const [property, setProperty] = useState<PropertyWithUnits | null>(null)
   const [stats, setStats] = useState<PropertyStats | null>(null)
@@ -34,6 +38,18 @@ export default function PropertyDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [showUnitForm, setShowUnitForm] = useState(false)
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null)
+  const [activeTab, setActiveTab] = useState<'overview' | 'units' | 'users'>('overview')
+
+  // Check if current user can manage users for this property
+  const currentPropertyAccess = properties.find(p => p.property_id === propertyId)
+  const canManageUsers = currentPropertyAccess?.can_manage_users || false
+
+  // Reset tab to overview if user doesn't have permission for users tab
+  useEffect(() => {
+    if (activeTab === 'users' && !canManageUsers) {
+      setActiveTab('overview')
+    }
+  }, [activeTab, canManageUsers])
 
   const loadPropertyDetails = async () => {
     try {
@@ -258,92 +274,133 @@ export default function PropertyDetailPage() {
         </div>
       )}
 
-      {/* Units List */}
+      {/* Tab Navigation */}
       <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Units ({property.units.length})</h3>
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`${
+                activeTab === 'overview'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('units')}
+              className={`${
+                activeTab === 'units'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Units & Tenants
+            </button>
+            {canManageUsers && (
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`${
+                  activeTab === 'users'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                User Management
+              </button>
+            )}
+          </nav>
         </div>
-        <div className="divide-y divide-gray-200">
-          {property.units.length === 0 ? (
-            <div className="px-6 py-8 text-center">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H7m2 0v-4a2 2 0 012-2h2a2 2 0 012 2v4" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No units</h3>
-              <p className="mt-1 text-sm text-gray-500">Get started by adding your first unit.</p>
-              <div className="mt-6">
-                <button
-                  onClick={() => {
-                    setEditingUnit(null)
-                    setShowUnitForm(true)
-                  }}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Add Unit
-                </button>
-              </div>
-            </div>
-          ) : (
-            property.units.map((unit) => (
-              <div key={unit.id} className="px-6 py-4 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">{unit.unit_label}</h4>
-                      <p className="text-sm text-gray-500">
-                        {formatCurrency(unit.monthly_rent_kes)} / month
-                        {unit.deposit_kes && ` • Deposit: ${formatCurrency(unit.deposit_kes)}`}
-                      </p>
-                      <div className="flex items-center space-x-3 mt-1">
-                        {/* KPLC Meter Info */}
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-green-100 text-green-800">
-                          ⚡ {unit.meter_type === 'PREPAID' ? 'Prepaid' : 'Postpaid (Analogue)'}
-                          {unit.kplc_account && ` • ${unit.kplc_account}`}
-                        </span>
 
-                        {/* Water Info */}
-                        {unit.water_included ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
-                            💧 Water Included
-                          </span>
-                        ) : unit.water_meter_type ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-cyan-100 text-cyan-800">
-                            💧 {unit.water_meter_type === 'DIRECT_TAVEVO' ? 'Direct Tavevo' : 'Internal Submeter'}
-                            {unit.water_meter_number && ` • ${unit.water_meter_number}`}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-600">
-                            💧 Water Setup Needed
-                          </span>
-                        )}
-                      </div>
-                    </div>
+        {/* Tab Content */}
+        <div className="p-6">
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Property Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Property Name</label>
+                    <p className="mt-1 text-sm text-gray-900">{property.name}</p>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUnitStatusColor(unit)}`}>
-                      {getUnitStatusText(unit)}
-                    </span>
-                    {unit.tenants.length > 0 && (
-                      <div className="text-sm text-gray-600">
-                        {unit.tenants[0].full_name}
-                      </div>
-                    )}
-                    <button
-                      onClick={() => {
-                        setEditingUnit(unit)
-                        setShowUnitForm(true)
-                      }}
-                      className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                    >
-                      Manage
-                    </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Address</label>
+                    <p className="mt-1 text-sm text-gray-900">{property.physical_address}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Property Type</label>
+                    <p className="mt-1 text-sm text-gray-900">{property.property_type || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Total Units</label>
+                    <p className="mt-1 text-sm text-gray-900">{property.units?.length || 0}</p>
                   </div>
                 </div>
               </div>
-            ))
+            </div>
+          )}
+
+          {activeTab === 'units' && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Units & Tenants</h3>
+              <div className="space-y-4">
+                {property.units.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No units found for this property.</p>
+                    <button
+                      onClick={() => {
+                        setEditingUnit(null)
+                        setShowUnitForm(true)
+                      }}
+                      className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                      Add Unit
+                    </button>
+                  </div>
+                ) : (
+                  property.units.map((unit) => (
+                    <div key={unit.id} className="bg-white p-4 rounded-lg border">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">{unit.unit_label}</h4>
+                          <p className="text-sm text-gray-500">
+                            {formatCurrency(unit.monthly_rent_kes)} / month
+                          </p>
+                          <div className="mt-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUnitStatusColor(unit)}`}>
+                              {getUnitStatusText(unit)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          {unit.tenants && unit.tenants.length > 0 && (
+                            <div className="text-sm text-gray-600">
+                              {unit.tenants[0].full_name}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => {
+                              setEditingUnit(unit)
+                              setShowUnitForm(true)
+                            }}
+                            className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                          >
+                            Manage
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'users' && canManageUsers && (
+            <div>
+              <UserManagement />
+            </div>
           )}
         </div>
       </div>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Fetch Test</title>
+</head>
+<body>
+    <h1>Simple Fetch Test</h1>
+    <button onclick="testFetch()">Test Fetch</button>
+    <div id="results"></div>
+
+    <script>
+        async function testFetch() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                // Test basic fetch to Supabase
+                const supabaseUrl = 'https://ajrxvnakphkpkcssisxm.supabase.co';
+                const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcnh2bmFrcGhrcGtjc3Npc3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzE5NzQsImV4cCI6MjA1MDU0Nzk3NH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8'; // Truncated for security
+                
+                console.log('Testing fetch to:', supabaseUrl + '/rest/v1/');
+                
+                const response = await fetch(supabaseUrl + '/rest/v1/', {
+                    method: 'GET',
+                    headers: {
+                        'apikey': anonKey,
+                        'Authorization': `Bearer ${anonKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (response.ok) {
+                    results.innerHTML = `
+                        <p style="color: green;">✅ Fetch successful!</p>
+                        <p>Status: ${response.status} ${response.statusText}</p>
+                        <p>This means the network connection to Supabase is working.</p>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <p style="color: orange;">⚠️ Fetch returned error status</p>
+                        <p>Status: ${response.status} ${response.statusText}</p>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Fetch error:', error);
+                results.innerHTML = `
+                    <p style="color: red;">❌ Fetch failed</p>
+                    <p>Error: ${error.message}</p>
+                    <p>This suggests a network connectivity issue.</p>
+                `;
+            }
+        }
+        
+        // Auto-run test on page load
+        window.onload = testFetch;
+    </script>
+</body>
+</html>

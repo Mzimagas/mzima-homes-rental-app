@@ -22,7 +22,7 @@ interface PropertyWithStats extends Property {
 }
 
 export default function PropertiesPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [properties, setProperties] = useState<PropertyWithStats[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -35,58 +35,211 @@ export default function PropertiesPage() {
       setLoading(true)
       setError(null)
 
-      // Get the user's landlord IDs with auto-setup enabled
-      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds(true)
-
-      if (landlordError || !landlordIds || landlordIds.length === 0) {
-        setError('Unable to load properties. Please ensure you have proper landlord permissions.')
-        setLoading(false)
+      // Ensure user is authenticated
+      if (!user?.id) {
+        setError('Please log in to view your properties')
         return
       }
 
-      // For now, use the first landlord ID (most users will have only one)
-      const landlordId = landlordIds[0]
+      console.log('Loading properties for user:', user.email, '- Version 2.1 with authentication fix')
 
-      const { data: propertiesData, error: propertiesError } = await clientQueries.getPropertiesByLandlord(landlordId)
-      
+      // Double-check authentication with Supabase
+      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser()
+
+      if (authError || !currentUser) {
+        console.log('Properties: Authentication verification failed:', authError?.message || 'No current user')
+        setError('Authentication expired. Please log in again.')
+        return
+      }
+
+      if (currentUser.id !== user.id) {
+        console.log('Properties: User ID mismatch - session may be stale')
+        setError('Session expired. Please refresh and log in again.')
+        return
+      }
+
+      // Use the new helper function to get accessible properties (avoiding RLS recursion and type mismatch)
+      const { data: accessibleProperties, error: accessError } = await supabase.rpc('get_user_properties_simple')
+
+      if (accessError) {
+        // Enhanced error handling to prevent empty error objects
+        let errorMessage = 'Unknown error occurred'
+        let errorDetails = {}
+
+        try {
+          if (accessError?.message) {
+            errorMessage = accessError.message
+          } else if (accessError?.details) {
+            errorMessage = accessError.details
+          } else if (typeof accessError === 'string') {
+            errorMessage = accessError
+          } else if (accessError && typeof accessError === 'object') {
+            errorMessage = JSON.stringify(accessError)
+            if (errorMessage === '{}') {
+              errorMessage = 'Empty error object from database'
+            }
+          }
+
+          errorDetails = {
+            errorType: typeof accessError,
+            hasMessage: !!accessError?.message,
+            hasDetails: !!accessError?.details,
+            errorKeys: accessError ? Object.keys(accessError) : [],
+            userEmail: user.email,
+            timestamp: new Date().toISOString()
+          }
+        } catch (parseError) {
+          errorMessage = 'Error parsing database error'
+          errorDetails.parseError = parseError.message
+        }
+
+        console.error('PROPERTIES PAGE ERROR - Accessible properties loading failed:', {
+          message: errorMessage,
+          details: errorDetails,
+          originalError: accessError
+        })
+
+        setError(`Failed to load your properties: ${errorMessage}`)
+        return
+      }
+
+      if (!accessibleProperties || accessibleProperties.length === 0) {
+        console.log('No accessible properties found for user')
+        setProperties([])
+        return
+      }
+
+      console.log(`Found ${accessibleProperties.length} accessible properties`)
+
+      // Get property IDs
+      const propertyIds = accessibleProperties.map(p => p.property_id)
+
+      // Get full property details with units and tenants
+      const { data: propertiesData, error: propertiesError } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          name,
+          physical_address,
+          landlord_id,
+          lat,
+          lng,
+          notes,
+          created_at,
+          updated_at,
+          units (
+            id,
+            unit_label,
+            monthly_rent_kes,
+            is_active,
+            tenants (
+              id,
+              full_name,
+              status
+            )
+          )
+        `)
+        .in('id', propertyIds)
+        .order('name')
+
       if (propertiesError) {
-        setError('Failed to load properties')
+        // Enhanced error handling to prevent empty error objects
+        let errorMessage = 'Unknown error occurred'
+        let errorDetails = {}
+
+        try {
+          if (propertiesError?.message) {
+            errorMessage = propertiesError.message
+          } else if (propertiesError?.details) {
+            errorMessage = propertiesError.details
+          } else if (typeof propertiesError === 'string') {
+            errorMessage = propertiesError
+          } else if (propertiesError && typeof propertiesError === 'object') {
+            errorMessage = JSON.stringify(propertiesError)
+            if (errorMessage === '{}') {
+              errorMessage = 'Empty error object from database'
+            }
+          }
+
+          errorDetails = {
+            errorType: typeof propertiesError,
+            hasMessage: !!propertiesError?.message,
+            hasDetails: !!propertiesError?.details,
+            errorKeys: propertiesError ? Object.keys(propertiesError) : [],
+            propertyIds: propertyIds,
+            userEmail: user.email,
+            timestamp: new Date().toISOString()
+          }
+        } catch (parseError) {
+          errorMessage = 'Error parsing database error'
+          errorDetails.parseError = parseError.message
+        }
+
+        console.error('PROPERTIES PAGE ERROR - Property details loading failed:', {
+          message: errorMessage,
+          details: errorDetails,
+          originalError: propertiesError
+        })
+
+        setError(`Failed to load property details: ${errorMessage}`)
         return
       }
 
-      // Load stats for each property
+      // Calculate stats for each property
       const propertiesWithStats: PropertyWithStats[] = []
-      
+
       if (propertiesData) {
         for (const property of propertiesData) {
-          const { data: stats } = await clientBusinessFunctions.getPropertyStats(property.id)
-          
+          const units = property.units || []
+          const activeUnits = units.filter(unit => unit.is_active)
+          const occupiedUnits = activeUnits.filter(unit =>
+            unit.tenants?.some(tenant => tenant.status === 'ACTIVE')
+          )
+
+          const totalRentPotential = activeUnits.reduce((sum, unit) => sum + (unit.monthly_rent_kes || 0), 0)
+          const totalRentActual = occupiedUnits.reduce((sum, unit) => sum + (unit.monthly_rent_kes || 0), 0)
+          const occupancyRate = activeUnits.length > 0 ? (occupiedUnits.length / activeUnits.length) * 100 : 0
+
           propertiesWithStats.push({
             ...property,
-            stats: stats?.[0] || {
-              total_units: 0,
-              occupied_units: 0,
-              vacant_units: 0,
-              occupancy_rate: 0,
-              monthly_rent_potential: 0,
-              monthly_rent_actual: 0
+            stats: {
+              total_units: activeUnits.length,
+              occupied_units: occupiedUnits.length,
+              vacant_units: activeUnits.length - occupiedUnits.length,
+              occupancy_rate: occupancyRate,
+              monthly_rent_potential: totalRentPotential,
+              monthly_rent_actual: totalRentActual
             }
           })
         }
       }
-      
+
+      console.log(`Loaded ${propertiesWithStats.length} properties with details`)
       setProperties(propertiesWithStats)
+
     } catch (err) {
-      setError('Failed to load properties')
-      console.error('Properties loading error:', err)
+      const errorMessage = err instanceof Error ? err.message : (typeof err === 'string' ? err : JSON.stringify(err))
+      console.error('PROPERTIES PAGE ERROR - General loading failure:', {
+        error: err,
+        message: errorMessage,
+        user: user?.email,
+        stack: err instanceof Error ? err.stack : undefined,
+        timestamp: new Date().toISOString()
+      })
+      setError(`Failed to load properties: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadProperties()
-  }, [])
+    if (!authLoading && user) {
+      loadProperties()
+    } else if (!authLoading && !user) {
+      setError('Please log in to view your properties')
+      setLoading(false)
+    }
+  }, [user, authLoading])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -120,23 +273,74 @@ export default function PropertiesPage() {
     return occupancyStatus === filterStatus
   })
 
-  if (loading) {
+  // Show loading state while auth is loading
+  if (authLoading) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold text-gray-900">Properties</h1>
         </div>
-        <LoadingStats />
-        <LoadingCard title="Loading properties..." />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <LoadingCard title="Loading properties..." />
+          <LoadingCard title="Loading properties..." />
+          <LoadingCard title="Loading properties..." />
+        </div>
       </div>
     )
   }
 
+  // Show authentication error
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold text-gray-900">Properties</h1>
+        </div>
+        <ErrorCard
+          title="Authentication Required"
+          message="Please log in to view your properties"
+          onRetry={() => window.location.href = '/auth/login'}
+        />
+      </div>
+    )
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold text-gray-900">Properties</h1>
+          <button
+            disabled
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-400 cursor-not-allowed"
+          >
+            Add Property
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <LoadingCard title="Loading properties..." />
+          <LoadingCard title="Loading properties..." />
+          <LoadingCard title="Loading properties..." />
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Properties</h1>
-        <ErrorCard 
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold text-gray-900">Properties</h1>
+          <button
+            onClick={() => setShowPropertyForm(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Add Property
+          </button>
+        </div>
+        <ErrorCard
           title="Failed to load properties"
           message={error}
           onRetry={loadProperties}
@@ -149,7 +353,15 @@ export default function PropertiesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Properties</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Properties</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {properties.length === 0
+              ? 'No properties found'
+              : `${properties.length} ${properties.length === 1 ? 'property' : 'properties'}`
+            }
+          </p>
+        </div>
         <button
           onClick={() => setShowPropertyForm(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -190,15 +402,34 @@ export default function PropertiesPage() {
 
       {/* Properties Grid */}
       {filteredProperties.length === 0 ? (
-        <EmptyState
-          title="No properties found"
-          description={searchTerm || filterStatus !== 'all' 
-            ? "No properties match your search criteria. Try adjusting your filters."
-            : "You haven't added any properties yet. Create your first property to get started."
-          }
-          actionLabel={!searchTerm && filterStatus === 'all' ? "Add Property" : undefined}
-          onAction={() => setShowPropertyForm(true)}
-        />
+        // Empty State
+        <div className="text-center py-12">
+          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            {searchTerm || filterStatus !== 'all' ? 'No properties found' : 'No properties'}
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {searchTerm || filterStatus !== 'all'
+              ? "No properties match your search criteria. Try adjusting your filters."
+              : "Get started by adding your first property."
+            }
+          </p>
+          {(!searchTerm && filterStatus === 'all') && (
+            <div className="mt-6">
+              <button
+                onClick={() => setShowPropertyForm(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                <svg className="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add Property
+              </button>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProperties.map((property) => (
@@ -292,14 +523,20 @@ export default function PropertiesPage() {
       )}
 
       {/* Property Form Modal */}
-      <PropertyForm
-        isOpen={showPropertyForm}
-        onSuccess={(propertyId) => {
-          setShowPropertyForm(false)
-          loadProperties() // Reload properties list
-        }}
-        onCancel={() => setShowPropertyForm(false)}
-      />
+      {showPropertyForm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <PropertyForm
+              isOpen={showPropertyForm}
+              onSuccess={(propertyId) => {
+                setShowPropertyForm(false)
+                loadProperties() // Reload properties list
+              }}
+              onCancel={() => setShowPropertyForm(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

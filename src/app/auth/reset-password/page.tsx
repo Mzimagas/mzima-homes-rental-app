@@ -4,6 +4,9 @@ import { useState, useEffect, Suspense } from 'react'
 import { useAuth } from '../../../lib/auth-context'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
+const PasswordStrength = dynamic(() => import('../../../components/PasswordStrength'), { ssr: false })
+
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState('')
@@ -27,8 +30,17 @@ function ResetPasswordForm() {
       return 'Please enter a new password'
     }
 
-    if (password.length < 6) {
-      return 'Password must be at least 6 characters long'
+    // Stronger password policy: min 10, 3 of 4 classes
+    const atLeastThreeClasses = (pw: string) => {
+      let classes = 0
+      if (/[a-z]/.test(pw)) classes++
+      if (/[A-Z]/.test(pw)) classes++
+      if (/[0-9]/.test(pw)) classes++
+      if (/[^A-Za-z0-9]/.test(pw)) classes++
+      return pw.length >= 10 && classes >= 3
+    }
+    if (!atLeastThreeClasses(password)) {
+      return 'Password must be at least 10 characters and include a mix of letters, numbers, and symbols.'
     }
 
     if (!confirmPassword) {
@@ -150,7 +162,7 @@ function ResetPasswordForm() {
             Enter your new password below
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
@@ -166,8 +178,11 @@ function ResetPasswordForm() {
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="New password"
                 value={password}
+              <PasswordStrength value={password} />
+
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+              <PasswordStrength value={password} />
               />
             </div>
             <div>

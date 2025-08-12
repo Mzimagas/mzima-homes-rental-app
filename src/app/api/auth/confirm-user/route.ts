@@ -1,4 +1,3 @@
-
 // API endpoint to confirm user emails (development only)
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
@@ -17,34 +16,36 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       )
     }
-    
+
+    // Simple CSRF check (double-submit cookie pattern): header x-csrf-token must match cookie
+    const csrfHeader = request.headers.get('x-csrf-token') || ''
+    const csrfCookie = request.cookies.get('csrf-token')?.value || ''
+    if (!csrfHeader || !csrfCookie || csrfHeader !== csrfCookie) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
+    }
+
     const { userId, email } = await request.json()
-    
+
     if (!userId || !email) {
       return NextResponse.json(
         { error: 'User ID and email are required' },
         { status: 400 }
       )
     }
-    
-    console.log('🔧 Confirming user:', { userId, email })
-    
+
     // Confirm the user's email
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
       { email_confirm: true }
     )
-    
+
     if (error) {
-      console.error('❌ Confirmation error:', error)
       return NextResponse.json(
         { error: 'Failed to confirm user email' },
         { status: 500 }
       )
     }
-    
-    console.log('✅ User confirmed successfully')
-    
+
     return NextResponse.json({
       success: true,
       user: {
@@ -53,8 +54,7 @@ export async function POST(request: NextRequest) {
         email_confirmed_at: data.user.email_confirmed_at
       }
     })
-  } catch (err) {
-    console.error('❌ API error:', err)
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
