@@ -30,7 +30,7 @@ export default function TenantList({ defaultPropertyId }: Props) {
 
   // Check if user has admin permissions (OWNER or PROPERTY_MANAGER)
   const hasAdminAccess = userProperties.some(p =>
-    ['OWNER', 'PROPERTY_MANAGER'].includes(p.role)
+    ['OWNER', 'PROPERTY_MANAGER'].includes(p.user_role)
   )
   const newTenantHref = useMemo(() => {
     const params = new URLSearchParams()

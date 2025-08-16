@@ -42,8 +42,8 @@ export default function DeletedTenantsPage() {
   } | null>(null)
 
   // Check if user has admin permissions (OWNER or PROPERTY_MANAGER)
-  const hasAdminAccess = properties.some(p => 
-    ['OWNER', 'PROPERTY_MANAGER'].includes(p.role)
+  const hasAdminAccess = properties.some(p =>
+    ['OWNER', 'PROPERTY_MANAGER'].includes(p.user_role)
   )
 
   const fetchDeletedTenants = async () => {
@@ -52,7 +52,7 @@ export default function DeletedTenantsPage() {
       setError(null)
 
       // Get all property IDs the user has access to
-      const propertyIds = properties.map(p => p.id)
+      const propertyIds = properties.map(p => p.property_id)
       
       if (propertyIds.length === 0) {
         setDeletedTenants([])

@@ -16,7 +16,7 @@ export default function TenantDetail({ id }: { id: string }) {
 
   // Check if user has admin permissions (OWNER or PROPERTY_MANAGER)
   const hasAdminAccess = userProperties.some(p =>
-    ['OWNER', 'PROPERTY_MANAGER'].includes(p.role)
+    ['OWNER', 'PROPERTY_MANAGER'].includes(p.user_role)
   )
 
 
