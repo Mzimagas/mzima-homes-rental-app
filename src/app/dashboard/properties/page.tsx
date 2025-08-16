@@ -123,7 +123,7 @@ export default function PropertiesPage() {
       // Get property IDs
       const propertyIds = accessibleProperties.map((p: { property_id: string }) => p.property_id)
 
-      // Get full property details with units and tenants
+      // Get full property details with units and tenants (exclude soft-deleted properties)
       const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
         .select(`
@@ -136,6 +136,7 @@ export default function PropertiesPage() {
           notes,
           created_at,
           updated_at,
+          disabled_at,
           units (
             id,
             unit_label,
@@ -149,6 +150,7 @@ export default function PropertiesPage() {
           )
         `)
         .in('id', propertyIds)
+        .is('disabled_at', null)
         .order('name')
 
       if (propertiesError) {
