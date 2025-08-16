@@ -56,9 +56,15 @@ export default function TenantDetail({ id }: { id: string }) {
 
   const onDelete = async () => {
     if (!confirm('Delete this tenant? This is a soft delete and can be reversed by admin.')) return
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const csrf = document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || ''
+    const headers: Record<string, string> = { 'x-csrf-token': csrf }
+    if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+
     const res = await fetch(`/api/tenants/${id}`, {
       method: 'DELETE',
-      headers: { 'x-csrf-token': document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || '' },
+      headers,
       credentials: 'same-origin'
     })
     const j = await res.json().catch(() => ({}))
