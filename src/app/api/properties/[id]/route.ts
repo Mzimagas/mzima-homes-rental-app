@@ -143,12 +143,5 @@ async function handler(req: NextRequest) {
   }
 }
 
-export const DELETE = compose(
-  (h) => withRateLimit(h, (req) => {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    return `property-delete:${ip}`
-  }, 'property-delete'),
-  withCsrf,
-  withAuth,
-)(handler)
+export const DELETE = compose(withRateLimit, withCsrf)(handler)
 
