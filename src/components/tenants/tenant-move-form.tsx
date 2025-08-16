@@ -241,9 +241,16 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
         throw new Error(`Unit ${selectedUnit.unit_label} is currently occupied by ${selectedUnit.current_tenant?.full_name}`)
       }
 
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-csrf-token': getCsrf()
+      }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+
       const res = await fetch(`/api/tenants/${tenantId}/move`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrf() },
+        headers,
         credentials: 'same-origin',
         body: JSON.stringify(data),
       })

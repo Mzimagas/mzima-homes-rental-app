@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { tenantUpdateSchema, TenantUpdateInput } from '../../lib/validation/tenant'
+import supabase from '../../lib/supabase-client'
 
 function getCsrf() {
   return document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || ''
@@ -44,9 +45,16 @@ export default function TenantEditForm({ id, onSuccess }: Props) {
   const onSubmit = async (values: TenantUpdateInput) => {
     setError(null)
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-csrf-token': getCsrf()
+      }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+
       const res = await fetch(`/api/tenants/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrf() },
+        headers,
         credentials: 'same-origin',
         body: JSON.stringify(values),
       })
