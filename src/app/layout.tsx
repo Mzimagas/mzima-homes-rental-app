@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mzima Homes",
+  title: "KodiRent",
   description: "Comprehensive rental property management system",
 };
 

@@ -9,15 +9,23 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 async function getRoleForProperty(userId: string, propertyId: string) {
-  const admin = createClient(supabaseUrl, serviceKey)
-  const { data, error } = await admin
-    .from('property_users')
-    .select('role, status')
-    .eq('user_id', userId)
-    .eq('property_id', propertyId)
-    .maybeSingle()
-  if (error) throw error
-  return data
+  try {
+    const admin = createClient(supabaseUrl, serviceKey)
+    const { data, error } = await admin
+      .from('property_users')
+      .select('role, status')
+      .eq('user_id', userId)
+      .eq('property_id', propertyId)
+      .maybeSingle()
+    if (error) {
+      console.error('[getRoleForProperty] error:', error.message)
+      return null
+    }
+    return data
+  } catch (e: any) {
+    console.error('[getRoleForProperty] unexpected:', e?.message || e)
+    return null
+  }
 }
 
 export const GET = compose(withRateLimit)(async (req: NextRequest) => {
@@ -77,23 +85,35 @@ export const GET = compose(withRateLimit)(async (req: NextRequest) => {
 export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) => {
   try {
     console.info('[POST /api/tenants] start')
-    // TEMPORARY: Use service role to bypass RLS while fixing Next.js 15 cookies issue
+
+    if (!supabaseUrl || !serviceKey) {
+      console.error('[POST /api/tenants] missing Supabase configuration')
+      return errors.internal('Supabase configuration missing on server')
+    }
+
+    // Use service role to bypass RLS for write while auth is verified separately
     const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     })
-    console.info('[POST /api/tenants] TEMPORARY: Using service role to bypass RLS')
 
-    // TODO: Get actual user ID from auth when cookies are fixed
-    let userId = 'temp-user-id'
+    // Resolve userId from Authorization bearer token or server session
+    let userId = ''
+    const auth = req.headers.get('authorization') || ''
+    console.info('[POST /api/tenants] auth header present?', !!auth)
+    if (auth.toLowerCase().startsWith('bearer ')) {
+      const token = auth.slice(7)
+      const anon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      const { data: tokenUser, error: tokenErr } = await anon.auth.getUser(token)
+      console.info('[POST /api/tenants] token user', tokenUser?.user?.id, tokenErr?.message)
+      userId = tokenUser?.user?.id || ''
+    }
     if (!userId) {
-      const auth = req.headers.get('authorization') || ''
-      console.info('[POST /api/tenants] auth header present?', !!auth)
-      if (auth.toLowerCase().startsWith('bearer ')) {
-        const token = auth.slice(7)
-        const anon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-        const { data: tokenUser, error: tokenErr } = await anon.auth.getUser(token)
-        console.info('[POST /api/tenants] token user', tokenUser?.user?.id, tokenErr?.message)
-        userId = tokenUser?.user?.id || ''
+      try {
+        const supa = await createServerSupabaseClient()
+        const { data: { user } } = await supa.auth.getUser()
+        userId = user?.id || ''
+      } catch (e) {
+        console.warn('[POST /api/tenants] failed to read server user', (e as any)?.message || e)
       }
     }
     if (!userId) {

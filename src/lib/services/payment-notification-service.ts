@@ -71,7 +71,7 @@ export class PaymentNotificationService {
       if (tenant.email) {
         await this.sendEmailNotification({
           to: tenant.email,
-          subject: 'Payment Confirmation - Mzima Homes',
+          subject: 'Payment Confirmation - KodiRent',
           template: 'payment_confirmation',
           data: {
             tenantName: data.tenantName,
@@ -89,7 +89,7 @@ export class PaymentNotificationService {
       // Send SMS notification if phone is available
       if (tenant.phone) {
         const payerInfo = data.paidByName ? ` Paid by: ${data.paidByName}.` : ''
-        const smsMessage = `Payment confirmed: ${this.formatCurrency(data.amount)} via ${data.method}. Ref: ${data.txRef || 'N/A'}.${payerInfo} Thank you! - Mzima Homes`
+        const smsMessage = `Payment confirmed: ${this.formatCurrency(data.amount)} via ${data.method}. Ref: ${data.txRef || 'N/A'}.${payerInfo} Thank you! - KodiRent`
         await this.sendSMSNotification({
           to: tenant.phone,
           message: smsMessage
@@ -98,7 +98,7 @@ export class PaymentNotificationService {
 
       // Optional: Notify payer if requested and contact provided
       if (data.notifyPayer && data.paidByContact) {
-        const smsMessage = `You paid ${this.formatCurrency(data.amount)} for ${data.tenantName} via ${data.method}. Ref: ${data.txRef || 'N/A'}. Thank you! - Mzima Homes`
+        const smsMessage = `You paid ${this.formatCurrency(data.amount)} for ${data.tenantName} via ${data.method}. Ref: ${data.txRef || 'N/A'}. Thank you! - KodiRent`
         await this.sendSMSNotification({
           to: data.paidByContact,
           message: smsMessage
@@ -164,7 +164,7 @@ export class PaymentNotificationService {
       if (tenant.email) {
         await this.sendEmailNotification({
           to: tenant.email,
-          subject: `Payment Reminder${urgencyLevel === 'urgent' ? ' - Urgent' : ''} - Mzima Homes`,
+          subject: `Payment Reminder${urgencyLevel === 'urgent' ? ' - Urgent' : ''} - KodiRent`,
           template: 'payment_reminder',
           data: {
             tenantName: data.tenantName,
@@ -180,7 +180,7 @@ export class PaymentNotificationService {
 
       // Send SMS for urgent reminders
       if (tenant.phone && urgencyLevel === 'urgent') {
-        const smsMessage = `URGENT: Rent payment of ${this.formatCurrency(data.amount)} is due ${daysUntilDue > 0 ? `in ${daysUntilDue} days` : 'today'}. Please pay to avoid late fees. - Mzima Homes`
+        const smsMessage = `URGENT: Rent payment of ${this.formatCurrency(data.amount)} is due ${daysUntilDue > 0 ? `in ${daysUntilDue} days` : 'today'}. Please pay to avoid late fees. - KodiRent`
         await this.sendSMSNotification({
           to: tenant.phone,
           message: smsMessage
@@ -236,7 +236,7 @@ export class PaymentNotificationService {
       if (tenant.email) {
         await this.sendEmailNotification({
           to: tenant.email,
-          subject: 'Payment Overdue - Immediate Action Required - Mzima Homes',
+          subject: 'Payment Overdue - Immediate Action Required - KodiRent',
           template: 'payment_overdue',
           data: {
             tenantName: data.tenantName,
@@ -251,7 +251,7 @@ export class PaymentNotificationService {
 
       // Send SMS notification
       if (tenant.phone) {
-        const smsMessage = `OVERDUE: Rent payment of ${this.formatCurrency(data.overdueAmount || data.amount)} is ${daysOverdue} days overdue. Pay now to avoid additional charges. - Mzima Homes`
+        const smsMessage = `OVERDUE: Rent payment of ${this.formatCurrency(data.overdueAmount || data.amount)} is ${daysOverdue} days overdue. Pay now to avoid additional charges. - KodiRent`
         await this.sendSMSNotification({
           to: tenant.phone,
           message: smsMessage

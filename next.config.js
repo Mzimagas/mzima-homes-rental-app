@@ -49,7 +49,7 @@ const nextConfig = {
       `img-src 'self' data: blob: https://${SUPABASE_HOST}`,
       "font-src 'self' data:",
       // Allow HTTPS and WSS to Supabase, plus other required endpoints
-      `connect-src 'self' https://${SUPABASE_HOST} wss://${SUPABASE_HOST} https://challenges.cloudflare.com https://app.posthog.com https://nominatim.openstreetmap.org`,
+      `connect-src 'self' https://${SUPABASE_HOST} wss://${SUPABASE_HOST} https://challenges.cloudflare.com https://app.posthog.com https://*.posthog.com https://nominatim.openstreetmap.org https://vitals.vercel-insights.com`,
       "worker-src 'self' blob:",
       "frame-src https://challenges.cloudflare.com",
       "frame-ancestors 'none'",
