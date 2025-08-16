@@ -3,13 +3,21 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import supabase from '../../lib/supabase-client'
+import { usePropertyAccess } from '../../hooks/usePropertyAccess'
 
 export default function TenantDetail({ id }: { id: string }) {
+  const { properties: userProperties } = usePropertyAccess()
   const [data, setData] = useState<any | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [unitsById, setUnitsById] = useState<Record<string, any>>({})
   const [propertiesById, setPropertiesById] = useState<Record<string, any>>({})
+  const [restoring, setRestoring] = useState(false)
+
+  // Check if user has admin permissions (OWNER or PROPERTY_MANAGER)
+  const hasAdminAccess = userProperties.some(p =>
+    ['OWNER', 'PROPERTY_MANAGER'].includes(p.role)
+  )
 
 
   const load = async () => {
@@ -73,6 +81,74 @@ export default function TenantDetail({ id }: { id: string }) {
       return
     }
     alert('Tenant deleted')
+    load() // Reload to show updated status
+  }
+
+  const onRestore = async () => {
+    if (!confirm('Restore this tenant? This will reactivate their account.')) return
+
+    try {
+      setRestoring(true)
+
+      const { data: { session } } = await supabase.auth.getSession()
+      const csrf = document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || ''
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-csrf-token': csrf
+      }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+
+      const response = await fetch(`/api/tenants/${id}/restore`, {
+        method: 'PATCH',
+        headers,
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          restore_to_unit: data?.current_unit_id
+        })
+      })
+
+      const result = await response.json()
+
+      if (response.status === 409 && result.conflict) {
+        // Handle unit conflict
+        const forceRestore = confirm(
+          `Unit conflict: ${result.conflict.message}\n\nRestore tenant without unit assignment?`
+        )
+
+        if (forceRestore) {
+          // Retry with force_restore flag
+          const forceResponse = await fetch(`/api/tenants/${id}/restore`, {
+            method: 'PATCH',
+            headers,
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              restore_to_unit: data?.current_unit_id,
+              force_restore: true
+            })
+          })
+
+          const forceResult = await forceResponse.json()
+          if (!forceResponse.ok || !forceResult.ok) {
+            throw new Error(forceResult.error || 'Failed to restore tenant')
+          }
+
+          alert('Tenant restored successfully (without unit assignment)')
+        } else {
+          return
+        }
+      } else if (!response.ok || !result.ok) {
+        throw new Error(result.error || 'Failed to restore tenant')
+      } else {
+        alert('Tenant restored successfully')
+      }
+
+      load() // Reload to show updated status
+    } catch (err: any) {
+      console.error('Restore error:', err)
+      alert(err.message || 'Failed to restore tenant')
+    } finally {
+      setRestoring(false)
+    }
   }
 
   if (loading) return <div>Loading...</div>
@@ -83,11 +159,34 @@ export default function TenantDetail({ id }: { id: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">{t.full_name}</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-semibold">{t.full_name}</h2>
+          {t.status === 'DELETED' && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              Deleted
+            </span>
+          )}
+        </div>
         <div className="flex gap-2">
-          <Link className="px-3 py-2 rounded border" href={`/dashboard/tenants/${id}/edit`}>Edit</Link>
-          <Link className="px-3 py-2 rounded border" href={`/dashboard/tenants/${id}/move`}>Move Tenant</Link>
-          <button className="px-3 py-2 rounded border text-red-600" onClick={onDelete}>Delete</button>
+          {t.status === 'DELETED' ? (
+            // Show restore button for deleted tenants (admin only)
+            hasAdminAccess && (
+              <button
+                className="px-3 py-2 rounded border bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                onClick={onRestore}
+                disabled={restoring}
+              >
+                {restoring ? 'Restoring...' : 'Restore'}
+              </button>
+            )
+          ) : (
+            // Show normal actions for active tenants
+            <>
+              <Link className="px-3 py-2 rounded border" href={`/dashboard/tenants/${id}/edit`}>Edit</Link>
+              <Link className="px-3 py-2 rounded border" href={`/dashboard/tenants/${id}/move`}>Move Tenant</Link>
+              <button className="px-3 py-2 rounded border text-red-600" onClick={onDelete}>Delete</button>
+            </>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

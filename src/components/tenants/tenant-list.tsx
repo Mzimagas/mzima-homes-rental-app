@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import supabase from '../../lib/supabase-client'
 import { Property, Tenant, Unit } from '../../lib/types/database'
+import { usePropertyAccess } from '../../hooks/usePropertyAccess'
 
 function getCsrf() {
   return document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || ''
@@ -14,6 +15,7 @@ type Props = {
 }
 
 export default function TenantList({ defaultPropertyId }: Props) {
+  const { properties: userProperties } = usePropertyAccess()
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [properties, setProperties] = useState<Property[]>([])
   const [units, setUnits] = useState<Unit[]>([])
@@ -25,6 +27,11 @@ export default function TenantList({ defaultPropertyId }: Props) {
   const [showDeleted, setShowDeleted] = useState(false)
   const [unitsById, setUnitsById] = useState<Record<string, any>>({})
   const [propertiesById, setPropertiesById] = useState<Record<string, any>>({})
+
+  // Check if user has admin permissions (OWNER or PROPERTY_MANAGER)
+  const hasAdminAccess = userProperties.some(p =>
+    ['OWNER', 'PROPERTY_MANAGER'].includes(p.role)
+  )
   const newTenantHref = useMemo(() => {
     const params = new URLSearchParams()
     if (propertyId) params.set('propertyId', propertyId)
@@ -177,6 +184,14 @@ export default function TenantList({ defaultPropertyId }: Props) {
         >
           Clear Filters
         </button>
+        {hasAdminAccess && (
+          <Link
+            className="px-3 py-2 text-sm bg-red-100 text-red-700 border border-red-200 rounded hover:bg-red-200"
+            href="/dashboard/tenants/deleted"
+          >
+            Deleted Tenants
+          </Link>
+        )}
         <Link className="ml-auto inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded" href={newTenantHref}>New Tenant</Link>
       </div>
 
