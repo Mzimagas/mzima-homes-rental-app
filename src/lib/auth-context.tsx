@@ -24,9 +24,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
+    setIsMounted(true)
+
     // Get initial session
     const getInitialSession = async () => {
       try {
@@ -58,19 +61,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null)
         setLoading(false)
 
-        // Handle different auth events
-        if (event === 'SIGNED_IN') {
-          if (shouldLogAuth()) logger.info('AuthProvider: User signed in, redirecting to dashboard')
-          router.push('/dashboard')
-        } else if (event === 'SIGNED_OUT') {
-          if (shouldLogAuth()) logger.info('AuthProvider: User signed out, redirecting to login')
-          router.push('/auth/login')
+        // Handle different auth events - only if component is mounted
+        if (isMounted) {
+          if (event === 'SIGNED_IN') {
+            if (shouldLogAuth()) logger.info('AuthProvider: User signed in, redirecting to dashboard')
+            router.push('/dashboard')
+          } else if (event === 'SIGNED_OUT') {
+            if (shouldLogAuth()) logger.info('AuthProvider: User signed out, redirecting to login')
+            router.push('/auth/login')
+          }
         }
       }
     )
 
     return () => {
       subscription.unsubscribe()
+      setIsMounted(false)
     }
   }, [router])
 
@@ -248,6 +254,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     resetPassword,
     updatePassword,
+  }
+
+  // Prevent hydration issues by not rendering until mounted
+  if (!isMounted) {
+    return (
+      <AuthContext.Provider value={{ ...value, loading: true }}>
+        {children}
+      </AuthContext.Provider>
+    )
   }
 
   return (
