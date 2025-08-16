@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase, clientBusinessFunctions } from '../../lib/supabase-client'
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
+import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
 import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
@@ -62,7 +62,7 @@ interface PropertyReportsData {
   }[]
 }
 
-export default function PropertyReports() {
+const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
   const [data, setData] = useState<PropertyReportsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -105,7 +105,7 @@ export default function PropertyReports() {
 
       setProperties(propertiesData || [])
       setPropertiesLoaded(true)
-      console.log('Properties loaded:', propertiesData?.length || 0, 'properties')
+      console.warn('Properties loaded:', propertiesData?.length || 0, 'properties')
     } catch (err) {
       console.error('Error loading properties:', err)
       setProperties([]) // Set empty array to prevent infinite loading
@@ -116,13 +116,13 @@ export default function PropertyReports() {
   const loadPropertyReports = async () => {
     // Prevent multiple simultaneous calls
     if (isGeneratingReport) {
-      console.log('Already generating report, skipping loadPropertyReports call')
+      console.warn('Already generating report, skipping loadPropertyReports call')
       return
     }
 
     // Don't load if properties haven't been loaded yet
     if (!propertiesLoaded) {
-      console.log('Properties not loaded yet, skipping report load')
+      console.warn('Properties not loaded yet, skipping report load')
       return
     }
 
@@ -131,7 +131,7 @@ export default function PropertyReports() {
       setIsGeneratingReport(true)
       setError(null)
 
-      console.log('Loading property reports...', {
+      console.warn('Loading property reports...', {
         selectedProperty,
         selectedPeriod,
         customDateRange,
@@ -186,7 +186,7 @@ export default function PropertyReports() {
         maintenanceOverview
       }
 
-      console.log('Property reports data loaded successfully:', reportData)
+      console.warn('Property reports data loaded successfully:', reportData)
       setData(reportData)
 
     } catch (err) {
@@ -200,13 +200,13 @@ export default function PropertyReports() {
         maintenanceOverview: []
       }
 
-      console.log('Setting fallback data due to error')
+      console.warn('Setting fallback data due to error')
       setData(fallbackData)
       setError('Failed to load property reports. Please try again.')
     } finally {
       setLoading(false)
       setIsGeneratingReport(false)
-      console.log('Property reports loading completed')
+      console.warn('Property reports loading completed')
     }
   }
 
@@ -231,6 +231,14 @@ export default function PropertyReports() {
     }
   }
 
+  // SINGLE unconditional useImperativeHandle (before any early return)
+  useImperativeHandle(ref, () => ({
+    exportPDF: handleExportPDF,
+    exportExcel: handleExportExcel,
+    isExporting: () => isExporting,
+  }))
+
+
   // Handle custom date range change
   const handleCustomDateRangeChange = (newDateRange: { startDate: string; endDate: string }) => {
     setCustomDateRange(newDateRange)
@@ -238,6 +246,8 @@ export default function PropertyReports() {
       setSelectedPeriod('custom')
     }
   }
+
+
 
   // Export to PDF
   const handleExportPDF = async () => {
@@ -296,6 +306,8 @@ export default function PropertyReports() {
           unit.status,
           unit.tenantName || 'Vacant',
           formatCurrency(unit.monthlyRent),
+
+
           unit.lastPayment ? formatDate(unit.lastPayment) : 'N/A',
           formatCurrency(unit.balance)
         ])
@@ -409,11 +421,13 @@ export default function PropertyReports() {
       alert('Failed to export Excel file. Please try again.')
     } finally {
       setIsExporting(false)
+
+
     }
   }
 
   const calculatePropertyPerformance = async (landlordId: string, propertyFilter: string, startDate: Date, endDate: Date) => {
-    console.log('calculatePropertyPerformance called with:', { landlordId, propertyFilter, startDate, endDate })
+    console.warn('calculatePropertyPerformance called with:', { landlordId, propertyFilter, startDate, endDate })
 
     const propertiesToAnalyze = propertyFilter === 'all'
       ? properties
@@ -439,10 +453,10 @@ export default function PropertyReports() {
         console.error('Error getting property stats for', property.id, ':', statsError)
         continue
       }
-      
+
       if (stats && stats.length > 0) {
         const stat = stats[0]
-        
+
         // Get revenue for this property
         const { data: payments } = await supabase
           .from('payments')
@@ -460,7 +474,7 @@ export default function PropertyReports() {
           .eq('tenants.units.properties.id', property.id)
           .gte('payment_date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0])
 
-        const totalRevenue = payments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0
+        const totalRevenue = payments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
         // Calculate collection rate
         const { data: invoices } = await supabase
@@ -477,8 +491,8 @@ export default function PropertyReports() {
           .eq('units.properties.id', property.id)
           .gte('period_start', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0])
 
-        const totalDue = invoices?.reduce((sum, inv) => sum + inv.amount_due_kes, 0) || 0
-        const totalPaid = invoices?.reduce((sum, inv) => sum + inv.amount_paid_kes, 0) || 0
+        const totalDue = invoices?.reduce((sum: number, inv: { amount_due_kes: number }) => sum + inv.amount_due_kes, 0) || 0
+        const totalPaid = invoices?.reduce((sum: number, inv: { amount_paid_kes: number }) => sum + inv.amount_paid_kes, 0) || 0
         const collectionRate = totalDue > 0 ? (totalPaid / totalDue) * 100 : 0
 
         const averageRent = stat.total_units > 0 ? stat.monthly_rent_potential / stat.total_units : 0
@@ -537,12 +551,12 @@ export default function PropertyReports() {
 
       if (propertyData) {
         for (const unit of propertyData.units) {
-          const activeTenant = unit.tenants?.find(t => t.status === 'ACTIVE')
-          
+          const activeTenant = unit.tenants?.find((t: any) => t.status === 'ACTIVE')
+
           // Get last payment if tenant exists
-          let lastPayment = null
+          let lastPayment: string | null = null
           let balance = 0
-          
+
           if (activeTenant) {
             const { data: payments } = await supabase
               .from('payments')
@@ -561,7 +575,7 @@ export default function PropertyReports() {
               .in('status', ['PENDING', 'PARTIAL', 'OVERDUE'])
 
             balance = invoices?.reduce(
-              (sum, inv) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0
+              (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0
             ) || 0
           }
 
@@ -569,8 +583,8 @@ export default function PropertyReports() {
           let daysVacant = 0
           if (!activeTenant) {
             const lastTenant = unit.tenants
-              ?.filter(t => t.end_date)
-              .sort((a, b) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime())[0]
+              ?.filter((t: any) => t.end_date)
+              .sort((a: any, b: any) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime())[0]
 
             if (lastTenant?.end_date) {
               daysVacant = Math.floor(
@@ -640,7 +654,7 @@ export default function PropertyReports() {
         .gte('payment_date', currentMonthStart.toISOString().split('T')[0])
         .lte('payment_date', currentMonthEnd.toISOString().split('T')[0])
 
-      const currentMonth = currentPayments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0
+      const currentMonth = currentPayments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
       // Get previous month revenue
       const { data: previousPayments } = await supabase
@@ -659,7 +673,7 @@ export default function PropertyReports() {
         .gte('payment_date', previousMonthStart.toISOString().split('T')[0])
         .lte('payment_date', previousMonthEnd.toISOString().split('T')[0])
 
-      const previousMonth = previousPayments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0
+      const previousMonth = previousPayments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
       // Get units for this property
       const { data: propertyUnits } = await supabase
@@ -667,7 +681,7 @@ export default function PropertyReports() {
         .select('id')
         .eq('property_id', property.id)
 
-      const propertyUnitIds = propertyUnits?.map(u => u.id) || []
+      const propertyUnitIds = propertyUnits?.map((u: { id: string }) => u.id) || []
 
       // Get tenants for these units
       const { data: propertyTenants } = await supabase
@@ -675,7 +689,7 @@ export default function PropertyReports() {
         .select('id')
         .in('current_unit_id', propertyUnitIds)
 
-      const propertyTenantIds = propertyTenants?.map(t => t.id) || []
+      const propertyTenantIds = propertyTenants?.map((t: { id: string }) => t.id) || []
 
       // Get year to date revenue
       const { data: ytdPayments } = await supabase
@@ -695,7 +709,7 @@ export default function PropertyReports() {
         .in('tenant_id', propertyTenantIds)
         .gte('payment_date', yearStart.toISOString().split('T')[0])
 
-      const yearToDate = ytdPayments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0
+      const yearToDate = ytdPayments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
       // Calculate growth
       const growth = previousMonth > 0 ? ((currentMonth - previousMonth) / previousMonth) * 100 : 0
@@ -762,6 +776,9 @@ export default function PropertyReports() {
   }
 
   if (!data) {
+
+	// Expose export handlers to parent via ref, after handlers are defined
+
     return <div>No property reports data available</div>
   }
 
@@ -975,7 +992,7 @@ export default function PropertyReports() {
               <div>
                 <div className="font-medium text-gray-900">{property.propertyName}</div>
                 <div className="text-sm text-gray-500">
-                  Current: {formatCurrency(property.currentMonth)} | 
+                  Current: {formatCurrency(property.currentMonth)} |
                   Previous: {formatCurrency(property.previousMonth)}
                 </div>
               </div>
@@ -1055,4 +1072,6 @@ export default function PropertyReports() {
       </div>
     </div>
   )
-}
+})
+
+export default PropertyReports

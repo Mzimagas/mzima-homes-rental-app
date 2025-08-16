@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { withAuth } from '../../lib/withAuth'
-import { supabase, clientBusinessFunctions } from '../../lib/supabase-client'
+import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
 import PropertyForm from '../../components/properties/property-form'
@@ -34,31 +34,31 @@ function DashboardPage() {
   const [generatingInvoices, setGeneratingInvoices] = useState(false)
 
   const loadDashboardStats = async () => {
-    console.log('🚀 Dashboard loadDashboardStats - Version 2.1-enhanced starting...')
+    console.warn('🚀 Dashboard loadDashboardStats - Version 2.1-enhanced starting...')
     try {
       setLoading(true)
       setError(null)
 
       // Ensure user is authenticated
       if (!user?.id) {
-        console.log('Dashboard: No authenticated user found')
+        console.warn('Dashboard: No authenticated user found')
         setError('Please log in to view your dashboard')
         return
       }
 
-      console.log('Loading dashboard for user:', user.email, '- Version 2.1 with authentication fix')
+      console.warn('Loading dashboard for user:', user.email, '- Version 2.1 with authentication fix')
 
       // Double-check authentication with Supabase
       const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser()
 
       if (authError || !currentUser) {
-        console.log('Dashboard: Authentication verification failed:', authError?.message || 'No current user')
+        console.warn('Dashboard: Authentication verification failed:', authError?.message || 'No current user')
         setError('Authentication expired. Please log in again.')
         return
       }
 
       if (currentUser.id !== user.id) {
-        console.log('Dashboard: User ID mismatch - session may be stale')
+        console.warn('Dashboard: User ID mismatch - session may be stale')
         setError('Session expired. Please refresh and log in again.')
         return
       }
@@ -72,7 +72,7 @@ function DashboardPage() {
         let errorDetails = {}
 
         // Log the raw error first for debugging
-        console.log('🔍 Raw accessError detected:', {
+        console.warn('🔍 Raw accessError detected:', {
           error: accessError,
           type: typeof accessError,
           keys: Object.keys(accessError || {}),
@@ -88,7 +88,7 @@ function DashboardPage() {
               accessError?.code === 'PGRST301' ||
               accessError?.__isAuthError) {
             errorMessage = 'Authentication session expired. Please log in again.'
-            console.log('✅ Detected authentication error, showing login prompt')
+            console.warn('✅ Detected authentication error, showing login prompt')
             setError(errorMessage)
             return
           }
@@ -101,7 +101,7 @@ function DashboardPage() {
           }
           // Check for no data errors (this is actually OK)
           else if (accessError?.code === 'PGRST116') {
-            console.log('Dashboard: No accessible properties found for user (this is normal for new users)')
+            console.warn('Dashboard: No accessible properties found for user (this is normal for new users)')
             // Set empty stats for users with no properties
             setStats({
               totalProperties: 0,
@@ -141,7 +141,9 @@ function DashboardPage() {
           }
         } catch (parseError) {
           errorMessage = 'Error parsing database error'
-          errorDetails.parseError = parseError.message
+          if (parseError && typeof parseError === 'object' && 'message' in parseError) {
+            errorDetails = { ...errorDetails, parseMessage: (parseError as any).message }
+          }
         }
 
         // Use console.warn instead of console.error to avoid Next.js interception
@@ -154,15 +156,15 @@ function DashboardPage() {
         })
 
         // Also log a clear message
-        console.log(`❌ Dashboard Error: ${errorMessage}`)
-        console.log('📋 Error Details:', errorDetails)
+        console.warn(`❌ Dashboard Error: ${errorMessage}`)
+        console.warn('📋 Error Details:', errorDetails)
 
         setError(`Failed to load your properties: ${errorMessage}`)
         return
       }
 
       if (!accessibleProperties || accessibleProperties.length === 0) {
-        console.log('No accessible properties found for user')
+        console.warn('No accessible properties found for user')
         // Set empty stats for users with no properties
         setStats({
           totalProperties: 0,
@@ -177,12 +179,12 @@ function DashboardPage() {
         return
       }
 
-      console.log(`Found ${accessibleProperties.length} accessible properties`)
+      console.warn(`Found ${accessibleProperties.length} accessible properties`)
 
       // Get property IDs and validate them
       const propertyIds = accessibleProperties
-        .map(p => p.property_id)
-        .filter(id => id && typeof id === 'string')
+        .map((p: { property_id?: string | null }) => p.property_id)
+        .filter((id: string | null | undefined): id is string => !!id && typeof id === 'string')
 
       if (propertyIds.length === 0) {
         console.warn('No valid property IDs found in accessible properties')
@@ -279,7 +281,9 @@ function DashboardPage() {
           }
         } catch (parseError) {
           errorMessage = 'Error parsing database error'
-          errorDetails.parseError = parseError.message
+          if (parseError && typeof parseError === 'object' && 'message' in parseError) {
+            errorDetails = { ...errorDetails, parseMessage: (parseError as any).message }
+          }
         }
 
         console.error('DASHBOARD ERROR - Property details loading failed:', {
@@ -302,15 +306,15 @@ function DashboardPage() {
         for (const property of properties) {
           try {
             const units = property.units || []
-            const activeUnits = units.filter(unit => unit && unit.is_active === true)
+            const activeUnits = units.filter((unit: any) => unit && unit.is_active === true)
 
             totalUnits += activeUnits.length
 
-            for (const unit of activeUnits) {
-              const rentAmount = Number(unit.monthly_rent_kes) || 0
+            for (const unit of activeUnits as any[]) {
+              const rentAmount = Number((unit as any).monthly_rent_kes) || 0
               totalRentPotential += rentAmount
 
-              const activeTenants = unit.tenants?.filter(tenant => tenant && tenant.status === 'ACTIVE') || []
+              const activeTenants = (unit as any).tenants?.filter((tenant: any) => tenant && tenant.status === 'ACTIVE') || []
               if (activeTenants.length > 0) {
                 occupiedUnits++
                 totalRentActual += rentAmount
@@ -340,7 +344,7 @@ function DashboardPage() {
         // Don't fail the entire dashboard for overdue invoice errors
       } else {
         overdueAmount = overdueInvoices?.reduce(
-          (sum, invoice) => sum + ((invoice.amount_due_kes || 0) - (invoice.amount_paid_kes || 0)),
+          (sum: number, invoice: any) => sum + ((invoice.amount_due_kes || 0) - (invoice.amount_paid_kes || 0)),
           0
         ) || 0
       }
@@ -399,11 +403,11 @@ function DashboardPage() {
       const periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
         .toISOString().split('T')[0]
 
-      console.log('Generating invoices for period:', periodStart)
+      console.warn('Generating invoices for period:', periodStart)
 
       const { data, error } = await clientBusinessFunctions.runMonthlyRent(periodStart)
 
-      console.log('Invoice generation result:', { data, error })
+      console.warn('Invoice generation result:', { data, error })
 
       if (error) {
         console.error('Invoice generation error:', error)
@@ -717,7 +721,7 @@ function DashboardPage() {
       )}
 
       {/* Recent Activity Placeholder */}
-      {stats?.totalProperties > 0 && (
+      {(stats?.totalProperties || 0) > 0 && (
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>

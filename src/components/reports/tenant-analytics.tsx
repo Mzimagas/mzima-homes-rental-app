@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase, clientBusinessFunctions } from '../../lib/supabase-client'
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
+import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
 import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
@@ -74,7 +74,7 @@ interface TenantAnalyticsData {
   }
 }
 
-export default function TenantAnalytics() {
+const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
   const [data, setData] = useState<TenantAnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -151,6 +151,16 @@ export default function TenantAnalytics() {
     }
   }
 
+  // SINGLE unconditional useImperativeHandle (before any early return)
+  useImperativeHandle(ref, () => ({
+    exportPDF: handleExportPDF,
+    exportExcel: handleExportExcel,
+    isExporting: () => isExporting,
+  }))
+
+
+
+
   // Export to PDF
   const handleExportPDF = async () => {
     if (!data || isExporting) return
@@ -196,6 +206,8 @@ export default function TenantAnalytics() {
           ['Late Payments', data.paymentBehavior.latePayments.toString()],
           ['Missed Payments', data.paymentBehavior.missedPayments.toString()],
           ['Average Payment Delay (days)', data.paymentBehavior.averagePaymentDelay.toString()]
+
+
         ]
       }
       yPosition = addTableToPDF(doc, paymentBehaviorTable, yPosition, 'Payment Behavior Summary')
@@ -222,6 +234,8 @@ export default function TenantAnalytics() {
       alert('Failed to export PDF. Please try again.')
     } finally {
       setIsExporting(false)
+
+
     }
   }
 
@@ -299,6 +313,8 @@ export default function TenantAnalytics() {
       alert('Failed to export Excel file. Please try again.')
     } finally {
       setIsExporting(false)
+
+
     }
   }
 
@@ -347,7 +363,7 @@ export default function TenantAnalytics() {
       .eq('units.properties.landlord_id', landlordId)
 
     const totalTenants = tenants?.length || 0
-    const activeTenants = tenants?.filter(t => t.status === 'ACTIVE').length || 0
+    const activeTenants = tenants?.filter((t: any) => t.status === 'ACTIVE').length || 0
     const inactiveTenants = totalTenants - activeTenants
 
     // Get balances for all tenants
@@ -382,10 +398,10 @@ export default function TenantAnalytics() {
       .eq('landlord_id', landlordId)
 
     if (!properties || properties.length === 0) {
-      return { onTimePayments: 0, latePayments: 0, averageDaysLate: 0, paymentMethods: [] }
+      return { onTimePayments: 0, latePayments: 0, missedPayments: 0, averagePaymentDelay: 0 }
     }
 
-    const propertyIds = properties.map(p => p.id)
+    const propertyIds = properties.map((p: { id: string }) => p.id)
 
     // Get units for these properties
     const { data: units } = await supabase
@@ -394,10 +410,10 @@ export default function TenantAnalytics() {
       .in('property_id', propertyIds)
 
     if (!units || units.length === 0) {
-      return { onTimePayments: 0, latePayments: 0, averageDaysLate: 0, paymentMethods: [] }
+      return { onTimePayments: 0, latePayments: 0, missedPayments: 0, averagePaymentDelay: 0 }
     }
 
-    const unitIds = units.map(u => u.id)
+    const unitIds = units.map((u: { id: string }) => u.id)
 
     // Get invoices and payments for the period
     const { data: invoices } = await supabase
@@ -428,14 +444,14 @@ export default function TenantAnalytics() {
     let totalDelayDays = 0
     let latePaymentCount = 0
 
-    invoices?.forEach(invoice => {
+    invoices?.forEach((invoice: any) => {
       if (invoice.status === 'PAID') {
         // Check if payment was on time
         const payment = invoice.payments?.[0]
         if (payment) {
           const paymentDate = new Date(payment.payment_date)
           const dueDate = new Date(invoice.due_date)
-          
+
           if (paymentDate <= dueDate) {
             onTimePayments++
           } else {
@@ -487,7 +503,7 @@ export default function TenantAnalytics() {
     // Group by tenant
     const tenantData: { [key: string]: any } = {}
 
-    payments?.forEach(payment => {
+    payments?.forEach((payment: any) => {
       const tenant = Array.isArray(payment.tenants) ? payment.tenants[0] : payment.tenants as any
       if (tenant && tenant.id) {
         if (!tenantData[tenant.id]) {
@@ -546,7 +562,7 @@ export default function TenantAnalytics() {
     for (const tenant of tenants || []) {
       // Get balance
       const { data: balance } = await clientBusinessFunctions.getTenantBalance(tenant.id)
-      
+
       // Get last payment date
       const { data: lastPayment } = await supabase
         .from('payments')
@@ -555,7 +571,7 @@ export default function TenantAnalytics() {
         .order('payment_date', { ascending: false })
         .limit(1)
 
-      const daysSinceLastPayment = lastPayment?.[0] 
+      const daysSinceLastPayment = lastPayment?.[0]
         ? Math.floor((new Date().getTime() - new Date(lastPayment[0].payment_date).getTime()) / (1000 * 60 * 60 * 24))
         : 999
 
@@ -602,30 +618,30 @@ export default function TenantAnalytics() {
       `)
       .eq('units.properties.landlord_id', landlordId)
 
-    const newTenants = tenancies?.filter(t => 
-      t.start_date && 
-      new Date(t.start_date) >= startDate && 
+    const newTenants = tenancies?.filter((t: any) =>
+      t.start_date &&
+      new Date(t.start_date) >= startDate &&
       new Date(t.start_date) <= endDate
     ).length || 0
 
-    const lostTenants = tenancies?.filter(t => 
-      t.end_date && 
-      new Date(t.end_date) >= startDate && 
+    const lostTenants = tenancies?.filter((t: any) =>
+      t.end_date &&
+      new Date(t.end_date) >= startDate &&
       new Date(t.end_date) <= endDate
     ).length || 0
 
-    const activeTenants = tenancies?.filter(t => t.status === 'ACTIVE').length || 0
+    const activeTenants = tenancies?.filter((t: any) => t.status === 'ACTIVE').length || 0
     const retainedTenants = activeTenants
 
-    const retentionRate = (retainedTenants + lostTenants) > 0 
-      ? (retainedTenants / (retainedTenants + lostTenants)) * 100 
+    const retentionRate = (retainedTenants + lostTenants) > 0
+      ? (retainedTenants / (retainedTenants + lostTenants)) * 100
       : 0
 
     // Calculate average tenancy length
-    const completedTenancies = tenancies?.filter(t => t.start_date && t.end_date) || []
+    const completedTenancies = tenancies?.filter((t: any) => t.start_date && t.end_date) || []
     let totalDays = 0
-    
-    completedTenancies.forEach(tenancy => {
+
+    completedTenancies.forEach((tenancy: any) => {
       const days = Math.floor(
         (new Date(tenancy.end_date!).getTime() - new Date(tenancy.start_date!).getTime()) / (1000 * 60 * 60 * 24)
       )
@@ -1004,4 +1020,6 @@ export default function TenantAnalytics() {
       </div>
     </div>
   )
-}
+})
+
+export default TenantAnalytics

@@ -1,6 +1,6 @@
 // Hook for managing multi-user property access
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase-client'
+import supabase from '../lib/supabase-client'
 
 export type UserRole = 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
 
@@ -63,7 +63,7 @@ export function usePropertyAccess(): PropertyAccess {
       }
 
       // The function now returns the correct format, use it directly
-      const accessibleProperties: AccessibleProperty[] = (data || []).map(item => ({
+      const accessibleProperties: AccessibleProperty[] = (data || []).map((item: any) => ({
         property_id: item.property_id,
         property_name: item.property_name,
         user_role: item.user_role,

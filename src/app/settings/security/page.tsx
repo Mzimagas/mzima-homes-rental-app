@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { withAuth } from '../../../lib/withAuth'
-import { supabase } from '../../../lib/supabase-client'
+import supabase from '../../../lib/supabase-client'
 
 function SecuritySettings() {
   const [enrolled, setEnrolled] = useState(false)
@@ -13,7 +13,7 @@ function SecuritySettings() {
 
   useEffect(() => {
     // Check existing factors
-    supabase.auth.mfa.listFactors().then(({ data }) => {
+    supabase.auth.mfa.listFactors().then(({ data }: { data: any }) => {
       const totp = data.totp?.[0]
       if (totp && totp.status === 'verified') setEnrolled(true)
     })

@@ -1,16 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase, clientBusinessFunctions, handleSupabaseError } from '../../lib/supabase-client'
-
-interface PaymentFormData {
-  tenantId: string
-  amount: string
-  paymentDate: string
-  method: 'MPESA' | 'CASH' | 'BANK_TRANSFER' | 'CHEQUE' | 'OTHER'
-  txRef: string
-  notes: string
-}
+import { useEffect, useMemo, useState } from 'react'
+import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
+import { useForm, type Resolver, type SubmitHandler } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { paymentSchema, type PaymentFormValues } from '../../lib/validation/payment'
+import { Button, TextField, Select, Combobox } from '../ui'
 
 interface PaymentFormProps {
   onSuccess?: () => void
@@ -22,37 +17,32 @@ interface PaymentFormProps {
 interface TenantOption {
   id: string
   full_name: string
-  units: {
-    unit_label: string
-    properties: {
-      name: string
-    }[]
-  }[]
+  units: { unit_label: string; properties: { name: string }[] }[]
   balance?: number
 }
 
 export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTenantId }: PaymentFormProps) {
-  const [formData, setFormData] = useState<PaymentFormData>({
-    tenantId: preselectedTenantId || '',
-    amount: '',
-    paymentDate: new Date().toISOString().split('T')[0],
-    method: 'MPESA',
-    txRef: '',
-    notes: ''
-  })
   const [tenants, setTenants] = useState<TenantOption[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingTenants, setLoadingTenants] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { register, handleSubmit, setValue, reset, watch, formState: { errors, isSubmitting } } = useForm<PaymentFormValues>({
+    resolver: zodResolver(paymentSchema) as unknown as Resolver<PaymentFormValues>,
+    defaultValues: {
+      tenantId: preselectedTenantId || '',
+      amount: 0,
+      paymentDate: new Date().toISOString().split('T')[0],
+      method: 'MPESA',
+      txRef: '',
+      notes: ''
+    }
+  })
 
   useEffect(() => {
     if (isOpen) {
       loadTenants()
-      if (preselectedTenantId) {
-        setFormData(prev => ({ ...prev, tenantId: preselectedTenantId }))
-      }
+      if (preselectedTenantId) setValue('tenantId', preselectedTenantId)
     }
-  }, [isOpen, preselectedTenantId])
+  }, [isOpen, preselectedTenantId, setValue])
 
   const loadTenants = async () => {
     try {
@@ -82,7 +72,7 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
 
       // Load balances for each tenant
       const tenantsWithBalances = await Promise.all(
-        (tenantsData || []).map(async (tenant) => {
+        (tenantsData || []).map(async (tenant: any) => {
           const { data: balance } = await clientBusinessFunctions.getTenantBalance(tenant.id)
           return {
             ...tenant,
@@ -99,81 +89,32 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
+  const tenantOptions = useMemo(() => tenants.map(t => ({ value: t.id, label: `${t.full_name} - ${t.units?.[0]?.properties?.[0]?.name || ''} ${t.units?.[0]?.unit_label || ''}${t.balance !== undefined ? ` (Balance: ${formatCurrency(t.balance)})` : ''}` })), [tenants])
 
-  const validateForm = (): string | null => {
-    if (!formData.tenantId) {
-      return 'Please select a tenant'
-    }
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      return 'Please enter a valid payment amount'
-    }
-    if (!formData.paymentDate) {
-      return 'Please select a payment date'
-    }
-    return null
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-
-    const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const { data, error } = await clientBusinessFunctions.applyPayment(
-        formData.tenantId,
-        parseFloat(formData.amount),
-        formData.paymentDate,
-        formData.method,
-        formData.txRef || undefined
-      )
-
-      if (error) {
-        setError(error)
-        return
-      }
-
-      // Reset form
-      setFormData({
-        tenantId: preselectedTenantId || '',
-        amount: '',
-        paymentDate: new Date().toISOString().split('T')[0],
-        method: 'MPESA',
-        txRef: '',
-        notes: ''
-      })
-
-      onSuccess?.()
-    } catch (err) {
-      setError('Failed to record payment. Please try again.')
-      console.error('Payment recording error:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0,
-    }).format(amount)
+    return new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(amount)
   }
 
-  const selectedTenant = tenants.find(t => t.id === formData.tenantId)
+  const onSubmit: SubmitHandler<PaymentFormValues> = async (values) => {
+    try {
+      const { data, error } = await clientBusinessFunctions.applyPayment(
+        values.tenantId,
+        Number(values.amount),
+        values.paymentDate,
+        values.method,
+        values.txRef || undefined
+      )
+      if (error) { alert(error); return }
+      reset({ tenantId: preselectedTenantId || '', amount: '' as unknown as number, paymentDate: new Date().toISOString().split('T')[0], method: 'MPESA', txRef: '', notes: '' })
+      onSuccess?.()
+    } catch (err) {
+      console.error('Payment recording error:', err)
+      alert('Failed to record payment. Please try again.')
+    }
+  }
+
+  const selectedTenant = tenants.find(t => t.id === watch('tenantId'))
 
   if (!isOpen) return null
 
@@ -193,34 +134,18 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
             </button>
           </div>
 
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
+          {/* Top-level form errors can be displayed via toast or summary if needed */}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div>
-              <label htmlFor="tenantId" className="block text-sm font-medium text-gray-700">
-                Tenant *
-              </label>
-              <select
-                id="tenantId"
-                name="tenantId"
-                value={formData.tenantId}
-                onChange={handleChange}
-                required
-                disabled={loadingTenants || !!preselectedTenantId}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-              >
-                <option value="">Select a tenant...</option>
-                {tenants.map((tenant) => (
-                  <option key={tenant.id} value={tenant.id}>
-                    {tenant.full_name} - {tenant.units?.[0]?.properties?.[0]?.name} {tenant.units?.[0]?.unit_label}
-                    {tenant.balance !== undefined && ` (Balance: ${formatCurrency(tenant.balance)})`}
-                  </option>
-                ))}
-              </select>
+              <label className="block text-sm font-medium text-gray-700">Tenant *</label>
+              <Combobox
+                options={tenantOptions}
+                value={tenantOptions.find(o => o.value === watch('tenantId')) || null}
+                onChange={(opt) => setValue('tenantId', opt?.value || '')}
+                placeholder={loadingTenants ? 'Loading tenants…' : 'Select a tenant…'}
+              />
+              {errors.tenantId?.message && <p className="mt-1 text-xs text-red-600">{errors.tenantId.message}</p>}
               {loadingTenants && (
                 <p className="mt-1 text-sm text-gray-500">Loading tenants...</p>
               )}
@@ -246,103 +171,34 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
             )}
 
             <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                Amount (KES) *
-              </label>
-              <input
-                type="number"
-                id="amount"
-                name="amount"
-                value={formData.amount}
-                onChange={handleChange}
-                required
-                min="0"
-                step="0.01"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="25000"
-              />
+              <TextField label="Amount (KES) *" type="number" step="any" placeholder="25000" error={errors.amount?.message} {...register('amount', { valueAsNumber: true })} />
             </div>
 
             <div>
-              <label htmlFor="paymentDate" className="block text-sm font-medium text-gray-700">
-                Payment Date *
-              </label>
-              <input
-                type="date"
-                id="paymentDate"
-                name="paymentDate"
-                value={formData.paymentDate}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
+              <TextField label="Payment Date *" type="date" error={errors.paymentDate?.message} {...register('paymentDate')} />
             </div>
 
             <div>
-              <label htmlFor="method" className="block text-sm font-medium text-gray-700">
-                Payment Method *
-              </label>
-              <select
-                id="method"
-                name="method"
-                value={formData.method}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="MPESA">M-Pesa</option>
-                <option value="CASH">Cash</option>
-                <option value="BANK_TRANSFER">Bank Transfer</option>
-                <option value="CHEQUE">Cheque</option>
-                <option value="OTHER">Other</option>
-              </select>
+              <Select label="Payment Method *" error={errors.method?.message} {...register('method')} options={[
+                { value: 'MPESA', label: 'M-Pesa' },
+                { value: 'CASH', label: 'Cash' },
+                { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
+                { value: 'CHEQUE', label: 'Cheque' },
+                { value: 'OTHER', label: 'Other' },
+              ]} />
             </div>
 
             <div>
-              <label htmlFor="txRef" className="block text-sm font-medium text-gray-700">
-                Transaction Reference
-              </label>
-              <input
-                type="text"
-                id="txRef"
-                name="txRef"
-                value={formData.txRef}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="QA12345678"
-              />
+              <TextField label="Transaction Reference" placeholder="QA12345678" error={errors.txRef?.message} {...register('txRef')} />
             </div>
 
             <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={3}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Additional notes about this payment..."
-              />
+              <TextField label="Notes" placeholder="Additional notes about this payment..." error={errors.notes?.message} {...register('notes')} />
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-              >
-                {loading ? 'Recording...' : 'Record Payment'}
-              </button>
+              <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Recording…' : 'Record Payment'}</Button>
             </div>
           </form>
         </div>

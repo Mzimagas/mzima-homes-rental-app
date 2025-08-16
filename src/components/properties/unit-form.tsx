@@ -84,7 +84,10 @@ export default function UnitForm({ propertyId, unit, onSuccess, onCancel, isOpen
   }, [unit])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target
+    const target = e.target as HTMLInputElement | HTMLSelectElement
+    const { name, value } = target
+    const type = (target as HTMLInputElement).type
+    const checked = (target as HTMLInputElement).checked
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : (name === 'monthlyRent' || name === 'deposit' ? parseFloat(value) || 0 : value)

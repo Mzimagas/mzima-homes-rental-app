@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase, clientBusinessFunctions } from '../../lib/supabase-client'
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
+import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
 import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
@@ -67,7 +67,7 @@ interface OccupancyData {
   }
 }
 
-export default function OccupancyReports() {
+const OccupancyReports = forwardRef(function OccupancyReports(_props: {}, ref) {
   const [data, setData] = useState<OccupancyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -152,13 +152,15 @@ export default function OccupancyReports() {
     if (period !== 'custom') {
       const predefinedRanges = getPredefinedDateRanges()
       switch (period) {
-        case '6months':
+        case '6months': {
           setCustomDateRange(predefinedRanges.last6Months)
           break
-        case '1year':
+        }
+        case '1year': {
           setCustomDateRange(predefinedRanges.lastYear)
           break
-        case '2years':
+        }
+        case '2years': {
           const now = new Date()
           const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate())
           setCustomDateRange({
@@ -166,6 +168,7 @@ export default function OccupancyReports() {
             endDate: now.toISOString().split('T')[0]
           })
           break
+        }
       }
     }
   }
@@ -177,6 +180,8 @@ export default function OccupancyReports() {
       setSelectedPeriod('custom')
     }
   }
+
+
 
   // Export to PDF
   const handleExportPDF = async () => {
@@ -292,8 +297,18 @@ export default function OccupancyReports() {
       alert('Failed to export Excel file. Please try again.')
     } finally {
       setIsExporting(false)
+
+
     }
   }
+
+
+  // Expose export handlers to parent via ref (always call hooks before any early returns)
+  useImperativeHandle(ref, () => ({
+    exportPDF: handleExportPDF,
+    exportExcel: handleExportExcel,
+    isExporting: () => isExporting,
+  }))
 
   const calculateOverallStats = async (landlordId: string) => {
     // Get all properties and their stats
@@ -323,11 +338,11 @@ export default function OccupancyReports() {
     for (const property of properties || []) {
       for (const unit of property.units) {
         totalUnits++
-        
-        const activeTenant = unit.tenants?.find(t => t.status === 'ACTIVE')
+
+        const activeTenant = unit.tenants?.find((t: any) => t.status === 'ACTIVE')
         if (activeTenant) {
           occupiedUnits++
-          
+
           // Calculate tenancy length for average
           if (activeTenant.start_date) {
             const startDate = new Date(activeTenant.start_date)
@@ -363,7 +378,7 @@ export default function OccupancyReports() {
 
     for (const property of properties || []) {
       const { data: stats } = await clientBusinessFunctions.getPropertyStats(property.id)
-      
+
       if (stats && stats.length > 0) {
         const stat = stats[0]
         breakdown.push({
@@ -393,7 +408,7 @@ export default function OccupancyReports() {
       return []
     }
 
-    const propertyIds = properties.map(p => p.id)
+    const propertyIds = properties.map((p: { id: string }) => p.id)
 
     // Get units for these properties
     const { data: units } = await supabase
@@ -405,7 +420,7 @@ export default function OccupancyReports() {
       return []
     }
 
-    const unitIds = units.map(u => u.id)
+    const unitIds = units.map((u: { id: string }) => u.id)
 
     // Get tenancy agreements for move-ins and move-outs
     const { data: tenancies } = await supabase
@@ -430,11 +445,11 @@ export default function OccupancyReports() {
       .select('units(id)')
       .eq('landlord_id', landlordId)
 
-    const totalUnits = propertiesWithUnits?.reduce((sum, p) => sum + p.units.length, 0) || 0
+    const totalUnits = propertiesWithUnits?.reduce((sum: number, p: any) => sum + p.units.length, 0) || 0
 
     // Group by month
     const monthlyData: { [key: string]: any } = {}
-    
+
     // Initialize months
     const current = new Date(startDate)
     while (current <= endDate) {
@@ -450,10 +465,10 @@ export default function OccupancyReports() {
     }
 
     // Process tenancies
-    tenancies?.forEach(tenancy => {
+    tenancies?.forEach((tenancy: any) => {
       // Move-ins
       if (tenancy.start_date) {
-        const monthKey = tenancy.start_date.slice(0, 7)
+        const monthKey = String(tenancy.start_date).slice(0, 7)
         if (monthlyData[monthKey]) {
           monthlyData[monthKey].moveIns++
         }
@@ -461,7 +476,7 @@ export default function OccupancyReports() {
 
       // Move-outs
       if (tenancy.end_date) {
-        const monthKey = tenancy.end_date.slice(0, 7)
+        const monthKey = String(tenancy.end_date).slice(0, 7)
         if (monthlyData[monthKey]) {
           monthlyData[monthKey].moveOuts++
         }
@@ -499,16 +514,16 @@ export default function OccupancyReports() {
 
     for (const property of properties || []) {
       for (const unit of property.units) {
-        const activeTenant = unit.tenants?.find(t => t.status === 'ACTIVE')
-        
+        const activeTenant = unit.tenants?.find((t: any) => t.status === 'ACTIVE')
+
         if (!activeTenant) {
           // Find the last tenant to determine when it became vacant
           const lastTenant = unit.tenants
-            ?.filter(t => t.end_date)
-            .sort((a, b) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime())[0]
+            ?.filter((t: any) => t.end_date)
+            .sort((a: any, b: any) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime())[0]
 
           const vacantSince = lastTenant?.end_date || null
-          const daysSinceVacant = vacantSince 
+          const daysSinceVacant = vacantSince
             ? Math.floor((new Date().getTime() - new Date(vacantSince).getTime()) / (1000 * 60 * 60 * 24))
             : 0
 
@@ -534,10 +549,10 @@ export default function OccupancyReports() {
       .eq('landlord_id', landlordId)
 
     if (!properties || properties.length === 0) {
-      return { averageTenancyLength: 0, turnoverRate: 0, renewalRate: 0 }
+      return { averageTenancyLength: 0, turnoverRate: 0, renewalRate: 0, retentionRate: 0, seasonalTrends: [] }
     }
 
-    const propertyIds = properties.map(p => p.id)
+    const propertyIds = properties.map((p: { id: string }) => p.id)
 
     // Get units for these properties
     const { data: units } = await supabase
@@ -546,10 +561,10 @@ export default function OccupancyReports() {
       .in('property_id', propertyIds)
 
     if (!units || units.length === 0) {
-      return { averageTenancyLength: 0, turnoverRate: 0, renewalRate: 0 }
+      return { averageTenancyLength: 0, turnoverRate: 0, renewalRate: 0, retentionRate: 0, seasonalTrends: [] }
     }
 
-    const unitIds = units.map(u => u.id)
+    const unitIds = units.map((u: { id: string }) => u.id)
 
     // Get all tenancy agreements
     const { data: tenancies } = await supabase
@@ -568,10 +583,10 @@ export default function OccupancyReports() {
       .in('unit_id', unitIds)
 
     // Calculate average tenancy length
-    const completedTenancies = tenancies?.filter(t => t.end_date) || []
+    const completedTenancies = tenancies?.filter((t: any) => t.end_date) || []
     let totalDays = 0
-    
-    completedTenancies.forEach(tenancy => {
+
+    completedTenancies.forEach((tenancy: any) => {
       if (tenancy.start_date && tenancy.end_date) {
         const days = Math.floor(
           (new Date(tenancy.end_date).getTime() - new Date(tenancy.start_date).getTime()) / (1000 * 60 * 60 * 24)
@@ -584,7 +599,7 @@ export default function OccupancyReports() {
 
     // Calculate turnover rate (simplified)
     const totalTenancies = tenancies?.length || 0
-    const activeTenancies = tenancies?.filter(t => t.status === 'ACTIVE').length || 0
+    const activeTenancies = tenancies?.filter((t: any) => t.status === 'ACTIVE').length || 0
     const turnoverRate = totalTenancies > 0 ? ((totalTenancies - activeTenancies) / totalTenancies) * 100 : 0
     const retentionRate = 100 - turnoverRate
 
@@ -632,6 +647,8 @@ export default function OccupancyReports() {
   if (loading) {
     return <LoadingCard title="Loading occupancy reports..." />
   }
+
+
 
   if (error) {
     return <ErrorCard title="Failed to load occupancy data" message={error} onRetry={loadOccupancyData} />
@@ -898,4 +915,6 @@ export default function OccupancyReports() {
       </div>
     </div>
   )
-}
+})
+
+export default OccupancyReports

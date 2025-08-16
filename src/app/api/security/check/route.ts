@@ -1,29 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRatelimit, getRedis } from '../../../../lib/upstash'
+import { getRedis } from '../../../../lib/upstash'
+import { z } from 'zod'
+import { compose, withAuth, withCsrf, withRateLimit } from '../../../../lib/api/middleware'
+import { errors } from '../../../../lib/api/errors'
 
-export async function POST(request: NextRequest) {
-  // CSRF check
-  const csrfHeader = request.headers.get('x-csrf-token') || ''
-  const csrfCookie = request.cookies.get('csrf-token')?.value || ''
-  if (!csrfHeader || !csrfCookie || csrfHeader !== csrfCookie) {
-    return NextResponse.json({ ok: false, reason: 'csrf' }, { status: 403 })
-  }
-
+async function handler(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
   const body = await request.json().catch(() => ({}))
-  const action = (body?.action || 'generic').toString()
-  const identifier = (body?.email || '').toString().toLowerCase()
-  const idPrefix = identifier.slice(0, 3)
 
-  // Distributed rate limit
-  const rl = getRatelimit()
-  const [ipRes, idRes] = await Promise.all([
-    rl.limit(`ip:${ip}:action:${action}`),
-    rl.limit(`id:${idPrefix}:action:${action}`),
-  ])
-  if (!ipRes.success || !idRes.success) {
-    return NextResponse.json({ ok: false, reason: 'rate' }, { status: 429 })
+  // Validate body with Zod
+  const schema = z.object({
+    action: z.string().min(1).default('generic'),
+    email: z.string().email().optional()
+  })
+  const parsed = schema.safeParse(body)
+  if (!parsed.success) {
+    return errors.validation(parsed.error.flatten())
   }
+  const { action, email } = parsed.data
+  const identifier = (email || '').toLowerCase()
+  const idPrefix = identifier.slice(0, 3)
 
   // Server-side persistent lockout check
   const redis = getRedis()
@@ -39,6 +35,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, reason: 'lock', retryAfterSec: lockedTtl }, { status: 429 })
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, rateKey: `${ip}:${idPrefix}` })
 }
+
+const wrapped = compose(
+  (h) => withRateLimit(h, (req) => {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    return `security-check:${ip}`
+  }, 'security-check'),
+  withCsrf,
+)
+
+export const POST = wrapped(handler)
 

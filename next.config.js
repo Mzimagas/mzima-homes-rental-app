@@ -1,20 +1,24 @@
 /** @type {import('next').NextConfig} */
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+let SUPABASE_HOST = 'ajrxvnakphkpkcssisxm.supabase.co'
+try { if (SUPABASE_URL) SUPABASE_HOST = new URL(SUPABASE_URL).host } catch {}
+
 const nextConfig = {
   // External packages for server components
   serverExternalPackages: ['@supabase/supabase-js'],
 
-  // Ensure environment variables are available
+  // Ensure environment variables are available to the client
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
 
-  // Disable strict mode to prevent double rendering in development
-  reactStrictMode: false,
+  // Enable strict mode in development to catch side effects
+  reactStrictMode: true,
 
-  // Disable TypeScript checking during build for deployment
+  // Re-enable TypeScript checking during build (CI should fail on type errors)
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // Production optimizations
@@ -22,7 +26,7 @@ const nextConfig = {
 
   // Image optimization
   images: {
-    domains: ['ajrxvnakphkpkcssisxm.supabase.co'],
+    domains: [SUPABASE_HOST],
     formats: ['image/webp', 'image/avif'],
   },
 
@@ -31,13 +35,18 @@ const nextConfig = {
     const isProd = process.env.NODE_ENV === 'production'
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+      // In production remove unsafe-eval; keep minimal inline if necessary. Consider moving to nonces later.
+      `script-src 'self' ${isProd ? '' : "'unsafe-inline' 'unsafe-eval'"} https://challenges.cloudflare.com`,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: ajrxvnakphkpkcssisxm.supabase.co",
+      `img-src 'self' data: blob: ${SUPABASE_HOST}`,
       "font-src 'self' data:",
-      "connect-src 'self' ajrxvnakphkpkcssisxm.supabase.co https://challenges.cloudflare.com https://app.posthog.com",
+      // If external APIs are proxied via /api, remove them here to reduce surface.
+      `connect-src 'self' ${SUPABASE_HOST} https://challenges.cloudflare.com https://app.posthog.com`,
       "frame-src https://challenges.cloudflare.com",
       "frame-ancestors 'none'",
+      "object-src 'none'",
+      "form-action 'self'",
+      ...(isProd ? ["upgrade-insecure-requests"] : []),
       "base-uri 'self'"
     ].join('; ')
 
@@ -50,7 +59,7 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
           { key: 'Content-Security-Policy', value: csp },
           ...(isProd ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }] : []),
-          { key: 'Permissions-Policy', value: 'geolocation=(), microphone=(), camera=()' },
+          { key: 'Permissions-Policy', value: "geolocation=(self), microphone=(), camera=()" },
         ],
       },
     ]

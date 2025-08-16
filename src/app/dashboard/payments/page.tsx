@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase, clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
+import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
-import { Payment, Tenant, Unit, Property } from '../../../../lib/types/database'
+import { Payment, Tenant, Unit, Property } from '../../../lib/types/database'
 import PaymentForm from '../../../components/payments/payment-form'
 import PaymentHistory from '../../../components/payments/payment-history'
 import PaymentAnalytics from '../../../components/payments/payment-analytics'
@@ -75,12 +75,12 @@ export default function PaymentsPage() {
       const thisMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
 
       const totalPaymentsToday = recentPayments
-        ?.filter(p => p.payment_date === today)
-        .reduce((sum, p) => sum + p.amount_kes, 0) || 0
+        ?.filter((p: PaymentWithDetails) => p.payment_date === today)
+        .reduce((sum: number, p: PaymentWithDetails) => sum + p.amount_kes, 0) || 0
 
       const totalPaymentsThisMonth = recentPayments
-        ?.filter(p => p.payment_date.startsWith(thisMonth))
-        .reduce((sum, p) => sum + p.amount_kes, 0) || 0
+        ?.filter((p: PaymentWithDetails) => p.payment_date.startsWith(thisMonth))
+        .reduce((sum: number, p: PaymentWithDetails) => sum + p.amount_kes, 0) || 0
 
       // Get outstanding invoices count
       const { data: overdueInvoices } = await supabase
@@ -89,7 +89,7 @@ export default function PaymentsPage() {
         .eq('status', 'OVERDUE')
 
       const totalOutstanding = overdueInvoices
-        ?.reduce((sum, inv) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0) || 0
+        ?.reduce((sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0) || 0
 
       const overdueCount = overdueInvoices?.length || 0
 

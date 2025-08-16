@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase-client'
+import supabase from '../../lib/supabase-client'
 import { usePropertyAccess, getRoleDisplayName, getRoleDescription, type UserRole } from '../../hooks/usePropertyAccess'
 import { PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { UserManagementDenied } from '../common/PermissionDenied'
@@ -69,7 +69,7 @@ export default function UserManagement() {
       if (error) throw error
 
       // Get user details from auth.users (this might need to be done differently depending on your setup)
-      const usersWithDetails = data?.map(user => ({
+      const usersWithDetails = data?.map((user: any) => ({
         ...user,
         user_email: 'user@example.com', // Placeholder - you'll need to get this from your user management system
         user_name: 'User Name' // Placeholder
@@ -221,22 +221,23 @@ export default function UserManagement() {
 
     } catch (err) {
       // Comprehensive error extraction that handles non-enumerable properties
+      const e1 = err as any
       const errorInfo = {
-        errorType: typeof err,
-        errorConstructor: err?.constructor?.name,
-        errorMessage: err?.message,
-        errorDetails: err?.details,
-        errorCode: err?.code,
-        errorHint: err?.hint,
-        errorStatus: err?.status,
-        errorName: err?.name,
-        isAuthError: err?.__isAuthError,
+        errorType: typeof e1,
+        errorConstructor: e1?.constructor?.name,
+        errorMessage: e1?.message,
+        errorDetails: e1?.details,
+        errorCode: e1?.code,
+        errorHint: e1?.hint,
+        errorStatus: e1?.status,
+        errorName: e1?.name,
+        isAuthError: e1?.__isAuthError,
         // Get all properties including non-enumerable ones
-        allProperties: err ? Object.getOwnPropertyNames(err) : [],
+        allProperties: e1 ? Object.getOwnPropertyNames(e1) : [],
         // Convert to string representation
-        errorString: String(err),
+        errorString: String(e1),
         // Proper JSON serialization
-        errorJSON: err ? JSON.stringify(err, Object.getOwnPropertyNames(err)) : 'null'
+        errorJSON: e1 ? JSON.stringify(e1, Object.getOwnPropertyNames(e1)) : 'null'
       }
 
       console.error('❌ Error in loadInvitations:', errorInfo)
@@ -244,8 +245,9 @@ export default function UserManagement() {
       // Extract meaningful error message
       let errorMessage = 'Unknown error occurred'
 
-      if (err?.message) {
-        errorMessage = err.message
+      const e2 = err as any
+      if (e2?.message) {
+        errorMessage = e2.message
       } else if (err?.toString && typeof err.toString === 'function') {
         errorMessage = err.toString()
       } else if (typeof err === 'string') {
@@ -297,11 +299,12 @@ export default function UserManagement() {
       alert(`Invitation sent to ${inviteEmail}`)
 
     } catch (err) {
+      const e3 = err as any
       console.error('Error inviting user:', {
-        error: err,
-        message: err instanceof Error ? err.message : 'Unknown error',
-        details: err?.details,
-        code: err?.code
+        error: e3,
+        message: e3 instanceof Error ? e3.message : 'Unknown error',
+        details: e3?.details,
+        code: e3?.code
       })
       setError(`Failed to send invitation: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {

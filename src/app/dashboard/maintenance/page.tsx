@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase } from '../../../lib/supabase-client'
+import supabase from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
 import MaintenanceForm from '../../../components/maintenance/maintenance-form'
@@ -29,7 +29,7 @@ interface MaintenanceTicket {
   }
 }
 
-interface MaintenanceStats {
+interface MaintenanceStatsData {
   totalTickets: number
   openTickets: number
   inProgressTickets: number
@@ -42,7 +42,7 @@ interface MaintenanceStats {
 export default function MaintenancePage() {
   const { user } = useAuth()
   const [tickets, setTickets] = useState<MaintenanceTicket[]>([])
-  const [stats, setStats] = useState<MaintenanceStats | null>(null)
+  const [stats, setStats] = useState<MaintenanceStatsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)

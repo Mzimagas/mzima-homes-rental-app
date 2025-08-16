@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase } from '../../../lib/supabase-client'
+import supabase from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
 import DocumentUpload from '../../../components/documents/document-upload'
@@ -28,7 +28,7 @@ interface Document {
   }
 }
 
-interface DocumentStats {
+interface DocumentStatsData {
   totalDocuments: number
   totalSize: number
   documentsByType: {
@@ -42,7 +42,7 @@ interface DocumentStats {
 export default function DocumentsPage() {
   const { user } = useAuth()
   const [documents, setDocuments] = useState<Document[]>([])
-  const [stats, setStats] = useState<DocumentStats | null>(null)
+  const [stats, setStats] = useState<DocumentStatsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showUpload, setShowUpload] = useState(false)
@@ -83,11 +83,11 @@ export default function DocumentsPage() {
       }
 
       // Transform storage files to our document format
-      const documentsData: Document[] = (files || []).map(file => {
-        const pathParts = file.name.split('/')
+      const documentsData: Document[] = (files || []).map((file: any) => {
+        const pathParts = String(file.name).split('/')
         const fileName = pathParts[pathParts.length - 1]
-        const type = pathParts[0] as Document['type'] || 'other'
-        
+        const type = (pathParts[0] || 'other') as Document['type']
+
         return {
           id: file.id || file.name,
           name: fileName,

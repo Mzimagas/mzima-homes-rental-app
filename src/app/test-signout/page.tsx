@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
-import { supabase } from '../../lib/supabase-client'
+import supabase from '../../lib/supabase-client'
 
 export default function SignOutTest() {
   const [logs, setLogs] = useState<string[]>([])
@@ -134,7 +134,7 @@ export default function SignOutTest() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <button
             onClick={testAuthContextSignIn}
-            disabled={loading || authLoading || isSignedIn}
+            disabled={loading || authLoading || !!isSignedIn}
             className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 disabled:opacity-50"
           >
             {loading ? 'Testing...' : 'Auth SignIn'}

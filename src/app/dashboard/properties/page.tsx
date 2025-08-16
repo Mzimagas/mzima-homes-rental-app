@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase, clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
+import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
-import { Property, Unit } from '../../../../lib/types/database'
+import { Property, Unit } from '../../../lib/types/database'
 import PropertyForm from '../../../components/properties/property-form'
 import Link from 'next/link'
 
@@ -90,7 +90,9 @@ export default function PropertiesPage() {
           }
         } catch (parseError) {
           errorMessage = 'Error parsing database error'
-          errorDetails.parseError = parseError.message
+          if (parseError && typeof parseError === 'object' && 'message' in parseError) {
+            errorDetails = { ...errorDetails, parseMessage: (parseError as any).message }
+          }
         }
 
         console.error('PROPERTIES PAGE ERROR - Accessible properties loading failed:', {
@@ -112,7 +114,7 @@ export default function PropertiesPage() {
       console.log(`Found ${accessibleProperties.length} accessible properties`)
 
       // Get property IDs
-      const propertyIds = accessibleProperties.map(p => p.property_id)
+      const propertyIds = accessibleProperties.map((p: { property_id: string }) => p.property_id)
 
       // Get full property details with units and tenants
       const { data: propertiesData, error: propertiesError } = await supabase
@@ -172,7 +174,9 @@ export default function PropertiesPage() {
           }
         } catch (parseError) {
           errorMessage = 'Error parsing database error'
-          errorDetails.parseError = parseError.message
+          if (parseError && typeof parseError === 'object' && 'message' in parseError) {
+            errorDetails = { ...errorDetails, parseMessage: (parseError as any).message }
+          }
         }
 
         console.error('PROPERTIES PAGE ERROR - Property details loading failed:', {
@@ -191,13 +195,13 @@ export default function PropertiesPage() {
       if (propertiesData) {
         for (const property of propertiesData) {
           const units = property.units || []
-          const activeUnits = units.filter(unit => unit.is_active)
-          const occupiedUnits = activeUnits.filter(unit =>
-            unit.tenants?.some(tenant => tenant.status === 'ACTIVE')
+          const activeUnits = units.filter((unit: any) => unit.is_active)
+          const occupiedUnits = activeUnits.filter((unit: any) =>
+            unit.tenants?.some((tenant: any) => tenant.status === 'ACTIVE')
           )
 
-          const totalRentPotential = activeUnits.reduce((sum, unit) => sum + (unit.monthly_rent_kes || 0), 0)
-          const totalRentActual = occupiedUnits.reduce((sum, unit) => sum + (unit.monthly_rent_kes || 0), 0)
+          const totalRentPotential = activeUnits.reduce((sum: number, unit: any) => sum + (unit.monthly_rent_kes || 0), 0)
+          const totalRentActual = occupiedUnits.reduce((sum: number, unit: any) => sum + (unit.monthly_rent_kes || 0), 0)
           const occupancyRate = activeUnits.length > 0 ? (occupiedUnits.length / activeUnits.length) * 100 : 0
 
           propertiesWithStats.push({
@@ -263,8 +267,8 @@ export default function PropertiesPage() {
 
   const filteredProperties = properties.filter(property => {
     const matchesSearch = property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.physical_address.toLowerCase().includes(searchTerm.toLowerCase())
-    
+                         (property.physical_address || '').toLowerCase().includes(searchTerm.toLowerCase())
+
     if (!matchesSearch) return false
     
     if (filterStatus === 'all') return true

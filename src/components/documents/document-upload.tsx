@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { supabase } from '../../lib/supabase-client'
+import supabase from '../../lib/supabase-client'
 
 interface DocumentUploadProps {
   onSuccess?: () => void

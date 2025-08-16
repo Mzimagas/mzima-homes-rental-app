@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase-client'
+import supabase from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
 import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
-import { Payment } from '../../../lib/types/database'
+import { Payment } from '../../lib/types/database'
 
-interface PaymentAnalytics {
+interface PaymentAnalyticsData {
   monthlyTrends: {
     month: string
     totalAmount: number
@@ -32,7 +32,7 @@ interface PaymentAnalytics {
 }
 
 export default function PaymentAnalytics() {
-  const [analytics, setAnalytics] = useState<PaymentAnalytics | null>(null)
+  const [analytics, setAnalytics] = useState<PaymentAnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<'3months' | '6months' | '1year' | 'custom'>('6months')
@@ -91,7 +91,7 @@ export default function PaymentAnalytics() {
         return
       }
 
-      const propertyIds = properties.map(p => p.id)
+      const propertyIds = properties.map((p: { id: string }) => p.id)
 
       // Get units for these properties
       const { data: units } = await supabase
@@ -109,7 +109,7 @@ export default function PaymentAnalytics() {
         return
       }
 
-      const unitIds = units.map(u => u.id)
+      const unitIds = units.map((u: { id: string }) => u.id)
 
       // Get tenants for these units
       const { data: tenants } = await supabase
@@ -127,7 +127,7 @@ export default function PaymentAnalytics() {
         return
       }
 
-      const tenantIds = tenants.map(t => t.id)
+      const tenantIds = tenants.map((t: { id: string }) => t.id)
 
       // Now get payments for these tenants
       const { data: paymentsData, error: paymentsError } = await supabase

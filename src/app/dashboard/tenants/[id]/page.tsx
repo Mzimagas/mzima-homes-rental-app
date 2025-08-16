@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase, clientBusinessFunctions, clientQueries } from '../../../../lib/supabase-client'
+import supabase, { clientBusinessFunctions, clientQueries } from '../../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../../components/ui/loading'
 import { ErrorCard } from '../../../../components/ui/error'
-import { Tenant, Unit, Property, Payment } from '../../../../../lib/types/database'
+import { Tenant, Unit, Property, Payment } from '../../../../lib/types/database'
 
 interface TenantWithDetails extends Tenant {
   units: (Unit & {
@@ -169,8 +169,8 @@ export default function TenantDetailPage() {
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">{tenant.full_name}</h1>
               <div className="flex items-center space-x-2">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(tenant.status)}`}>
-                  {tenant.status}
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(tenant.status || 'INACTIVE')}`}>
+                  {tenant.status || 'INACTIVE'}
                 </span>
                 <span className="text-gray-500">•</span>
                 <span className="text-gray-600">{tenant.phone}</span>
@@ -213,9 +213,9 @@ export default function TenantDetailPage() {
               <p className="text-sm text-gray-600">Property</p>
               <p className="font-medium">{tenant.units[0].properties.name}</p>
               <p className="text-sm text-gray-600 mt-2">Unit</p>
-              <p className="font-medium">{tenant.units[0].unit_label}</p>
+              <p className="font-medium">{tenant.units[0].unit_label || ''}</p>
               <p className="text-sm text-gray-600 mt-2">Monthly Rent</p>
-              <p className="font-medium">{formatCurrency(tenant.units[0].monthly_rent_kes)}</p>
+              <p className="font-medium">{formatCurrency(tenant.units[0].monthly_rent_kes || 0)}</p>
             </div>
           ) : (
             <p className="text-gray-500">No unit assigned</p>

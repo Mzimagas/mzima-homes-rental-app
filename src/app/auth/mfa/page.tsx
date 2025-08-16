@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { withAuth } from '../../../lib/withAuth'
-import { supabase } from '../../../lib/supabase-client'
+import supabase from '../../../lib/supabase-client'
 
 function MfaPage() {
   const [factorId, setFactorId] = useState<string | null>(null)
@@ -13,10 +13,10 @@ function MfaPage() {
   useEffect(() => {
     (async () => {
       const { data: factors } = await supabase.auth.mfa.listFactors()
-      const factor = factors.totp?.find(f=>f.status==='verified') || factors.totp?.[0]
-      if (factor) {
-        await supabase.auth.mfa.challenge({ factorId: factor.id })
-        setFactorId(factor.id)
+      const factor = factors.totp?.find((f: { status?: string })=>f.status==='verified') || factors.totp?.[0]
+      if (factor && 'id' in factor && factor.id) {
+        await supabase.auth.mfa.challenge({ factorId: factor.id as string })
+        setFactorId(factor.id as string)
       } else {
         setError('No MFA factor found for your account.')
       }

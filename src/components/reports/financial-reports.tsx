@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase-client'
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
+import supabase from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
 import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
@@ -56,7 +56,7 @@ interface FinancialData {
   }[]
 }
 
-export default function FinancialReports() {
+const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
   const [data, setData] = useState<FinancialData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -104,13 +104,13 @@ export default function FinancialReports() {
 
       // Get monthly revenue data
       const monthlyRevenue = await calculateMonthlyRevenue(startDate, endDate, mockLandlordId)
-      
+
       // Get year-to-date summary
       const yearToDate = await calculateYearToDate(selectedYear, mockLandlordId)
-      
+
       // Get current rent roll
       const rentRoll = await getCurrentRentRoll(mockLandlordId)
-      
+
       // Get profit/loss breakdown
       const profitLoss = await calculateProfitLoss(selectedYear, mockLandlordId)
 
@@ -179,6 +179,8 @@ export default function FinancialReports() {
       setSelectedPeriod('custom')
     }
   }
+
+
 
   // Export to PDF
   const handleExportPDF = async () => {
@@ -267,6 +269,7 @@ export default function FinancialReports() {
       savePDFFile(doc, exportOptions.filename)
     } catch (error) {
       console.error('Error exporting PDF:', error)
+
       alert('Failed to export PDF. Please try again.')
     } finally {
       setIsExporting(false)
@@ -361,10 +364,12 @@ export default function FinancialReports() {
 
   const calculateMonthlyRevenue = async (startDate: Date, endDate: Date, landlordId: string) => {
     const monthlyData: any[] = []
-    
+
     // Get payments data
     const { data: payments } = await supabase
       .from('payments')
+
+
       .select(`
         payment_date,
         amount_kes,
@@ -405,7 +410,7 @@ export default function FinancialReports() {
       return months
     }
 
-    const propertyIds = properties.map(p => p.id)
+    const propertyIds = properties.map((p: { id: string }) => p.id)
 
     // Get units for these properties
     const { data: units } = await supabase
@@ -432,7 +437,7 @@ export default function FinancialReports() {
       return months
     }
 
-    const unitIds = units.map(u => u.id)
+    const unitIds = units.map((u: { id: string }) => u.id)
 
     // Get invoices data for outstanding amounts
     const { data: invoices } = await supabase
@@ -455,7 +460,7 @@ export default function FinancialReports() {
 
     // Group by month
     const monthlyMap: { [key: string]: any } = {}
-    
+
     // Initialize months
     const current = new Date(startDate)
     while (current <= endDate) {
@@ -471,19 +476,19 @@ export default function FinancialReports() {
     }
 
     // Process payments
-    payments?.forEach(payment => {
-      const monthKey = payment.payment_date.slice(0, 7)
+    payments?.forEach((payment: any) => {
+      const monthKey = String(payment.payment_date).slice(0, 7)
       if (monthlyMap[monthKey]) {
-        monthlyMap[monthKey].collections += payment.amount_kes
-        monthlyMap[monthKey].revenue += payment.amount_kes
+        monthlyMap[monthKey].collections += payment.amount_kes || 0
+        monthlyMap[monthKey].revenue += payment.amount_kes || 0
       }
     })
 
     // Process invoices for outstanding amounts
-    invoices?.forEach(invoice => {
-      const monthKey = invoice.period_start.slice(0, 7)
+    invoices?.forEach((invoice: any) => {
+      const monthKey = String(invoice.period_start).slice(0, 7)
       if (monthlyMap[monthKey]) {
-        const outstanding = invoice.amount_due_kes - invoice.amount_paid_kes
+        const outstanding = (invoice.amount_due_kes || 0) - (invoice.amount_paid_kes || 0)
         if (outstanding > 0) {
           monthlyMap[monthKey].outstanding += outstanding
         }
@@ -492,7 +497,7 @@ export default function FinancialReports() {
 
     // Calculate net income
     Object.values(monthlyMap).forEach((month: any) => {
-      month.netIncome = month.revenue - month.expenses
+      month.netIncome = (month.revenue || 0) - (month.expenses || 0)
     })
 
     return Object.values(monthlyMap)
@@ -512,7 +517,7 @@ export default function FinancialReports() {
       return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, collectionRate: 0, outstandingAmount: 0 }
     }
 
-    const propertyIds = properties.map(p => p.id)
+    const propertyIds = properties.map((p: { id: string }) => p.id)
 
     // Get units for these properties
     const { data: units } = await supabase
@@ -524,7 +529,7 @@ export default function FinancialReports() {
       return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, collectionRate: 0, outstandingAmount: 0 }
     }
 
-    const unitIds = units.map(u => u.id)
+    const unitIds = units.map((u: { id: string }) => u.id)
 
     // Get tenants for these units
     const { data: tenants } = await supabase
@@ -536,7 +541,7 @@ export default function FinancialReports() {
       return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, collectionRate: 0, outstandingAmount: 0 }
     }
 
-    const tenantIds = tenants.map(t => t.id)
+    const tenantIds = tenants.map((t: { id: string }) => t.id)
 
     // Get total payments for the year
     const { data: payments } = await supabase
@@ -557,7 +562,7 @@ export default function FinancialReports() {
       .gte('payment_date', startOfYear)
       .lte('payment_date', endOfYear)
 
-    const totalRevenue = payments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0
+    const totalRevenue = payments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
     // Get outstanding invoices
     const { data: outstandingInvoices } = await supabase
@@ -575,7 +580,7 @@ export default function FinancialReports() {
       .in('status', ['PENDING', 'PARTIAL', 'OVERDUE'])
 
     const outstandingAmount = outstandingInvoices?.reduce(
-      (sum, inv) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0
+      (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0
     ) || 0
 
     // Get total invoiced amount for collection rate
@@ -595,8 +600,8 @@ export default function FinancialReports() {
       .gte('period_start', startOfYear)
       .lte('period_start', endOfYear)
 
-    const totalInvoiced = allInvoices?.reduce((sum, inv) => sum + inv.amount_due_kes, 0) || 0
-    const totalCollected = allInvoices?.reduce((sum, inv) => sum + inv.amount_paid_kes, 0) || 0
+    const totalInvoiced = allInvoices?.reduce((sum: number, inv: { amount_due_kes: number }) => sum + inv.amount_due_kes, 0) || 0
+    const totalCollected = allInvoices?.reduce((sum: number, inv: { amount_paid_kes: number }) => sum + inv.amount_paid_kes, 0) || 0
     const collectionRate = totalInvoiced > 0 ? (totalCollected / totalInvoiced) * 100 : 0
 
     return {
@@ -631,11 +636,11 @@ export default function FinancialReports() {
     for (const property of properties || []) {
       for (const unit of property.units) {
         const tenant = unit.tenants?.[0]
-        
+
         // Get last payment if tenant exists
         let lastPayment = null
         let balance = 0
-        
+
         if (tenant) {
           const { data: payments } = await supabase
             .from('payments')
@@ -654,7 +659,7 @@ export default function FinancialReports() {
             .in('status', ['PENDING', 'PARTIAL', 'OVERDUE'])
 
           balance = invoices?.reduce(
-            (sum, inv) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0
+            (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0
           ) || 0
         }
 
@@ -694,7 +699,7 @@ export default function FinancialReports() {
       .gte('payment_date', startOfYear)
       .lte('payment_date', endOfYear)
 
-    const totalRevenue = payments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0
+    const totalRevenue = payments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
     return [
       { category: 'Rental Income', amount: totalRevenue, percentage: 100 },
@@ -714,6 +719,14 @@ export default function FinancialReports() {
     }).format(amount)
   }
 
+  // Expose export handlers to parent via ref (always call hooks before any early returns)
+  useImperativeHandle(ref, () => ({
+    exportPDF: handleExportPDF,
+    exportExcel: handleExportExcel,
+    isExporting: () => isExporting,
+  }))
+
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never'
     return new Date(dateString).toLocaleDateString('en-KE', {
@@ -729,7 +742,11 @@ export default function FinancialReports() {
 
   if (error) {
     return <ErrorCard title="Failed to load financial data" message={error} onRetry={loadFinancialData} />
+
+
   }
+
+
 
   if (!data) {
     return <div>No financial data available</div>
@@ -951,7 +968,7 @@ export default function FinancialReports() {
               <div>
                 <div className="font-medium text-gray-900">{month.month}</div>
                 <div className="text-sm text-gray-500">
-                  Collections: {formatCurrency(month.collections)} | 
+                  Collections: {formatCurrency(month.collections)} |
                   Outstanding: {formatCurrency(month.outstanding)}
                 </div>
               </div>
@@ -1026,4 +1043,6 @@ export default function FinancialReports() {
       </div>
     </div>
   )
-}
+})
+
+export default FinancialReports

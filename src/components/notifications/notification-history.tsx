@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-interface NotificationHistory {
+interface NotificationHistoryItem {
   id: string
   rule_id: string | null
   type: string
@@ -20,11 +20,11 @@ interface NotificationHistory {
 }
 
 interface NotificationHistoryProps {
-  notifications: NotificationHistory[]
+  notifications: NotificationHistoryItem[]
 }
 
 export default function NotificationHistory({ notifications }: NotificationHistoryProps) {
-  const [selectedNotification, setSelectedNotification] = useState<NotificationHistory | null>(null)
+  const [selectedNotification, setSelectedNotification] = useState<NotificationHistoryItem | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterChannel, setFilterChannel] = useState<string>('all')
 

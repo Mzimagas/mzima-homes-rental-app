@@ -5,7 +5,8 @@ import { useAuth } from '../../../lib/auth-context'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Turnstile } from '@marsidev/react-turnstile'
-import { supabase } from '../../../lib/supabase-client'
+import supabase from '../../../lib/supabase-client'
+import { validateEmailSimple } from '../../../lib/email-validation'
 import MfaChallenge from './mfa-challenge'
 
 function LoginForm() {
@@ -36,6 +37,13 @@ function LoginForm() {
 
     if (!email || !password) {
       setError('Please fill in all fields')
+      setIsLoading(false)
+      return
+    }
+
+    const emailError = validateEmailSimple(email)
+    if (emailError) {
+      setError(emailError)
       setIsLoading(false)
       return
     }
@@ -178,8 +186,8 @@ function LoginForm() {
                       setIsLoading(true)
                       try {
                         const { data: factors } = await supabase.auth.mfa.listFactors()
-                        const factor = factors.totp?.find(f=>f.status==='verified') || factors.totp?.[0]
-                        if (factor) {
+                        const factor = factors.totp?.find((f: { status?: string }) => f.status === 'verified') || factors.totp?.[0]
+                        if (factor && 'id' in factor && factor.id) {
                           const { data, error } = await supabase.auth.mfa.verify({ factorId: factor.id, code })
                           if (!error) {
                             setShowMfa(false)
@@ -220,7 +228,9 @@ function LoginForm() {
                 Forgot your password?
               </Link>
             </div>
-            <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string} onSuccess={setToken} />
+            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+              <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string} onSuccess={setToken} />
+            ) : null}
           </div>
 
           <div>

@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase-client'
+import supabase from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard, EmptyState } from '../ui/error'
-import { Payment, Tenant, Unit, Property } from '../../../lib/types/database'
+import { Payment, Tenant, Unit, Property } from '../../lib/types/database'
 import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
 
 interface PaymentWithDetails extends Payment {
@@ -156,8 +156,8 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
     const matchesSearch = searchTerm === '' ||
       payment.tenants.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       payment.tenants.units?.[0]?.properties?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.tenants.units?.[0]?.unit_label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.tx_ref?.toLowerCase().includes(searchTerm.toLowerCase())
+      (payment.tenants.units?.[0]?.unit_label || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (payment.tx_ref || '').toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesMethod = filterMethod === 'all' || payment.method === filterMethod
 
@@ -172,13 +172,15 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
     if (range !== 'custom' && range !== 'all') {
       const predefinedRanges = getPredefinedDateRanges()
       switch (range) {
-        case 'month':
+        case 'month': {
           setCustomDateRange(predefinedRanges.currentMonth)
           break
-        case 'quarter':
+        }
+        case 'quarter': {
           setCustomDateRange(predefinedRanges.last3Months)
           break
-        case 'week':
+        }
+        case 'week': {
           const now = new Date()
           const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
           setCustomDateRange({
@@ -186,13 +188,15 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
             endDate: now.toISOString().split('T')[0]
           })
           break
-        case 'today':
+        }
+        case 'today': {
           const today = new Date().toISOString().split('T')[0]
           setCustomDateRange({
             startDate: today,
             endDate: today
           })
           break
+        }
       }
     }
   }
@@ -427,8 +431,8 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
                       {formatCurrency(payment.amount_kes)}
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMethodBadgeColor(payment.method)}`}>
-                        {payment.method}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMethodBadgeColor(payment.method || 'UNKNOWN')}`}>
+                        {payment.method || 'UNKNOWN'}
                       </span>
                     </div>
                     <div className="text-xs text-gray-500 mt-1">

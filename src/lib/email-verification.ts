@@ -75,7 +75,7 @@ export async function verifyEmailForDelivery(email: string): Promise<EmailVerifi
   const [localPart, domain] = email.toLowerCase().split('@')
 
   // Step 2: Check for typos and suggest corrections
-  const typoSuggestion = COMMON_TYPOS[domain]
+  const typoSuggestion = (COMMON_TYPOS as Record<string, string>)[domain]
   if (typoSuggestion) {
     result.errors.push(`Did you mean ${localPart}@${typoSuggestion}?`)
     result.confidence = 'low'
@@ -238,7 +238,7 @@ export function suggestEmailCorrection(email: string): string | null {
   if (!email.includes('@')) return null
   
   const [localPart, domain] = email.toLowerCase().split('@')
-  const suggestion = COMMON_TYPOS[domain]
-  
+  const suggestion = (COMMON_TYPOS as Record<string, string>)[domain]
+
   return suggestion ? `${localPart}@${suggestion}` : null
 }

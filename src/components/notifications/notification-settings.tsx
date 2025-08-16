@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { clientBusinessFunctions } from '../../lib/supabase-client'
 
-interface NotificationSettings {
+interface NotificationSettingsData {
   email: {
     enabled: boolean
     smtp_host: string
@@ -31,7 +31,7 @@ interface NotificationSettings {
 }
 
 export default function NotificationSettings() {
-  const [settings, setSettings] = useState<NotificationSettings>({
+  const [settings, setSettings] = useState<NotificationSettingsData>({
     email: {
       enabled: true,
       smtp_host: 'smtp.gmail.com',
@@ -123,7 +123,7 @@ export default function NotificationSettings() {
     }
   }
 
-  const handleEmailSettingChange = (field: keyof NotificationSettings['email'], value: any) => {
+  const handleEmailSettingChange = (field: keyof NotificationSettingsData['email'], value: any) => {
     setSettings(prev => ({
       ...prev,
       email: {
@@ -133,7 +133,7 @@ export default function NotificationSettings() {
     }))
   }
 
-  const handleSmsSettingChange = (field: keyof NotificationSettings['sms'], value: any) => {
+  const handleSmsSettingChange = (field: keyof NotificationSettingsData['sms'], value: any) => {
     setSettings(prev => ({
       ...prev,
       sms: {
@@ -143,7 +143,7 @@ export default function NotificationSettings() {
     }))
   }
 
-  const handleGeneralSettingChange = (field: keyof NotificationSettings['general'], value: any) => {
+  const handleGeneralSettingChange = (field: keyof NotificationSettingsData['general'], value: any) => {
     setSettings(prev => ({
       ...prev,
       general: {

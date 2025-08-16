@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase-client'
+import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 
 interface MaintenanceFormData {
   unitId: string
@@ -85,41 +85,87 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
   const loadUnits = async () => {
     try {
       setLoadingUnits(true)
-      
-      // For now, using actual landlord ID from database - in real app, this would come from user profile
-      const mockLandlordId = '78664634-fa3c-4b1e-990e-513f5b184fa6' // Test Landlord with actual properties
+      setError(null)
 
+      // 1) Get landlord IDs for the current authenticated user
+      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds()
+      if (landlordError) {
+        console.error('Error determining user access (landlord IDs):', landlordError)
+        setUnits([])
+        setError(typeof landlordError === 'string' ? landlordError : 'Unable to determine your property access. Please sign in again.')
+        return
+      }
+
+      if (!landlordIds || landlordIds.length === 0) {
+        // No access means no properties/units to show
+        setUnits([])
+        setError('You have no accessible properties. Please contact the administrator to gain access.')
+        return
+      }
+
+      // 2) Get properties owned by any of these landlord IDs
+      const { data: properties, error: propertiesError } = await supabase
+        .from('properties')
+        .select('id, name, landlord_id')
+        .in('landlord_id', landlordIds)
+
+      if (propertiesError) {
+        console.error('Error loading properties for units:', propertiesError)
+        setUnits([])
+        setError('Failed to load properties. Please try again later.')
+        return
+      }
+
+      if (!properties || properties.length === 0) {
+        // No properties means no units to show
+        setUnits([])
+        setError('No properties found for your account.')
+        return
+      }
+
+      const propertyIds = properties.map((p: any) => p.id)
+
+      // 3) Get active units for those properties and include property name
       const { data: unitsData, error: unitsError } = await supabase
         .from('units')
         .select(`
           id,
           unit_label,
+          property_id,
           properties (
-            name,
-            landlord_id
+            name
           )
         `)
-        .eq('properties.landlord_id', mockLandlordId)
+        .in('property_id', propertyIds)
         .eq('is_active', true)
-        .order('properties.name, unit_label')
+        .order('unit_label', { ascending: true })
 
       if (unitsError) {
         console.error('Error loading units:', unitsError)
+        setUnits([])
+        setError('Failed to load units. Please try again later.')
         return
       }
 
-      // Transform the data to match UnitOption interface
-      const transformedUnits = (unitsData || []).map((unit: any) => ({
-        id: unit.id,
-        unit_label: unit.unit_label,
-        properties: {
-          name: unit.properties?.[0]?.name || 'Unknown Property'
-        }
-      }))
+      // Transform and sort by property name then unit label
+      const transformedUnits = (unitsData || [])
+        .map((unit: any) => ({
+          id: unit.id,
+          unit_label: unit.unit_label,
+          properties: {
+            name: unit.properties?.name || 'Unknown Property'
+          }
+        }))
+        .sort((a: UnitOption, b: UnitOption) => {
+          const byProperty = a.properties.name.localeCompare(b.properties.name)
+          return byProperty !== 0 ? byProperty : a.unit_label.localeCompare(b.unit_label)
+        })
 
       setUnits(transformedUnits)
     } catch (err) {
       console.error('Error loading units:', err)
+      setUnits([])
+      setError('An unexpected error occurred while loading units.')
     } finally {
       setLoadingUnits(false)
     }

@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase, clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
+import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
-import { Tenant, Unit, Property } from '../../../../lib/types/database'
+import { Tenant, Unit, Property } from '../../../lib/types/database'
 import TenantForm from '../../../components/tenants/tenant-form'
 import Link from 'next/link'
 
@@ -44,7 +44,7 @@ export default function TenantsPage() {
         return
       }
 
-      const propertyIds = properties.map(p => p.id)
+      const propertyIds = properties.map((p: { id: string }) => p.id)
 
       // Get units for these properties
       const { data: units } = await supabase
@@ -57,7 +57,7 @@ export default function TenantsPage() {
         return
       }
 
-      const unitIds = units.map(u => u.id)
+      const unitIds = units.map((u: { id: string }) => u.id)
 
       // Get all tenants for these units
       const { data: tenantsData, error: tenantsError } = await supabase
@@ -138,15 +138,15 @@ export default function TenantsPage() {
 
   const filteredTenants = tenants.filter(tenant => {
     const matchesSearch = tenant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tenant.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tenant.units[0]?.unit_label.toLowerCase().includes(searchTerm.toLowerCase())
-    
+                         (tenant.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (tenant.units[0]?.unit_label || '').toLowerCase().includes(searchTerm.toLowerCase())
+
     if (!matchesSearch) return false
     
     if (filterStatus === 'all') return true
     if (filterStatus === 'overdue') return (tenant.balance || 0) > 0
     
-    return tenant.status.toLowerCase() === filterStatus
+    return (tenant.status || '').toLowerCase() === filterStatus
   })
 
   if (loading) {
@@ -247,8 +247,8 @@ export default function TenantsPage() {
                         <div className="ml-4">
                           <div className="flex items-center">
                             <p className="text-sm font-medium text-gray-900">{tenant.full_name}</p>
-                            <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(tenant.status)}`}>
-                              {tenant.status}
+                            <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(tenant.status || 'INACTIVE')}`}>
+                              {tenant.status || 'INACTIVE'}
                             </span>
                           </div>
                           <div className="mt-1 flex items-center text-sm text-gray-500">

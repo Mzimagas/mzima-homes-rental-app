@@ -24,14 +24,27 @@ function fmt(args: any[]) {
 
 function safeClone(obj: any) {
   try {
+    // Preserve useful information from Error instances
+    if (obj instanceof Error) {
+      return {
+        name: obj.name,
+        message: obj.message,
+        stack: obj.stack,
+        cause: (obj as any).cause || undefined,
+      }
+    }
     return JSON.parse(JSON.stringify(obj, (key, value) => {
-      if (key.toLowerCase().includes('password')) return '***'
-      if (key.toLowerCase().includes('token')) return '***'
-      if (key.toLowerCase().includes('secret')) return '***'
+      if (typeof key === 'string') {
+        const k = key.toLowerCase()
+        if (k.includes('password')) return '***'
+        if (k.includes('token')) return '***'
+        if (k.includes('secret')) return '***'
+      }
       return value
     }))
   } catch {
-    return '[unserializable]'
+    // Last-resort stringification
+    try { return String(obj) } catch { return '[unserializable]' }
   }
 }
 

@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase, clientBusinessFunctions } from '../../../../lib/supabase-client'
+import supabase, { clientBusinessFunctions } from '../../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../../components/ui/loading'
 import { ErrorCard } from '../../../../components/ui/error'
-import { Property, Unit, Tenant } from '../../../../../lib/types/database'
+import { Property, Unit, Tenant } from '../../../../lib/types/database'
 import UnitForm from '../../../../components/properties/unit-form'
+import PropertyForm from '../../../../components/properties/property-form'
 import UserManagement from '../../../../components/property/UserManagement'
-import { PropertySelectorCompact } from '../../../../components/property/PropertySelector'
 import { usePropertyAccess } from '../../../../hooks/usePropertyAccess'
+import { UnitActions } from '../../../../components/properties/UnitActions'
+import { PropertyActions } from '../../../../components/properties/PropertyActions'
 
 interface PropertyWithUnits extends Property {
   units: (Unit & {
@@ -39,6 +41,7 @@ export default function PropertyDetailPage() {
   const [showUnitForm, setShowUnitForm] = useState(false)
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'units' | 'users'>('overview')
+  const [showPropertyForm, setShowPropertyForm] = useState(false)
 
   // Check if current user can manage users for this property
   const currentPropertyAccess = properties.find(p => p.property_id === propertyId)
@@ -75,7 +78,7 @@ export default function PropertyDetailPage() {
 
       // Load tenants for the units
       if (propertyData.units && propertyData.units.length > 0) {
-        const unitIds = propertyData.units.map(unit => unit.id)
+        const unitIds = propertyData.units.map((unit: any) => unit.id)
         const { data: tenantsData } = await supabase
           .from('tenants')
           .select('id, full_name, phone, status, current_unit_id')
@@ -83,9 +86,9 @@ export default function PropertyDetailPage() {
           .eq('status', 'ACTIVE')
 
         // Associate tenants with their units
-        const unitsWithTenants = propertyData.units.map(unit => ({
+        const unitsWithTenants = propertyData.units.map((unit: any) => ({
           ...unit,
-          tenants: tenantsData?.filter(tenant => tenant.current_unit_id === unit.id) || []
+          tenants: tenantsData?.filter((tenant: any) => tenant.current_unit_id === unit.id) || []
         }))
 
         setProperty({
@@ -170,7 +173,7 @@ export default function PropertyDetailPage() {
           </button>
           <h1 className="text-2xl font-semibold text-gray-900">Property Details</h1>
         </div>
-        <ErrorCard 
+        <ErrorCard
           title="Failed to load property"
           message={error || 'Property not found'}
           onRetry={loadPropertyDetails}
@@ -197,8 +200,13 @@ export default function PropertyDetailPage() {
             <p className="text-gray-600">{property.physical_address}</p>
           </div>
         </div>
-        <div className="flex space-x-3">
-          <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <div className="flex space-x-3 items-center">
+          {/* Property actions (disable/enable/delete) */}
+          <PropertyActions propertyId={property.id} hasDisabledAt={!!(property as any).disabled_at} onChanged={loadPropertyDetails} />
+          <button
+            onClick={() => setShowPropertyForm(true)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
             Edit Property
           </button>
           <button
@@ -252,8 +260,8 @@ export default function PropertyDetailPage() {
                 <span className="text-sm font-medium">{formatCurrency(stats.monthly_rent_actual)}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-600 h-2 rounded-full" 
+                <div
+                  className="bg-green-600 h-2 rounded-full"
                   style={{ width: `${stats.monthly_rent_potential > 0 ? (stats.monthly_rent_actual / stats.monthly_rent_potential) * 100 : 0}%` }}
                 ></div>
               </div>
@@ -363,9 +371,9 @@ export default function PropertyDetailPage() {
                     <div key={unit.id} className="bg-white p-4 rounded-lg border">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="text-sm font-medium text-gray-900">{unit.unit_label}</h4>
+                          <h4 className="text-sm font-medium text-gray-900">{unit.unit_label || ''}</h4>
                           <p className="text-sm text-gray-500">
-                            {formatCurrency(unit.monthly_rent_kes)} / month
+                            {formatCurrency(unit.monthly_rent_kes || 0)} / month
                           </p>
                           <div className="mt-2">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUnitStatusColor(unit)}`}>
@@ -388,6 +396,10 @@ export default function PropertyDetailPage() {
                           >
                             Manage
                           </button>
+                          <div className="ml-2">
+                            {/* Disable/Enable actions */}
+                            <UnitActions unitId={unit.id} isActive={!!unit.is_active} onChanged={loadPropertyDetails} />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -416,9 +428,19 @@ export default function PropertyDetailPage() {
       {/* Unit Form Modal */}
       <UnitForm
         propertyId={propertyId}
-        unit={editingUnit}
+        unit={editingUnit ? {
+          id: editingUnit.id,
+          unit_label: editingUnit.unit_label || '',
+          monthly_rent_kes: editingUnit.monthly_rent_kes || 0,
+          deposit_kes: editingUnit.deposit_kes || 0,
+          meter_type: (editingUnit.meter_type as any) || 'PREPAID',
+          kplc_account: editingUnit.kplc_account || undefined,
+          water_included: !!editingUnit.water_included,
+          water_meter_type: (editingUnit.water_meter_type as any) ?? null,
+          water_meter_number: editingUnit.water_meter_number ?? null
+        } : undefined}
         isOpen={showUnitForm}
-        onSuccess={(unitId) => {
+        onSuccess={() => {
           setShowUnitForm(false)
           setEditingUnit(null)
           loadPropertyDetails() // Reload property details
@@ -428,6 +450,26 @@ export default function PropertyDetailPage() {
           setEditingUnit(null)
         }}
       />
+
+      {/* Property Form Modal */}
+      {showPropertyForm && (
+        <PropertyForm
+          isOpen={showPropertyForm}
+          property={{
+            id: property.id,
+            name: property.name,
+            physical_address: property.physical_address,
+            lat: (property as any).lat ?? undefined,
+            lng: (property as any).lng ?? undefined,
+            notes: property.notes ?? undefined
+          }}
+          onSuccess={() => {
+            setShowPropertyForm(false)
+            loadPropertyDetails()
+          }}
+          onCancel={() => setShowPropertyForm(false)}
+        />
+      )}
     </div>
   )
 }

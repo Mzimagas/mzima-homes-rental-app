@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase } from '../../../lib/supabase-client'
+import supabase from '../../../lib/supabase-client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { logEmailSuccess, logEmailFailure, logEmailBounce } from '../../../lib/email-monitoring'

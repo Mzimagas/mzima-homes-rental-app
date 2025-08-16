@@ -1,54 +1,89 @@
 import { createClient } from '@supabase/supabase-js'
-import { Database } from '../../../lib/types/database'
+import { Database } from '../lib/types/database'
 import { logger, shouldLogAuth } from './logger'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:', {
-    url: !!supabaseUrl,
-    key: !!supabaseAnonKey
+  logger.error('Supabase configuration missing', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseAnonKey,
   })
-  throw new Error('Missing Supabase environment variables')
+  // Do not throw at import time; provide a safe fallback below
 }
 
-// Enhanced client configuration with better error handling and retry logic
-// Create single instance to prevent multiple GoTrueClient warnings
-const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    // Add retry configuration for failed requests
-    retryAttempts: 3,
-    // Increase timeout for slow networks
-    timeout: 30000
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'voi-rental-app@1.0.0'
+// Build a real client when env vars are present; otherwise a safe stub for dev
+let supabase: any
+
+if (supabaseUrl && supabaseAnonKey) {
+  // Enhanced client configuration with better error handling and retry logic
+  // Create single instance to prevent multiple GoTrueClient warnings
+  supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
     },
-    // Simple fetch with env-aware logging
-    fetch: (url, options = {}) => {
-      if (shouldLogAuth()) logger.debug('Supabase fetch', url)
-      return fetch(url, options).catch(error => {
-        logger.error('Supabase fetch error', error)
-        throw error
-      })
+    global: {
+      headers: {
+        'X-Client-Info': 'voi-rental-app@1.0.0'
+      },
+      // Custom fetch that logs but does not throw on non-2xx (let supabase-js handle it)
+      fetch: async (url, options = {}) => {
+        try {
+          if (shouldLogAuth()) logger.debug('Supabase fetch', url)
+          const res = await fetch(url as any, options as any)
+          if (!res.ok) {
+            // Do not consume body; just log status and url
+            if (shouldLogAuth()) logger.warn('Supabase fetch non-OK', {
+              status: res.status,
+              statusText: res.statusText,
+              url: typeof url === 'string' ? url : (url as any)?.toString?.() || ''
+            })
+          }
+          return res
+        } catch (error: any) {
+          // Network or CORS errors
+          logger.error('Supabase fetch error', error)
+          throw error
+        }
+      }
+    },
+    // Add database configuration
+    db: {
+      schema: 'public'
+    },
+    // Add realtime configuration
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
     }
-  },
-  // Add database configuration
-  db: {
-    schema: 'public'
-  },
-  // Add realtime configuration
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
+  })
+} else {
+  // Minimal stub client for local/dev when env is missing
+  const stub: any = {
+    auth: {
+      async signInWithPassword() { return { data: null, error: { message: 'Supabase not configured: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY' } } },
+      async signUp() { return { data: null, error: { message: 'Supabase not configured' } } },
+      async signOut() { return { error: null } },
+      mfa: {
+        async enroll() { return { data: null, error: { message: 'Supabase not configured' } } },
+        async verify() { return { data: null, error: { message: 'Supabase not configured' } } },
+        async listFactors() { return { data: { totp: [] }, error: null } },
+        async challenge() { return { data: null, error: { message: 'Supabase not configured' } } },
+      },
+      async getUser() { return { data: { user: null }, error: null } },
+      async updateUser() { return { data: null, error: { message: 'Supabase not configured' } } },
+    },
+    rpc: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
+    from: () => ({ select: async () => ({ data: null, error: { message: 'Supabase not configured' } })})
   }
-})
+  supabase = stub
+}
+
+// Named exports removed to avoid duplicate export conflicts
 
 // Helper function to handle Supabase errors
 export function handleSupabaseError(error: any) {
@@ -180,11 +215,11 @@ export async function callRPC<T = any>(
 ): Promise<{ data: T | null; error: string | null }> {
   try {
     const { data, error } = await supabase.rpc(functionName, params)
-    
+
     if (error) {
       return { data: null, error: handleSupabaseError(error) }
     }
-    
+
     return { data, error: null }
   } catch (err) {
     return { data: null, error: handleSupabaseError(err) }
@@ -584,23 +619,23 @@ export const clientBusinessFunctions = {
       const { data, error } = await supabase.functions.invoke('process-notifications', {
         body: {}
       })
-      
+
       if (error) {
         // EDGE_FUNCTION_FALLBACK: Return mock response when function is not deployed
         if (error.message?.includes('not deployed') || error.message?.includes('404') || error.message?.includes('Failed to send')) {
           console.warn('Edge Function not deployed, returning mock response');
-          return { 
-            data: { 
-              status: 'not_deployed', 
+          return {
+            data: {
+              status: 'not_deployed',
               message: 'Edge Functions are not deployed. Please deploy them to enable this feature.',
-              processed: 0 
-            }, 
-            error: null 
+              processed: 0
+            },
+            error: null
           };
         }
         return { data: null, error: error.message }
       }
-      
+
       return { data, error: null }
     } catch (err: any) {
       console.error('Process notifications error:', err)
@@ -1021,4 +1056,5 @@ export const clientQueries = {
 
 // Export single instance as default to prevent multiple instances
 export default supabase
+
 export { supabase }

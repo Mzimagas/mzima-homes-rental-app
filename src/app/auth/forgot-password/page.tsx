@@ -181,7 +181,9 @@ export default function ForgotPasswordPage() {
           )}
 
           <div className="space-y-4">
-            <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string} />
+            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+              <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string} />
+            ) : null}
             <button
               type="submit"
               disabled={isLoading}

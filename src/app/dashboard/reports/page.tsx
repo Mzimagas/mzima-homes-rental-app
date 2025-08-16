@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase, clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
+import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard } from '../../../components/ui/error'
 import FinancialReports from '../../../components/reports/financial-reports'
 import OccupancyReports from '../../../components/reports/occupancy-reports'
 import TenantAnalytics from '../../../components/reports/tenant-analytics'
 import PropertyReports from '../../../components/reports/property-reports'
+import { useRef } from 'react'
 
 export default function ReportsPage() {
   const { user } = useAuth()
@@ -20,6 +21,49 @@ export default function ReportsPage() {
     // Initialize any required data
     setLoading(false)
   }, [])
+
+  // Refs to child report components
+  const financialRef = useRef<any>(null)
+  const occupancyRef = useRef<any>(null)
+  const tenantsRef = useRef<any>(null)
+  const propertiesRef = useRef<any>(null)
+
+  const [isExporting, setIsExporting] = useState(false)
+
+  const activeExporters = () => {
+    switch (activeTab) {
+      case 'financial': return financialRef.current
+      case 'occupancy': return occupancyRef.current
+      case 'tenants': return tenantsRef.current
+      case 'properties': return propertiesRef.current
+      default: return null
+    }
+  }
+
+  const handleExportPDF = async () => {
+    const exp = activeExporters()
+    if (exp && exp.exportPDF) {
+      setIsExporting(true)
+      try {
+        await exp.exportPDF()
+      } finally {
+        setIsExporting(false)
+      }
+    }
+  }
+
+  const handleExportExcel = async () => {
+    const exp = activeExporters()
+    if (exp && exp.exportExcel) {
+      setIsExporting(true)
+      try {
+        await exp.exportExcel()
+      } finally {
+        setIsExporting(false)
+      }
+    }
+  }
+
 
   const tabs = [
     { key: 'financial', label: 'Financial Reports', icon: 'chart-bar' },
@@ -69,9 +113,9 @@ export default function ReportsPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold text-gray-900">Reports & Analytics</h1>
         </div>
-        <ErrorCard 
-          title="Failed to load reports" 
-          message={error} 
+        <ErrorCard
+          title="Failed to load reports"
+          message={error}
           onRetry={() => setError(null)}
         />
       </div>
@@ -89,17 +133,17 @@ export default function ReportsPage() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          <button onClick={handleExportPDF} disabled={isExporting} className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Export PDF
+            {isExporting ? 'Exporting...' : 'Export PDF'}
           </button>
-          <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          <button onClick={handleExportExcel} disabled={isExporting} className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Export Excel
+            {isExporting ? 'Exporting...' : 'Export Excel'}
           </button>
         </div>
       </div>
@@ -126,10 +170,10 @@ export default function ReportsPage() {
 
       {/* Tab Content */}
       <div className="mt-6">
-        {activeTab === 'financial' && <FinancialReports />}
-        {activeTab === 'occupancy' && <OccupancyReports />}
-        {activeTab === 'tenants' && <TenantAnalytics />}
-        {activeTab === 'properties' && <PropertyReports />}
+        {activeTab === 'financial' && <FinancialReports ref={financialRef} />}
+        {activeTab === 'occupancy' && <OccupancyReports ref={occupancyRef} />}
+        {activeTab === 'tenants' && <TenantAnalytics ref={tenantsRef} />}
+        {activeTab === 'properties' && <PropertyReports ref={propertiesRef} />}
       </div>
     </div>
   )

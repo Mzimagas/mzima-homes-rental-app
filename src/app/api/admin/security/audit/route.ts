@@ -13,7 +13,7 @@ export async function GET() {
 
   const redis = getRedis()
   try {
-    const keys = await redis.smembers<string>('audit:index')
+    const keys = await redis.smembers('audit:index') as string[]
     const items: Array<{ key: string; ttl: number }> = []
     for (const key of keys || []) {
       const ttl = await redis.ttl(key)
