@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { errors } from './errors'
 import { getRatelimit } from '../upstash'
 import { createServerSupabaseClient } from '../supabase-server'
+import { createClient } from '@supabase/supabase-js'
 
 export type Handler = (req: NextRequest) => Promise<NextResponse> | NextResponse
 
@@ -29,10 +30,29 @@ export function withRateLimit(handler: Handler, keyFn?: (req: NextRequest) => st
 
 export function withAuth(handler: Handler): Handler {
   return async (req: NextRequest) => {
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await (await supabase).auth.getUser()
-    if (!user) return errors.unauthorized()
-    return handler(req)
+    // Primary: cookie-based session
+    try {
+      const supabase = createServerSupabaseClient()
+      const { data: { user } } = await (await supabase).auth.getUser()
+      if (user) return handler(req)
+    } catch {}
+
+    // Fallback: Bearer token in Authorization header
+    const auth = req.headers.get('authorization') || ''
+    if (auth.toLowerCase().startsWith('bearer ')) {
+      const token = auth.slice(7)
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (url && anon) {
+        try {
+          const anonClient = createClient(url, anon)
+          const { data: tokenUser } = await anonClient.auth.getUser(token)
+          if (tokenUser?.user) return handler(req)
+        } catch {}
+      }
+    }
+
+    return errors.unauthorized()
   }
 }
 

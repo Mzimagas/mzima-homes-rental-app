@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button, Modal, TextField } from '../ui'
 import { useToast } from '../ui/Toast'
+import supabase from '../../lib/supabase-client'
 
 export function PropertyActions({ propertyId, hasDisabledAt, onChanged, canDelete }: { propertyId: string; hasDisabledAt?: boolean; onChanged?: () => void; canDelete?: boolean }) {
   const [open, setOpen] = useState(false)
@@ -15,9 +16,16 @@ export function PropertyActions({ propertyId, hasDisabledAt, onChanged, canDelet
     try {
       const url = mode === 'disable' ? `/api/properties/${propertyId}/disable` : mode === 'enable' ? `/api/properties/${propertyId}/enable` : `/api/properties/${propertyId}`
       const method = mode === 'delete' ? 'DELETE' : 'POST'
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-csrf-token': (document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || '')
+      }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': (document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || '') },
+        headers,
         body: mode === 'disable' ? JSON.stringify({ reason, disableUnits }) : undefined,
       })
       if (!res.ok) {
