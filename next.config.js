@@ -43,13 +43,14 @@ const nextConfig = {
     const isProd = process.env.NODE_ENV === 'production'
     const csp = [
       "default-src 'self'",
-      // In production remove unsafe-eval; keep minimal inline if necessary. Consider moving to nonces later.
-      `script-src 'self' ${isProd ? '' : "'unsafe-inline' 'unsafe-eval'"} https://challenges.cloudflare.com`,
+      // Allow minimal inline needed by Next.js runtime and blob: for dynamic chunks/workers
+      `script-src 'self' 'unsafe-inline' blob: https://challenges.cloudflare.com`,
       "style-src 'self' 'unsafe-inline'",
-      `img-src 'self' data: blob: ${SUPABASE_HOST}`,
+      `img-src 'self' data: blob: https://${SUPABASE_HOST}`,
       "font-src 'self' data:",
-      // If external APIs are proxied via /api, remove them here to reduce surface.
-      `connect-src 'self' ${SUPABASE_HOST} https://challenges.cloudflare.com https://app.posthog.com https://nominatim.openstreetmap.org`,
+      // Allow HTTPS and WSS to Supabase, plus other required endpoints
+      `connect-src 'self' https://${SUPABASE_HOST} wss://${SUPABASE_HOST} https://challenges.cloudflare.com https://app.posthog.com https://nominatim.openstreetmap.org`,
+      "worker-src 'self' blob:",
       "frame-src https://challenges.cloudflare.com",
       "frame-ancestors 'none'",
       "object-src 'none'",
