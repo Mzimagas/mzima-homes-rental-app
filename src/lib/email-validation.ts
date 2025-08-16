@@ -1,5 +1,5 @@
 /**
- * Comprehensive email validation utility for Mzima Homes
+ * Comprehensive email validation utility for KodiRent
  * Prevents invalid emails that cause bounces and delivery failures
  */
 

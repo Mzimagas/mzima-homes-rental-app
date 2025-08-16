@@ -112,17 +112,46 @@ export default function AddressAutocomplete({
 
     try {
       navigator.geolocation.getCurrentPosition(async (pos) => {
-        const { latitude, longitude } = pos.coords
-        const address = await reverseGeocode(latitude, longitude)
-        const result: GeocodeResult = {
-          address: address || `${latitude}, ${longitude}`,
-          lat: latitude,
-          lng: longitude,
+        try {
+          const { latitude, longitude } = pos.coords
+
+          const address = await reverseGeocode(latitude, longitude)
+
+          if (address && address !== `${latitude}, ${longitude}`) {
+            // Successfully got a real address
+            const result: GeocodeResult = {
+              address,
+              lat: latitude,
+              lng: longitude,
+            }
+            setValidated(result)
+            onChange(address)
+            onSelect(result)
+          } else {
+            // Geocoding failed, use coordinates as fallback
+            const result: GeocodeResult = {
+              address: `${latitude}, ${longitude}`,
+              lat: latitude,
+              lng: longitude,
+            }
+            setValidated(result)
+            onChange(result.address)
+            onSelect(result)
+          }
+          setLoading(false)
+        } catch (geocodeError) {
+          console.error('GPS geocoding failed:', geocodeError)
+          const { latitude, longitude } = pos.coords
+          const result: GeocodeResult = {
+            address: `${latitude}, ${longitude}`,
+            lat: latitude,
+            lng: longitude,
+          }
+          setValidated(result)
+          onChange(result.address)
+          onSelect(result)
+          setLoading(false)
         }
-        setValidated(result)
-        onChange(result.address)
-        onSelect(result)
-        setLoading(false)
       }, (err) => {
         setLoading(false)
         const msg = String((err && (err as any).message) || '')
@@ -160,7 +189,7 @@ export default function AddressAutocomplete({
   const hint = useMemo(() => {
     if (error) return error
     if (localError) return localError
-    if (validated) return `Validated: ${shortenAddress(validated.address)}`
+    if (validated) return `Validated: ${shortenAddress(validated.address, 3)}`
     return 'Click “Use current” to fill your current location, or enter coordinates manually below.'
   }, [validated, error, localError])
 
@@ -228,13 +257,26 @@ export default function AddressAutocomplete({
                       return
                     }
                     setCoordsLoading(true)
+                    console.info(`[AddressAutocomplete] Manual coordinates entered: ${parsed.lat}, ${parsed.lng}`)
+
                     try {
                       const address = await reverseGeocode(parsed.lat, parsed.lng)
-                      const res: GeocodeResult = { address: address || `${parsed.lat}, ${parsed.lng}`, lat: parsed.lat, lng: parsed.lng }
-                      setValidated(res)
-                      onChange(res.address)
-                      onSelect(res)
-                    } catch {
+
+                      if (address && address !== `${parsed.lat}, ${parsed.lng}`) {
+                        // Successfully got a real address
+                        const res: GeocodeResult = { address, lat: parsed.lat, lng: parsed.lng }
+                        setValidated(res)
+                        onChange(address)
+                        onSelect(res)
+                      } else {
+                        // Geocoding failed or returned coordinates, use coordinates as fallback
+                        const res: GeocodeResult = { address: `${parsed.lat}, ${parsed.lng}`, lat: parsed.lat, lng: parsed.lng }
+                        setValidated(res)
+                        onChange(res.address)
+                        onSelect(res)
+                      }
+                    } catch (e) {
+                      console.error('Manual reverse geocoding error:', e)
                       const res: GeocodeResult = { address: `${parsed.lat}, ${parsed.lng}`, lat: parsed.lat, lng: parsed.lng }
                       setValidated(res)
                       onChange(res.address)

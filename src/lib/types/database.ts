@@ -15,28 +15,11 @@ export interface Payment {
   notes?: string | null
 }
 
-export interface Tenant {
-  id: string
-  full_name: string
-  status?: 'ACTIVE' | 'INACTIVE' | string
-  phone?: string | null
-  email?: string | null
-  national_id?: string | null
-  current_unit_id?: string | null
-  created_at?: string
-  // Optional emergency contact fields referenced in UI
-  emergency_contact_name?: string | null
-  emergency_contact_phone?: string | null
-  emergency_contact_relationship?: string | null
-  emergency_contact_email?: string | null
-}
-
 export interface Unit {
   id: string
   property_id?: string | null
   is_active?: boolean
   monthly_rent_kes?: number | null
-  tenants?: Tenant[]
   // Fields used throughout UI
   unit_label?: string
   deposit_kes?: number | null
@@ -56,6 +39,34 @@ export interface Property {
   notes?: string | null
   created_at?: string
 }
+
+export interface Tenant {
+  id: string
+  full_name: string
+  phone?: string | null
+  email?: string | null
+  national_id?: string | null
+  employer?: string | null
+  notes?: string | null
+  emergency_contact_name?: string | null
+  emergency_contact_phone?: string | null
+  emergency_contact_relationship?: string | null
+  emergency_contact_email?: string | null
+  current_unit_id?: string | null
+  created_at?: string
+}
+
+export interface TenancyAgreement {
+  id: string
+  tenant_id: string
+  unit_id: string
+  start_date: string
+  end_date?: string | null
+  status: string
+  monthly_rent_kes?: number | null
+  created_at?: string
+}
+
 
 // Placeholder Database type to satisfy supabase client generics
 // Replace with generated types when available

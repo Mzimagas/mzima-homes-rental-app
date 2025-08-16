@@ -4,7 +4,7 @@ import { errors } from '../../../../lib/api/errors'
 import { createServerSupabaseClient } from '../../../../lib/supabase-server'
 
 async function handler(req: NextRequest) {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return errors.unauthorized()
 

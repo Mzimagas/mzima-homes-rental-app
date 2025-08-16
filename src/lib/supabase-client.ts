@@ -241,6 +241,56 @@ export const clientBusinessFunctions = {
     return callRPC<number>('get_tenant_balance', { p_tenant_id: tenantId })
   },
 
+  // RENT balances: summary and ledger
+  async getRentBalanceSummary(tenantId: string) {
+    return callRPC<any>('get_rent_balance_summary', { p_tenant_id: tenantId })
+  },
+  async getRentLedger(tenantId: string, limit = 100) {
+    return callRPC<any[]>('get_rent_ledger', { p_tenant_id: tenantId, p_limit: limit })
+  },
+
+  // Utility accounts (secondary): ensure and operations
+  async ensureUtilityAccount(params: {
+    tenantId: string
+    unitId: string
+    type: 'ELECTRICITY_PREPAID' | 'ELECTRICITY_POSTPAID' | 'WATER_DIRECT_TAVEVO' | 'WATER_INTERNAL_SUBMETER'
+    lowThresholdKes?: number | null
+    creditLimitKes?: number | null
+  }) {
+    return callRPC<string>('ensure_utility_account', {
+      p_tenant_id: params.tenantId,
+      p_unit_id: params.unitId,
+      p_type: params.type,
+      p_low_threshold: params.lowThresholdKes ?? null,
+      p_credit_limit: params.creditLimitKes ?? null,
+    })
+  },
+
+  async recordUtilityTopup(accountId: string, amountKes: number, paymentId?: string, description?: string) {
+    return callRPC<string>('record_utility_topup', {
+      p_account_id: accountId,
+      p_amount_kes: amountKes,
+      p_payment_id: paymentId,
+      p_description: description,
+    })
+  },
+
+  async addUtilityCharge(params: {
+    accountId: string
+    amountKes: number
+    txnType?: 'BILL' | 'CONSUMPTION' | 'ALLOCATION' | 'ADJUSTMENT'
+    description?: string
+    metadata?: any
+  }) {
+    return callRPC<string>('add_utility_charge', {
+      p_account_id: params.accountId,
+      p_amount_kes: params.amountKes,
+      p_txn_type: params.txnType ?? 'BILL',
+      p_description: params.description,
+      p_metadata: params.metadata ?? {},
+    })
+  },
+
   // Get property statistics
   async getPropertyStats(propertyId: string) {
     return callRPC<{
@@ -271,7 +321,14 @@ export const clientBusinessFunctions = {
     paymentDate: string,
     method: 'MPESA' | 'CASH' | 'BANK_TRANSFER' | 'CHEQUE' | 'OTHER' = 'MPESA',
     txRef?: string,
-    postedByUserId?: string
+    postedByUserId?: string,
+    options?: {
+      unitId?: string
+      paidByName?: string
+      paidByContact?: string
+      paidByRole?: 'TENANT' | 'FAMILY' | 'GUARANTOR' | 'MANAGER' | 'OTHER'
+      notifyPayer?: boolean
+    }
   ) {
     return callRPC<string>('apply_payment', {
       p_tenant_id: tenantId,
@@ -279,7 +336,12 @@ export const clientBusinessFunctions = {
       p_payment_date: paymentDate,
       p_method: method,
       p_tx_ref: txRef,
-      p_posted_by_user_id: postedByUserId
+      p_posted_by_user_id: postedByUserId,
+      p_unit_id: options?.unitId,
+      p_paid_by_name: options?.paidByName,
+      p_paid_by_contact: options?.paidByContact,
+      p_paid_by_role: options?.paidByRole,
+      p_notify_payer: options?.notifyPayer ?? false,
     })
   },
 
@@ -887,16 +949,38 @@ export const clientBusinessFunctions = {
     }
   },
 
-  async getTenants() {
+  async getTenants(options?: { includeUnassigned?: boolean }) {
     try {
-      const { data: landlordIds, error: landlordError } = await this.getUserLandlordIds()
-      if (landlordError || !landlordIds || landlordIds.length === 0) {
-        return { data: null, error: landlordError || 'No landlord access found for this user' }
+      const includeUnassigned = !!options?.includeUnassigned
+
+      // Determine property scope using function that respects landlord ownership and property_users access
+      const { data: propertyIds, error: propErr } = await supabase.rpc('get_user_properties_simple')
+      if (propErr) {
+        return { data: null, error: handleSupabaseError(propErr) }
       }
 
-      // Query tenants with their current unit and property information
-      // Using the correct relationships: tenants -> units -> properties
-      const { data, error } = await supabase
+      // Normalize to an array of UUID strings (RPC may return objects like { property_id })
+      const propertyIdList: string[] = Array.isArray(propertyIds)
+        ? (propertyIds as any[])
+            .map((p: any) => (typeof p === 'string' ? p : p?.property_id))
+            .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
+        : []
+
+      if (propertyIdList.length === 0) {
+        return { data: [], error: null }
+      }
+
+      // Get unit IDs for these properties
+      const { data: units, error: unitsErr } = await supabase
+        .from('units')
+        .select('id')
+        .in('property_id', propertyIdList)
+      if (unitsErr) return { data: null, error: handleSupabaseError(unitsErr) }
+
+      const unitIds = (units || []).map((u: any) => u.id)
+
+      // Assigned tenants (have current_unit_id in scoped units)
+      const { data: assigned, error: assignedErr } = await supabase
         .from('tenants')
         .select(`
           id,
@@ -909,37 +993,49 @@ export const clientBusinessFunctions = {
             unit_label,
             properties (
               id,
-              name,
-              landlord_id
+              name
             )
           )
         `)
         .eq('status', 'ACTIVE')
-        .not('current_unit_id', 'is', null)
+        .in('current_unit_id', unitIds.length ? unitIds : ['00000000-0000-0000-0000-000000000000'])
         .order('full_name')
+      if (assignedErr) return { data: null, error: handleSupabaseError(assignedErr) }
 
-      if (error) {
-        return { data: null, error: handleSupabaseError(error) }
+      let combined: any[] = assigned || []
+
+      // Optionally include unassigned tenants who historically belong to scoped properties (via tenancy_agreements)
+      if (includeUnassigned) {
+        const { data: taTenantIds, error: taErr } = await supabase
+          .from('tenancy_agreements')
+          .select('tenant_id, unit_id')
+          .in('unit_id', unitIds.length ? unitIds : ['00000000-0000-0000-0000-000000000000'])
+        if (taErr) return { data: null, error: handleSupabaseError(taErr) }
+
+        const tenantIds = Array.from(new Set((taTenantIds || []).map((r: any) => r.tenant_id).filter(Boolean)))
+        if (tenantIds.length) {
+          const { data: unassigned, error: unassignedErr } = await supabase
+            .from('tenants')
+            .select('id, full_name, email, phone, status')
+            .is('current_unit_id', null)
+            .in('id', tenantIds)
+          if (unassignedErr) return { data: null, error: handleSupabaseError(unassignedErr) }
+
+          // Shape to match TenantsPage expectations: include empty units array
+          const shaped = (unassigned || []).map((t: any) => ({
+            ...t,
+            units: [] as any[],
+          }))
+
+          // Merge and de-duplicate by id
+          const byId = new Map<string, any>()
+          for (const t of combined) byId.set(t.id, t)
+          for (const t of shaped) if (!byId.has(t.id)) byId.set(t.id, t)
+          combined = Array.from(byId.values())
+        }
       }
 
-      // Filter tenants that belong to the current landlord's properties
-      // and transform the data to include property and unit information
-      const transformedData = data
-        ?.filter((tenant: any) => {
-          // Check if the tenant's unit belongs to one of the landlord's properties
-          const propertyLandlordId = tenant.units?.properties?.landlord_id
-          return propertyLandlordId && landlordIds.includes(propertyLandlordId)
-        })
-        .map((tenant: any) => ({
-          id: tenant.id,
-          name: tenant.full_name,
-          email: tenant.email || '',
-          phone: tenant.phone || '',
-          property_name: tenant.units?.properties?.name || 'Unknown Property',
-          unit_label: tenant.units?.unit_label || 'Unknown Unit'
-        }))
-
-      return { data: transformedData || [], error: null }
+      return { data: combined || [], error: null }
     } catch (err) {
       return { data: null, error: handleSupabaseError(err) }
     }

@@ -1,211 +1,231 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
-import supabase, { handleSupabaseError } from '../../lib/supabase-client'
-import { usePropertyAccess } from '../../hooks/usePropertyAccess'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { tenantSchema, type TenantFormValues } from '../../lib/validation/tenant'
-import { Button, TextField } from '../ui'
+import { tenantCreateSchema, TenantCreateInput } from '../../lib/validation/tenant'
+import supabase from '../../lib/supabase-client'
 
-interface TenantFormProps {
-  onSuccess?: (tenantId: string) => void
-  onCancel?: () => void
-  isOpen: boolean
+function getCsrf() {
+  return document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || ''
 }
 
-interface Unit {
-  id: string
-  unit_label: string
-  monthly_rent_kes: number
-  properties: { name: string }[]
+type Props = {
+  defaultPropertyId?: string
+  defaultUnitId?: string
+  onSuccess?: (id: string) => void
 }
 
-export default function TenantForm({ onSuccess, onCancel, isOpen }: TenantFormProps) {
-  const [availableUnits, setAvailableUnits] = useState<Unit[]>([])
+export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess }: Props) {
+  const [properties, setProperties] = useState<{ id: string; name: string }[]>([])
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(defaultPropertyId || '')
+  const [units, setUnits] = useState<{ id: string; label: string; monthly_rent_kes: number | null }[]>([])
   const [loadingUnits, setLoadingUnits] = useState(false)
-  const { currentProperty, canManageTenants } = usePropertyAccess()
+  const [error, setError] = useState<string | null>(null)
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<TenantFormValues>({
-    resolver: zodResolver(tenantSchema),
+  const form = useForm<TenantCreateInput>({
+    resolver: zodResolver(tenantCreateSchema),
     defaultValues: {
-      fullName: '', phone: '', email: '', nationalId: '',
-      emergencyContactName: '', emergencyContactPhone: '', emergencyContactRelationship: '', emergencyContactEmail: '', unitId: ''
+      full_name: '',
+      phone: '',
+      email: '',
+      national_id: '',
+      employer: '',
+      notes: '',
+      emergency_contact_name: '',
+      emergency_contact_phone: '',
+      emergency_contact_relationship: '',
+      emergency_contact_email: '',
+      current_unit_id: defaultUnitId || undefined,
     }
   })
 
-  const loadAvailableUnits = async () => {
-    try {
-      setLoadingUnits(true)
+  const unitId = form.watch('current_unit_id')
 
-      if (!currentProperty) {
-        setAvailableUnits([])
-        return
+  // Load properties if not preselected via defaultPropertyId
+  useEffect(() => {
+    if (defaultPropertyId) return
+    const loadProps = async () => {
+      try {
+        const { data: accessible, error: rpcErr } = await supabase.rpc('get_user_properties_simple')
+        if (rpcErr) throw rpcErr
+        const ids = (accessible || []).map((p: any) => (typeof p === 'string' ? p : p?.property_id)).filter(Boolean)
+        if (ids.length === 0) { setProperties([]); return }
+        const { data, error } = await supabase.from('properties').select('id, name').in('id', ids).order('name')
+        if (error) throw error
+        setProperties(data || [])
+      } catch (e: any) {
+        // Don't block the form entirely; surface error inline
+        setError(e.message || 'Failed to load properties')
       }
-
-      // Get units for the current property only
-      const { data: unitsData, error: unitsError } = await supabase
-        .from('units')
-        .select(`
-          id,
-          unit_label,
-          monthly_rent_kes,
-          property_id
-        `)
-        .eq('property_id', currentProperty.property_id)
-        .eq('is_active', true)
-
-      if (unitsError) {
-        console.error('Error loading units:', unitsError)
-        return
-      }
-
-      // Filter out units that have active tenants by checking tenancy agreements
-      const { data: activeTenancies, error: tenancyError } = await supabase
-        .from('tenancy_agreements')
-        .select('unit_id')
-        .eq('status', 'ACTIVE')
-
-      if (tenancyError) {
-        console.error('Error loading tenancies:', tenancyError)
-        // Continue anyway, just don't filter
-      }
-
-      const occupiedUnitIds = activeTenancies?.map((t: { unit_id: string }) => t.unit_id).filter(Boolean) || []
-
-      // Filter available units and add property names
-      const availableUnitsFiltered = (unitsData || []).filter((unit: { id: string }) =>
-        !occupiedUnitIds.includes(unit.id)
-      )
-
-      // Add property names to units
-      const availableUnitsWithProperties = availableUnitsFiltered.map((unit: any) => ({
-        ...unit,
-        properties: [{
-          name: currentProperty.property_name
-        }]
-      }))
-
-      setAvailableUnits(availableUnitsWithProperties)
-    } catch (err) {
-      console.error('Error loading available units:', err)
-    } finally {
-      setLoadingUnits(false)
     }
-  }
+    loadProps()
+  }, [defaultPropertyId])
 
   useEffect(() => {
-    if (isOpen && currentProperty) {
-      loadAvailableUnits()
-    }
-  }, [isOpen, currentProperty])
-
-  const onSubmit = async (values: TenantFormValues) => {
-    try {
-      const { data: tenantData, error: tenantError } = await supabase
-        .from('tenants')
-        .insert({
-          full_name: values.fullName.trim(),
-          phone: values.phone.trim(),
-          email: values.email?.trim() || null,
-          national_id: values.nationalId?.trim() || null,
-          emergency_contact_name: values.emergencyContactName?.trim() || null,
-          emergency_contact_phone: values.emergencyContactPhone?.trim() || null,
-          emergency_contact_relationship: values.emergencyContactRelationship?.trim() || null,
-          emergency_contact_email: values.emergencyContactEmail?.trim() || null,
-          status: 'ACTIVE'
-        })
-        .select()
-        .single()
-      if (tenantError) { alert(handleSupabaseError(tenantError)); return }
-
-      if (values.unitId) {
-        const selected = availableUnits.find(u => u.id === values.unitId)
-        if (selected) {
-          const { error: tenancyError } = await supabase
-            .from('tenancy_agreements')
-            .insert({
-              tenant_id: tenantData.id,
-              unit_id: values.unitId,
-              rent_kes: selected.monthly_rent_kes,
-              start_date: new Date().toISOString().split('T')[0],
-              billing_day: 1,
-              status: 'ACTIVE'
-            })
-          if (tenancyError) console.error('Error creating tenancy agreement:', tenancyError)
+    const loadUnits = async () => {
+      setError(null)
+      setLoadingUnits(true)
+      try {
+        const propId = selectedPropertyId || defaultPropertyId
+        if (!propId) { setUnits([]); return }
+        const { data, error } = await supabase
+          .from('units')
+          .select('id, unit_label, monthly_rent_kes')
+          .eq('property_id', propId)
+          .order('unit_label')
+        if (error) throw error
+        const mapped = (data || []).map((u: any) => ({ id: u.id, label: u.unit_label || 'Unit', monthly_rent_kes: u.monthly_rent_kes }))
+        setUnits(mapped)
+        // If unit is preselected, suggest monthly_rent_kes as default (overridable)
+        if (defaultUnitId) {
+          const sel = mapped.find((u: any) => u.id === defaultUnitId)
+          if (sel?.monthly_rent_kes) {
+            (form as any).setValue('monthly_rent_kes' as any, sel.monthly_rent_kes)
+          }
         }
+      } catch (e: any) {
+        setError(e.message || 'Failed to load units')
+      } finally {
+        setLoadingUnits(false)
       }
+    }
+    loadUnits()
+  }, [selectedPropertyId, defaultPropertyId, defaultUnitId, form])
 
-      reset()
-      onSuccess?.(tenantData.id)
-    } catch (err) {
-      console.error('Tenant creation error:', err)
-      alert('An unexpected error occurred')
+  // When user changes the selected unit, update the suggested monthly_rent_kes (user can override)
+  useEffect(() => {
+    if (!unitId) return
+    const sel = units.find(u => u.id === unitId)
+    if (sel?.monthly_rent_kes) {
+      (form as any).setValue('monthly_rent_kes' as any, sel.monthly_rent_kes)
+    }
+  }, [unitId, units, form])
+
+  const onSubmit = async (values: TenantCreateInput) => {
+    setError(null)
+    try {
+      // Normalize payload: turn empty string into null for optional UUIDs
+      const normalized: any = { ...values }
+      if ((normalized.current_unit_id as any) === '') normalized.current_unit_id = null
+
+      // Include CSRF and (if available) an auth token so API can authenticate the user
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-csrf-token': getCsrf(),
+      }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+
+      const res = await fetch('/api/tenants', {
+        method: 'POST',
+        headers,
+        credentials: 'same-origin',
+        body: JSON.stringify(normalized),
+      })
+      const j = await res.json()
+      if (!res.ok || !j.ok) throw new Error(j?.message || 'Failed to create tenant')
+      onSuccess?.(j.data?.id)
+      form.reset()
+    } catch (e: any) {
+      setError(e.message || 'Failed to create tenant')
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
-        <div className="mt-3">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Add New Tenant</h3>
-            <button onClick={onCancel} className="text-gray-400 hover:text-gray-600" aria-label="Close">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+    <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+      {error && <div className="text-red-600">{error}</div>}
 
-          {/* Permission check */}
-          {!currentProperty && (
-            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-              <p className="text-sm text-yellow-800">Please select a property to add tenants to.</p>
-            </div>
-          )}
-
-          {currentProperty && !canManageTenants(currentProperty.property_id) && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-800">You don't have permission to manage tenants for this property.</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-            <TextField label="Full Name *" placeholder="John Doe" error={errors.fullName?.message} {...register('fullName')} />
-            <TextField label="Phone Number *" placeholder="+254 700 000 000" error={errors.phone?.message} {...register('phone')} />
-            <TextField label="Email Address" type="email" placeholder="john@example.com" error={errors.email?.message} {...register('email')} />
-            <TextField label="National ID" placeholder="12345678" error={errors.nationalId?.message} {...register('nationalId')} />
-
-            <div className="border-t pt-4 space-y-3">
-              <h4 className="text-sm font-medium text-gray-900">Emergency Contact / Next of Kin</h4>
-              <TextField label="Full Name" placeholder="Jane Doe" error={errors.emergencyContactName?.message} {...register('emergencyContactName')} />
-              <TextField label="Phone Number" placeholder="+254 700 000 001" error={errors.emergencyContactPhone?.message} {...register('emergencyContactPhone')} />
-              <TextField label="Relationship" placeholder="Sister" error={errors.emergencyContactRelationship?.message} {...register('emergencyContactRelationship')} />
-              <TextField label="Email (Optional)" type="email" placeholder="jane@example.com" error={errors.emergencyContactEmail?.message} {...register('emergencyContactEmail')} />
-            </div>
-
-            <div>
-              <label htmlFor="unitId" className="block text-sm font-medium text-gray-700">Assign Unit (Optional)</label>
-              <select id="unitId" {...register('unitId')} disabled={loadingUnits} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Select a unit (optional)</option>
-                {availableUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.properties[0]?.name} - {unit.unit_label} (KES {unit.monthly_rent_kes.toLocaleString()}/month)
-                  </option>
-                ))}
-              </select>
-              {loadingUnits && <p className="mt-1 text-sm text-gray-500">Loading available units...</p>}
-            </div>
-
-            <div className="flex space-x-3 pt-4">
-              <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting || !currentProperty || !canManageTenants(currentProperty?.property_id || '')}>{isSubmitting ? 'Creating…' : 'Create Tenant'}</Button>
-            </div>
-          </form>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium">Full Name</label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('full_name')} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Phone</label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('phone')} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Email</label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('email')} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">National ID</label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('national_id')} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Employer</label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('employer')} />
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium">Notes</label>
+          <textarea className="border rounded px-3 py-2 w-full" rows={3} {...form.register('notes')} />
         </div>
       </div>
-    </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium">Emergency Contact Name</label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_name')} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Emergency Contact Phone</label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_phone')} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Emergency Contact Relationship</label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_relationship')} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Emergency Contact Email</label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_email')} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {!defaultPropertyId && (
+          <div>
+            <label className="block text-sm font-medium">Property</label>
+            <select
+              className="border rounded px-3 py-2 w-full"
+              value={selectedPropertyId}
+              onChange={(e) => {
+                setSelectedPropertyId(e.target.value)
+                // Reset selected unit when property changes
+                ;(form as any).setValue('current_unit_id' as any, '')
+              }}
+            >
+              <option value="">Select property</option>
+              {properties.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div>
+          <label className="block text-sm font-medium">Assign to Unit (optional)</label>
+          <select
+            className="border rounded px-3 py-2 w-full"
+            disabled={!defaultPropertyId && !selectedPropertyId}
+            {...form.register('current_unit_id')}
+          >
+            <option value="">Unassigned</option>
+            {units.map(u => (
+              <option key={u.id} value={u.id}>{u.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Monthly Rent (suggested)</label>
+          <input className="border rounded px-3 py-2 w-full" type="number" step="0.01" {...(form.register as any)('monthly_rent_kes' as any)} />
+          <small className="text-gray-500">Defaults to the selected unit's monthly_rent_kes; you can override.</small>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Create Tenant</button>
+      </div>
+    </form>
   )
 }
+

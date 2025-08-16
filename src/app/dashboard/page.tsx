@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { withAuth } from '../../lib/withAuth'
+import { useRouter } from 'next/navigation'
 import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
 import PropertyForm from '../../components/properties/property-form'
-import TenantForm from '../../components/tenants/tenant-form'
 import PaymentForm from '../../components/payments/payment-form'
 
 interface DashboardStats {
@@ -23,13 +23,13 @@ interface DashboardStats {
 
 function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Modal states for quick actions
   const [showPropertyForm, setShowPropertyForm] = useState(false)
-  const [showTenantForm, setShowTenantForm] = useState(false)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [generatingInvoices, setGeneratingInvoices] = useState(false)
 
@@ -389,7 +389,8 @@ function DashboardPage() {
   }
 
   const handleAddTenant = () => {
-    setShowTenantForm(true)
+    // Navigate to the tenants list
+    router.push('/dashboard/tenants')
   }
 
   const handleRecordPayment = () => {
@@ -747,14 +748,6 @@ function DashboardPage() {
         onCancel={() => setShowPropertyForm(false)}
       />
 
-      <TenantForm
-        isOpen={showTenantForm}
-        onSuccess={(tenantId) => {
-          setShowTenantForm(false)
-          loadDashboardStats() // Reload stats to reflect new tenant
-        }}
-        onCancel={() => setShowTenantForm(false)}
-      />
 
       <PaymentForm
         isOpen={showPaymentForm}

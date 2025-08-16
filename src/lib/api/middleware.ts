@@ -30,7 +30,7 @@ export function withRateLimit(handler: Handler, keyFn?: (req: NextRequest) => st
 export function withAuth(handler: Handler): Handler {
   return async (req: NextRequest) => {
     const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await (await supabase).auth.getUser()
     if (!user) return errors.unauthorized()
     return handler(req)
   }

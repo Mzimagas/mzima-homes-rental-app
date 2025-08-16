@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseCoordinates, isValidLatLng, shortenAddress } from '../src/lib/geocoding'
+import { parseCoordinates, isValidLatLng, shortenAddress, makeFriendlyAddress } from '../src/lib/geocoding'
 
 describe('geocoding utils', () => {
   it('parses simple lat,lng', () => {
@@ -21,8 +21,34 @@ describe('geocoding utils', () => {
     expect(isValidLatLng(90, 180)).toBe(true)
   })
 
-  it('shortens addresses', () => {
-    expect(shortenAddress('A, B, C, D, E', 3)).toBe('A, B, C')
+
+
+  it('creates friendly addresses from full display names', () => {
+    // Test with road + locality
+    expect(makeFriendlyAddress('Mombasa Road, Kaloleni, Nairobi County, Kenya')).toBe('Mombasa Road, Kaloleni')
+
+    // Test with street + area
+    expect(makeFriendlyAddress('Kenyatta Avenue, Central Business District, Nairobi, Kenya')).toBe('Kenyatta Avenue, Central Business District')
+
+    // Test with generic filtering
+    expect(makeFriendlyAddress('Main Street, Westlands, Nairobi County, Kenya, East Africa')).toBe('Main Street, Westlands')
+
+    // Test fallback to first two segments
+    expect(makeFriendlyAddress('Kilifi, Coast Province, Kenya')).toBe('Kilifi, Coast Province')
+
+    // Test short input (no change needed)
+    expect(makeFriendlyAddress('Short Name')).toBe('Short Name')
+
+    // Test coordinates (should pass through)
+    expect(makeFriendlyAddress('-1.2921, 36.8219')).toBe('-1.2921, 36.8219')
   })
+
+  it('shortens addresses to specified number of parts', () => {
+    expect(shortenAddress('Mombasa Road, Kaloleni, Nairobi County, Kenya', 3)).toBe('Mombasa Road, Kaloleni, Nairobi County')
+    expect(shortenAddress('A, B, C, D, E', 2)).toBe('A, B')
+    expect(shortenAddress('Single')).toBe('Single')
+  })
+
+
 })
 

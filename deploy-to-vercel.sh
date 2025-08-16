@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Deploying Mzima Homes Rental App to Vercel..."
+echo "🚀 Deploying KodiRent to Vercel..."
 
 # Make sure we're in the right directory
 cd "$(dirname "$0")"

@@ -4,7 +4,7 @@ import { errors } from '../../../../../lib/api/errors'
 import { createServerSupabaseClient } from '../../../../../lib/supabase-server'
 
 async function handler(req: NextRequest) {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return errors.unauthorized()
 
@@ -12,6 +12,17 @@ async function handler(req: NextRequest) {
   const idx = segments.findIndex(s => s === 'properties')
   const propertyId = idx >= 0 && segments[idx + 1] ? segments[idx + 1] : undefined
   if (!propertyId) return errors.badRequest('Missing property id in path')
+
+  // Permission: OWNER or PROPERTY_MANAGER can enable
+  const { data: membership } = await supabase
+    .from('property_users')
+    .select('role, status')
+    .eq('property_id', propertyId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (!membership || membership.status !== 'ACTIVE' || !['OWNER', 'PROPERTY_MANAGER'].includes(membership.role as any)) {
+    return errors.forbidden('Insufficient permission to enable property')
+  }
 
   const { error: updateErr } = await supabase
     .from('properties')

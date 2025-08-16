@@ -3,7 +3,7 @@ import { getRedis } from '../../../../../lib/upstash'
 import { createServerSupabaseClient } from '../../../../../lib/supabase-server'
 
 export async function GET() {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   const allowed = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
     .split(',').map(s=>s.trim().toLowerCase()).filter(Boolean)

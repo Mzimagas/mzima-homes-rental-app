@@ -138,7 +138,7 @@ function LoginForm() {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Voi Rental Management System
+            KodiRent
           </p>
         </div>
 

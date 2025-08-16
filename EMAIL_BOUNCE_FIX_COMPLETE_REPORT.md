@@ -4,7 +4,7 @@
 
 **Supabase Project ID:** `ajrxvnakphkpkcssisxm`
 
-The Mzima Homes rental app was experiencing high email bounce rates that could have triggered Supabase email sending restrictions. This comprehensive fix addresses all root causes and implements preventive measures.
+The KodiRent app was experiencing high email bounce rates that could have triggered Supabase email sending restrictions. This comprehensive fix addresses all root causes and implements preventive measures.
 
 ## 🔍 Root Causes Identified
 

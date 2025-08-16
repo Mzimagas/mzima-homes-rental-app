@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Voi Rental Management",
+  title: "KodiRent",
   description: "Comprehensive rental property management system",
 };
 

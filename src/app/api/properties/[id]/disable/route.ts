@@ -11,7 +11,7 @@ async function handler(req: NextRequest) {
   if (!parsed.success) return errors.validation(parsed.error.flatten())
   const { reason, disableUnits } = parsed.data
 
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return errors.unauthorized()
 
@@ -21,19 +21,38 @@ async function handler(req: NextRequest) {
   const propertyId = idx >= 0 && segments[idx + 1] ? segments[idx + 1] : undefined
   if (!propertyId) return errors.badRequest('Missing property id in path')
 
-  // Check no ACTIVE tenancies across all units for this property
-  const { data: active, error: activeErr } = await supabase
-    .from('tenancy_agreements')
-    .select('id')
-    .eq('status', 'ACTIVE')
-    .in('unit_id', (await supabase.from('units').select('id').eq('property_id', propertyId)).data?.map(u => u.id) || [])
+  // Permission: OWNER or PROPERTY_MANAGER can disable
+  const { data: membership } = await supabase
+    .from('property_users')
+    .select('role, status')
+    .eq('property_id', propertyId)
+    .eq('user_id', user.id)
     .maybeSingle()
-  if (activeErr) {
-    console.error('active tenancy check error', activeErr)
-    return errors.internal('Failed to check active tenancies')
+  if (!membership || membership.status !== 'ACTIVE' || !['OWNER', 'PROPERTY_MANAGER'].includes(membership.role as any)) {
+    return errors.forbidden('Insufficient permission to disable property')
   }
-  if (active) {
-    return NextResponse.json({ ok: false, code: 'ACTIVE_TENANCY', message: 'Property has active tenancies. End them before disabling.' }, { status: 409 })
+
+  // Check no ACTIVE tenancies across all units for this property
+  const { data: unitsForProperty, error: unitsLoadErr } = await supabase.from('units').select('id').eq('property_id', propertyId)
+  if (unitsLoadErr) {
+    console.error('units load error', unitsLoadErr)
+    return errors.internal('Failed to load units for tenancy check')
+  }
+  const unitIds = (unitsForProperty || []).map((u: any) => u.id)
+  if (unitIds.length > 0) {
+    const { data: active, error: activeErr } = await supabase
+      .from('tenancy_agreements')
+      .select('id')
+      .eq('status', 'ACTIVE')
+      .in('unit_id', unitIds)
+      .maybeSingle()
+    if (activeErr) {
+      console.error('active tenancy check error', activeErr)
+      return errors.internal('Failed to check active tenancies')
+    }
+    if (active) {
+      return NextResponse.json({ ok: false, code: 'ACTIVE_TENANCY', message: 'Property has active tenancies. End them before disabling.' }, { status: 409 })
+    }
   }
 
   // Optionally disable all units

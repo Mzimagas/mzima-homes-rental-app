@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button, Modal, TextField } from '../ui'
 import { useToast } from '../ui/Toast'
 
-export function PropertyActions({ propertyId, hasDisabledAt, onChanged }: { propertyId: string; hasDisabledAt?: boolean; onChanged?: () => void }) {
+export function PropertyActions({ propertyId, hasDisabledAt, onChanged, canDelete }: { propertyId: string; hasDisabledAt?: boolean; onChanged?: () => void; canDelete?: boolean }) {
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<'disable' | 'enable' | 'delete'>('disable')
   const [reason, setReason] = useState('')
@@ -43,12 +43,12 @@ export function PropertyActions({ propertyId, hasDisabledAt, onChanged }: { prop
       {!hasDisabledAt ? (
         <>
           <Button variant="danger" onClick={() => { setMode('disable'); setOpen(true) }}>Disable</Button>
-          <Button variant="danger" onClick={() => { setMode('delete'); setOpen(true) }} className="ml-2">Delete permanently</Button>
+          {canDelete && <Button variant="danger" onClick={() => { setMode('delete'); setOpen(true) }} className="ml-2">Delete permanently</Button>}
         </>
       ) : (
         <>
           <Button variant="primary" onClick={() => { setMode('enable'); setOpen(true) }}>Enable</Button>
-          <Button variant="danger" onClick={() => { setMode('delete'); setOpen(true) }} className="ml-2">Delete permanently</Button>
+          {canDelete && <Button variant="danger" onClick={() => { setMode('delete'); setOpen(true) }} className="ml-2">Delete permanently</Button>}
         </>
       )}
 

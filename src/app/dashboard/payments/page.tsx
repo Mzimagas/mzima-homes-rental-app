@@ -5,17 +5,17 @@ import { useAuth } from '../../../lib/auth-context'
 import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
-import { Payment, Tenant, Unit, Property } from '../../../lib/types/database'
+import { Payment, Unit, Property } from '../../../lib/types/database'
 import PaymentForm from '../../../components/payments/payment-form'
 import PaymentHistory from '../../../components/payments/payment-history'
 import PaymentAnalytics from '../../../components/payments/payment-analytics'
+import RentBalancesSection from '../../../components/payments/rent-balances-section'
+import UtilitiesSection from '../../../components/payments/utilities-section'
+import UtilityBalancePanel from '../../../components/utilities/utility-balance-panel'
+import UtilityLedgerTable from '../../../components/utilities/utility-ledger-table'
 
 interface PaymentWithDetails extends Payment {
-  tenants: Tenant & {
-    units: (Unit & {
-      properties: Property
-    })[]
-  }
+  // tenants relationship removed during tenant module rebuild
 }
 
 interface PaymentStats {
@@ -32,43 +32,48 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'analytics'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'rent' | 'utilities' | 'analytics'>('overview')
 
   const loadPaymentStats = async () => {
     try {
       setLoading(true)
       setError(null)
+      console.info('[Payments] Loading payment stats...')
 
       // For now, using mock landlord ID - in real app, this would come from user profile
       const mockLandlordId = '11111111-1111-1111-1111-111111111111'
+      console.info('[Payments] Using landlord ID:', mockLandlordId)
 
-      // Get recent payments across all properties
+      // Test if payments table exists first
+      console.info('[Payments] Testing payments table access...')
+      const { count, error: countError } = await supabase
+        .from('payments')
+        .select('*', { count: 'exact', head: true })
+
+      if (countError) {
+        console.error('[Payments] Payments table access failed:', countError)
+        setError('Payments table not accessible: ' + countError.message)
+        return
+      }
+
+      console.info('[Payments] Payments table exists with', count, 'records')
+
+      // Now get actual payment data
+      console.info('[Payments] Loading payment records...')
       const { data: recentPayments, error: paymentsError } = await supabase
         .from('payments')
-        .select(`
-          *,
-          tenants (
-            id,
-            full_name,
-            units (
-              id,
-              unit_label,
-              properties (
-                id,
-                name,
-                landlord_id
-              )
-            )
-          )
-        `)
-        .eq('tenants.units.properties.landlord_id', mockLandlordId as any)
+        .select('*')
         .order('payment_date', { ascending: false })
         .limit(20)
 
       if (paymentsError) {
-        setError('Failed to load payment data')
+        console.error('[Payments] Error loading payments:', paymentsError)
+        console.error('[Payments] Error details:', JSON.stringify(paymentsError, null, 2))
+        setError('Failed to load payment data: ' + (paymentsError.message || 'Unknown error'))
         return
       }
+      console.info('[Payments] Loaded payments:', recentPayments?.length || 0)
+      console.info('[Payments] Sample payment:', recentPayments?.[0])
 
       // Calculate stats
       const today = new Date().toISOString().split('T')[0]
@@ -83,10 +88,17 @@ export default function PaymentsPage() {
         .reduce((sum: number, p: PaymentWithDetails) => sum + p.amount_kes, 0) || 0
 
       // Get outstanding invoices count
-      const { data: overdueInvoices } = await supabase
+      console.info('[Payments] Loading overdue invoices...')
+      const { data: overdueInvoices, error: invoicesError } = await supabase
         .from('rent_invoices')
         .select('amount_due_kes, amount_paid_kes')
         .eq('status', 'OVERDUE')
+
+      if (invoicesError) {
+        console.error('[Payments] Error loading invoices:', invoicesError)
+        // Continue with empty invoices data
+      }
+      console.info('[Payments] Loaded invoices:', overdueInvoices?.length || 0)
 
       const totalOutstanding = overdueInvoices
         ?.reduce((sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0) || 0
@@ -102,10 +114,11 @@ export default function PaymentsPage() {
       })
 
     } catch (err) {
-      setError('Failed to load payment statistics')
-      console.error('Payment stats loading error:', err)
+      console.error('[Payments] Unhandled error:', err)
+      setError('Failed to load payment statistics: ' + (err as any)?.message)
     } finally {
       setLoading(false)
+      console.info('[Payments] Loading complete')
     }
   }
 
@@ -178,6 +191,8 @@ export default function PaymentsPage() {
           {[
             { key: 'overview', label: 'Overview' },
             { key: 'history', label: 'Payment History' },
+            { key: 'rent', label: 'Rent Balances' },
+            { key: 'utilities', label: 'Utility Balances' },
             { key: 'analytics', label: 'Analytics' }
           ].map((tab) => (
             <button
@@ -310,11 +325,8 @@ export default function PaymentsPage() {
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {payment.tenants.full_name}
-                          </div>
                           <div className="text-sm text-gray-500">
-                            {payment.tenants.units?.[0]?.properties?.name} - {payment.tenants.units?.[0]?.unit_label}
+                            Payment
                           </div>
                         </div>
                       </div>
@@ -337,6 +349,19 @@ export default function PaymentsPage() {
 
       {activeTab === 'history' && (
         <PaymentHistory onRecordPayment={() => setShowPaymentForm(true)} />
+      )}
+
+      {activeTab === 'rent' && (
+        <div className="space-y-6">
+          {/* Rent Summary */}
+          <RentBalancesSection />
+        </div>
+      )}
+
+      {activeTab === 'utilities' && (
+        <div className="space-y-6">
+          <UtilitiesSection />
+        </div>
       )}
 
       {activeTab === 'analytics' && (

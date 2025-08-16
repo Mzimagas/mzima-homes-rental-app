@@ -20,16 +20,43 @@ function headers(): Record<string, string> {
 
 
 export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
-  const url = new URL(NOMINATIM_BASE + '/reverse')
-  url.searchParams.set('lat', String(lat))
-  url.searchParams.set('lon', String(lng))
-  url.searchParams.set('format', 'json')
-  url.searchParams.set('zoom', '16')
+  try {
+    const url = new URL(NOMINATIM_BASE + '/reverse')
+    url.searchParams.set('lat', String(lat))
+    url.searchParams.set('lon', String(lng))
+    url.searchParams.set('format', 'json')
+    url.searchParams.set('zoom', '16')
+    url.searchParams.set('addressdetails', '1')
 
-  const res = await fetch(url.toString(), { headers: headers() })
-  if (!res.ok) return null
-  const data = (await res.json()) as { display_name?: string }
-  return data.display_name || null
+    const res = await fetch(url.toString(), {
+      headers: headers(),
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    })
+
+    if (!res.ok) {
+      console.warn(`Reverse geocoding failed: ${res.status} ${res.statusText}`)
+      return null
+    }
+
+    const data = (await res.json()) as { display_name?: string, error?: string }
+
+    if (data.error) {
+      console.warn(`Reverse geocoding API error: ${data.error}`)
+      return null
+    }
+
+    const address = data.display_name || null
+
+    if (!address || address.trim() === '') {
+      console.warn('Empty address returned from reverse geocoding')
+      return null
+    }
+
+    return address
+  } catch (error) {
+    console.error('Reverse geocoding failed:', error)
+    return null
+  }
 }
 
 export function parseCoordinates(input: string): { lat: number; lng: number } | null {
@@ -59,3 +86,33 @@ export function shortenAddress(address: string, parts: number = 4): string {
   return segs.slice(0, parts).join(', ')
 }
 
+// Heuristic: create a concise, human-friendly label like "Road, Area"
+// from Nominatim display_name. Filters out country/county and picks
+// the most relevant nearby locality.
+export function makeFriendlyAddress(address: string): string {
+  try {
+    const segs = address.split(',').map(s => s.trim()).filter(Boolean)
+    if (segs.length === 0) return address
+
+    const isGeneric = (s: string) => /^(kenya|africa|east africa|[a-z ]+ county)$/i.test(s)
+    const isRoady = (s: string) => /(\b|\s)(road|rd\.?|street|st\.?|avenue|ave\.?|highway|hwy\.?|way|close|lane|ln\.?|drive|dr\.?|place|pl\.?|bypass|ring road|expressway)(\b|\s)/i.test(s)
+
+    // Prefer a road-like segment plus the next non-generic locality
+    const roadIdx = segs.findIndex(isRoady)
+    if (roadIdx !== -1) {
+      const localityIdx = segs.findIndex((s, i) => i > roadIdx && !isGeneric(s))
+      const parts = [segs[roadIdx]]
+      if (localityIdx !== -1) {
+        parts.push(segs[localityIdx])
+      }
+      return parts.join(', ')
+    }
+
+    // Otherwise take first two non-generic segments
+    const filtered = segs.filter(s => !isGeneric(s))
+    const short = filtered.slice(0, 2).join(', ')
+    return short || segs.slice(0, 2).join(', ') || address
+  } catch {
+    return address
+  }
+}

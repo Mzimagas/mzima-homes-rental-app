@@ -11,7 +11,7 @@ async function handler(req: NextRequest) {
   if (!parsed.success) return errors.validation(parsed.error.flatten())
   const { reason } = parsed.data
 
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return errors.unauthorized()
 

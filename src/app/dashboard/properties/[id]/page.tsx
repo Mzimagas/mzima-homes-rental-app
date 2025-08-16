@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import supabase, { clientBusinessFunctions } from '../../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../../components/ui/loading'
 import { ErrorCard } from '../../../../components/ui/error'
-import { Property, Unit, Tenant } from '../../../../lib/types/database'
+import { Property, Unit } from '../../../../lib/types/database'
 import UnitForm from '../../../../components/properties/unit-form'
 import PropertyForm from '../../../../components/properties/property-form'
 import UserManagement from '../../../../components/property/UserManagement'
@@ -14,9 +14,7 @@ import { UnitActions } from '../../../../components/properties/UnitActions'
 import { PropertyActions } from '../../../../components/properties/PropertyActions'
 
 interface PropertyWithUnits extends Property {
-  units: (Unit & {
-    tenants: Tenant[]
-  })[]
+  units: Unit[]
 }
 
 interface PropertyStats {
@@ -79,17 +77,29 @@ export default function PropertyDetailPage() {
       // Load tenants for the units
       if (propertyData.units && propertyData.units.length > 0) {
         const unitIds = propertyData.units.map((unit: any) => unit.id)
-        const { data: tenantsData } = await supabase
+        console.info('[PropertyDetails] Loading tenants for units:', unitIds)
+
+        const { data: tenantsData, error: tenantsError } = await supabase
           .from('tenants')
           .select('id, full_name, phone, status, current_unit_id')
           .in('current_unit_id', unitIds)
           .eq('status', 'ACTIVE')
 
+        if (tenantsError) {
+          console.error('[PropertyDetails] Error loading tenants:', tenantsError)
+        } else {
+          console.info('[PropertyDetails] Loaded tenants:', tenantsData?.length || 0, tenantsData)
+        }
+
         // Associate tenants with their units
-        const unitsWithTenants = propertyData.units.map((unit: any) => ({
-          ...unit,
-          tenants: tenantsData?.filter((tenant: any) => tenant.current_unit_id === unit.id) || []
-        }))
+        const unitsWithTenants = propertyData.units.map((unit: any) => {
+          const unitTenants = tenantsData?.filter((tenant: any) => tenant.current_unit_id === unit.id) || []
+          console.info(`[PropertyDetails] Unit ${unit.unit_label} has ${unitTenants.length} tenants:`, unitTenants)
+          return {
+            ...unit,
+            tenants: unitTenants
+          }
+        })
 
         setProperty({
           ...propertyData,
@@ -127,15 +137,23 @@ export default function PropertyDetailPage() {
     }).format(amount)
   }
 
-  const getUnitStatusColor = (unit: Unit & { tenants: Tenant[] }) => {
+  const getUnitStatusColor = (unit: any) => {
     if (!unit.is_active) return 'bg-gray-100 text-gray-800'
-    if (unit.tenants.length > 0) return 'bg-green-100 text-green-800'
+
+    // Check if unit has active tenants
+    const hasActiveTenants = unit.tenants && unit.tenants.length > 0
+    if (hasActiveTenants) return 'bg-green-100 text-green-800'
+
     return 'bg-yellow-100 text-yellow-800'
   }
 
-  const getUnitStatusText = (unit: Unit & { tenants: Tenant[] }) => {
+  const getUnitStatusText = (unit: any) => {
     if (!unit.is_active) return 'Inactive'
-    if (unit.tenants.length > 0) return 'Occupied'
+
+    // Check if unit has active tenants
+    const hasActiveTenants = unit.tenants && unit.tenants.length > 0
+    if (hasActiveTenants) return 'Occupied'
+
     return 'Vacant'
   }
 
@@ -202,7 +220,7 @@ export default function PropertyDetailPage() {
         </div>
         <div className="flex space-x-3 items-center">
           {/* Property actions (disable/enable/delete) */}
-          <PropertyActions propertyId={property.id} hasDisabledAt={!!(property as any).disabled_at} onChanged={loadPropertyDetails} />
+          <PropertyActions propertyId={property.id} hasDisabledAt={!!(property as any).disabled_at} onChanged={loadPropertyDetails} canDelete={currentPropertyAccess?.user_role === 'OWNER'} />
           <button
             onClick={() => setShowPropertyForm(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -380,13 +398,23 @@ export default function PropertyDetailPage() {
                               {getUnitStatusText(unit)}
                             </span>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          {unit.tenants && unit.tenants.length > 0 && (
-                            <div className="text-sm text-gray-600">
-                              {unit.tenants[0].full_name}
+
+                          {/* Show tenant information if occupied */}
+                          {(unit as any).tenants && (unit as any).tenants.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs text-gray-500">Current Tenant:</div>
+                              {(unit as any).tenants.map((tenant: any) => (
+                                <div key={tenant.id} className="text-sm text-gray-900">
+                                  {tenant.full_name}
+                                  {tenant.phone && (
+                                    <span className="text-gray-500 ml-2">• {tenant.phone}</span>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           )}
+                        </div>
+                        <div className="flex items-center space-x-4">
                           <button
                             onClick={() => {
                               setEditingUnit(unit)

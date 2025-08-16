@@ -4,13 +4,23 @@ import { errors } from '../../../../lib/api/errors'
 import { createServerSupabaseClient } from '../../../../lib/supabase-server'
 
 async function handler(req: NextRequest) {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return errors.unauthorized()
 
-  // Only admins can delete properties (placeholder)
-  const isAdmin = false
-  if (!isAdmin) return errors.forbidden('Only admins can delete properties')
+  // Permission: OWNER can delete only if no dependencies and policy allows; or ADMIN
+  const { data: membership } = await supabase
+    .from('property_users')
+    .select('role, status')
+    .eq('property_id', (req.nextUrl.pathname.split('/').filter(Boolean)[req.nextUrl.pathname.split('/').filter(Boolean).findIndex(s => s === 'properties') + 1] || ''))
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const isAdmin = false // TODO: wire global admin role if you have one
+
+  if ((!membership || membership.status !== 'ACTIVE' || membership.role !== 'OWNER') && !isAdmin) {
+    return errors.forbidden('Only property owner or admin can delete properties')
+  }
 
   const segments = req.nextUrl.pathname.split('/').filter(Boolean)
   const idx = segments.findIndex(s => s === 'properties')

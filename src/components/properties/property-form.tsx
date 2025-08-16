@@ -23,7 +23,7 @@ interface PropertyFormProps {
 }
 
 export default function PropertyForm({ onSuccess, onCancel, isOpen, property }: PropertyFormProps) {
-  const { register, handleSubmit, setValue, reset, formState: { errors, isSubmitting } } = useForm<PropertyFormValues>({
+  const { register, handleSubmit, setValue, reset, watch, formState: { errors, isSubmitting } } = useForm<PropertyFormValues>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       name: property?.name || '',
@@ -43,6 +43,8 @@ export default function PropertyForm({ onSuccess, onCancel, isOpen, property }: 
       notes: property?.notes || ''
     })
   }, [property, reset])
+
+
 
   const onSubmit = async (values: PropertyFormValues) => {
     try {
@@ -130,13 +132,14 @@ export default function PropertyForm({ onSuccess, onCancel, isOpen, property }: 
 
             <div>
               <AddressAutocomplete
-                value={''}
-                onChange={(val) => setValue('physicalAddress', val)}
+                value={watch('physicalAddress') || ''}
+                onChange={(val) => setValue('physicalAddress', val, { shouldDirty: true })}
                 onSelect={({ address, lat, lng }) => {
-                  setValue('physicalAddress', address)
-                  setValue('lat', lat)
-                  setValue('lng', lng)
+                  setValue('physicalAddress', address, { shouldDirty: true })
+                  if (lat !== undefined) setValue('lat', lat, { shouldDirty: true })
+                  if (lng !== undefined) setValue('lng', lng, { shouldDirty: true })
                 }}
+                error={errors.physicalAddress?.message || null}
               />
               {errors.physicalAddress?.message && (
                 <p className="mt-1 text-xs text-red-600">{errors.physicalAddress.message}</p>

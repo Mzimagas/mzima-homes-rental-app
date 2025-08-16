@@ -1,18 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import supabase from '../../lib/supabase-client'
+import supabase, { clientBusinessFunctions, clientQueries } from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard, EmptyState } from '../ui/error'
-import { Payment, Tenant, Unit, Property } from '../../lib/types/database'
+import { Payment } from '../../lib/types/database'
+import { getPaymentMethod } from '../../lib/config/payment-methods'
 import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
 
 interface PaymentWithDetails extends Payment {
-  tenants: Tenant & {
-    units: (Unit & {
-      properties: Property
-    })[]
-  }
+  // tenants relationship removed during tenant module rebuild
 }
 
 interface PaymentHistoryProps {
@@ -28,43 +25,110 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
   const [filterDateRange, setFilterDateRange] = useState<string>('all')
   const [customDateRange, setCustomDateRange] = useState(getDefaultDateRange())
   const [isLoadingPayments, setIsLoadingPayments] = useState(false)
+  // New: landlord/property/tenant scope
+  const [landlordId, setLandlordId] = useState<string | null>(null)
+  const [properties, setProperties] = useState<{ id: string; name: string }[]>([])
+  const [selectedProperty, setSelectedProperty] = useState<string>('')
+  const [tenantsList, setTenantsList] = useState<{ id: string; full_name: string }[]>([])
+  const [selectedTenant, setSelectedTenant] = useState<string>('')
+  const [ready, setReady] = useState(false)
 
+  // Initial bootstrap: landlord, properties, tenants
   useEffect(() => {
+    let isMounted = true
+    ;(async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const { data: landlordIds, error: landlordErr } = await clientBusinessFunctions.getUserLandlordIds(true)
+        if (!isMounted) return
+        if (landlordErr || !landlordIds || landlordIds.length === 0) {
+          setError(landlordErr || 'No landlord access found for this user')
+          return
+        }
+        const lId = landlordIds[0]
+        setLandlordId(lId)
+
+        const { data: props } = await clientQueries.getPropertiesByLandlord(lId)
+        if (!isMounted) return
+        setProperties(props || [])
+        if (!selectedProperty && props && props.length > 0) {
+          setSelectedProperty(props[0].id)
+        }
+
+        // Load tenants for selected property (if any), else all
+        if (selectedProperty) {
+          const { data: units } = await supabase.from('units').select('id').eq('property_id', selectedProperty)
+          if (!isMounted) return
+          const unitIds = (units || []).map(u => u.id)
+          if (unitIds.length > 0) {
+            const { data: tenants } = await supabase.from('tenants').select('id, full_name').in('current_unit_id', unitIds)
+            if (!isMounted) return
+            setTenantsList(tenants || [])
+            if (!selectedTenant && tenants && tenants.length > 0) setSelectedTenant(tenants[0].id)
+          } else {
+            setTenantsList([])
+          }
+        } else {
+          const { data: tenants } = await supabase.from('tenants').select('id, full_name')
+          if (!isMounted) return
+          setTenantsList(tenants || [])
+        }
+
+        setReady(true)
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    })()
+    return () => { isMounted = false }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Reload tenants when property changes
+  useEffect(() => {
+    let isMounted = true
+    ;(async () => {
+      if (!landlordId) return
+      if (!selectedProperty) {
+        const { data: tenants } = await supabase.from('tenants').select('id, full_name')
+        if (!isMounted) return
+        setTenantsList(tenants || [])
+        return
+      }
+      const { data: units } = await supabase.from('units').select('id').eq('property_id', selectedProperty)
+      if (!isMounted) return
+      const unitIds = (units || []).map(u => u.id)
+      if (unitIds.length === 0) {
+        setTenantsList([])
+        return
+      }
+      const { data: tenants } = await supabase.from('tenants').select('id, full_name').in('current_unit_id', unitIds)
+      if (!isMounted) return
+      setTenantsList(tenants || [])
+    })()
+    return () => { isMounted = false }
+  }, [selectedProperty, landlordId])
+
+  // Load payments when ready or filters change
+  useEffect(() => {
+    if (!ready) return
     loadPayments()
-  }, [filterDateRange, customDateRange])
+  }, [ready, filterDateRange, customDateRange, selectedTenant])
 
   const loadPayments = async () => {
     try {
-      setLoading(true)
       setIsLoadingPayments(true)
       setError(null)
 
-      // For now, using mock landlord ID - in real app, this would come from user profile
-      const mockLandlordId = '11111111-1111-1111-1111-111111111111'
-
-      // Build query with date filtering
       let query = supabase
         .from('payments')
-        .select(`
-          *,
-          tenants (
-            id,
-            full_name,
-            phone,
-            units (
-              id,
-              unit_label,
-              properties (
-                id,
-                name,
-                landlord_id
-              )
-            )
-          )
-        `)
-        .eq('tenants.units.properties.landlord_id', mockLandlordId)
+        .select('*')
+        .order('payment_date', { ascending: false })
 
-      // Apply date filtering based on selected range
+      if (selectedTenant) {
+        query = query.eq('tenant_id', selectedTenant)
+      }
+
       if (filterDateRange === 'custom') {
         query = query
           .gte('payment_date', customDateRange.startDate)
@@ -72,40 +136,23 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
       } else if (filterDateRange !== 'all') {
         const now = new Date()
         let startDate: Date
-
         switch (filterDateRange) {
-          case 'today':
-            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-            break
-          case 'week':
-            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-            break
-          case 'month':
-            startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-            break
-          case 'quarter':
-            startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
-            break
-          default:
-            startDate = new Date(0) // Beginning of time
+          case 'today': startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); break
+          case 'week': startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break
+          case 'month': startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()); break
+          case 'quarter': startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()); break
+          default: startDate = new Date(0)
         }
-
         query = query.gte('payment_date', startDate.toISOString().split('T')[0])
       }
 
-      const { data: paymentsData, error: paymentsError } = await query.order('payment_date', { ascending: false })
-
-      if (paymentsError) {
-        setError('Failed to load payment history')
-        return
-      }
-
+      const { data: paymentsData, error: paymentsError } = await query
+      if (paymentsError) { setError(paymentsError.message || 'Unable to load payments'); return }
       setPayments(paymentsData || [])
-    } catch (err) {
-      setError('Failed to load payment history')
+    } catch (err: any) {
+      setError(err?.message || 'Unable to load payments')
       console.error('Payment history loading error:', err)
     } finally {
-      setLoading(false)
       setIsLoadingPayments(false)
     }
   }
@@ -154,9 +201,6 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
   // Filter payments based on search and method (date filtering now done server-side)
   const filteredPayments = payments.filter(payment => {
     const matchesSearch = searchTerm === '' ||
-      payment.tenants.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.tenants.units?.[0]?.properties?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (payment.tenants.units?.[0]?.unit_label || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (payment.tx_ref || '').toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesMethod = filterMethod === 'all' || payment.method === filterMethod
@@ -214,7 +258,13 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
   }
 
   if (error) {
-    return <ErrorCard title="Failed to load payment history" message={error} onRetry={loadPayments} />
+    return (
+      <ErrorCard
+        title="Unable to load payments"
+        message={error}
+        onRetry={loadPayments}
+      />
+    )
   }
 
   return (
@@ -243,20 +293,37 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700">
-                Search
-              </label>
-              <input
-                type="text"
-                id="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+              <label htmlFor="property" className="block text-sm font-medium text-gray-700">Property</label>
+              <select
+                id="property"
+                value={selectedProperty}
+                onChange={(e) => setSelectedProperty(e.target.value)}
                 disabled={isLoadingPayments}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                placeholder="Search by tenant, property, or reference..."
-              />
+              >
+                <option value="">All Properties</option>
+                {properties.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="tenant" className="block text-sm font-medium text-gray-700">Tenant</label>
+              <select
+                id="tenant"
+                value={selectedTenant}
+                onChange={(e) => setSelectedTenant(e.target.value)}
+                disabled={isLoadingPayments}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              >
+                <option value="">All Tenants</option>
+                {tenantsList.map(t => (
+                  <option key={t.id} value={t.id}>{t.full_name}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -297,6 +364,21 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
                 <option value="quarter">Last 3 Months</option>
                 <option value="custom">Custom Date Range</option>
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700">
+                Search
+              </label>
+              <input
+                type="text"
+                id="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                disabled={isLoadingPayments}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                placeholder="Search by reference..."
+              />
             </div>
           </div>
 
@@ -394,8 +476,8 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
 
         {filteredPayments.length === 0 ? (
           <EmptyState
-            title="No payments found"
-            description="No payments match your current filters."
+            title="No payments recorded"
+            description="Start by recording your first payment transaction."
             actionLabel="Record Payment"
             onAction={onRecordPayment}
           />
@@ -413,12 +495,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
                       </div>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {payment.tenants.full_name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {payment.tenants.units?.[0]?.properties?.name} - {payment.tenants.units?.[0]?.unit_label}
-                      </div>
+                      <div className="text-sm text-gray-500">Payment</div>
                       {payment.tx_ref && (
                         <div className="text-xs text-gray-400">
                           Ref: {payment.tx_ref}
