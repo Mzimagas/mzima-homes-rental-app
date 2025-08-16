@@ -202,12 +202,14 @@ function DashboardPage() {
       }
 
       // Get full property details (with tenants join - enhanced error logging active)
+      // Exclude soft-deleted properties from dashboard statistics
       const { data: properties, error: propertiesError } = await supabase
         .from('properties')
         .select(`
           id,
           name,
           physical_address,
+          disabled_at,
           units (
             id,
             unit_label,
@@ -221,6 +223,7 @@ function DashboardPage() {
           )
         `)
         .in('id', propertyIds)
+        .is('disabled_at', null)
 
       if (propertiesError) {
         console.error("❌ Supabase query failed:");
@@ -328,15 +331,20 @@ function DashboardPage() {
       }
 
       // Get overdue invoices (using correct rent_invoices table)
+      // Only include invoices from active properties (exclude soft-deleted properties)
       const { data: overdueInvoices, error: overdueError } = await supabase
         .from('rent_invoices')
         .select(`
           amount_due_kes,
           amount_paid_kes,
-          units!inner(property_id)
+          units!inner(
+            property_id,
+            properties!inner(disabled_at)
+          )
         `)
         .in('units.property_id', propertyIds)
         .eq('status', 'OVERDUE')
+        .is('units.properties.disabled_at', null)
 
       let overdueAmount = 0
       if (overdueError) {
