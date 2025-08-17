@@ -7,6 +7,7 @@ export type UserRole = 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTEN
 export interface AccessibleProperty {
   property_id: string
   property_name: string
+  property_type?: string | null
   user_role: UserRole
   permissions?: any
   can_manage_users: boolean
@@ -66,6 +67,7 @@ export function usePropertyAccess(): PropertyAccess {
       const accessibleProperties: AccessibleProperty[] = (data || []).map((item: any) => ({
         property_id: item.property_id,
         property_name: item.property_name,
+        property_type: item.property_type,
         user_role: item.user_role,
         can_manage_users: item.can_manage_users,
         can_edit_property: item.can_edit_property,

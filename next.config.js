@@ -44,7 +44,8 @@ const nextConfig = {
     const csp = [
       "default-src 'self'",
       // Allow minimal inline needed by Next.js runtime and blob: for dynamic chunks/workers
-      `script-src 'self' 'unsafe-inline' blob: https://challenges.cloudflare.com https://www.google-analytics.com https://*.googletagmanager.com`,
+      // In development, allow 'unsafe-eval' for React refresh utilities
+      `script-src 'self' 'unsafe-inline' ${isProd ? '' : "'unsafe-eval'"} blob: https://challenges.cloudflare.com https://www.google-analytics.com https://*.googletagmanager.com`,
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: blob: https://${SUPABASE_HOST}`,
       "font-src 'self' data:",

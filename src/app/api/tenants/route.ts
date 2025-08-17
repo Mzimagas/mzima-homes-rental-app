@@ -129,8 +129,7 @@ export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) =>
       return errors.validation(parse.error.flatten())
     }
     // Ensure status is ACTIVE upon creation to make occupancy consistent across views
-    const payload: any = { ...parse.data, status: 'ACTIVE' }
-    console.info('[POST /api/tenants] payload.current_unit_id', payload.current_unit_id, 'status', payload.status)
+    const payload: any = { ...parse.data }
 
     // Determine property from unit if provided
     let propertyId: string | null = null
@@ -150,17 +149,60 @@ export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) =>
       if (!['OWNER', 'PROPERTY_MANAGER', 'LEASING_AGENT'].includes(role)) return errors.forbidden('Insufficient role')
     }
 
-    // Insert via service role
+    // Insert via service role (whitelist tenant columns only)
     const admin = createClient(supabaseUrl, serviceKey)
     console.info('[POST /api/tenants] inserting tenant')
-    const { data, error } = await admin.from('tenants').insert(payload).select('*').single()
+    const tenantInsert = {
+      full_name: payload.full_name,
+      phone: payload.phone,
+      alternate_phone: payload.alternate_phone ?? null,
+      email: payload.email ?? null,
+      national_id: payload.national_id,
+      notes: payload.notes ?? null,
+      emergency_contact_name: payload.emergency_contact_name ?? null,
+      emergency_contact_phone: payload.emergency_contact_phone ?? null,
+      emergency_contact_relationship: payload.emergency_contact_relationship ?? null,
+      emergency_contact_email: payload.emergency_contact_email ?? null,
+      current_unit_id: payload.current_unit_id ?? null,
+      status: 'ACTIVE' as const,
+    }
+    const { data: tenant, error } = await admin.from('tenants').insert(tenantInsert as any).select('*').single()
     if (error) {
       console.error('[POST /api/tenants] insert error', error)
       return errors.badRequest('Failed to create tenant', error)
     }
 
-    console.info('[POST /api/tenants] success', data?.id)
-    return NextResponse.json({ ok: true, data })
+    // If unit assigned on creation, create an initial tenancy_agreement and apply billing defaults
+    if (payload.current_unit_id) {
+      // Load property defaults
+      const { data: prop } = await admin
+        .from('properties')
+        .select('default_align_billing_to_start, default_billing_day')
+        .eq('id', propertyId)
+        .maybeSingle()
+
+      const alignBilling = (json.align_billing_to_start ?? prop?.default_align_billing_to_start ?? true)
+      // If align is true, default billing_day to start day during move/start; here we don’t know start date, but first invoice run will clamp correctly
+      // We store a best-effort: if align=true and user didn’t pass a custom day, leave null; else use custom or property default
+      const resolvedBillingDay = alignBilling
+        ? (json.billing_day || null)
+        : (json.billing_day || prop?.default_billing_day || null)
+
+      const { error: agErr } = await admin.from('tenancy_agreements').insert({
+        tenant_id: tenant.id,
+        unit_id: payload.current_unit_id,
+        start_date: new Date().toISOString().slice(0,10),
+        status: 'ACTIVE',
+        monthly_rent_kes: payload.monthly_rent_kes || null,
+        billing_day: resolvedBillingDay,
+        align_billing_to_start: alignBilling,
+        notes: payload.notes || null,
+      })
+      if (agErr) console.warn('[POST /api/tenants] failed to create initial tenancy_agreement', agErr.message)
+    }
+
+    console.info('[POST /api/tenants] success', tenant?.id)
+    return NextResponse.json({ ok: true, data: tenant })
   } catch (e: any) {
     console.error('[POST /api/tenants] unhandled', e?.message || e)
     return errors.internal()

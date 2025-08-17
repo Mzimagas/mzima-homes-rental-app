@@ -36,17 +36,21 @@ export interface Property {
   name: string
   physical_address?: string | null
   property_type?: string | null
+  lat?: number | null
+  lng?: number | null
   notes?: string | null
+  default_billing_day?: number | null
+  default_align_billing_to_start?: boolean
   created_at?: string
 }
 
 export interface Tenant {
   id: string
   full_name: string
-  phone?: string | null
+  phone: string
+  alternate_phone?: string | null
   email?: string | null
-  national_id?: string | null
-  employer?: string | null
+  national_id: string
   notes?: string | null
   emergency_contact_name?: string | null
   emergency_contact_phone?: string | null
@@ -64,6 +68,8 @@ export interface TenancyAgreement {
   end_date?: string | null
   status: string
   monthly_rent_kes?: number | null
+  billing_day?: number | null
+  align_billing_to_start?: boolean
   created_at?: string
 }
 

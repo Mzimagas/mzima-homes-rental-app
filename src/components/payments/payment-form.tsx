@@ -298,6 +298,7 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
                       setValue('tenantId', '' as any)
                     }
                   }}
+                  required
                   options={[
                     { value: '', label: 'Select a unit…' },
                     ...units
@@ -331,11 +332,12 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
 
             <div>
               <TextField
-                label="Amount (KES) *"
+                label="Amount (KES)"
                 type="number"
                 step="0.01"
                 placeholder="25000"
                 error={errors.amount?.message}
+                required
                 {...register('amount', { valueAsNumber: true })}
               />
               <p className="mt-1 text-xs text-gray-500">
@@ -345,9 +347,10 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
 
             <div>
               <TextField
-                label="Payment Date *"
+                label="Payment Date"
                 type="date"
                 error={errors.paymentDate?.message}
+                required
                 {...register('paymentDate')}
               />
               <p className="mt-1 text-xs text-gray-500">
@@ -358,8 +361,9 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Select
-                  label="Payment Method *"
+                  label="Payment Method"
                   error={errors.method?.message}
+                  required
                   {...register('method')}
                   options={getPaymentMethodOptions()}
                 />

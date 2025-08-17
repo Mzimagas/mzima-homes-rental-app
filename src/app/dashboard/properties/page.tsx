@@ -2,12 +2,21 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
-import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
-import { ErrorCard, EmptyState } from '../../../components/ui/error'
+import supabase from '../../../lib/supabase-client'
+import { LoadingCard } from '../../../components/ui/loading'
+import { ErrorCard } from '../../../components/ui/error'
 import { Property, Unit } from '../../../lib/types/database'
 import PropertyForm from '../../../components/properties/property-form'
+import BulkLandPropertyCreator from '../../../components/properties/BulkLandPropertyCreator'
+import DuplicatePropertyCleaner from '../../../components/properties/DuplicatePropertyCleaner'
+import PermanentPropertyDeleter from '../../../components/properties/PermanentPropertyDeleter'
+import PropertySizeConverter from '../../../components/properties/PropertySizeConverter'
 import { usePropertyAccess } from '../../../hooks/usePropertyAccess'
+import { PropertyTypeBadgeCompact } from '../../../components/ui/PropertyTypeBadge'
+import PropertyTypeFilter from '../../../components/ui/PropertyTypeFilter'
+import { type PropertyType, isLandProperty } from '../../../lib/validation/property'
+import Tooltip from '../../../components/ui/Tooltip'
+import Sparkline from '../../../components/ui/Sparkline'
 import Link from 'next/link'
 
 interface PropertyWithStats extends Property {
@@ -30,12 +39,21 @@ export default function PropertiesPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'high' | 'medium' | 'low'>('all')
+  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<PropertyType[]>([])
+  const [showPropertyTypeFilter, setShowPropertyTypeFilter] = useState(false)
+
+  // Date range for time-based metrics
+  const [dateRange, setDateRange] = useState<'30d' | '90d' | 'ytd' | '12m'>('30d')
 
   // Check if user has admin permissions (OWNER for properties)
   const hasAdminAccess = userProperties.some(p =>
     p.user_role === 'OWNER'
   )
   const [showPropertyForm, setShowPropertyForm] = useState(false)
+  const [showBulkLandCreator, setShowBulkLandCreator] = useState(false)
+  const [showDuplicateCleaner, setShowDuplicateCleaner] = useState(false)
+  const [showPermanentDeleter, setShowPermanentDeleter] = useState(false)
+  const [showSizeConverter, setShowSizeConverter] = useState(false)
 
   const loadProperties = async () => {
     try {
@@ -130,6 +148,7 @@ export default function PropertiesPage() {
           id,
           name,
           physical_address,
+          property_type,
           landlord_id,
           lat,
           lng,
@@ -279,9 +298,18 @@ export default function PropertiesPage() {
                          (property.physical_address || '').toLowerCase().includes(searchTerm.toLowerCase())
 
     if (!matchesSearch) return false
-    
+
+    // Property type filter
+    const matchesPropertyType = selectedPropertyTypes.length === 0 ||
+      selectedPropertyTypes.includes(property.property_type as PropertyType)
+
+    if (!matchesPropertyType) return false
+
     if (filterStatus === 'all') return true
-    
+
+    // If land property, treat as not applicable for occupancy filters
+    if (isLandProperty((property.property_type as any) || 'HOME')) return false
+
     const occupancyStatus = getOccupancyStatus(property.stats?.occupancy_rate || 0)
     return occupancyStatus === filterStatus
   })
@@ -375,52 +403,126 @@ export default function PropertiesPage() {
             }
           </p>
         </div>
-        <button
-          onClick={() => setShowPropertyForm(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Add Property
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowPropertyForm(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Property
+          </button>
+          <button
+            onClick={() => setShowBulkLandCreator(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            title="Bulk create sample land properties"
+          >
+            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Bulk Add Land
+          </button>
+          <button
+            onClick={() => setShowDuplicateCleaner(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            title="Remove recent bulk imports"
+          >
+            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Clear Recent Imports
+          </button>
+          <button
+            onClick={() => setShowPermanentDeleter(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-800 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            title="Permanently delete all soft-deleted properties"
+          >
+            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Permanent Delete
+          </button>
+          <button
+            onClick={() => setShowSizeConverter(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            title="Convert hectare values to acres for bulk imported properties"
+          >
+            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0V3a1 1 0 00-1 1v1m11-1V3a1 1 0 00-1 1v1m-11 1v16a1 1 0 001 1h10a1 1 0 001-1V5H6z" />
+            </svg>
+            Convert Sizes
+          </button>
+        </div>
       </div>
 
       {/* Search and Filters */}
       <div className="bg-white p-4 rounded-lg shadow">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search properties by name or address..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Properties</option>
-              <option value="high">High Occupancy (80%+)</option>
-              <option value="medium">Medium Occupancy (60-79%)</option>
-              <option value="low">Low Occupancy (&lt;60%)</option>
-            </select>
-          </div>
-          {hasAdminAccess && (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search properties by name or address..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
             <div>
-              <Link
-                href="/dashboard/properties/deleted"
-                className="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Properties</option>
+                <option value="high">High Occupancy (80%+)</option>
+                <option value="medium">Medium Occupancy (60-79%)</option>
+                <option value="low">Low Occupancy (&lt;60%)</option>
+              </select>
+            </div>
+            <div>
+              <button
+                onClick={() => setShowPropertyTypeFilter(!showPropertyTypeFilter)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
                 </svg>
-                Deleted Properties
-              </Link>
+                Property Types
+                {selectedPropertyTypes.length > 0 && (
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {selectedPropertyTypes.length}
+                  </span>
+                )}
+              </button>
+            </div>
+            {hasAdminAccess && (
+              <div>
+                <Link
+                  href="/dashboard/properties/deleted"
+                  className="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Deleted Properties
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Property Type Filter */}
+          {showPropertyTypeFilter && (
+            <div className="border-t pt-4">
+              <PropertyTypeFilter
+                selectedTypes={selectedPropertyTypes}
+                onSelectionChange={setSelectedPropertyTypes}
+                allowMultiple={true}
+                showCategories={true}
+                variant="buttons"
+                size="sm"
+              />
             </div>
           )}
         </div>
@@ -461,40 +563,60 @@ export default function PropertiesPage() {
           {filteredProperties.map((property) => (
             <div key={property.id} className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
               <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900 truncate">
-                    {property.name}
-                  </h3>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getOccupancyColor(property.stats?.occupancy_rate || 0)}`}>
-                    {Math.round(property.stats?.occupancy_rate || 0)}%
-                  </span>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-medium text-gray-900 truncate">
+                      {property.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500 truncate">
+                      {property.physical_address}
+                    </p>
+                    <div className="mt-2">
+                      <PropertyTypeBadgeCompact
+                        type={property.property_type as PropertyType}
+                        className="mr-2"
+                      />
+                    </div>
+                  </div>
+                  {!isLandProperty((property.property_type as any) || 'HOME') && (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getOccupancyColor(property.stats?.occupancy_rate || 0)}`}>
+                      {Math.round(property.stats?.occupancy_rate || 0)}%
+                    </span>
+                  )}
                 </div>
-                
-                <p className="mt-1 text-sm text-gray-500 truncate">
-                  {property.physical_address}
-                </p>
 
                 <div className="mt-4 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Units</span>
-                    <span className="font-medium">
-                      {property.stats?.occupied_units || 0} / {property.stats?.total_units || 0}
-                    </span>
-                  </div>
+                  {!isLandProperty((property.property_type as any) || 'HOME') ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Units</span>
+                      <span className="font-medium">
+                        {property.stats?.occupied_units || 0} / {property.stats?.total_units || 0}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Category</span>
+                      <span className="font-medium capitalize">Land</span>
+                    </div>
+                  )}
                   
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Monthly Revenue</span>
-                    <span className="font-medium">
-                      {formatCurrency(property.stats?.monthly_rent_actual || 0)}
-                    </span>
-                  </div>
+                  {!isLandProperty((property.property_type as any) || 'HOME') && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Monthly Revenue</span>
+                      <span className="font-medium">
+                        {formatCurrency(property.stats?.monthly_rent_actual || 0)}
+                      </span>
+                    </div>
+                  )}
                   
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Potential Revenue</span>
-                    <span className="font-medium">
-                      {formatCurrency(property.stats?.monthly_rent_potential || 0)}
-                    </span>
-                  </div>
+                  {!isLandProperty((property.property_type as any) || 'HOME') && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Potential Revenue</span>
+                      <span className="font-medium">
+                        {formatCurrency(property.stats?.monthly_rent_potential || 0)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-6 flex space-x-3">
@@ -504,12 +626,16 @@ export default function PropertiesPage() {
                   >
                     View Details
                   </Link>
-                  <Link
-                    href={`/dashboard/properties/${property.id}`}
+                  <a
+                    href={property.lat != null && property.lng != null ? `https://www.google.com/maps?q=${property.lat},${property.lng}` : `https://www.google.com/maps?q=${encodeURIComponent(property.physical_address || property.name)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex-1 bg-gray-100 text-gray-700 text-center py-2 px-3 rounded-md text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                    aria-label={`Open ${property.name} in Google Maps`}
+                    title="Open in Google Maps"
                   >
-                    Manage Units
-                  </Link>
+                    View on Google Maps
+                  </a>
                 </div>
               </div>
             </div>
@@ -517,33 +643,169 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {/* Summary Stats */}
+      {/* Portfolio Summary - Enhanced */}
       {properties.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Portfolio Summary</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{properties.length}</div>
-              <div className="text-sm text-gray-500">Total Properties</div>
+        <div className="bg-white rounded-xl shadow border border-light">
+          <div className="px-6 pt-6 pb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-primary">Portfolio Summary</h3>
+            {/* Date range selector */}
+            <div className="flex items-center gap-2 text-xs text-tertiary">
+              <label htmlFor="range" className="sr-only">Date range</label>
+              <select
+                id="range"
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value as any)}
+                className="px-2 py-1 border rounded-md bg-secondary hover:bg-elevated"
+                title="Change date range"
+              >
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+                <option value="ytd">Year to date</option>
+                <option value="12m">Last 12 months</option>
+              </select>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {properties.reduce((sum, p) => sum + (p.stats?.total_units || 0), 0)}
+          </div>
+
+          {/* KPI Cards */}
+          <div className="px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total Properties */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedPropertyTypes([])
+              }}
+              className="group text-left p-4 rounded-lg border bg-elevated hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-brand"
+              title="Show all properties"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-tertiary">Total Properties</div>
+                  <div className="mt-1 text-2xl font-bold text-primary">{properties.length}</div>
+                </div>
+                <div className="w-10 h-10 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center">🏢</div>
               </div>
-              <div className="text-sm text-gray-500">Total Units</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {Math.round(properties.reduce((sum, p) => sum + (p.stats?.occupancy_rate || 0), 0) / properties.length)}%
+            </button>
+
+            {/* Total Units (rentals only) */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedPropertyTypes(['HOME','HOSTEL','STALL'] as any)
+              }}
+              className="group text-left p-4 rounded-lg border bg-elevated hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-brand"
+              title="Filter to rental properties"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-tertiary">Total Units</div>
+                  <div className="mt-1 text-2xl font-bold text-primary">
+                    {properties.filter(p => !isLandProperty((p.property_type as any) || 'HOME')).reduce((sum, p) => sum + (p.stats?.total_units || 0), 0)}
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center">🔢</div>
               </div>
-              <div className="text-sm text-gray-500">Avg Occupancy</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {formatCurrency(properties.reduce((sum, p) => sum + (p.stats?.monthly_rent_actual || 0), 0))}
+            </button>
+
+            {/* Avg Occupancy (rentals) */}
+            <div className="p-4 rounded-lg border bg-elevated">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-tertiary flex items-center gap-1">
+                    <span>Avg Occupancy (rentals)</span>
+                    <Tooltip content="Average occupied units across rental properties.">
+                      <svg className="w-4 h-4 text-tertiary" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                        <path fillRule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zM9 7h2v2H9V7zm0 3h2v4H9v-4z" clipRule="evenodd" />
+                      </svg>
+                    </Tooltip>
+                  </div>
+                  <div className="mt-1 text-2xl font-bold text-primary">
+                    {(() => {
+                      const rentals = properties.filter(p => !isLandProperty((p.property_type as any) || 'HOME'))
+                      const avg = rentals.length > 0 ? Math.round(rentals.reduce((sum, p) => sum + (p.stats?.occupancy_rate || 0), 0) / rentals.length) : 0
+                      return `${avg}%`
+                    })()}
+                  </div>
+                </div>
+                <div className="w-24">
+                  <Sparkline data={properties.filter(p => !isLandProperty((p.property_type as any) || 'HOME')).map(p => p.stats?.occupancy_rate || 0)} stroke="#16a34a" />
+                </div>
               </div>
-              <div className="text-sm text-gray-500">Monthly Revenue</div>
+              <div className="mt-2 text-xs text-tertiary">Compared to last period</div>
             </div>
+
+            {/* Monthly Revenue (rentals) */}
+            <div className="p-4 rounded-lg border bg-elevated">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-tertiary">Monthly Revenue</div>
+                  <div className="mt-1 text-2xl font-bold text-primary">
+                    {formatCurrency(properties.reduce((sum, p) => sum + (p.stats?.monthly_rent_actual || 0), 0))}
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">💰</div>
+              </div>
+              <div className="mt-2 text-xs text-tertiary">vs. potential {formatCurrency(properties.reduce((sum, p) => sum + (p.stats?.monthly_rent_potential || 0), 0))}</div>
+            </div>
+          </div>
+
+          {/* Breakdown row */}
+          <div className="px-6 py-5 grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Rentals vs Land breakdown */}
+            <div className="p-4 rounded-lg border bg-elevated">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium text-primary">Property Types</h4>
+                <div className="text-xs text-tertiary">Tap a chip to filter</div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(() => {
+                  const typeStats = properties.reduce((acc, property) => {
+                    const type = property.property_type as PropertyType
+                    if (!acc[type]) acc[type] = { count: 0 }
+                    acc[type].count++
+                    return acc
+                  }, {} as Record<PropertyType, { count: number }>)
+
+                  return Object.entries(typeStats).map(([type, stats]) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setSelectedPropertyTypes([type as PropertyType])}
+                      className="px-3 py-1.5 rounded-full border bg-white hover:bg-secondary text-sm"
+                      title={`Filter to ${type}`}
+                    >
+                      <span className="font-medium mr-2">{type}</span>
+                      <span className="text-tertiary">{stats.count}</span>
+                    </button>
+                  ))
+                })()}
+              </div>
+            </div>
+
+            {/* Vacancy rate and trend (rentals) */}
+            <div className="p-4 rounded-lg border bg-elevated">
+              <h4 className="text-sm font-medium text-primary mb-3">Vacancy Snapshot</h4>
+              {(() => {
+                const rentals = properties.filter(p => !isLandProperty((p.property_type as any) || 'HOME'))
+                const totalUnits = rentals.reduce((sum, p) => sum + (p.stats?.total_units || 0), 0)
+                const occupied = rentals.reduce((sum, p) => sum + (p.stats?.occupied_units || 0), 0)
+                const vacant = totalUnits - occupied
+                const vacancyRate = totalUnits > 0 ? Math.round((vacant / totalUnits) * 100) : 0
+                return (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-2xl font-bold text-primary">{vacancyRate}%</div>
+                      <div className="text-xs text-tertiary">Vacancy rate</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-tertiary">Units</div>
+                      <div className="text-primary text-sm font-medium">{vacant} vacant / {totalUnits}</div>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+
+
           </div>
         </div>
       )}
@@ -554,7 +816,7 @@ export default function PropertiesPage() {
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
             <PropertyForm
               isOpen={showPropertyForm}
-              onSuccess={(propertyId) => {
+              onSuccess={() => {
                 setShowPropertyForm(false)
                 loadProperties() // Reload properties list
               }}
@@ -563,6 +825,46 @@ export default function PropertiesPage() {
           </div>
         </div>
       )}
+
+      {/* Bulk Land Property Creator Modal */}
+      <BulkLandPropertyCreator
+        isOpen={showBulkLandCreator}
+        onSuccess={() => {
+          setShowBulkLandCreator(false)
+          loadProperties() // Reload properties list
+        }}
+        onCancel={() => setShowBulkLandCreator(false)}
+      />
+
+      {/* Duplicate Property Cleaner Modal */}
+      <DuplicatePropertyCleaner
+        isOpen={showDuplicateCleaner}
+        onSuccess={() => {
+          setShowDuplicateCleaner(false)
+          loadProperties() // Reload properties list
+        }}
+        onCancel={() => setShowDuplicateCleaner(false)}
+      />
+
+      {/* Permanent Property Deleter Modal */}
+      <PermanentPropertyDeleter
+        isOpen={showPermanentDeleter}
+        onSuccess={() => {
+          setShowPermanentDeleter(false)
+          loadProperties() // Reload properties list
+        }}
+        onCancel={() => setShowPermanentDeleter(false)}
+      />
+
+      {/* Property Size Converter Modal */}
+      <PropertySizeConverter
+        isOpen={showSizeConverter}
+        onSuccess={() => {
+          setShowSizeConverter(false)
+          loadProperties() // Reload properties list
+        }}
+        onCancel={() => setShowSizeConverter(false)}
+      />
     </div>
   )
 }

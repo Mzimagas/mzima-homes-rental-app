@@ -71,6 +71,14 @@ export async function POST(req: NextRequest) {
       .single()
     if (unitErr || !unit) return errors.badRequest('Invalid unit')
 
+    // Load property defaults
+    const { data: prop, error: propErr } = await admin
+      .from('properties')
+      .select('id, default_billing_day, default_align_billing_to_start')
+      .eq('id', unit.property_id)
+      .maybeSingle()
+    if (propErr) return errors.badRequest('Failed to load property defaults')
+
     // Check if tenant is already in this unit
     if (tenant.current_unit_id === new_unit_id) {
       return errors.badRequest('Tenant is already in this unit')
@@ -130,15 +138,28 @@ export async function POST(req: NextRequest) {
     }
 
     // Create new agreement starting on move date
-    const { error: createErr } = await admin.from('tenancy_agreements').insert({
+    const alignBilling = (parse.data.align_billing_to_start ?? prop?.default_align_billing_to_start ?? true)
+    const resolvedBillingDay = alignBilling
+      ? new Date(move_date).getDate()
+      : (parse.data.billing_day || prop?.default_billing_day || new Date(move_date).getDate())
+
+    const { data: createdAgreement, error: createErr } = await admin.from('tenancy_agreements').insert({
       tenant_id: tenantId,
       unit_id: new_unit_id,
       start_date: move_date,
       status: moveDate <= today ? 'ACTIVE' : 'PENDING',
       monthly_rent_kes: monthly_rent_kes || unit.monthly_rent_kes,
+      billing_day: resolvedBillingDay,
+      align_billing_to_start: alignBilling,
       notes: reason ? `Move reason: ${reason}${notes ? `. ${notes}` : ''}` : notes
-    })
+    }).select('id').single()
     if (createErr) return errors.badRequest('Failed to create new agreement', createErr)
+
+    // Create first-month prorated invoice if applicable
+    const { error: prorationErr } = await admin.rpc('create_first_month_prorated_invoice', { p_tenancy_agreement_id: createdAgreement?.id })
+    if (prorationErr) {
+      console.warn('[move] proration failed', prorationErr.message)
+    }
 
     // Update tenant current_unit_id (only if move is today or in the past)
     if (moveDate <= today) {

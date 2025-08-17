@@ -16,11 +16,21 @@ interface DeletedTenant {
   units?: {
     id: string
     unit_label: string
+    property_id: string
     properties: {
       id: string
       name: string
     }
   }
+  lastUnit?: {
+    id: string
+    unit_label: string
+    property_id: string
+    properties: {
+      id: string
+      name: string
+    }
+  } | null
 }
 
 interface RestoreConflict {
@@ -59,41 +69,40 @@ export default function DeletedTenantsPage() {
         return
       }
 
-      // Fetch deleted tenants with their unit and property information
-      const { data, error } = await supabase
-        .from('tenants')
-        .select(`
-          id,
-          full_name,
-          email,
-          phone,
-          current_unit_id,
-          created_at,
-          units (
-            id,
-            unit_label,
-            properties (
-              id,
-              name
-            )
-          )
-        `)
-        .eq('status', 'DELETED')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching deleted tenants:', error)
+      // Use server API with service role to bypass RLS for deleted tenants
+      console.log('[deleted-tenants] fetching via /api/tenants?includeDeleted=1')
+      const resp = await fetch(`/api/tenants?includeDeleted=1`, { credentials: 'same-origin' })
+      if (!resp.ok) {
+        console.error('Error fetching deleted tenants via API:', resp.status)
         setError('Failed to load deleted tenants')
         return
       }
+      const payload = await resp.json()
+      const allTenants = (payload?.data || []) as any[]
+      console.log('[deleted-tenants] api rows:', allTenants.length)
 
-      // Filter tenants based on user's property access
-      const filteredTenants = (data || []).filter(tenant => {
-        if (!tenant.units) return false
-        return propertyIds.includes(tenant.units.properties.id)
-      })
+      // Filter to DELETED only
+      const deletedOnly = allTenants.filter(t => t.status === 'DELETED')
+      console.log('[deleted-tenants] deleted rows:', deletedOnly.length)
 
-      setDeletedTenants(filteredTenants)
+      // Since deleted tenants often have no current_unit_id or tenancy history,
+      // include them for users who have access to any property
+      const filteredTenants = deletedOnly.filter(t => propertyIds.length > 0)
+
+      // Map to UI shape
+      const enhancedTenants = filteredTenants.map(t => ({
+        id: t.id,
+        full_name: t.full_name,
+        email: t.email,
+        phone: t.phone,
+        current_unit_id: t.current_unit_id,
+        created_at: t.created_at,
+        // We don't have unit joins here; UI will show "No unit assignment"
+        units: undefined,
+        lastUnit: null
+      }))
+
+      setDeletedTenants(enhancedTenants)
     } catch (err) {
       console.error('Error:', err)
       setError('An unexpected error occurred')
@@ -267,8 +276,12 @@ export default function DeletedTenantsPage() {
                     <div className="mt-1 text-sm text-gray-600">
                       <p>Email: {tenant.email || 'Not provided'}</p>
                       <p>Phone: {tenant.phone || 'Not provided'}</p>
-                      {tenant.units && (
-                        <p>Previous Unit: {tenant.units.unit_label} at {tenant.units.properties.name}</p>
+                      {tenant.units ? (
+                        <p>Current Unit: {tenant.units.unit_label} at {tenant.units.properties.name}</p>
+                      ) : tenant.lastUnit ? (
+                        <p>Last Unit: {tenant.lastUnit.unit_label} at {tenant.lastUnit.properties.name}</p>
+                      ) : (
+                        <p>Unit: No unit assignment</p>
                       )}
                       <p>Deleted: {new Date(tenant.created_at).toLocaleDateString()}</p>
                     </div>

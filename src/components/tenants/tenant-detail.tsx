@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import supabase from '../../lib/supabase-client'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
+import AgreementEditInline from './tenancy-agreement-edit'
 
 export default function TenantDetail({ id }: { id: string }) {
   const { properties: userProperties } = usePropertyAccess()
@@ -242,6 +243,7 @@ export default function TenantDetail({ id }: { id: string }) {
                   <th className="text-left p-2">End</th>
                   <th className="text-left p-2">Status</th>
                   <th className="text-left p-2">Monthly Rent</th>
+                  <th className="text-left p-2">Billing</th>
                 </tr>
               </thead>
               <tbody>
@@ -256,7 +258,15 @@ export default function TenantDetail({ id }: { id: string }) {
                       <td className="p-2">{a.start_date}</td>
                       <td className="p-2">{a.end_date || '-'}</td>
                       <td className="p-2">{a.status}</td>
-                      <td className="p-2">{a.monthly_rent_kes || '-'}</td>
+                      <td className="p-2">{a.monthly_rent_kes ? `KES ${Number(a.monthly_rent_kes).toLocaleString()}` : '-'}</td>
+                      <td className="p-2">
+                        <div className="text-xs text-gray-700">
+                          {a.align_billing_to_start ? 'Align to start' : `Custom day ${a.billing_day || '-'}`}
+                        </div>
+                        <div className="mt-1">
+                          <AgreementEditInline agreementId={a.id} onSaved={load} />
+                        </div>
+                      </td>
                     </tr>
                   )
                 })}

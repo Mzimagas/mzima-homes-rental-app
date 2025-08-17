@@ -16,9 +16,16 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function 
   if (hint) describedBy.push(`${fieldId}-hint`)
   if (error) describedBy.push(`${fieldId}-error`)
 
+  const isRequired = !!(props.required || props['aria-required'])
+  const showAsterisk = !!label && isRequired && !String(label).includes('*')
+
   return (
     <div className="space-y-1">
-      {label && <label htmlFor={fieldId} className="text-sm font-medium text-gray-700">{label}</label>}
+      {label && (
+        <label htmlFor={fieldId} className="text-sm font-medium text-gray-700">
+          {label} {showAsterisk && <span className="text-red-600" aria-hidden>*</span>}
+        </label>
+      )}
       <select
         id={fieldId}
         ref={ref}

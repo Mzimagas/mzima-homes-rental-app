@@ -74,24 +74,20 @@ export default function TenantEditForm({ id, onSuccess }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium">Full Name</label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('full_name')} />
+          <label className="block text-sm font-medium">Full Name <span className="text-red-600">*</span></label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('full_name')} required />
         </div>
         <div>
-          <label className="block text-sm font-medium">Phone</label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('phone')} />
+          <label className="block text-sm font-medium">Phone <span className="text-red-600">*</span></label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('phone')} required />
         </div>
         <div>
           <label className="block text-sm font-medium">Email</label>
           <input className="border rounded px-3 py-2 w-full" {...form.register('email')} />
         </div>
         <div>
-          <label className="block text-sm font-medium">National ID</label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('national_id')} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Employer</label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('employer')} />
+          <label className="block text-sm font-medium">National ID <span className="text-red-600">*</span></label>
+          <input className="border rounded px-3 py-2 w-full" {...form.register('national_id')} required />
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium">Notes</label>

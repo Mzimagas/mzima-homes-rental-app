@@ -8,6 +8,8 @@ import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
 import PropertyForm from '../../components/properties/property-form'
+import { isLandProperty } from '../../lib/validation/property'
+
 import PaymentForm from '../../components/payments/payment-form'
 
 interface DashboardStats {
@@ -155,6 +157,8 @@ function DashboardPage() {
           version: '2.1-enhanced'
         })
 
+
+
         // Also log a clear message
         console.warn(`❌ Dashboard Error: ${errorMessage}`)
         console.warn('📋 Error Details:', errorDetails)
@@ -209,7 +213,9 @@ function DashboardPage() {
           id,
           name,
           physical_address,
+          property_type,
           disabled_at,
+          property_type,
           units (
             id,
             unit_label,
@@ -308,6 +314,11 @@ function DashboardPage() {
       if (properties && Array.isArray(properties)) {
         for (const property of properties) {
           try {
+            // Skip land properties for occupancy/rent stats
+            if (isLandProperty(((property as any).property_type as any) || 'HOME')) {
+              continue
+            }
+
             const units = property.units || []
             const activeUnits = units.filter((unit: any) => unit && unit.is_active === true)
 

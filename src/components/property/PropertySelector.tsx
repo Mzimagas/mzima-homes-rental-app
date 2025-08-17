@@ -4,6 +4,8 @@ import { Fragment } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { ChevronUpDownIcon, CheckIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
 import { usePropertyAccess, getRoleDisplayName, type AccessibleProperty } from '../../hooks/usePropertyAccess'
+import { PropertyTypeBadgeCompact } from '../ui/PropertyTypeBadge'
+import { getPropertyTypeLabel } from '../../lib/validation/property'
 
 interface PropertySelectorProps {
   className?: string
@@ -92,15 +94,22 @@ export default function PropertySelector({ className = '', showRole = true }: Pr
                   {({ selected }) => (
                     <>
                       <div className="flex items-center">
-                        <BuildingOfficeIcon className="h-4 w-4 text-gray-400 mr-2" />
-                        <div className="flex-1">
-                          <span
-                            className={`block truncate ${
-                              selected ? 'font-medium' : 'font-normal'
-                            }`}
-                          >
-                            {property.property_name}
-                          </span>
+                        <div className="flex items-center mr-2">
+                          <PropertyTypeBadgeCompact type={(property.property_type as any) || 'HOME'} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`block truncate ${
+                                selected ? 'font-medium' : 'font-normal'
+                              }`}
+                            >
+                              {property.property_name}
+                            </span>
+                            <span className="ml-2 shrink-0 text-xs text-gray-400 truncate max-w-[120px]">
+                              {getPropertyTypeLabel((property.property_type as any) || 'HOME')}
+                            </span>
+                          </div>
                           {showRole && (
                             <span className="text-xs text-gray-500">
                               {getRoleDisplayName(property.user_role)}

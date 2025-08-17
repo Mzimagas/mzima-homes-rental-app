@@ -51,7 +51,7 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const form = useForm<TenantMoveInput>({
+  const form = useForm({
     resolver: zodResolver(tenantMoveSchema),
     defaultValues: {
       new_unit_id: defaultUnitId || '',
@@ -59,11 +59,13 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
       end_current_agreement: true,
       monthly_rent_kes: null,
       reason: '',
-      notes: ''
+      notes: '',
+      align_billing_to_start: true,
+      billing_day: null,
     }
   })
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = form
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = form as any
   const watchedUnitId = watch('new_unit_id')
   const watchedMoveDate = watch('move_date')
 
@@ -350,10 +352,11 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
         {/* Unit Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            New Unit *
+            New Unit <span className="text-red-600">*</span>
           </label>
           <select
             {...register('new_unit_id')}
+            required
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={!selectedPropertyId}
           >
@@ -374,16 +377,50 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
         {/* Move Date */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Move Date *
+            Move Date <span className="text-red-600">*</span>
           </label>
           <input
             type="date"
             {...register('move_date')}
+            required
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {errors.move_date && (
             <p className="text-red-600 text-sm mt-1">{errors.move_date.message}</p>
           )}
+        </div>
+
+        {/* Billing Day Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              {...register('align_billing_to_start')}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              defaultChecked
+            />
+            <label className="ml-2 block text-sm text-gray-700">
+              Align rent due date to tenancy start date
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Custom Due Day (1–31)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={31}
+              {...register('billing_day', { valueAsNumber: true })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              disabled={watch('align_billing_to_start')}
+              placeholder="e.g., 15"
+            />
+            <p className="text-gray-500 text-xs mt-1">If the month has fewer days, the due date is set to the last day of the month.</p>
+            {errors.billing_day && (
+              <p className="text-red-600 text-sm mt-1">{errors.billing_day.message as any}</p>
+            )}
+          </div>
         </div>
 
         {/* Monthly Rent */}

@@ -8,10 +8,18 @@ import { ErrorCard } from '../../../../components/ui/error'
 import { Property, Unit } from '../../../../lib/types/database'
 import UnitForm from '../../../../components/properties/unit-form'
 import PropertyForm from '../../../../components/properties/property-form'
+import ReservationsTab from './ReservationsTab'
+import PhotosTab from './PhotosTab'
+
 import UserManagement from '../../../../components/property/UserManagement'
 import { usePropertyAccess } from '../../../../hooks/usePropertyAccess'
 import { UnitActions } from '../../../../components/properties/UnitActions'
 import { PropertyActions } from '../../../../components/properties/PropertyActions'
+import PropertyBillingSettings from '../../../../components/properties/property-billing-settings'
+import LandDetailsForm from '../../../../components/properties/LandDetailsForm'
+
+
+import { isLandProperty, getPropertyTypeLabel } from '../../../../lib/validation/property'
 
 interface PropertyWithUnits extends Property {
   units: Unit[]
@@ -38,7 +46,9 @@ export default function PropertyDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [showUnitForm, setShowUnitForm] = useState(false)
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'units' | 'users'>('overview')
+  const [showLandForm, setShowLandForm] = useState(false)
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'units' | 'photos' | 'reservations' | 'users'>('overview')
   const [showPropertyForm, setShowPropertyForm] = useState(false)
 
   // Check if current user can manage users for this property
@@ -51,6 +61,13 @@ export default function PropertyDetailPage() {
       setActiveTab('overview')
     }
   }, [activeTab, canManageUsers])
+
+  // Ensure 'units' tab is not active for land properties
+  useEffect(() => {
+    if (property && isLandProperty((property.property_type as any) || 'HOME') && activeTab === 'units') {
+      setActiveTab('overview')
+    }
+  }, [property?.property_type, activeTab])
 
   const loadPropertyDetails = async () => {
     try {
@@ -221,31 +238,47 @@ export default function PropertyDetailPage() {
         <div className="flex space-x-3 items-center">
           {/* Property actions (disable/enable/delete) */}
           <PropertyActions propertyId={property.id} hasDisabledAt={!!(property as any).disabled_at} onChanged={loadPropertyDetails} canDelete={currentPropertyAccess?.user_role === 'OWNER'} />
+          {isLandProperty((property.property_type as any) || 'HOME') && (
+            <button
+              type="button"
+              onClick={() => setShowLandForm(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+            >
+              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Edit Land Details
+            </button>
+          )}
+
           <button
             onClick={() => setShowPropertyForm(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Edit Property
           </button>
-          <button
-            onClick={() => {
-              setEditingUnit(null)
-              setShowUnitForm(true)
-            }}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Add Unit
-          </button>
+          {!isLandProperty((property.property_type as any) || 'HOME') && (
+            <button
+              onClick={() => {
+                setEditingUnit(null)
+                setShowUnitForm(true)
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add Unit
+            </button>
+          )}
         </div>
       </div>
 
       {/* Property Statistics */}
-      {stats && (
+      {stats && !isLandProperty((property.property_type as any) || 'HOME') && (
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Property Statistics</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">Property Statistics</h3>
+          <p className="text-xs text-gray-500 mb-3">Not applicable for land properties</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{stats.total_units}</div>
@@ -267,10 +300,106 @@ export default function PropertyDetailPage() {
         </div>
       )}
 
-      {/* Revenue Comparison */}
-      {stats && (
+      {/* Land Overview - only for land properties */}
+      {isLandProperty((property.property_type as any) || 'HOME') && (
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Revenue Analysis</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">Land Overview</h3>
+          <p className="text-xs text-gray-500 mb-4">Relevant details for land properties</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Type and Zoning */}
+            <div className="p-4 rounded-lg border">
+              <div className="text-xs text-gray-500">Property Type</div>
+              <div className="text-sm font-medium text-gray-900">
+                {getPropertyTypeLabel((property.property_type as any) || 'RESIDENTIAL_LAND')}
+              </div>
+            </div>
+            <div className="p-4 rounded-lg border">
+              <div className="text-xs text-gray-500">Zoning</div>
+              <div className="text-sm font-medium text-gray-900">
+                {(property as any).zoning_classification || 'Not specified'}
+              </div>
+            </div>
+
+            {/* Size */}
+            <div className="p-4 rounded-lg border">
+              <div className="text-xs text-gray-500">Size (Acres)</div>
+              <div className="text-sm font-medium text-gray-900">
+                {typeof (property as any).total_area_acres === 'number' ? `${(property as any).total_area_acres}` : 'Not specified'}
+              </div>
+            </div>
+            <div className="p-4 rounded-lg border">
+              <div className="text-xs text-gray-500">Size (sqm)</div>
+              <div className="text-sm font-medium text-gray-900">
+                {typeof (property as any).total_area_sqm === 'number' ? `${(property as any).total_area_sqm.toLocaleString()}` : 'Not specified'}
+              </div>
+            </div>
+
+            {/* Access & Utilities */}
+            <div className="p-4 rounded-lg border">
+              <div className="text-xs text-gray-500">Road Access</div>
+              <div className="text-sm font-medium text-gray-900">
+                {(property as any).road_access_type || 'Not specified'}
+              </div>
+            </div>
+            <div className="p-4 rounded-lg border">
+              <div className="text-xs text-gray-500">Electricity</div>
+              <div className="text-sm font-medium text-gray-900">
+                {(property as any).electricity_available === true ? 'Available' : (property as any).electricity_available === false ? 'Not available' : 'Unknown'}
+              </div>
+            </div>
+            <div className="p-4 rounded-lg border">
+              <div className="text-xs text-gray-500">Water</div>
+              <div className="text-sm font-medium text-gray-900">
+                {(property as any).water_available === true ? 'Available' : (property as any).water_available === false ? 'Not available' : 'Unknown'}
+              </div>
+            </div>
+
+            {/* Development Permit */}
+            <div className="p-4 rounded-lg border md:col-span-2 lg:col-span-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-gray-500">Development Permit</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {(property as any).development_permit_status || 'Unknown'}
+                  </div>
+                </div>
+                {(property as any).development_permit_status && (
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${((status?: string) => {
+                    switch (status) {
+                      case 'APPROVED': return 'bg-green-100 text-green-700 border border-green-200'
+                      case 'PENDING': return 'bg-amber-100 text-amber-700 border border-amber-200'
+                      case 'DENIED': return 'bg-red-100 text-red-700 border border-red-200'
+                      case 'NOT_REQUIRED': return 'bg-gray-100 text-gray-700 border border-gray-200'
+                      default: return 'bg-gray-100 text-gray-700 border border-gray-200'
+                    }
+
+
+
+                  })((property as any).development_permit_status)}`}>
+                    {((status?: string) => {
+                      switch (status) {
+                        case 'APPROVED': return 'Development Approved'
+                        case 'PENDING': return 'Permit Pending'
+                        case 'DENIED': return 'Permit Denied'
+                        case 'NOT_REQUIRED': return 'No Permit Required'
+                        default: return 'Permit Status Unknown'
+                      }
+                    })((property as any).development_permit_status)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Revenue Comparison */}
+      {stats && !isLandProperty((property.property_type as any) || 'HOME') && (
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-900 mb-1">Revenue Analysis</h3>
+          <p className="text-xs text-gray-500 mb-3">Revenue metrics apply only to rental properties</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -316,13 +445,35 @@ export default function PropertyDetailPage() {
             </button>
             <button
               onClick={() => setActiveTab('units')}
+              disabled={isLandProperty((property.property_type as any) || 'HOME')}
               className={`${
                 activeTab === 'units'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${isLandProperty((property.property_type as any) || 'HOME') ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={isLandProperty((property.property_type as any) || 'HOME') ? 'Units are not applicable for land properties' : undefined}
             >
               Units & Tenants
+            </button>
+            <button
+              onClick={() => setActiveTab('photos')}
+              className={`${
+                activeTab === 'photos'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Photos
+            </button>
+            <button
+              onClick={() => setActiveTab('reservations')}
+              className={`${
+                activeTab === 'reservations'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Reservations
             </button>
             {canManageUsers && (
               <button
@@ -358,16 +509,35 @@ export default function PropertyDetailPage() {
                     <label className="block text-sm font-medium text-gray-700">Property Type</label>
                     <p className="mt-1 text-sm text-gray-900">{property.property_type || 'Not specified'}</p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Total Units</label>
-                    <p className="mt-1 text-sm text-gray-900">{property.units?.length || 0}</p>
-                  </div>
                 </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Billing Defaults</h3>
+                <PropertyBillingSettings propertyId={propertyId} onChanged={loadPropertyDetails} />
               </div>
             </div>
           )}
 
-          {activeTab === 'units' && (
+          {activeTab === 'photos' && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Unit Photos</h3>
+              <div className="space-y-4">
+                <PhotosTab propertyId={propertyId} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'reservations' && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Reservations</h3>
+              <div className="space-y-4">
+                {/* @ts-expect-error Server/Client boundary - component is client-side */}
+                <ReservationsTab propertyId={propertyId} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'units' && !isLandProperty((property.property_type as any) || 'HOME') && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">Units & Tenants</h3>
               <div className="space-y-4">
@@ -487,6 +657,7 @@ export default function PropertyDetailPage() {
             id: property.id,
             name: property.name,
             physical_address: property.physical_address,
+            property_type: (property as any).property_type as any,
             lat: (property as any).lat ?? undefined,
             lng: (property as any).lng ?? undefined,
             notes: property.notes ?? undefined
@@ -498,6 +669,83 @@ export default function PropertyDetailPage() {
           onCancel={() => setShowPropertyForm(false)}
         />
       )}
+
+      {/* Land Details Modal - moved to top-level to avoid nesting issues */}
+      {showLandForm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <LandDetailsForm
+              propertyId={property.id}
+              initialData={{
+                totalAreaSqm: (property as any).total_area_sqm,
+                totalAreaAcres: (property as any).total_area_acres,
+                frontageMeters: (property as any).frontage_meters,
+                zoningClassification: (property as any).zoning_classification,
+                titleDeedNumber: (property as any).title_deed_number,
+                surveyPlanNumber: (property as any).survey_plan_number,
+                developmentPermitStatus: (property as any).development_permit_status,
+                electricityAvailable: (property as any).electricity_available,
+                waterAvailable: (property as any).water_available,
+                sewerAvailable: (property as any).sewer_available,
+                roadAccessType: (property as any).road_access_type,
+                internetAvailable: (property as any).internet_available,
+                topography: (property as any).topography,
+                soilType: (property as any).soil_type,
+                drainageStatus: (property as any).drainage_status,
+                salePriceKes: (property as any).sale_price_kes,
+                leasePricePerSqmKes: (property as any).lease_price_per_sqm_kes,
+                leaseDurationYears: (property as any).lease_duration_years,
+                priceNegotiable: (property as any).price_negotiable,
+                developmentPotential: (property as any).development_potential,
+                nearbyLandmarks: (property as any).nearby_landmarks,
+                environmentalRestrictions: (property as any).environmental_restrictions,
+                buildingRestrictions: (property as any).building_restrictions,
+                easements: (property as any).easements,
+              }}
+              onSave={async (formValues) => {
+                const payload: any = {
+                  total_area_sqm: formValues.totalAreaSqm ?? null,
+                  total_area_acres: formValues.totalAreaAcres ?? null,
+                  frontage_meters: formValues.frontageMeters ?? null,
+                  zoning_classification: formValues.zoningClassification ?? null,
+                  title_deed_number: formValues.titleDeedNumber ?? null,
+                  survey_plan_number: formValues.surveyPlanNumber ?? null,
+                  development_permit_status: formValues.developmentPermitStatus ?? null,
+                  electricity_available: formValues.electricityAvailable ?? null,
+                  water_available: formValues.waterAvailable ?? null,
+                  sewer_available: formValues.sewerAvailable ?? null,
+                  road_access_type: formValues.roadAccessType ?? null,
+                  internet_available: formValues.internetAvailable ?? null,
+                  topography: formValues.topography ?? null,
+                  soil_type: formValues.soilType ?? null,
+                  drainage_status: formValues.drainageStatus ?? null,
+                  sale_price_kes: formValues.salePriceKes ?? null,
+                  lease_price_per_sqm_kes: formValues.leasePricePerSqmKes ?? null,
+                  lease_duration_years: formValues.leaseDurationYears ?? null,
+                  price_negotiable: formValues.priceNegotiable ?? null,
+                  development_potential: formValues.developmentPotential ?? null,
+                  nearby_landmarks: formValues.nearbyLandmarks ?? null,
+                  environmental_restrictions: formValues.environmentalRestrictions ?? null,
+                  building_restrictions: formValues.buildingRestrictions ?? null,
+                  easements: formValues.easements ?? null,
+                }
+                const { error: updErr } = await supabase
+                  .from('properties')
+                  .update(payload)
+                  .eq('id', property.id)
+                if (updErr) {
+                  alert(`Failed to save land details: ${updErr.message}`)
+                  return
+                }
+                setShowLandForm(false)
+                await loadPropertyDetails()
+              }}
+              onCancel={() => setShowLandForm(false)}
+            />
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
