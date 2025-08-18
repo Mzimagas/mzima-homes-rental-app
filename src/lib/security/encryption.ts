@@ -490,7 +490,8 @@ export class SecurityHeaders {
         "img-src 'self' data: https:",
         "font-src 'self'",
         "connect-src 'self' https://api.supabase.co https://sandbox.safaricom.co.ke https://api.safaricom.co.ke",
-        "frame-ancestors 'none'"
+        "frame-ancestors 'none'",
+        "frame-src https://challenges.cloudflare.com https://www.google.com"
       ].join('; ')
     }
   }

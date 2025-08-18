@@ -17,6 +17,7 @@ import { UnitActions } from '../../../../components/properties/UnitActions'
 import { PropertyActions } from '../../../../components/properties/PropertyActions'
 import PropertyBillingSettings from '../../../../components/properties/property-billing-settings'
 import LandDetailsForm from '../../../../components/properties/LandDetailsForm'
+import GoogleMapEmbed from '../../../../components/location/GoogleMapEmbed'
 
 import { isLandProperty, getPropertyTypeLabel } from '../../../../lib/validation/property'
 
@@ -232,6 +233,15 @@ export default function PropertyDetailPage() {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">{property.name}</h1>
             <p className="text-gray-600">{property.physical_address}</p>
+            <div className="mt-3 w-full md:w-96 h-48">
+              <GoogleMapEmbed
+                lat={(property as any).lat ?? null}
+                lng={(property as any).lng ?? null}
+                address={property.physical_address ?? property.name}
+                title={`Map of ${property.name}`}
+                className="h-48"
+              />
+            </div>
           </div>
         </div>
         <div className="flex space-x-3 items-center">
@@ -493,6 +503,19 @@ export default function PropertyDetailPage() {
         <div className="p-6">
           {activeTab === 'overview' && (
             <div className="space-y-6">
+              {/* Large Map on Overview */}
+              <div className="bg-white rounded-lg overflow-hidden border">
+                <div className="w-full h-80">
+                  <GoogleMapEmbed
+                    lat={(property as any).lat ?? null}
+                    lng={(property as any).lng ?? null}
+                    address={property.physical_address ?? property.name}
+                    className="h-80"
+                    title={`Map of ${property.name}`}
+                  />
+                </div>
+              </div>
+
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Property Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -556,8 +579,8 @@ export default function PropertyDetailPage() {
                 ) : (
                   property.units.map((unit) => (
                     <div key={unit.id} className="bg-white p-4 rounded-lg border">
-                      <div className="flex items-center justify-between">
-                        <div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-2">
                           <h4 className="text-sm font-medium text-gray-900">{unit.unit_label || ''}</h4>
                           <p className="text-sm text-gray-500">
                             {formatCurrency(unit.monthly_rent_kes || 0)} / month
@@ -582,6 +605,14 @@ export default function PropertyDetailPage() {
                               ))}
                             </div>
                           )}
+                        </div>
+                        <div className="h-32">
+                          <GoogleMapEmbed
+                            lat={(property as any).lat ?? null}
+                            lng={(property as any).lng ?? null}
+                            address={property.physical_address ?? property.name}
+                            className="h-32"
+                          />
                         </div>
                         <div className="flex items-center space-x-4">
                           <button

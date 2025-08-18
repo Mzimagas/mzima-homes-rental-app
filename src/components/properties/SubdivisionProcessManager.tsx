@@ -8,6 +8,8 @@ import supabase from '../../lib/supabase-client'
 import { Button, TextField, FormField } from '../ui'
 import Modal from '../ui/Modal'
 
+import GoogleMapEmbed from '../location/GoogleMapEmbed'
+
 // Subdivision schema
 const subdivisionSchema = z.object({
   subdivisionName: z.string().min(1, 'Subdivision name is required'),
@@ -463,14 +465,21 @@ export default function SubdivisionProcessManager({ onPropertyCreated }: Subdivi
                 <div className="grid gap-4">
                   {properties.map((property) => (
                     <div key={property.id} className="bg-white rounded-lg border border-gray-200 p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-2">
                           <h4 className="font-semibold text-gray-900">{property.name}</h4>
                           <p className="text-gray-600">{property.physical_address}</p>
                           <p className="text-sm text-gray-500">
                             Type: {property.property_type.replace('_', ' ')}
                             {property.total_area_acres && ` • ${property.total_area_acres} acres`}
                           </p>
+                        </div>
+                        <div className="h-32">
+                          <GoogleMapEmbed
+                            address={property.physical_address || property.name}
+                            title={`Map of ${property.name}`}
+                            className="h-32"
+                          />
                         </div>
                         <div className="flex items-center space-x-2">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800`}>
@@ -520,8 +529,8 @@ export default function SubdivisionProcessManager({ onPropertyCreated }: Subdivi
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="w-full bg-gray-200 rounded-full h-2 mr-4">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
                             style={{ width: `${(subdivision.total_plots_created / subdivision.total_plots_planned) * 100}%` }}
                           ></div>
                         </div>

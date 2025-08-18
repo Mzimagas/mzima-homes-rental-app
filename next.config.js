@@ -52,7 +52,7 @@ const nextConfig = {
       // Allow HTTPS and WSS to Supabase, plus other required endpoints
       `connect-src 'self' https://${SUPABASE_HOST} wss://${SUPABASE_HOST} https://challenges.cloudflare.com https://app.posthog.com https://*.posthog.com https://nominatim.openstreetmap.org https://vitals.vercel-insights.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.googletagmanager.com`,
       "worker-src 'self' blob:",
-      "frame-src https://challenges.cloudflare.com",
+      "frame-src https://challenges.cloudflare.com https://www.google.com",
       "frame-ancestors 'none'",
       "object-src 'none'",
       "form-action 'self'",
