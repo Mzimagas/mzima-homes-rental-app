@@ -25,6 +25,25 @@
     "@next/next/no-html-link-for-pages": "off",
     "react-hooks/exhaustive-deps": "off",
     "no-redeclare": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/__tests__/**/*.{js,ts,tsx}"],
+      "env": {
+        "jest": true
+      },
+      "globals": {
+        "jest": "readonly",
+        "describe": "readonly",
+        "test": "readonly",
+        "it": "readonly",
+        "expect": "readonly",
+        "beforeEach": "readonly",
+        "afterEach": "readonly",
+        "beforeAll": "readonly",
+        "afterAll": "readonly"
+      }
+    }
+  ]
 }
 

@@ -142,10 +142,11 @@ export default function LandDetailsForm({
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-secondary mb-2">
+                <label htmlFor="totalAreaSqm" className="block text-sm font-medium text-secondary mb-2">
                   Total Area (Square Meters)
                 </label>
                 <input
+                  id="totalAreaSqm"
                   type="number"
                   step="0.01"
                   {...register('totalAreaSqm', { valueAsNumber: true })}
@@ -162,10 +163,11 @@ export default function LandDetailsForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-2">
+                <label htmlFor="totalAreaAcres" className="block text-sm font-medium text-secondary mb-2">
                   Total Area (Acres)
                 </label>
                 <input
+                  id="totalAreaAcres"
                   type="number"
                   step="0.0001"
                   {...register('totalAreaAcres', { valueAsNumber: true })}
@@ -183,10 +185,11 @@ export default function LandDetailsForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
+              <label htmlFor="frontageMeters" className="block text-sm font-medium text-secondary mb-2">
                 Road Frontage (Meters)
               </label>
               <input
+                id="frontageMeters"
                 type="number"
                 step="0.1"
                 {...register('frontageMeters', { valueAsNumber: true })}
@@ -200,10 +203,10 @@ export default function LandDetailsForm({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-secondary mb-2">
+                <label htmlFor="zoningClassification" className="block text-sm font-medium text-secondary mb-2">
                   Zoning Classification
                 </label>
-                <select {...register('zoningClassification')} className="form-input">
+                <select id="zoningClassification" {...register('zoningClassification')} className="form-input">
                   <option value="">Select zoning...</option>
                   {ZONING_OPTIONS.map(option => (
                     <option key={option} value={option}>{option}</option>
@@ -212,10 +215,10 @@ export default function LandDetailsForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-2">
+                <label htmlFor="topography" className="block text-sm font-medium text-secondary mb-2">
                   Topography
                 </label>
-                <select {...register('topography')} className="form-input">
+                <select id="topography" {...register('topography')} className="form-input">
                   <option value="">Select topography...</option>
                   {TOPOGRAPHY_OPTIONS.map(option => (
                     <option key={option} value={option}>{option}</option>
@@ -226,10 +229,10 @@ export default function LandDetailsForm({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-secondary mb-2">
+                <label htmlFor="soilType" className="block text-sm font-medium text-secondary mb-2">
                   Soil Type
                 </label>
-                <select {...register('soilType')} className="form-input">
+                <select id="soilType" {...register('soilType')} className="form-input">
                   <option value="">Select soil type...</option>
                   {SOIL_TYPE_OPTIONS.map(option => (
                     <option key={option} value={option}>{option}</option>
@@ -238,10 +241,10 @@ export default function LandDetailsForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-2">
+                <label htmlFor="drainageStatus" className="block text-sm font-medium text-secondary mb-2">
                   Drainage Status
                 </label>
-                <select {...register('drainageStatus')} className="form-input">
+                <select id="drainageStatus" {...register('drainageStatus')} className="form-input">
                   <option value="">Select drainage...</option>
                   {DRAINAGE_OPTIONS.map(option => (
                     <option key={option} value={option}>{option}</option>

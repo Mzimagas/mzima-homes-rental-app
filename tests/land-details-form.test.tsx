@@ -33,6 +33,10 @@ describe('LandDetailsForm', () => {
     const zoning = screen.getByLabelText(/Zoning Classification/i) as HTMLSelectElement
     fireEvent.change(zoning, { target: { value: 'Commercial' } })
 
+    // Fill required numeric field to avoid validation errors
+    const frontage = screen.getByLabelText(/Road Frontage \(Meters\)/i) as HTMLInputElement
+    fireEvent.change(frontage, { target: { value: '50' } })
+
     // Submit
     const submit = screen.getByRole('button', { name: /save land details/i })
     fireEvent.click(submit)

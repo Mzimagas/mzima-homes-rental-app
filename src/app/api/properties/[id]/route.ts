@@ -154,9 +154,18 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const body = await req.json().catch(() => ({}))
-    const { property_type: newType, force } = body || {}
+    const {
+      property_type: newType,
+      lifecycle_status,
+      subdivision_status,
+      handover_status,
+      handover_date,
+      force
+    } = body || {}
 
-    if (!newType) {
+    // Check if we have any fields to update
+    const hasUpdates = newType || lifecycle_status || subdivision_status || handover_status || handover_date !== undefined
+    if (!hasUpdates) {
       return errors.badRequest('No fields to update')
     }
 
@@ -178,43 +187,70 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
     const role = (membership as any).role
     if (!['OWNER', 'PROPERTY_MANAGER'].includes(role)) return errors.forbidden('Insufficient permission')
 
-    const oldType = (existing as any).property_type as string | null
-    const isLand = (t: string | null) => ['RESIDENTIAL_LAND','COMMERCIAL_LAND','AGRICULTURAL_LAND','MIXED_USE_LAND'].includes((t || '').toString())
-    const crossingCategory = isLand(oldType) !== isLand(newType)
+    // Prepare update object
+    const updateData: any = {}
 
-    if (crossingCategory) {
-      // Check units and active tenants
-      const { data: units } = await admin.from('units').select('id').eq('property_id', propertyId)
-      const unitIds = (units || []).map(u => u.id)
-      let activeTenantCount = 0
-      if (unitIds.length > 0) {
-        const { data: activeTenants } = await admin
-          .from('tenants')
-          .select('id')
-          .in('current_unit_id', unitIds)
-          .eq('status', 'ACTIVE')
-        activeTenantCount = activeTenants?.length || 0
+    // Handle property type changes (existing logic)
+    if (newType) {
+      const oldType = (existing as any).property_type as string | null
+      const isLand = (t: string | null) => ['RESIDENTIAL_LAND','COMMERCIAL_LAND','AGRICULTURAL_LAND','MIXED_USE_LAND'].includes((t || '').toString())
+      const crossingCategory = isLand(oldType) !== isLand(newType)
+
+      if (crossingCategory) {
+        // Check units and active tenants
+        const { data: units } = await admin.from('units').select('id').eq('property_id', propertyId)
+        const unitIds = (units || []).map(u => u.id)
+        let activeTenantCount = 0
+        if (unitIds.length > 0) {
+          const { data: activeTenants } = await admin
+            .from('tenants')
+            .select('id')
+            .in('current_unit_id', unitIds)
+            .eq('status', 'ACTIVE')
+          activeTenantCount = activeTenants?.length || 0
+        }
+
+        const unitCount = unitIds.length
+
+        if (!force && (unitCount > 0 || activeTenantCount > 0)) {
+          return new NextResponse(
+            JSON.stringify({
+              ok: false,
+              code: 'TYPE_CHANGE_CONFLICT',
+              message: 'Changing property type across categories will affect related data.',
+              details: { unitCount, activeTenantCount }
+            }),
+            { status: 409, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
       }
+      updateData.property_type = newType
+    }
 
-      const unitCount = unitIds.length
+    // Handle lifecycle status changes
+    if (lifecycle_status) {
+      updateData.lifecycle_status = lifecycle_status
+    }
 
-      if (!force && (unitCount > 0 || activeTenantCount > 0)) {
-        return new NextResponse(
-          JSON.stringify({
-            ok: false,
-            code: 'TYPE_CHANGE_CONFLICT',
-            message: 'Changing property type across categories will affect related data.',
-            details: { unitCount, activeTenantCount }
-          }),
-          { status: 409, headers: { 'Content-Type': 'application/json' } }
-        )
-      }
+    // Handle subdivision status changes
+    if (subdivision_status) {
+      updateData.subdivision_status = subdivision_status
+    }
+
+    // Handle handover status changes
+    if (handover_status) {
+      updateData.handover_status = handover_status
+    }
+
+    // Handle handover date changes
+    if (handover_date !== undefined) {
+      updateData.handover_date = handover_date
     }
 
     // Perform the update
     const { error: updErr } = await admin
       .from('properties')
-      .update({ property_type: newType })
+      .update(updateData)
       .eq('id', propertyId)
 
     if (updErr) return errors.badRequest('Failed to update property', updErr)
@@ -223,21 +259,43 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
     try {
       const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
       const ua = req.headers.get('user-agent') || 'unknown'
-      // Insert durable DB audit if table exists
-      await admin.from('property_audit_log').insert({
-        property_id: propertyId,
-        user_id: userId,
-        event_type: 'property_type_changed',
-        old_type: oldType as any,
-        new_type: newType as any,
-        details: { ip_address: ip, user_agent: ua }
-      }).catch(()=>({}))
-      // Fire-and-forget to existing audit endpoint (redis-backed)
-      fetch(`${new URL(req.url).origin}/api/security/audit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: 'property_type_changed', identifier: propertyId })
-      }).catch(()=>{})
+
+      // Log property type changes if applicable
+      if (newType) {
+        const oldType = (existing as any).property_type as string | null
+        // Insert durable DB audit if table exists
+        try {
+          await admin.from('property_audit_log').insert({
+            property_id: propertyId,
+            user_id: userId,
+            event_type: 'property_type_changed',
+            old_type: oldType as any,
+            new_type: newType as any,
+            details: { ip_address: ip, user_agent: ua }
+          })
+        } catch (auditErr) {
+          // Ignore audit errors
+        }
+        // Fire-and-forget to existing audit endpoint (redis-backed)
+        fetch(`${new URL(req.url).origin}/api/security/audit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'property_type_changed', identifier: propertyId })
+        }).catch(()=>{})
+      }
+
+      // Log other property updates
+      if (lifecycle_status || handover_status || handover_date !== undefined) {
+        fetch(`${new URL(req.url).origin}/api/security/audit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'property_updated',
+            identifier: propertyId,
+            details: { lifecycle_status, handover_status, handover_date }
+          })
+        }).catch(()=>{})
+      }
     } catch {}
 
     return NextResponse.json({ ok: true })

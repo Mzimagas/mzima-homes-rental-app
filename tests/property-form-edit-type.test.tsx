@@ -10,6 +10,10 @@ vi.mock('../src/components/location/AddressAutocomplete', () => ({
   ),
 }))
 
+// Mock global fetch to capture API calls
+const fetchMock = vi.fn()
+global.fetch = fetchMock
+
 // Mock supabase client to capture update payload (define inside factory to avoid hoist issues)
 vi.mock('../src/lib/supabase-client', () => {
   const updateMock = vi.fn().mockReturnThis()
@@ -30,18 +34,25 @@ vi.mock('../src/lib/supabase-client', () => {
 })
 
 import PropertyForm from '../src/components/properties/property-form'
-import supabaseModule from '../src/lib/supabase-client'
+import * as supabaseModule from '../src/lib/supabase-client'
 
 const doubles = (supabaseModule as any).__test_doubles
 
 
 describe('PropertyForm editing property_type', () => {
   it('allows changing property_type and includes it in update payload', async () => {
+    // Mock successful API response
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 'prop-1', property_type: 'RESIDENTIAL_LAND' }),
+    })
     const property = {
       id: 'prop-1',
       name: 'Test Property',
       physical_address: '123 Test St',
       property_type: 'HOME',
+      lat: -1.2921,
+      lng: 36.8219,
     }
 
     render(<PropertyForm isOpen={true} property={property} onCancel={() => {}} />)
@@ -55,11 +66,15 @@ describe('PropertyForm editing property_type', () => {
     const submitBtn = screen.getByRole('button', { name: /update property/i })
     fireEvent.click(submitBtn)
 
-    await waitFor(() => expect(doubles.fromMock).toHaveBeenCalledWith('properties'))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
-    expect(doubles.updateMock).toHaveBeenCalled()
-    const payload = doubles.updateMock.mock.calls[0][0]
-    expect(payload).toMatchObject({ property_type: 'RESIDENTIAL_LAND' })
+    expect(fetchMock).toHaveBeenCalledWith('/api/properties/prop-1', expect.objectContaining({
+      method: 'PATCH',
+      headers: expect.objectContaining({
+        'Content-Type': 'application/json',
+      }),
+      body: expect.stringContaining('"property_type":"RESIDENTIAL_LAND"'),
+    }))
   })
 
   it('shows a warning when switching between rental and land categories', async () => {
@@ -68,6 +83,8 @@ describe('PropertyForm editing property_type', () => {
       name: 'Another Property',
       physical_address: '456 Test Ave',
       property_type: 'HOME',
+      lat: -1.2921,
+      lng: 36.8219,
     }
 
     render(<PropertyForm isOpen={true} property={property} onCancel={() => {}} />)

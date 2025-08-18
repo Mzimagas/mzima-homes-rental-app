@@ -18,7 +18,6 @@ import { PropertyActions } from '../../../../components/properties/PropertyActio
 import PropertyBillingSettings from '../../../../components/properties/property-billing-settings'
 import LandDetailsForm from '../../../../components/properties/LandDetailsForm'
 
-
 import { isLandProperty, getPropertyTypeLabel } from '../../../../lib/validation/property'
 
 interface PropertyWithUnits extends Property {

@@ -1,3 +1,5 @@
+import type { JSX } from 'react'
+
 interface AmenityIconProps {
   code: string
   className?: string

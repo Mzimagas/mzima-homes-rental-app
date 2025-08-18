@@ -1,175 +1,118 @@
-// Test the authentication fix to verify logout works correctly
-const fs = require('fs')
-const { createClient } = require('@supabase/supabase-js')
+#!/usr/bin/env node
 
-// Read environment variables from .env.local
-let supabaseUrl, supabaseAnonKey
-try {
-  const envContent = fs.readFileSync('.env.local', 'utf8')
-  const lines = envContent.split('\n')
-  
-  for (const line of lines) {
-    const trimmedLine = line.trim()
-    if (trimmedLine.startsWith('NEXT_PUBLIC_SUPABASE_URL=')) {
-      supabaseUrl = trimmedLine.split('=')[1]
-    }
-    if (trimmedLine.startsWith('NEXT_PUBLIC_SUPABASE_ANON_KEY=')) {
-      supabaseAnonKey = trimmedLine.split('=')[1]
-    }
-  }
-} catch (err) {
-  console.error('❌ Could not read .env.local file:', err.message)
+import { createClient } from '@supabase/supabase-js'
+import dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config({ path: './voi-rental-app/.env.local' })
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Missing Supabase environment variables')
   process.exit(1)
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
-  }
-})
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-async function testAuthFix() {
-  console.log('🧪 Testing Authentication Fix - Login/Logout Cycle...\n')
-  
+async function testAuthenticationHandling() {
+  console.log('🔍 Testing Authentication Handling...\n')
+
+  // Test 1: Check current authentication status
+  console.log('1️⃣ Checking current authentication status...')
   try {
-    // Test 1: Complete login/logout cycle
-    console.log('1️⃣ Testing complete login/logout cycle...')
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    // Login
-    console.log('   Logging in as Abel...')
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: 'abeljoshua04@gmail.com',
-      password: 'password123'
-    })
-    
-    if (signInError) {
-      console.log('❌ Login failed:', signInError.message)
-      return
-    }
-    
-    console.log('✅ Login successful!')
-    console.log(`   User: ${signInData.user?.email}`)
-    console.log(`   Session: ${signInData.session ? 'Created' : 'Not created'}`)
-    
-    // Verify session exists
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError) {
-      console.log('❌ Session check error:', sessionError.message)
-    } else if (session) {
-      console.log('✅ Session confirmed:')
-      console.log(`   User: ${session.user?.email}`)
-      console.log(`   Expires: ${new Date(session.expires_at * 1000).toLocaleString()}`)
+    if (authError) {
+      console.log('❌ Auth error:', authError.message)
+    } else if (user) {
+      console.log('✅ User is authenticated:', user.email)
     } else {
-      console.log('❌ No session found after login')
+      console.log('⚠️  No authenticated user (anonymous access)')
     }
-    
-    // Test logout
-    console.log('\n   Testing logout...')
-    const { error: signOutError } = await supabase.auth.signOut()
-    
-    if (signOutError) {
-      console.log('❌ Logout failed:', signOutError.message)
-      
-      if (signOutError.message.includes('Auth session missing')) {
-        console.log('   The "Auth session missing" error still exists')
-        console.log('   This indicates the frontend auth context needs additional fixes')
-      }
-    } else {
-      console.log('✅ Logout successful!')
-      
-      // Verify session is cleared
-      const { data: { session: postLogoutSession } } = await supabase.auth.getSession()
-      
-      if (postLogoutSession) {
-        console.log('⚠️ Session still exists after logout')
-      } else {
-        console.log('✅ Session properly cleared')
-      }
-    }
-    
-    // Test 2: Test function calls after auth fix
-    console.log('\n2️⃣ Testing function calls after auth fix...')
-    
-    // Login again for function testing
-    const { data: testSignIn, error: testSignInError } = await supabase.auth.signInWithPassword({
-      email: 'abeljoshua04@gmail.com',
-      password: 'password123'
-    })
-    
-    if (testSignInError) {
-      console.log('❌ Test login failed:', testSignInError.message)
-    } else {
-      console.log('✅ Test login successful')
-      
-      // Test get_user_accessible_properties function
-      const { data: properties, error: propertiesError } = await supabase.rpc('get_user_accessible_properties')
-      
-      if (propertiesError) {
-        console.log('❌ Function call error:', propertiesError.message)
-      } else {
-        console.log('✅ Function call successful!')
-        console.log(`   Found ${properties?.length || 0} accessible properties`)
-        
-        if (properties && properties.length > 0) {
-          properties.forEach(prop => {
-            console.log(`   - ${prop.property_name}: ${prop.user_role}`)
-          })
-        }
-      }
-      
-      // Test direct property access
-      const { data: directProperties, error: directError } = await supabase
-        .from('properties')
-        .select('id, name')
-      
-      if (directError) {
-        console.log('❌ Direct property access error:', directError.message)
-        
-        if (directError.message.includes('infinite recursion')) {
-          console.log('   RLS recursion issue still exists - need to apply FIX_RLS_RECURSION.sql')
-        }
-      } else {
-        console.log('✅ Direct property access working!')
-        console.log(`   Found ${directProperties?.length || 0} properties`)
-      }
-      
-      // Clean logout
-      await supabase.auth.signOut()
-    }
-    
-    console.log('\n📋 Authentication Fix Test Summary:')
-    console.log('✅ Auth context import: Fixed (removed non-existent auth import)')
-    console.log('✅ signIn function: Updated to use supabase.auth.signInWithPassword')
-    console.log('✅ signUp function: Updated to use supabase.auth.signUp')
-    console.log('✅ signOut function: Updated to use supabase.auth.signOut')
-    console.log('✅ Application compilation: No errors')
-    
-    console.log('\n🎉 AUTH SESSION FIX APPLIED SUCCESSFULLY!')
-    console.log('\n📝 What was fixed:')
-    console.log('   1. Removed non-existent "auth" import from supabase-client')
-    console.log('   2. Updated all auth functions to use supabase.auth directly')
-    console.log('   3. Fixed function signatures to match Supabase v2 API')
-    console.log('   4. Ensured consistent auth method usage throughout')
-    
-    console.log('\n🚀 Expected Results:')
-    console.log('   - "Logout failed: Auth session missing!" error should be resolved')
-    console.log('   - Login/logout cycle should work smoothly in the frontend')
-    console.log('   - Auth context should properly manage session state')
-    console.log('   - All authentication operations should be functional')
-    
-    console.log('\n🔧 Remaining Tasks:')
-    console.log('   1. Test the frontend login/logout in browser')
-    console.log('   2. Apply FIX_RLS_RECURSION.sql to resolve property access issues')
-    console.log('   3. Verify dashboard shows real property data')
-    console.log('   4. Test property creation functionality')
-    
   } catch (err) {
-    console.error('❌ Auth fix test failed:', err.message)
+    console.log('❌ Exception checking auth:', err.message)
   }
+
+  // Test 2: Test session refresh
+  console.log('\n2️⃣ Testing session refresh...')
+  try {
+    const { data, error } = await supabase.auth.refreshSession()
+    
+    if (error) {
+      console.log('❌ Session refresh error:', error.message)
+    } else {
+      console.log('✅ Session refresh successful')
+      if (data.user) {
+        console.log('   User after refresh:', data.user.email)
+      }
+    }
+  } catch (err) {
+    console.log('❌ Exception during session refresh:', err.message)
+  }
+
+  // Test 3: Test API endpoint that was failing
+  console.log('\n3️⃣ Testing property finances API endpoint...')
+  try {
+    const response = await fetch(`${supabaseUrl.replace('/supabase', '')}/api/properties/finances/summary`)
+    
+    console.log('   Response status:', response.status)
+    console.log('   Response headers:', Object.fromEntries(response.headers.entries()))
+    
+    if (response.status === 401) {
+      console.log('⚠️  API returned 401 - Authentication required')
+      console.log('   This is expected if no user is logged in')
+    } else if (response.status === 404) {
+      console.log('⚠️  API returned 404 - Endpoint not found or database setup required')
+    } else if (response.ok) {
+      console.log('✅ API call successful')
+      const data = await response.json()
+      console.log('   Response data:', data)
+    } else {
+      console.log('❌ API call failed with status:', response.status)
+      const errorText = await response.text()
+      console.log('   Error response:', errorText)
+    }
+  } catch (err) {
+    console.log('❌ Exception calling API:', err.message)
+  }
+
+  // Test 4: Test properties query directly
+  console.log('\n4️⃣ Testing direct properties query...')
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .in('lifecycle_status', ['ACTIVE', 'UNDER_DEVELOPMENT'])
+      .limit(5)
+
+    if (error) {
+      console.log('❌ Properties query error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
+      
+      if (error.message?.includes('Auth session missing') || error.code === 'PGRST301') {
+        console.log('🎯 This is an authentication error - session refresh would be attempted')
+      }
+    } else {
+      console.log('✅ Properties query successful')
+      console.log(`   Found ${data?.length || 0} properties`)
+    }
+  } catch (err) {
+    console.log('❌ Exception in properties query:', err.message)
+  }
+
+  console.log('\n📋 Summary:')
+  console.log('The authentication handling improvements should:')
+  console.log('1. ✅ Check user authentication before API calls')
+  console.log('2. ✅ Attempt session refresh on auth failures')
+  console.log('3. ✅ Provide clear error messages to users')
+  console.log('4. ✅ Handle both API and Supabase query auth errors')
+  console.log('5. ✅ Show login prompt when authentication is required')
 }
 
-testAuthFix()
+testAuthenticationHandling().catch(console.error)

@@ -1,4 +1,113 @@
+// Jest setup file
 import '@testing-library/jest-dom'
+
+// Mock environment variables for testing
+process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co'
+process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-key'
+process.env.MPESA_CONSUMER_KEY = 'test-consumer-key'
+process.env.MPESA_CONSUMER_SECRET = 'test-consumer-secret'
+process.env.MPESA_BUSINESS_SHORT_CODE = '174379'
+process.env.MPESA_PASSKEY = 'test-passkey'
+process.env.MPESA_ENVIRONMENT = 'sandbox'
+
+// Mock fetch for API calls
+global.fetch = jest.fn()
+
+// Mock crypto for file hashing
+Object.defineProperty(global, 'crypto', {
+  value: {
+    subtle: {
+      digest: jest.fn().mockResolvedValue(new ArrayBuffer(32))
+    }
+  }
+})
+
+// Mock window.location
+Object.defineProperty(window, 'location', {
+  value: {
+    href: 'http://localhost:3000',
+    origin: 'http://localhost:3000',
+    pathname: '/',
+    search: '',
+    hash: ''
+  },
+  writable: true
+})
+
+// Mock IntersectionObserver
+global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn()
+}))
+
+// Mock ResizeObserver
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn()
+}))
+
+// Clean up after each test
+afterEach(() => {
+  jest.clearAllMocks()
+
+  // Reset fetch mock
+  if (global.fetch && global.fetch.mockClear) {
+    global.fetch.mockClear()
+  }
+})
+
+// Global test utilities
+global.testUtils = {
+  // Generate test UUID
+  generateTestId: () => `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+
+  // Wait for async operations
+  waitFor: (ms = 100) => new Promise(resolve => setTimeout(resolve, ms)),
+
+  // Mock successful API response
+  mockApiSuccess: (data) => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ data, error: null })
+  }),
+
+  // Mock API error response
+  mockApiError: (error) => ({
+    ok: false,
+    status: 400,
+    json: async () => ({ data: null, error })
+  }),
+
+  // Create test client data
+  createTestClient: () => ({
+    full_name: 'Test Client',
+    id_number: `TEST${Date.now()}`,
+    phone: '+254701234567',
+    email: 'test@example.com',
+    source: 'walk_in'
+  }),
+
+  // Create test plot data
+  createTestPlot: (subdivisionId) => ({
+    subdivision_id: subdivisionId,
+    plot_no: `TEST${Date.now()}`,
+    size_sqm: 1000,
+    access_type: 'public_road',
+    utility_level: 'water_power',
+    stage: 'ready_for_sale'
+  }),
+
+  // Create test coordinates
+  createTestCoordinates: () => [
+    [36.8219, -1.2921],
+    [36.8229, -1.2921],
+    [36.8229, -1.2931],
+    [36.8219, -1.2931],
+    [36.8219, -1.2921]
+  ]
+}
 
 // Mock Next.js router
 jest.mock('next/router', () => ({
