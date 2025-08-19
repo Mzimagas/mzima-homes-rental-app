@@ -34,7 +34,7 @@ export default function PropertyDetailPage() {
   const params = useParams()
   const router = useRouter()
   const propertyId = params.id as string
-  const { properties } = usePropertyAccess()
+  const { properties, loading: propertiesLoading } = usePropertyAccess()
 
   const [property, setProperty] = useState<PropertyWithUnits | null>(null)
   const [stats, setStats] = useState<PropertyStats | null>(null)
@@ -66,6 +66,13 @@ export default function PropertyDetailPage() {
     try {
       setLoading(true)
       setError(null)
+
+      // First check if user has access to this property
+      const hasAccess = properties.some(p => p.property_id === propertyId)
+      if (!hasAccess) {
+        setError('You do not have access to this property')
+        return
+      }
 
       // Load property with units
       const { data: propertyData, error: propertyError } = await supabase
@@ -134,10 +141,11 @@ export default function PropertyDetailPage() {
   }
 
   useEffect(() => {
-    if (propertyId) {
+    // Only load property details after properties are loaded from usePropertyAccess
+    if (propertyId && !propertiesLoading) {
       loadPropertyDetails()
     }
-  }, [propertyId])
+  }, [propertyId, propertiesLoading, properties])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {

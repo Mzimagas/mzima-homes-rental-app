@@ -17,6 +17,8 @@ import {
   calculateBalanceDue
 } from '../utils/purchase-pipeline.utils'
 import { getSourceIcon, getSourceLabel } from '../utils/property-management.utils'
+import { usePropertyAccess } from '../../../hooks/usePropertyAccess'
+
 
 interface InlinePurchaseViewProps {
   purchase: PurchaseItem
@@ -33,6 +35,10 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
   const [purchaseData, setPurchaseData] = useState<PurchaseItem | null>(null)
   const [selectedStageId, setSelectedStageId] = useState<number | null>(null)
   const [showStageModal, setShowStageModal] = useState(false)
+
+  // Always allow financial management for purchase pipeline entries
+  const { properties } = usePropertyAccess()
+  const hasPropertyAccess = true // User owns the purchase pipeline entry
 
   // Convert PurchaseItem to PropertyWithLifecycle format for PropertyAcquisitionFinancials
   const convertToProperty = (purchaseItem: PurchaseItem): PropertyWithLifecycle => {
@@ -60,6 +66,8 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
     loadPurchaseData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [purchase.id])
+
+
 
   const loadPurchaseData = async () => {
     try {
@@ -216,7 +224,6 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
           <PropertyAcquisitionFinancials
             property={convertToProperty(purchaseData || purchase)}
             onUpdate={(propertyId) => {
-              // Optionally refresh purchase data when financial data is updated
               console.log('Financial data updated for purchase:', propertyId)
             }}
           />

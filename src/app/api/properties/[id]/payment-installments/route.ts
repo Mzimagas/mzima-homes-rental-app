@@ -35,11 +35,45 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    const { data } = await admin
+
+    // Try the newer function signature first
+    let { data, error } = await admin
       .rpc('get_user_accessible_properties', { user_uuid: userId })
 
-    return data?.some((p: any) => p.property_id === propertyId) || false
-  } catch {
+    if (error) {
+      // Fallback: Check if user owns the property directly
+      const { data: property, error: propError } = await admin
+        .from('properties')
+        .select('id, landlord_id')
+        .eq('id', propertyId)
+        .eq('landlord_id', userId)
+        .single()
+
+      if (propError) {
+        return false
+      }
+
+      return !!property
+    }
+
+    // Handle different function return formats
+    let hasAccess = false
+    if (Array.isArray(data)) {
+      // Check if data contains property_id field (newer format) or just UUIDs (older format)
+      hasAccess = data.some((p: any) => {
+        if (typeof p === 'string') {
+          // Old format: array of UUIDs
+          return p === propertyId
+        } else if (p && typeof p === 'object') {
+          // New format: array of objects with property_id field
+          return p.property_id === propertyId
+        }
+        return false
+      })
+    }
+
+    return hasAccess
+  } catch (e) {
     return false
   }
 }

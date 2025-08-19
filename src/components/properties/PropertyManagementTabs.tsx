@@ -7,6 +7,7 @@ import SubdivisionProcessManager from './SubdivisionProcessManager'
 import WorkflowNavigation from './components/WorkflowNavigation'
 import PropertiesTab from './components/PropertiesTab'
 import HandoverPipelineManager from './components/HandoverPipelineManager'
+
 import { PropertyManagementService } from './services/property-management.service'
 import { 
   PropertyManagementTabsProps,
@@ -164,6 +165,8 @@ export default function PropertyManagementTabs({
             onSearchChange={setSearchTerm}
           />
         )}
+
+
       </div>
     </div>
   )

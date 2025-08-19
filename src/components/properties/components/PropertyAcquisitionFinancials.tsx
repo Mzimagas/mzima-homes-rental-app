@@ -107,6 +107,9 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
     notes: ''
   })
 
+  // Check if this is a purchase pipeline entry
+  const isPurchasePipelineEntry = !property.landlord_id && property.property_source !== 'PURCHASE_PIPELINE'
+
   // Load existing financial data
   useEffect(() => {
     loadFinancialData()
@@ -129,7 +132,13 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       console.error('Error loading financial data:', error)
       // Check if it's a database schema issue (migration not applied)
       const errorMessage = error instanceof Error ? error.message : String(error)
-      if (errorMessage.includes('403') || errorMessage.includes('404') || errorMessage.includes('column') && errorMessage.includes('does not exist')) {
+      if (errorMessage.includes('403') || errorMessage.includes('Not allowed')) {
+        setError('You do not have access to financial data for this property. Please ensure you have the correct permissions.')
+        // Set empty data for now
+        setCostEntries([])
+        setPaymentInstallments([])
+        setTotalPurchasePrice('')
+      } else if (errorMessage.includes('404') || errorMessage.includes('column') && errorMessage.includes('does not exist')) {
         setError('Database migration required. Please apply the acquisition financials migration to enable this feature.')
         // Set empty data for now
         setCostEntries([])

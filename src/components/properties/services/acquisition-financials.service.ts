@@ -145,15 +145,28 @@ export class AcquisitionFinancialsService {
   // Purchase Price API calls
   static async updatePurchasePrice(propertyId: string, purchasePrice: number, changeReason?: string): Promise<void> {
     try {
-      const body: any = { purchase_price_agreement_kes: purchasePrice }
-      if (changeReason) {
-        body.change_reason = changeReason
-      }
+      // Check if this is a purchase pipeline entry
+      const isPipeline = await this.isPurchasePipelineEntry(propertyId)
 
-      await this.makeRequest(`/api/properties/${propertyId}/purchase-price`, {
-        method: 'PATCH',
-        body: JSON.stringify(body),
-      })
+      if (isPipeline) {
+        // Update purchase pipeline entry
+        const body = { negotiated_price_kes: purchasePrice }
+        await this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        })
+      } else {
+        // Update property purchase price
+        const body: any = { purchase_price_agreement_kes: purchasePrice }
+        if (changeReason) {
+          body.change_reason = changeReason
+        }
+
+        await this.makeRequest(`/api/properties/${propertyId}/purchase-price`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        })
+      }
     } catch (error) {
       console.error('Error updating purchase price:', error)
       throw error
@@ -163,13 +176,34 @@ export class AcquisitionFinancialsService {
   // Get purchase price change history
   static async getPurchasePriceHistory(propertyId: string): Promise<PurchasePriceHistoryEntry[]> {
     try {
-      const response = await this.makeRequest(`/api/properties/${propertyId}/purchase-price/history`, {
-        method: 'GET',
-      })
-      return response.data || []
+      // Check if this is a purchase pipeline entry
+      const isPipeline = await this.isPurchasePipelineEntry(propertyId)
+
+      if (isPipeline) {
+        // Purchase pipeline entries don't have history yet, return empty array
+        return []
+      } else {
+        // Get property purchase price history
+        const response = await this.makeRequest(`/api/properties/${propertyId}/purchase-price/history`, {
+          method: 'GET',
+        })
+        return response.data || []
+      }
     } catch (error) {
       console.error('Error fetching purchase price history:', error)
-      throw error
+      // Return empty array instead of throwing for purchase pipeline entries
+      return []
+    }
+  }
+
+  // Helper to detect if this is a purchase pipeline entry
+  private static async isPurchasePipelineEntry(propertyId: string): Promise<boolean> {
+    try {
+      // Try to fetch from purchase pipeline API first
+      const response = await fetch(`/api/purchase-pipeline/${propertyId}/financial`)
+      return response.ok
+    } catch {
+      return false
     }
   }
 
@@ -179,12 +213,25 @@ export class AcquisitionFinancialsService {
     payments: PaymentInstallment[]
   }> {
     try {
-      const [costs, payments] = await Promise.all([
-        this.getAcquisitionCosts(propertyId).catch(() => []), // Return empty array if API doesn't exist
-        this.getPaymentInstallments(propertyId).catch(() => []) // Return empty array if API doesn't exist
-      ])
+      // Check if this is a purchase pipeline entry
+      const isPipeline = await this.isPurchasePipelineEntry(propertyId)
 
-      return { costs, payments }
+      if (isPipeline) {
+        // Use purchase pipeline financial endpoint
+        const data = await this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`)
+        return {
+          costs: data.costs || [],
+          payments: data.payments || []
+        }
+      } else {
+        // Use property financial endpoints
+        const [costs, payments] = await Promise.all([
+          this.getAcquisitionCosts(propertyId).catch(() => []), // Return empty array if API doesn't exist
+          this.getPaymentInstallments(propertyId).catch(() => []) // Return empty array if API doesn't exist
+        ])
+
+        return { costs, payments }
+      }
     } catch (error) {
       console.error('Error loading financial data:', error)
       // Return empty data instead of throwing if it's a 404 (API not implemented yet)
