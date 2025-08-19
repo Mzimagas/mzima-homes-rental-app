@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,7 +8,8 @@ import supabase from '../../lib/supabase-client'
 import { Button, TextField, FormField } from '../ui'
 import Modal from '../ui/Modal'
 
-import GoogleMapEmbed from '../location/GoogleMapEmbed'
+import ViewOnGoogleMapsButton from '../location/ViewOnGoogleMapsButton'
+import PropertySearch from './components/PropertySearch'
 
 // Subdivision schema
 const subdivisionSchema = z.object({
@@ -47,6 +48,8 @@ interface Property {
   total_area_acres?: number
   lifecycle_status: string
   subdivision_status?: string
+  lat?: number | null
+  lng?: number | null
 }
 
 interface SubdivisionItem {
@@ -74,9 +77,15 @@ interface SubdivisionPlot {
 
 interface SubdivisionProcessManagerProps {
   onPropertyCreated?: (propertyId: string) => void
+  searchTerm?: string
+  onSearchChange?: (searchTerm: string) => void
 }
 
-export default function SubdivisionProcessManager({ onPropertyCreated }: SubdivisionProcessManagerProps) {
+export default function SubdivisionProcessManager({
+  onPropertyCreated,
+  searchTerm = '',
+  onSearchChange
+}: SubdivisionProcessManagerProps) {
   const [properties, setProperties] = useState<Property[]>([])
   const [subdivisions, setSubdivisions] = useState<SubdivisionItem[]>([])
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
@@ -87,6 +96,35 @@ export default function SubdivisionProcessManager({ onPropertyCreated }: Subdivi
   const [showPlotForm, setShowPlotForm] = useState(false)
   const [activeTab, setActiveTab] = useState<'properties' | 'subdivisions' | 'plots'>('properties')
   const [tablesExist, setTablesExist] = useState(true)
+
+  // Filter subdivisions based on search term
+  const filteredSubdivisions = useMemo(() => {
+    if (!searchTerm.trim()) return subdivisions
+
+    const lower = searchTerm.toLowerCase()
+    return subdivisions.filter(subdivision => {
+      return (
+        subdivision.subdivision_name.toLowerCase().includes(lower) ||
+        (subdivision.properties?.name.toLowerCase().includes(lower) ?? false) ||
+        (subdivision.properties?.physical_address?.toLowerCase().includes(lower) ?? false) ||
+        (subdivision.properties?.property_type?.toLowerCase().includes(lower) ?? false)
+      )
+    })
+  }, [subdivisions, searchTerm])
+
+  // Filter properties based on search term
+  const filteredProperties = useMemo(() => {
+    if (!searchTerm.trim()) return properties
+
+    const lower = searchTerm.toLowerCase()
+    return properties.filter(property => {
+      return (
+        property.name.toLowerCase().includes(lower) ||
+        property.physical_address.toLowerCase().includes(lower) ||
+        property.property_type.toLowerCase().includes(lower)
+      )
+    })
+  }, [properties, searchTerm])
 
   const subdivisionForm = useForm<SubdivisionFormValues>({
     resolver: zodResolver(subdivisionSchema)
@@ -450,7 +488,17 @@ export default function SubdivisionProcessManager({ onPropertyCreated }: Subdivi
                   Showing properties where subdivision status is "Sub-Division Started"
                 </p>
               </div>
-              {properties.length === 0 ? (
+
+              {/* Search */}
+              {onSearchChange && (
+                <PropertySearch
+                  onSearchChange={onSearchChange}
+                  placeholder="Search properties by name, address, or type..."
+                  resultsCount={filteredProperties.length}
+                  totalCount={properties.length}
+                />
+              )}
+              {filteredProperties.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-lg">
                   <div className="text-4xl mb-4">🏗️</div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Properties with Subdivision in Progress</h3>
@@ -463,7 +511,7 @@ export default function SubdivisionProcessManager({ onPropertyCreated }: Subdivi
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {properties.map((property) => (
+                  {filteredProperties.map((property) => (
                     <div key={property.id} className="bg-white rounded-lg border border-gray-200 p-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                         <div className="md:col-span-2">
@@ -474,11 +522,12 @@ export default function SubdivisionProcessManager({ onPropertyCreated }: Subdivi
                             {property.total_area_acres && ` • ${property.total_area_acres} acres`}
                           </p>
                         </div>
-                        <div className="h-32">
-                          <GoogleMapEmbed
+                        <div className="flex justify-end">
+                          <ViewOnGoogleMapsButton
+                            lat={property.lat}
+                            lng={property.lng}
                             address={property.physical_address || property.name}
-                            title={`Map of ${property.name}`}
-                            className="h-32"
+                            propertyName={property.name}
                           />
                         </div>
                         <div className="flex items-center space-x-2">
@@ -505,7 +554,17 @@ export default function SubdivisionProcessManager({ onPropertyCreated }: Subdivi
           {activeTab === 'subdivisions' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Active Subdivisions</h3>
-              {subdivisions.length === 0 ? (
+
+              {/* Search */}
+              {onSearchChange && (
+                <PropertySearch
+                  onSearchChange={onSearchChange}
+                  placeholder="Search subdivisions by name or original property..."
+                  resultsCount={filteredSubdivisions.length}
+                  totalCount={subdivisions.length}
+                />
+              )}
+              {filteredSubdivisions.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-lg">
                   <div className="text-4xl mb-4">🏗️</div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Subdivisions</h3>
@@ -513,7 +572,7 @@ export default function SubdivisionProcessManager({ onPropertyCreated }: Subdivi
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {subdivisions.map((subdivision) => (
+                  {filteredSubdivisions.map((subdivision) => (
                     <div key={subdivision.id} className="bg-white rounded-lg border border-gray-200 p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -643,7 +702,6 @@ export default function SubdivisionProcessManager({ onPropertyCreated }: Subdivi
           subdivisionForm.reset()
         }}
         title="Start Subdivision Process"
-        size="large"
       >
         <form onSubmit={subdivisionForm.handleSubmit(onSubdivisionSubmit)} className="space-y-4">
           <FormField name="subdivisionName" label="Subdivision Name" error={subdivisionForm.formState.errors.subdivisionName?.message}>

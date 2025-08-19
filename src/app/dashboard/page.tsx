@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
-import PropertyForm from '../../components/properties/property-form'
+// PropertyForm removed - using workflow-based property creation
 import { isLandProperty } from '../../lib/validation/property'
 
 import PaymentForm from '../../components/payments/payment-form'
@@ -31,7 +31,7 @@ function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   // Modal states for quick actions
-  const [showPropertyForm, setShowPropertyForm] = useState(false)
+  // Property form removed - using workflow-based creation
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [generatingInvoices, setGeneratingInvoices] = useState(false)
 
@@ -404,7 +404,8 @@ function DashboardPage() {
 
   // Quick action handlers
   const handleAddProperty = () => {
-    setShowPropertyForm(true)
+    // Property creation is handled through workflows
+    router.push('/dashboard/properties')
   }
 
   const handleAddTenant = () => {
@@ -757,15 +758,7 @@ function DashboardPage() {
         </div>
       )}
 
-      {/* Modal Forms */}
-      <PropertyForm
-        isOpen={showPropertyForm}
-        onSuccess={(propertyId) => {
-          setShowPropertyForm(false)
-          loadDashboardStats() // Reload stats to reflect new property
-        }}
-        onCancel={() => setShowPropertyForm(false)}
-      />
+      {/* Property form removed - using workflow-based creation */}
 
 
       <PaymentForm

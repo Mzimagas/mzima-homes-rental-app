@@ -6,18 +6,14 @@ import supabase, { clientBusinessFunctions } from '../../../../lib/supabase-clie
 import { LoadingStats, LoadingCard } from '../../../../components/ui/loading'
 import { ErrorCard } from '../../../../components/ui/error'
 import { Property, Unit } from '../../../../lib/types/database'
-import UnitForm from '../../../../components/properties/unit-form'
-import PropertyForm from '../../../../components/properties/property-form'
+// UnitForm and PropertyForm removed - using workflow-based management
 import ReservationsTab from './ReservationsTab'
 import PhotosTab from './PhotosTab'
 
 import UserManagement from '../../../../components/property/UserManagement'
 import { usePropertyAccess } from '../../../../hooks/usePropertyAccess'
-import { UnitActions } from '../../../../components/properties/UnitActions'
-import { PropertyActions } from '../../../../components/properties/PropertyActions'
-import PropertyBillingSettings from '../../../../components/properties/property-billing-settings'
-import LandDetailsForm from '../../../../components/properties/LandDetailsForm'
-import GoogleMapEmbed from '../../../../components/location/GoogleMapEmbed'
+// UnitActions, PropertyActions, PropertyBillingSettings, and LandDetailsForm removed - using workflow-based management
+import ViewOnGoogleMapsButton from '../../../../components/location/ViewOnGoogleMapsButton'
 
 import { isLandProperty, getPropertyTypeLabel } from '../../../../lib/validation/property'
 
@@ -44,12 +40,9 @@ export default function PropertyDetailPage() {
   const [stats, setStats] = useState<PropertyStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showUnitForm, setShowUnitForm] = useState(false)
-  const [editingUnit, setEditingUnit] = useState<Unit | null>(null)
-  const [showLandForm, setShowLandForm] = useState(false)
+  // Unit and property forms removed - using workflow-based management
 
   const [activeTab, setActiveTab] = useState<'overview' | 'units' | 'photos' | 'reservations' | 'users'>('overview')
-  const [showPropertyForm, setShowPropertyForm] = useState(false)
 
   // Check if current user can manage users for this property
   const currentPropertyAccess = properties.find(p => p.property_id === propertyId)
@@ -233,53 +226,24 @@ export default function PropertyDetailPage() {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">{property.name}</h1>
             <p className="text-gray-600">{property.physical_address}</p>
-            <div className="mt-3 w-full md:w-96 h-48">
-              <GoogleMapEmbed
+            <div className="mt-3">
+              <ViewOnGoogleMapsButton
                 lat={(property as any).lat ?? null}
                 lng={(property as any).lng ?? null}
                 address={property.physical_address ?? property.name}
-                title={`Map of ${property.name}`}
-                className="h-48"
+                propertyName={property.name}
               />
             </div>
           </div>
         </div>
         <div className="flex space-x-3 items-center">
           {/* Property actions (disable/enable/delete) */}
-          <PropertyActions propertyId={property.id} hasDisabledAt={!!(property as any).disabled_at} onChanged={loadPropertyDetails} canDelete={currentPropertyAccess?.user_role === 'OWNER'} />
-          {isLandProperty((property.property_type as any) || 'HOME') && (
-            <button
-              type="button"
-              onClick={() => setShowLandForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-            >
-              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Edit Land Details
-            </button>
-          )}
+          {/* PropertyActions removed - using workflow-based management */}
+          {/* Land details form removed - using workflow-based management */}
 
-          <button
-            onClick={() => setShowPropertyForm(true)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Edit Property
-          </button>
-          {!isLandProperty((property.property_type as any) || 'HOME') && (
-            <button
-              onClick={() => {
-                setEditingUnit(null)
-                setShowUnitForm(true)
-              }}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add Unit
-            </button>
-          )}
+          <div className="text-sm text-gray-600">
+            Property and unit management is handled through workflows
+          </div>
         </div>
       </div>
 
@@ -503,15 +467,15 @@ export default function PropertyDetailPage() {
         <div className="p-6">
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* Large Map on Overview */}
-              <div className="bg-white rounded-lg overflow-hidden border">
-                <div className="w-full h-80">
-                  <GoogleMapEmbed
+              {/* Property Location */}
+              <div className="bg-white rounded-lg border p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Location</h3>
+                <div className="flex justify-center">
+                  <ViewOnGoogleMapsButton
                     lat={(property as any).lat ?? null}
                     lng={(property as any).lng ?? null}
                     address={property.physical_address ?? property.name}
-                    className="h-80"
-                    title={`Map of ${property.name}`}
+                    propertyName={property.name}
                   />
                 </div>
               </div>
@@ -535,7 +499,9 @@ export default function PropertyDetailPage() {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Billing Defaults</h3>
-                <PropertyBillingSettings propertyId={propertyId} onChanged={loadPropertyDetails} />
+                <div className="text-sm text-gray-600">
+                  Billing settings are managed through workflows
+                </div>
               </div>
             </div>
           )}
@@ -553,7 +519,6 @@ export default function PropertyDetailPage() {
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">Reservations</h3>
               <div className="space-y-4">
-                {/* @ts-expect-error Server/Client boundary - component is client-side */}
                 <ReservationsTab propertyId={propertyId} />
               </div>
             </div>
@@ -566,15 +531,9 @@ export default function PropertyDetailPage() {
                 {property.units.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No units found for this property.</p>
-                    <button
-                      onClick={() => {
-                        setEditingUnit(null)
-                        setShowUnitForm(true)
-                      }}
-                      className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                    >
-                      Add Unit
-                    </button>
+                    <p className="mt-2 text-sm text-gray-400">
+                      Use the workflow system to add units
+                    </p>
                   </div>
                 ) : (
                   property.units.map((unit) => (
@@ -606,27 +565,17 @@ export default function PropertyDetailPage() {
                             </div>
                           )}
                         </div>
-                        <div className="h-32">
-                          <GoogleMapEmbed
+                        <div className="flex justify-center py-4">
+                          <ViewOnGoogleMapsButton
                             lat={(property as any).lat ?? null}
                             lng={(property as any).lng ?? null}
                             address={property.physical_address ?? property.name}
-                            className="h-32"
+                            propertyName={property.name}
                           />
                         </div>
                         <div className="flex items-center space-x-4">
-                          <button
-                            onClick={() => {
-                              setEditingUnit(unit)
-                              setShowUnitForm(true)
-                            }}
-                            className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                          >
-                            Manage
-                          </button>
-                          <div className="ml-2">
-                            {/* Disable/Enable actions */}
-                            <UnitActions unitId={unit.id} isActive={!!unit.is_active} onChanged={loadPropertyDetails} />
+                          <div className="text-xs text-gray-500">
+                            Unit management handled through workflows
                           </div>
                         </div>
                       </div>
@@ -653,128 +602,9 @@ export default function PropertyDetailPage() {
         </div>
       )}
 
-      {/* Unit Form Modal */}
-      <UnitForm
-        propertyId={propertyId}
-        unit={editingUnit ? {
-          id: editingUnit.id,
-          unit_label: editingUnit.unit_label || '',
-          monthly_rent_kes: editingUnit.monthly_rent_kes || 0,
-          deposit_kes: editingUnit.deposit_kes || 0,
-          meter_type: (editingUnit.meter_type as any) || 'PREPAID',
-          kplc_account: editingUnit.kplc_account || undefined,
-          water_included: !!editingUnit.water_included,
-          water_meter_type: (editingUnit.water_meter_type as any) ?? null,
-          water_meter_number: editingUnit.water_meter_number ?? null
-        } : undefined}
-        isOpen={showUnitForm}
-        onSuccess={() => {
-          setShowUnitForm(false)
-          setEditingUnit(null)
-          loadPropertyDetails() // Reload property details
-        }}
-        onCancel={() => {
-          setShowUnitForm(false)
-          setEditingUnit(null)
-        }}
-      />
+      {/* Unit and property forms removed - using workflow-based management */}
 
-      {/* Property Form Modal */}
-      {showPropertyForm && (
-        <PropertyForm
-          isOpen={showPropertyForm}
-          property={{
-            id: property.id,
-            name: property.name,
-            physical_address: property.physical_address,
-            property_type: (property as any).property_type as any,
-            lat: (property as any).lat ?? undefined,
-            lng: (property as any).lng ?? undefined,
-            notes: property.notes ?? undefined
-          }}
-          onSuccess={() => {
-            setShowPropertyForm(false)
-            loadPropertyDetails()
-          }}
-          onCancel={() => setShowPropertyForm(false)}
-        />
-      )}
-
-      {/* Land Details Modal - moved to top-level to avoid nesting issues */}
-      {showLandForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <LandDetailsForm
-              propertyId={property.id}
-              initialData={{
-                totalAreaSqm: (property as any).total_area_sqm,
-                totalAreaAcres: (property as any).total_area_acres,
-                frontageMeters: (property as any).frontage_meters,
-                zoningClassification: (property as any).zoning_classification,
-                titleDeedNumber: (property as any).title_deed_number,
-                surveyPlanNumber: (property as any).survey_plan_number,
-                developmentPermitStatus: (property as any).development_permit_status,
-                electricityAvailable: (property as any).electricity_available,
-                waterAvailable: (property as any).water_available,
-                sewerAvailable: (property as any).sewer_available,
-                roadAccessType: (property as any).road_access_type,
-                internetAvailable: (property as any).internet_available,
-                topography: (property as any).topography,
-                soilType: (property as any).soil_type,
-                drainageStatus: (property as any).drainage_status,
-                salePriceKes: (property as any).sale_price_kes,
-                leasePricePerSqmKes: (property as any).lease_price_per_sqm_kes,
-                leaseDurationYears: (property as any).lease_duration_years,
-                priceNegotiable: (property as any).price_negotiable,
-                developmentPotential: (property as any).development_potential,
-                nearbyLandmarks: (property as any).nearby_landmarks,
-                environmentalRestrictions: (property as any).environmental_restrictions,
-                buildingRestrictions: (property as any).building_restrictions,
-                easements: (property as any).easements,
-              }}
-              onSave={async (formValues) => {
-                const payload: any = {
-                  total_area_sqm: formValues.totalAreaSqm ?? null,
-                  total_area_acres: formValues.totalAreaAcres ?? null,
-                  frontage_meters: formValues.frontageMeters ?? null,
-                  zoning_classification: formValues.zoningClassification ?? null,
-                  title_deed_number: formValues.titleDeedNumber ?? null,
-                  survey_plan_number: formValues.surveyPlanNumber ?? null,
-                  development_permit_status: formValues.developmentPermitStatus ?? null,
-                  electricity_available: formValues.electricityAvailable ?? null,
-                  water_available: formValues.waterAvailable ?? null,
-                  sewer_available: formValues.sewerAvailable ?? null,
-                  road_access_type: formValues.roadAccessType ?? null,
-                  internet_available: formValues.internetAvailable ?? null,
-                  topography: formValues.topography ?? null,
-                  soil_type: formValues.soilType ?? null,
-                  drainage_status: formValues.drainageStatus ?? null,
-                  sale_price_kes: formValues.salePriceKes ?? null,
-                  lease_price_per_sqm_kes: formValues.leasePricePerSqmKes ?? null,
-                  lease_duration_years: formValues.leaseDurationYears ?? null,
-                  price_negotiable: formValues.priceNegotiable ?? null,
-                  development_potential: formValues.developmentPotential ?? null,
-                  nearby_landmarks: formValues.nearbyLandmarks ?? null,
-                  environmental_restrictions: formValues.environmentalRestrictions ?? null,
-                  building_restrictions: formValues.buildingRestrictions ?? null,
-                  easements: formValues.easements ?? null,
-                }
-                const { error: updErr } = await supabase
-                  .from('properties')
-                  .update(payload)
-                  .eq('id', property.id)
-                if (updErr) {
-                  alert(`Failed to save land details: ${updErr.message}`)
-                  return
-                }
-                setShowLandForm(false)
-                await loadPropertyDetails()
-              }}
-              onCancel={() => setShowLandForm(false)}
-            />
-          </div>
-        </div>
-      )}
+      {/* Land details form removed - using workflow-based management */}
 
     </div>
   )

@@ -28,7 +28,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ show }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 space-y-2">
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2">
         {toasts.map(t => (
           <div key={t.id} role="status" aria-live="polite" className={`min-w-[260px] rounded-md border p-3 shadow bg-white ${
             t.variant === 'success' ? 'border-green-200' : t.variant === 'error' ? 'border-red-200' : t.variant === 'warning' ? 'border-yellow-200' : 'border-gray-200'

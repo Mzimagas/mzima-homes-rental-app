@@ -10,7 +10,7 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {

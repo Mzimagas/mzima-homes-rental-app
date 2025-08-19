@@ -13,11 +13,13 @@ export const PropertyTypeEnum = z.enum([
 
 export const propertySchema = z.object({
   name: z.string().min(1, 'Property name is required').max(120),
-  physicalAddress: z.string().min(1, 'Physical address is required').max(250),
-  propertyType: PropertyTypeEnum.default('HOME'),
+  physical_address: z.string().max(250).optional().or(z.literal('')),
+  property_type: PropertyTypeEnum.default('HOME'),
   lat: z.number().gte(-90).lte(90).optional(),
   lng: z.number().gte(-180).lte(180).optional(),
   notes: z.string().max(1000).optional().or(z.literal('')),
+  default_billing_day: z.number().int().min(1).max(31).optional(),
+  default_align_billing_to_start: z.boolean().default(true),
 }).refine((val) => {
   // If one coordinate provided, require the other
   if ((val.lat !== undefined && val.lng === undefined) || (val.lng !== undefined && val.lat === undefined)) return false

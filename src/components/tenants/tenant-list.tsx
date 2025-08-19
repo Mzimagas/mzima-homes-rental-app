@@ -12,9 +12,27 @@ function getCsrf() {
 
 type Props = {
   defaultPropertyId?: string
+  showDeleted?: boolean
+  hidePropertyFilters?: boolean
+  onViewTenant?: (tenantId: string) => void
+  onEditTenant?: (tenantId: string) => void
+  onMoveTenant?: (tenantId: string, propertyId?: string) => void
+  onCreateTenant?: (propertyId?: string, unitId?: string) => void
+  onViewDeleted?: () => void
+  onBack?: () => void
 }
 
-export default function TenantList({ defaultPropertyId }: Props) {
+export default function TenantList({
+  defaultPropertyId,
+  showDeleted = false,
+  hidePropertyFilters = false,
+  onViewTenant,
+  onEditTenant,
+  onMoveTenant,
+  onCreateTenant,
+  onViewDeleted,
+  onBack
+}: Props) {
   const { properties: userProperties } = usePropertyAccess()
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [properties, setProperties] = useState<Property[]>([])
@@ -24,7 +42,7 @@ export default function TenantList({ defaultPropertyId }: Props) {
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showDeleted, setShowDeleted] = useState(false)
+  // Use showDeleted prop instead of local state
   const [unitsById, setUnitsById] = useState<Record<string, any>>({})
   const [propertiesById, setPropertiesById] = useState<Record<string, any>>({})
 
@@ -110,13 +128,29 @@ export default function TenantList({ defaultPropertyId }: Props) {
     try {
       const params = new URLSearchParams()
       if (q) params.set('q', q)
+
+      // Apply property/unit filters regardless of hidePropertyFilters
+      // hidePropertyFilters only controls UI visibility, not data filtering
       if (propertyId) params.set('propertyId', propertyId)
       if (unitId) params.set('unitId', unitId)
+
+      // For defaultPropertyId (used in inline tenant management), apply as filter
+      if (!propertyId && defaultPropertyId) {
+        params.set('propertyId', defaultPropertyId)
+      }
+
       if (showDeleted) params.set('includeDeleted', '1')
 
       const url = `/api/tenants?${params.toString()}`
       console.info('[TenantList] Loading tenants from:', url)
-      console.info('[TenantList] Filters:', { q, propertyId, unitId, showDeleted })
+      console.info('[TenantList] Filters:', {
+        q,
+        propertyId: propertyId || defaultPropertyId || 'none',
+        unitId: unitId || 'none',
+        showDeleted,
+        hidePropertyFilters,
+        appliedPropertyFilter: propertyId || defaultPropertyId
+      })
 
       const res = await fetch(url, { credentials: 'same-origin' })
       console.info('[TenantList] Response status:', res.status, res.statusText)
@@ -151,7 +185,6 @@ export default function TenantList({ defaultPropertyId }: Props) {
     setQ('')
     setPropertyId('')
     setUnitId('')
-    setShowDeleted(false)
   }
 
   return (
@@ -163,36 +196,58 @@ export default function TenantList({ defaultPropertyId }: Props) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        <label className="inline-flex items-center gap-2 ml-2 text-sm">
-          <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} /> Show deleted tenants
-        </label>
-        <select className="border rounded px-3 py-2" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
-          <option value="">All properties</option>
-          {properties.map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-        <select className="border rounded px-3 py-2" value={unitId} onChange={(e) => setUnitId(e.target.value)} disabled={!propertyId}>
-          <option value="">All units</option>
-          {unitOptions.map(u => (
-            <option key={u.value} value={u.value}>{u.label}</option>
-          ))}
-        </select>
-        <button
-          onClick={clearAllFilters}
-          className="px-3 py-2 text-sm bg-gray-100 border rounded hover:bg-gray-200"
-        >
-          Clear Filters
-        </button>
-        {hasAdminAccess && (
-          <Link
+        {!hidePropertyFilters && (
+          <>
+            <select className="border rounded px-3 py-2" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
+              <option value="">All properties</option>
+              {properties.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <select className="border rounded px-3 py-2" value={unitId} onChange={(e) => setUnitId(e.target.value)} disabled={!propertyId}>
+              <option value="">All units</option>
+              {unitOptions.map(u => (
+                <option key={u.value} value={u.value}>{u.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={clearAllFilters}
+              className="px-3 py-2 text-sm bg-gray-100 border rounded hover:bg-gray-200"
+            >
+              Clear Filters
+            </button>
+
+          </>
+        )}
+        {hasAdminAccess && onViewDeleted && !showDeleted && (
+          <button
+            onClick={onViewDeleted}
             className="px-3 py-2 text-sm bg-red-100 text-red-700 border border-red-200 rounded hover:bg-red-200"
-            href="/dashboard/tenants/deleted"
           >
             Deleted Tenants
-          </Link>
+          </button>
         )}
-        <Link className="ml-auto inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded" href={newTenantHref}>New Tenant</Link>
+        {onBack && showDeleted && (
+          <button
+            onClick={onBack}
+            className="px-3 py-2 text-sm bg-gray-100 text-gray-700 border border-gray-200 rounded hover:bg-gray-200"
+          >
+            ← Back to Active Tenants
+          </button>
+        )}
+        {onCreateTenant ? (
+          <button
+            onClick={() => onCreateTenant(
+              hidePropertyFilters ? undefined : propertyId,
+              hidePropertyFilters ? undefined : unitId
+            )}
+            className="ml-auto inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            New Tenant
+          </button>
+        ) : (
+          <Link className="ml-auto inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded" href={newTenantHref}>New Tenant</Link>
+        )}
       </div>
 
       {error && <div className="text-red-600">{error}</div>}
@@ -226,6 +281,13 @@ export default function TenantList({ defaultPropertyId }: Props) {
                     <td className="p-2">
                       {isDeleted ? (
                         <span className="px-2 py-1 text-xs rounded bg-gray-100 border">DELETED</span>
+                      ) : onViewTenant ? (
+                        <button
+                          onClick={() => onViewTenant(t.id)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          View
+                        </button>
                       ) : (
                         <Link className="text-blue-600 hover:underline" href={`/dashboard/tenants/${t.id}`}>View</Link>
                       )}
