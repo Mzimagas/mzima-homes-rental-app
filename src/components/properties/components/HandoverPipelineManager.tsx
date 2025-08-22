@@ -9,6 +9,7 @@ import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
 import HandoverStageModal from './HandoverStageModal'
 import HandoverProgressTracker from './HandoverProgressTracker'
 import PropertySearch from './PropertySearch'
+import InlineHandoverView from './InlineHandoverView'
 import { Property } from '../../../lib/types/database'
 import supabase from '../../../lib/supabase-client'
 import {
@@ -45,6 +46,7 @@ export default function HandoverPipelineManager({
   const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null)
   const [selectedHandoverStageId, setSelectedHandoverStageId] = useState<number | null>(null)
   const [showHandoverStageModal, setShowHandoverStageModal] = useState(false)
+  const [viewingHandoverId, setViewingHandoverId] = useState<string | null>(null)
 
   // Filter handovers based on search term
   const filteredHandovers = useMemo(() => {
@@ -630,25 +632,7 @@ export default function HandoverPipelineManager({
                 </div>
               </div>
 
-              {/* Handover Progress Tracker */}
-              <div className="mb-4">
-                <HandoverProgressTracker
-                  currentStage={handover.current_stage || 1}
-                  stageData={handover.pipeline_stages || initializeHandoverPipelineStages()}
-                  onStageClick={(stageId) => handleHandoverStageClick(stageId, handover.id)}
-                  overallProgress={handover.overall_progress || 0}
-                  handoverId={handover.id}
-                  onStageUpdate={handleHandoverStageUpdate}
-                />
-              </div>
 
-              {/* Progress Cards Info */}
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
-                <div className="flex items-center text-sm text-purple-800">
-                  <span className="mr-2">📋</span>
-                  <span>Click on any accessible stage card above to view details and update status</span>
-                </div>
-              </div>
 
               <div className="flex space-x-2">
                 <Button
@@ -658,7 +642,26 @@ export default function HandoverPipelineManager({
                 >
                   Edit Details
                 </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setViewingHandoverId(
+                    viewingHandoverId === handover.id ? null : handover.id
+                  )}
+                >
+                  {viewingHandoverId === handover.id ? 'Hide Details' : 'View Details'}
+                </Button>
               </div>
+
+              {/* Inline Handover Details */}
+              {viewingHandoverId === handover.id && (
+                <InlineHandoverView
+                  handover={handover}
+                  onClose={() => setViewingHandoverId(null)}
+                  onStageClick={handleHandoverStageClick}
+                  onStageUpdate={handleHandoverStageUpdate}
+                />
+              )}
             </div>
           ))}
         </div>

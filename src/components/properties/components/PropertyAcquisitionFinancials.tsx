@@ -10,6 +10,7 @@ import {
 } from '../types/property-management.types'
 import { AcquisitionFinancialsService } from '../services/acquisition-financials.service'
 import EnhancedPurchasePriceManager from './EnhancedPurchasePriceManager'
+import PropertySubdivisionCosts from './PropertySubdivisionCosts'
 
 interface PropertyAcquisitionFinancialsProps {
   property: PropertyWithLifecycle
@@ -35,6 +36,11 @@ interface NewPaymentInstallment {
 export default function PropertyAcquisitionFinancials({ property, onUpdate }: PropertyAcquisitionFinancialsProps) {
   const [costEntries, setCostEntries] = useState<AcquisitionCostEntry[]>([])
   const [paymentInstallments, setPaymentInstallments] = useState<PaymentInstallment[]>([])
+  const [subdivisionCostsSummary, setSubdivisionCostsSummary] = useState({
+    totalSubdivisionCosts: 0,
+    paidSubdivisionCosts: 0,
+    pendingSubdivisionCosts: 0
+  })
   const [totalPurchasePrice, setTotalPurchasePrice] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
@@ -107,12 +113,10 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
     notes: ''
   })
 
-  // Check if this is a purchase pipeline entry
-  const isPurchasePipelineEntry = !property.landlord_id && property.property_source !== 'PURCHASE_PIPELINE'
-
   // Load existing financial data
   useEffect(() => {
     loadFinancialData()
+    loadSubdivisionCostsSummary()
   }, [property.id])
 
   const loadFinancialData = async () => {
@@ -152,6 +156,24 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
     }
   }
 
+  const loadSubdivisionCostsSummary = async () => {
+    try {
+      // Import the service dynamically to avoid circular dependencies
+      const { SubdivisionCostsService } = await import('../services/subdivision-costs.service')
+      const costs = await SubdivisionCostsService.getSubdivisionCosts(property.id)
+      const summary = SubdivisionCostsService.calculateSubdivisionSummary(costs)
+
+      setSubdivisionCostsSummary({
+        totalSubdivisionCosts: summary.totalSubdivisionCosts,
+        paidSubdivisionCosts: summary.paidSubdivisionCosts,
+        pendingSubdivisionCosts: summary.pendingSubdivisionCosts
+      })
+    } catch (error) {
+      console.error('Error loading subdivision costs summary:', error)
+      // Don't set error state for subdivision costs as they're optional
+    }
+  }
+
   // Calculate totals
   const calculateTotals = () => {
     const totalCosts = costEntries.reduce((sum, entry) => sum + entry.amount_kes, 0)
@@ -181,7 +203,10 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       totalPayments,
       purchasePrice,
       remainingBalance,
-      totalAcquisitionCost: totalCosts + purchasePrice,
+      totalAcquisitionCost: totalCosts + purchasePrice + subdivisionCostsSummary.totalSubdivisionCosts,
+      totalSubdivisionCosts: subdivisionCostsSummary.totalSubdivisionCosts,
+      paidSubdivisionCosts: subdivisionCostsSummary.paidSubdivisionCosts,
+      pendingSubdivisionCosts: subdivisionCostsSummary.pendingSubdivisionCosts,
       costsByCategory
     }
   }
@@ -202,7 +227,6 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       // Create cost entry via API
       const costEntry = await AcquisitionFinancialsService.createAcquisitionCost(property.id, {
         cost_type_id: newCost.cost_type_id,
-        cost_category: costType.category,
         amount_kes: parseFloat(newCost.amount_kes),
         payment_reference: newCost.payment_reference || undefined,
         payment_date: newCost.payment_date || undefined,
@@ -307,7 +331,25 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
     return ACQUISITION_COST_TYPES.find(type => type.id === costTypeId)?.label || 'Unknown'
   }
 
+  // Handle subdivision costs updates
+  const handleSubdivisionCostsUpdate = async (propertyId: string) => {
+    try {
+      // Import the service dynamically to avoid circular dependencies
+      const { SubdivisionCostsService } = await import('../services/subdivision-costs.service')
+      const costs = await SubdivisionCostsService.getSubdivisionCosts(propertyId)
+      const summary = SubdivisionCostsService.calculateSubdivisionSummary(costs)
 
+      setSubdivisionCostsSummary({
+        totalSubdivisionCosts: summary.totalSubdivisionCosts,
+        paidSubdivisionCosts: summary.paidSubdivisionCosts,
+        pendingSubdivisionCosts: summary.pendingSubdivisionCosts
+      })
+
+      onUpdate?.(propertyId)
+    } catch (error) {
+      console.error('Error updating subdivision costs summary:', error)
+    }
+  }
 
   const totals = calculateTotals()
 
@@ -369,7 +411,7 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
         <h4 className="text-lg font-semibold text-blue-900 mb-3">Purchase Price in Sales Agreement</h4>
         <EnhancedPurchasePriceManager
           propertyId={property.id}
-          initialPrice={property.purchase_price_agreement_kes}
+          initialPrice={property.purchase_price_agreement_kes ?? null}
           onPriceUpdate={(newPrice) => {
             setTotalPurchasePrice(newPrice.toString())
             onUpdate?.(property.id)
@@ -380,14 +422,18 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       {/* Financial Summary */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <h4 className="text-lg font-semibold text-green-900 mb-3">Financial Summary</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
           <div>
             <div className="text-sm text-green-700">Agreement Price</div>
             <div className="font-bold text-green-900">{formatCurrency(totals.purchasePrice)}</div>
           </div>
           <div>
-            <div className="text-sm text-green-700">Total Costs</div>
+            <div className="text-sm text-green-700">Acquisition Costs</div>
             <div className="font-bold text-green-900">{formatCurrency(totals.totalCosts)}</div>
+          </div>
+          <div>
+            <div className="text-sm text-green-700">Subdivision Costs</div>
+            <div className="font-bold text-green-900">{formatCurrency(totals.totalSubdivisionCosts)}</div>
           </div>
           <div>
             <div className="text-sm text-green-700">Paid Purchase Price</div>
@@ -396,6 +442,15 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
           <div>
             <div className="text-sm text-green-700">Purchase Price Balance</div>
             <div className="font-bold text-green-900">{formatCurrency(totals.remainingBalance)}</div>
+          </div>
+        </div>
+        <div className="border-t border-green-200 pt-3">
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-bold text-green-900">Total Investment</span>
+            <span className="text-xl font-bold text-green-900">{formatCurrency(totals.totalAcquisitionCost)}</span>
+          </div>
+          <div className="text-sm text-green-700 mt-1">
+            Purchase Price + Acquisition Costs + Subdivision Costs
           </div>
         </div>
       </div>
@@ -680,6 +735,12 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
         )}
       </div>
       </div>
+
+      {/* Subdivision Costs */}
+      <PropertySubdivisionCosts
+        property={property}
+        onUpdate={handleSubdivisionCostsUpdate}
+      />
 
       {/* Cost Breakdown by Category */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">

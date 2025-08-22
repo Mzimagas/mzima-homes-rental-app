@@ -94,10 +94,44 @@ export type AcquisitionCostCategory =
   | 'TRANSFER_REGISTRATION'
   | 'OTHER'
 
+// Property subdivision cost categories
+export type SubdivisionCostCategory =
+  | 'STATUTORY_BOARD_FEES'
+  | 'SURVEY_PLANNING_FEES'
+  | 'REGISTRATION_TITLE_FEES'
+  | 'LEGAL_COMPLIANCE'
+  | 'OTHER_CHARGES'
+
+// Property handover cost categories - Kenya-specific property handover cost framework
+export type HandoverCostCategory =
+  | 'CLIENT_ENGAGEMENT'
+  | 'REGULATORY_LEGAL'
+  | 'SURVEY_MAPPING'
+  | 'ADMINISTRATIVE'
+  | 'TOTAL_ACQUISITION'
+  | 'OTHER'
+
 // Property acquisition cost types
 export interface AcquisitionCostType {
   id: string
   category: AcquisitionCostCategory
+  label: string
+  description?: string
+}
+
+// Property subdivision cost types
+export interface SubdivisionCostType {
+  id: string
+  category: SubdivisionCostCategory
+  label: string
+  description?: string
+  default_amount_kes?: number
+}
+
+// Property handover cost types
+export interface HandoverCostType {
+  id: string
+  category: HandoverCostCategory
   label: string
   description?: string
 }
@@ -108,6 +142,21 @@ export interface AcquisitionCostEntry {
   property_id: string
   cost_type_id: string
   amount_kes: number
+  payment_reference?: string
+  payment_date?: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+// Individual subdivision cost entry
+export interface SubdivisionCostEntry {
+  id: string
+  property_id: string
+  cost_type_id: string
+  cost_category: SubdivisionCostCategory
+  amount_kes: number
+  payment_status: 'PENDING' | 'PAID' | 'PARTIALLY_PAID'
   payment_reference?: string
   payment_date?: string
   notes?: string
@@ -151,6 +200,12 @@ export interface PropertyAcquisitionFinancials {
   payment_installments: PaymentInstallment[]
   total_acquisition_cost_kes: number
   cost_breakdown_by_category: Record<AcquisitionCostCategory, number>
+  // Subdivision costs
+  subdivision_cost_entries?: SubdivisionCostEntry[]
+  total_subdivision_costs_kes?: number
+  subdivision_costs_paid_kes?: number
+  subdivision_costs_pending_kes?: number
+  subdivision_cost_breakdown_by_category?: Record<SubdivisionCostCategory, number>
 }
 
 // Property with lifecycle information
@@ -233,4 +288,165 @@ export const ACQUISITION_COST_CATEGORY_LABELS: Record<AcquisitionCostCategory, s
   PAYMENTS: 'Payment Tracking',
   TRANSFER_REGISTRATION: 'Transfer & Registration Costs',
   OTHER: 'Other Costs'
+}
+
+// Predefined handover cost types - Kenya-specific property handover cost framework
+export const HANDOVER_COST_TYPES: HandoverCostType[] = [
+  // Client Engagement / Viewing
+  { id: 'land_visit', category: 'CLIENT_ENGAGEMENT', label: 'Land Visit (Site Viewing)', description: 'Variable costs for fuel, logistics, facilitation for showing property to potential clients' },
+
+  // Regulatory / Legal Approvals
+  { id: 'lcb_consent_normal', category: 'REGULATORY_LEGAL', label: 'LCB Consent - Normal Board', description: 'Land Control Board Consent for normal board proceedings - KES 3,050' },
+  { id: 'lcb_consent_special', category: 'REGULATORY_LEGAL', label: 'LCB Consent - Special Board', description: 'Land Control Board Consent for special board proceedings - KES 15,000' },
+  { id: 'chai_ya_wazee', category: 'REGULATORY_LEGAL', label: 'Chai ya Wazee', description: 'Traditional facilitation fee - KES 2,000' },
+
+  // Survey & Mapping
+  { id: 'beacon_reestablishment', category: 'SURVEY_MAPPING', label: 'Beacon Re-establishment', description: 'Re-establishment of property beacons if necessary' },
+
+  // Administrative / Incidental Costs
+  { id: 'transfer_forms_prep', category: 'ADMINISTRATIVE', label: 'Transfer Forms Preparation (LRA 33 Forms)', description: 'Preparation of Land Registration Authority Form 33 for property transfer' },
+  { id: 'search_fee', category: 'ADMINISTRATIVE', label: 'Search Fee (Official Land Search)', description: 'Official land search fee - KES 500' },
+  { id: 'agreement_drafting', category: 'ADMINISTRATIVE', label: 'Agreement Drafting / Notarization', description: 'Legal agreement drafting and notarization - KES 3,000–10,000 depending on advocate' },
+  { id: 'miscellaneous_admin', category: 'ADMINISTRATIVE', label: 'Miscellaneous Admin Costs', description: 'Facilitation, courier, photocopying, and other administrative costs' },
+
+  // Total Acquisition Cost
+  { id: 'total_acquisition_cost', category: 'TOTAL_ACQUISITION', label: 'Comprehensive Acquisition Cost', description: 'Purchase Price + LCB Consent + Stamp Duty + Registration & Title Costs + Legal/Professional Fees + Survey/Mutation Costs (if applicable) + Logistics (e.g., client land visit, transport, admin)' },
+
+  // Other Costs
+  { id: 'other_cost', category: 'OTHER', label: 'Other Cost', description: 'Miscellaneous handover costs not covered by other categories' }
+]
+
+// Handover cost category labels for display
+export const HANDOVER_COST_CATEGORY_LABELS: Record<HandoverCostCategory, string> = {
+  CLIENT_ENGAGEMENT: 'Client Engagement / Viewing',
+  REGULATORY_LEGAL: 'Regulatory / Legal Approvals',
+  SURVEY_MAPPING: 'Survey & Mapping',
+  ADMINISTRATIVE: 'Administrative / Incidental Costs',
+  TOTAL_ACQUISITION: 'Total Acquisition Cost',
+  OTHER: 'Other Costs'
+}
+
+// Subdivision Pipeline Stage Definitions
+export interface SubdivisionPipelineStage {
+  id: number
+  name: string
+  description: string
+  statusOptions: string[]
+  estimatedDays?: number
+}
+
+export const SUBDIVISION_PIPELINE_STAGES: SubdivisionPipelineStage[] = [
+  {
+    id: 1,
+    name: "Planning & Design",
+    description: "Initial subdivision planning and design phase",
+    statusOptions: ["Not Started", "In Progress", "Completed", "On Hold"],
+    estimatedDays: 14
+  },
+  {
+    id: 2,
+    name: "Survey Ordered",
+    description: "Professional survey commissioned and scheduled",
+    statusOptions: ["Not Started", "Ordered", "Scheduled", "In Progress", "Completed"],
+    estimatedDays: 21
+  },
+  {
+    id: 3,
+    name: "Survey Completed",
+    description: "Land survey completed and beacons placed",
+    statusOptions: ["Not Started", "In Progress", "Completed", "Issues Found"],
+    estimatedDays: 14
+  },
+  {
+    id: 4,
+    name: "Approval Pending",
+    description: "Subdivision plan submitted for authority approval",
+    statusOptions: ["Not Started", "Submitted", "Under Review", "Additional Info Required", "Approved"],
+    estimatedDays: 45
+  },
+  {
+    id: 5,
+    name: "Approved",
+    description: "Subdivision plan approved by relevant authorities",
+    statusOptions: ["Not Started", "Approved", "Conditional Approval", "Rejected"],
+    estimatedDays: 7
+  },
+  {
+    id: 6,
+    name: "Plots Created",
+    description: "Individual plots created and documented",
+    statusOptions: ["Not Started", "In Progress", "Completed"],
+    estimatedDays: 10
+  },
+  {
+    id: 7,
+    name: "Completed",
+    description: "Subdivision process completed and ready for sale",
+    statusOptions: ["Not Started", "Completed", "Finalized"],
+    estimatedDays: 5
+  }
+]
+
+// Subdivision Pipeline Stage Data
+export interface SubdivisionPipelineStageData {
+  stage_id: number
+  status: string
+  started_date?: string
+  completed_date?: string
+  notes?: string
+  documents?: any[]
+}
+
+// Subdivision Progress Tracker Props
+export interface SubdivisionProgressTrackerProps {
+  currentStage: number
+  stageData: SubdivisionPipelineStageData[]
+  onStageClick: (stageId: number) => void
+  overallProgress: number
+  subdivisionId: string
+  onStageUpdate: (subdivisionId: string, stageId: number, newStatus: string, notes?: string) => Promise<void>
+}
+
+// Predefined subdivision cost types
+export const SUBDIVISION_COST_TYPES: SubdivisionCostType[] = [
+  // Statutory & Board Fees
+  { id: 'lcb_normal_fee', category: 'STATUTORY_BOARD_FEES', label: 'Land Control Board (Normal)', description: 'Standard LCB processing fee', default_amount_kes: 4050 },
+  { id: 'lcb_special_fee', category: 'STATUTORY_BOARD_FEES', label: 'Land Control Board (Special)', description: 'Special LCB processing fee', default_amount_kes: 10000 },
+  { id: 'board_application_fee', category: 'STATUTORY_BOARD_FEES', label: 'Board Application Fee', description: 'Application fee for board approval', default_amount_kes: 3050 },
+
+  // Survey & Planning Fees
+  { id: 'scheme_plan_preparation', category: 'SURVEY_PLANNING_FEES', label: 'Scheme Plan Preparation', description: 'Cost per portion for scheme plan', default_amount_kes: 1000 },
+  { id: 'mutation_drawing', category: 'SURVEY_PLANNING_FEES', label: 'Mutation Drawing', description: 'Drawing of mutation plans', default_amount_kes: 5000 },
+  { id: 'mutation_checking', category: 'SURVEY_PLANNING_FEES', label: 'Mutation Checking', description: 'Cost per portion for mutation checking', default_amount_kes: 500 },
+  { id: 'surveyor_professional_fees', category: 'SURVEY_PLANNING_FEES', label: 'Surveyor Professional Fees', description: 'Professional surveyor fees (variable)', default_amount_kes: 50000 },
+  { id: 'map_amendment', category: 'SURVEY_PLANNING_FEES', label: 'Map Amendment', description: 'Cost per portion for map amendments', default_amount_kes: 500 },
+  { id: 'rim_update', category: 'SURVEY_PLANNING_FEES', label: 'RIM Update', description: 'Cost per portion for RIM updates', default_amount_kes: 1000 },
+  { id: 'new_parcel_numbers', category: 'SURVEY_PLANNING_FEES', label: 'New Parcel Numbers', description: 'Cost per portion for new parcel numbers', default_amount_kes: 1000 },
+
+  // Registration & Title Fees
+  { id: 'new_title_registration', category: 'REGISTRATION_TITLE_FEES', label: 'New Title Registration', description: 'Cost per portion for new title registration', default_amount_kes: 3550 },
+  { id: 'registrar_fees', category: 'REGISTRATION_TITLE_FEES', label: 'Registrar Fees', description: 'Cost per portion for registrar fees', default_amount_kes: 1000 },
+  { id: 'title_printing', category: 'REGISTRATION_TITLE_FEES', label: 'Title Printing', description: 'Cost per portion for title printing', default_amount_kes: 500 },
+
+  // Legal & Compliance
+  { id: 'compliance_certificate', category: 'LEGAL_COMPLIANCE', label: 'Compliance Certificate', description: 'Cost per portion for compliance certificate', default_amount_kes: 1500 },
+  { id: 'development_fee', category: 'LEGAL_COMPLIANCE', label: 'Development Fee', description: 'Cost per portion for development fee', default_amount_kes: 1500 },
+  { id: 'admin_costs', category: 'LEGAL_COMPLIANCE', label: 'Administrative Costs', description: 'Cost per portion for admin costs', default_amount_kes: 250 },
+  { id: 'search_fee', category: 'LEGAL_COMPLIANCE', label: 'Search Fee', description: 'Property search fee', default_amount_kes: 1050 },
+  { id: 'land_rates_clearance', category: 'LEGAL_COMPLIANCE', label: 'Land Rates Clearance', description: 'Clearance of land rates', default_amount_kes: 3000 },
+  { id: 'stamp_duty', category: 'LEGAL_COMPLIANCE', label: 'Stamp Duty', description: '1-4% of property value', default_amount_kes: 0 },
+
+  // Other Charges
+  { id: 'county_planning_fees', category: 'OTHER_CHARGES', label: 'County Planning Fees', description: 'County planning approval fees', default_amount_kes: 15000 },
+  { id: 'professional_legal_fees', category: 'OTHER_CHARGES', label: 'Professional/Legal Fees', description: 'Variable professional and legal fees', default_amount_kes: 0 },
+  { id: 'miscellaneous_disbursements', category: 'OTHER_CHARGES', label: 'Miscellaneous Disbursements', description: 'Other miscellaneous costs', default_amount_kes: 0 }
+]
+
+// Subdivision cost category labels for display
+export const SUBDIVISION_COST_CATEGORY_LABELS: Record<SubdivisionCostCategory, string> = {
+  STATUTORY_BOARD_FEES: 'Statutory & Board Fees',
+  SURVEY_PLANNING_FEES: 'Survey & Planning Fees',
+  REGISTRATION_TITLE_FEES: 'Registration & Title Fees',
+  LEGAL_COMPLIANCE: 'Legal & Compliance',
+  OTHER_CHARGES: 'Other Charges'
 }

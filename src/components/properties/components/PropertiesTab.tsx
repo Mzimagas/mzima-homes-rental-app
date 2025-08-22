@@ -43,10 +43,26 @@ export default function PropertiesTab({
 }: PropertiesTabProps) {
   // Filter properties based on search term and lifecycle status
   const filteredProperties = useMemo(() => {
-    // First filter out properties that are back in the purchase pipeline
-    const activeProperties = properties.filter(property =>
-      property.lifecycle_status !== 'PENDING_PURCHASE'
-    )
+    // Filter out properties that are back in the purchase pipeline or fully subdivided
+    // Keep properties that are just starting subdivision (they may not complete the process)
+    const activeProperties = properties.filter(property => {
+      const lifecycleStatus = property.lifecycle_status
+      const subdivisionStatus = property.subdivision_status
+
+      // Filter out properties moved back to purchase pipeline
+      if (lifecycleStatus === 'PENDING_PURCHASE') {
+        return false
+      }
+
+      // Filter out properties that are fully subdivided (completed the process)
+      // Use subdivision_status as the primary indicator since it's more specific
+      if (subdivisionStatus === 'Subdivided') {
+        return false
+      }
+
+      // Keep all other properties (including those starting subdivision)
+      return true
+    })
 
     if (!searchTerm.trim()) return activeProperties
 
@@ -106,7 +122,7 @@ export default function PropertiesTab({
         onSearchChange={onSearchChange}
         placeholder="Search properties by name, address, type, or notes..."
         resultsCount={filteredProperties.length}
-        totalCount={properties.length}
+        totalCount={filteredProperties.length}
       />
 
       {/* Properties List */}
@@ -119,6 +135,9 @@ export default function PropertiesTab({
         onEditProperty={handleEditProperty}
         onSubdivisionChange={onSubdivisionChange}
         onHandoverChange={onHandoverChange}
+        onSaveChanges={onSaveChanges}
+        onCancelChanges={onCancelChanges}
+        onNavigateToTabs={onNavigateToTabs}
         onRefresh={onRefresh}
       />
 

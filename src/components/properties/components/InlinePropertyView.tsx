@@ -13,7 +13,13 @@ import supabase from '../../../lib/supabase-client'
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import ProgressTracker from './ProgressTracker'
 import StageModal from './StageModal'
+import SubdivisionProgressTracker from './SubdivisionProgressTracker'
+import SubdivisionStageModal from './SubdivisionStageModal'
 import { PurchaseItem } from '../types/purchase-pipeline.types'
+import {
+  SubdivisionPipelineStageData,
+  SubdivisionProgressTrackerProps
+} from '../types/property-management.types'
 import { PurchasePipelineService } from '../services/purchase-pipeline.service'
 import {
   initializePipelineStages,
@@ -21,6 +27,14 @@ import {
   formatCurrency,
   calculateBalanceDue
 } from '../utils/purchase-pipeline.utils'
+import {
+  initializeSubdivisionPipelineStages,
+  calculateSubdivisionOverallProgress,
+  getCurrentSubdivisionStage,
+  mapSubdivisionStatusToStages,
+  getCurrentSubdivisionStageFromStatus,
+  calculateSubdivisionProgressFromStatus
+} from '../utils/subdivision-pipeline.utils'
 
 interface InlinePropertyViewProps {
   property: PropertyWithLifecycle
@@ -60,10 +74,17 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
   const [selectedStageId, setSelectedStageId] = useState<number | null>(null)
   const [pipelineLoading, setPipelineLoading] = useState(false)
 
+  // Subdivision pipeline state
+  const [subdivisionData, setSubdivisionData] = useState<any>(null)
+  const [showSubdivisionStageModal, setShowSubdivisionStageModal] = useState(false)
+  const [selectedSubdivisionStageId, setSelectedSubdivisionStageId] = useState<number | null>(null)
+  const [subdivisionLoading, setSubdivisionLoading] = useState(false)
+
   useEffect(() => {
     loadDocuments()
     loadPipelineDocuments()
     loadPurchaseData()
+    loadSubdivisionData()
   }, [property.id])
 
   const loadDocuments = async () => {
@@ -88,11 +109,16 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
   const loadPipelineDocuments = async () => {
     try {
+      // Only load pipeline documents if property came from purchase pipeline
+      if (property.property_source !== 'PURCHASE_PIPELINE') {
+        return
+      }
+
       // Check if this property came from purchase pipeline
       const { data: purchaseData, error: purchaseError } = await supabase
         .from('purchase_pipeline')
         .select('id, pipeline_stages')
-        .eq('property_id', property.id)
+        .eq('completed_property_id', property.id)
         .single()
 
       if (purchaseError || !purchaseData) return
@@ -134,14 +160,14 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
         return
       }
 
-      // First try to find by property_id
+      // First try to find by completed_property_id
       let { data: purchaseData, error: purchaseError } = await supabase
         .from('purchase_pipeline')
         .select('*')
-        .eq('property_id', property.id)
+        .eq('completed_property_id', property.id)
         .maybeSingle()
 
-      // If not found by property_id, try to find by source_reference_id
+      // If not found by completed_property_id, try to find by source_reference_id
       if (!purchaseData && property.source_reference_id) {
         const { data: refData, error: refError } = await supabase
           .from('purchase_pipeline')
@@ -169,6 +195,62 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
       setPurchaseData(null)
     } finally {
       setPipelineLoading(false)
+    }
+  }
+
+  const loadSubdivisionData = async () => {
+    try {
+      setSubdivisionLoading(true)
+
+      // Only load if property came from subdivision process
+      if (property.property_source !== 'SUBDIVISION_PROCESS') {
+        setSubdivisionData(null)
+        return
+      }
+
+      // Try to find subdivision data by source_reference_id
+      if (property.source_reference_id) {
+        const { data: subdivisionData, error: subdivisionError } = await supabase
+          .from('property_subdivisions')
+          .select('*')
+          .eq('id', property.source_reference_id)
+          .maybeSingle()
+
+        if (subdivisionError) {
+          console.error('Error loading subdivision data:', subdivisionError)
+          return
+        }
+
+        if (subdivisionData) {
+          // Use saved pipeline stages if available, otherwise initialize default stages
+          let stageData = subdivisionData.pipeline_stages
+          let currentStage = subdivisionData.current_stage
+          let overallProgress = subdivisionData.overall_progress
+
+          // If no saved pipeline stages, initialize with default empty stages (not demo data)
+          if (!stageData || stageData.length === 0) {
+            stageData = initializeSubdivisionPipelineStages()
+            currentStage = 1
+            overallProgress = 0
+          }
+
+          setSubdivisionData({
+            ...subdivisionData,
+            pipeline_stages: stageData,
+            current_stage: currentStage,
+            overall_progress: overallProgress
+          })
+        } else {
+          setSubdivisionData(null)
+        }
+      } else {
+        setSubdivisionData(null)
+      }
+    } catch (error) {
+      console.error('Error loading subdivision data:', error)
+      setSubdivisionData(null)
+    } finally {
+      setSubdivisionLoading(false)
     }
   }
 
@@ -274,9 +356,97 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     }
   }
 
+  // Subdivision pipeline interaction handlers
+  const handleSubdivisionStageClick = (stageId: number) => {
+    setSelectedSubdivisionStageId(stageId)
+    setShowSubdivisionStageModal(true)
+  }
+
+  const handleSubdivisionStageUpdate = async (subdivisionId: string, stageId: number, newStatus: string, notes?: string) => {
+    try {
+      console.log('Updating subdivision stage:', { subdivisionId, stageId, newStatus, notes })
+
+      // Update local subdivision data first for immediate UI feedback
+      if (subdivisionData) {
+        const updatedStages = subdivisionData.pipeline_stages.map((stage: SubdivisionPipelineStageData) => {
+          if (stage.stage_id === stageId) {
+            // Handle date logic based on status
+            let updatedStage = {
+              ...stage,
+              status: newStatus,
+              notes: notes || stage.notes
+            }
+
+            // Set dates based on new status
+            if (newStatus === 'Not Started') {
+              // Reset all dates when reverting to not started
+              updatedStage.started_date = undefined
+              updatedStage.completed_date = undefined
+            } else if (['In Progress', 'Pending Review', 'Under Review'].includes(newStatus)) {
+              // Set started date if not already set, clear completed date
+              updatedStage.started_date = stage.started_date || new Date().toISOString()
+              updatedStage.completed_date = undefined
+            } else if (['Completed', 'Approved', 'Finalized'].includes(newStatus)) {
+              // Set both started and completed dates
+              updatedStage.started_date = stage.started_date || new Date().toISOString()
+              updatedStage.completed_date = new Date().toISOString()
+            }
+
+            return updatedStage
+          }
+          return stage
+        })
+
+        const currentStage = getCurrentSubdivisionStage(updatedStages)
+        const overallProgress = calculateSubdivisionOverallProgress(updatedStages)
+
+        const updatedSubdivisionData = {
+          ...subdivisionData,
+          pipeline_stages: updatedStages,
+          current_stage: currentStage,
+          overall_progress: overallProgress
+        }
+
+        // Update local state immediately for UI responsiveness
+        setSubdivisionData(updatedSubdivisionData)
+
+        // Save to database
+        const response = await fetch(`/api/property-subdivisions/${subdivisionId}/stages`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pipeline_stages: updatedStages,
+            current_stage: currentStage,
+            overall_progress: overallProgress
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to save subdivision stage update')
+        }
+
+        console.log('Successfully saved subdivision stage update to database')
+      }
+    } catch (error) {
+      console.error('Error updating subdivision stage:', error)
+      // Reload subdivision data to revert any local changes if save failed
+      await loadSubdivisionData()
+      throw error
+    }
+  }
+
   const getCurrentStageData = () => {
     if (!purchaseData?.pipeline_stages || !selectedStageId) return undefined
     return purchaseData.pipeline_stages.find(stage => stage.stage_id === selectedStageId)
+  }
+
+  const getCurrentSubdivisionStageData = () => {
+    if (!subdivisionData || !selectedSubdivisionStageId) return undefined
+    return subdivisionData.pipeline_stages?.find((stage: SubdivisionPipelineStageData) =>
+      stage.stage_id === selectedSubdivisionStageId
+    )
   }
 
   const getFileIcon = (mimeType: string) => {
@@ -517,66 +687,39 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
               </div>
             )}
 
-            {/* Document Upload Section */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-              <div className="text-center">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="document-upload"
-                  disabled={uploading}
-                />
-                <label htmlFor="document-upload" className="cursor-pointer">
-                  <div className="text-gray-600">
-                    {uploading ? 'Uploading...' : 'Click to upload documents or drag and drop'}
+            {/* Subdivision Pipeline Interface - Only show for subdivision process properties */}
+            {property.property_source === 'SUBDIVISION_PROCESS' && (
+              <div>
+                {subdivisionLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-600">Loading subdivision data...</p>
                   </div>
-                  <div className="text-sm text-gray-400 mt-1">
-                    PDF, Word, Excel, Images up to 10MB each
+                ) : subdivisionData ? (
+                  <div className="space-y-6">
+                    {/* Subdivision Progress Tracker */}
+                    <SubdivisionProgressTracker
+                      currentStage={subdivisionData.current_stage || 1}
+                      stageData={subdivisionData.pipeline_stages || initializeSubdivisionPipelineStages()}
+                      onStageClick={handleSubdivisionStageClick}
+                      overallProgress={subdivisionData.overall_progress || 0}
+                      subdivisionId={subdivisionData.id}
+                      onStageUpdate={handleSubdivisionStageUpdate}
+                    />
                   </div>
-                </label>
+                ) : (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <div className="text-4xl mb-4">🏗️</div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Subdivision Data Not Found</h3>
+                    <p className="text-gray-600">This property was marked as coming from a subdivision process, but the subdivision data could not be loaded.</p>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
-            {/* Property Documents */}
-            <div>
-              <h4 className="text-lg font-medium text-gray-900 mb-4">Property Documents</h4>
-              {loading ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Loading documents...</p>
-                </div>
-              ) : documents.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No documents uploaded yet</p>
-              ) : (
-                <div className="space-y-3">
-                  {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">{getFileIcon(doc.mime_type)}</span>
-                        <div>
-                          <p className="font-medium text-gray-900">{doc.title}</p>
-                          <p className="text-sm text-gray-500">
-                            {formatFileSize(doc.file_size_bytes)} • {new Date(doc.uploaded_at).toLocaleDateString()}
-                          </p>
-                          {doc.description && (
-                            <p className="text-sm text-gray-600">{doc.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleDownload(doc)}
-                      >
-                        Download
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+
+
+
 
             {/* Pipeline Documents - Only show for non-purchase pipeline properties */}
             {property.property_source !== 'PURCHASE_PIPELINE' && pipelineDocuments.length > 0 && (
@@ -626,6 +769,18 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           purchaseId={purchaseData.id}
           stageData={getCurrentStageData()}
           onStageUpdate={handleStageUpdate}
+        />
+      )}
+
+      {/* Stage Modal for Subdivision Pipeline */}
+      {showSubdivisionStageModal && selectedSubdivisionStageId && subdivisionData && (
+        <SubdivisionStageModal
+          isOpen={showSubdivisionStageModal}
+          onClose={() => setShowSubdivisionStageModal(false)}
+          stageId={selectedSubdivisionStageId}
+          subdivisionId={subdivisionData.id}
+          stageData={getCurrentSubdivisionStageData()}
+          onStageUpdate={handleSubdivisionStageUpdate}
         />
       )}
     </div>

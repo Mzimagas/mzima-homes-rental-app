@@ -32,6 +32,7 @@ interface PropertyListProps {
   onSaveChanges: (propertyId: string) => void
   onCancelChanges: (propertyId: string) => void
   onNavigateToTabs: (tab: string) => void
+  onDeleteProperty?: (propertyId: string) => void
 }
 
 export default function PropertyList({
@@ -46,7 +47,8 @@ export default function PropertyList({
   onRefresh,
   onSaveChanges,
   onCancelChanges,
-  onNavigateToTabs
+  onNavigateToTabs,
+  onDeleteProperty
 }: PropertyListProps) {
   const [viewingPropertyId, setViewingPropertyId] = useState<string | null>(null)
   const [propertiesWithPipelineIssues, setPropertiesWithPipelineIssues] = useState<Set<string>>(new Set())
