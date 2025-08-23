@@ -11,7 +11,7 @@
 
 ### **Incorrect Configuration**
 - **Found:** `SMTP_USER=mzimahomesl@gmail.com` (with extra 'l')
-- **Correct:** `SMTP_USER=mzimahomes@gmail.com` (without extra 'l')
+- **Correct:** `SMTP_USER=system@example.com` (without extra 'l')
 - **Location:** `.env.local` and `.env.example` files
 
 ### **Potential Impact**
@@ -24,7 +24,7 @@
 ## 🛠️ Corrections Applied
 
 ### 1. **Environment Configuration Files**
-- ✅ **Updated `.env.local`:** Corrected `SMTP_USER` to `mzimahomes@gmail.com`
+- ✅ **Updated `.env.local`:** Corrected `SMTP_USER` to `system@example.com`
 - ✅ **Updated `.env.example`:** Corrected template for future deployments
 - ✅ **Verified password:** Confirmed `SMTP_PASS` remains unchanged
 
@@ -47,7 +47,7 @@
 - ✅ Database constraints: Active and preventing invalid emails
 
 ### **Email Validation Tests**
-- ✅ `mzimahomes@gmail.com` - Valid ✅
+- ✅ `system@example.com` - Valid ✅
 - ✅ `user@gmail.com` - Valid ✅  
 - ✅ `test@example.com` - Blocked ❌ (as expected)
 - ✅ Previous incorrect address format still validates (but won't be used)
@@ -63,12 +63,12 @@
 ```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=mzimagas@gmail.com
-SMTP_PASS=nauo vchp drwl ejjc
+SMTP_USER=admin@example.com
+SMTP_PASS=xxxx xxxx xxxx xxxx
 ```
 
 ### **Email Flow**
-1. **Authentication emails** sent via Gmail SMTP using `mzimahomes@gmail.com`
+1. **Authentication emails** sent via Gmail SMTP using `system@example.com`
 2. **From address** appears as `noreply@mzimahomes.com`
 3. **Validation** prevents invalid emails from entering system
 4. **Monitoring** tracks delivery success/failure rates
@@ -114,7 +114,7 @@ SMTP_PASS=nauo vchp drwl ejjc
 4. **Monitor Supabase Dashboard** - Watch for delivery improvements
 
 ### **Gmail Account Verification**
-1. **Confirm App Password** - Ensure it's configured for `mzimahomes@gmail.com`
+1. **Confirm App Password** - Ensure it's configured for `system@example.com`
 2. **Check Security Settings** - Verify 2FA and app passwords enabled
 3. **Monitor Gmail Activity** - Watch for successful SMTP connections
 4. **Review Security Alerts** - Ensure no authentication warnings
@@ -142,7 +142,7 @@ SMTP_PASS=nauo vchp drwl ejjc
 ## 🚨 Critical Reminders
 
 ### **Email Configuration**
-- **Correct Email:** `mzimahomes@gmail.com` (NO extra 'l')
+- **Correct Email:** `system@example.com` (NO extra 'l')
 - **Gmail App Password:** Must be configured for this exact address
 - **SMTP Server:** `smtp.gmail.com:587`
 - **From Address:** `noreply@mzimahomes.com`
@@ -156,7 +156,7 @@ SMTP_PASS=nauo vchp drwl ejjc
 ## 📞 Support Information
 
 ### **If Issues Occur**
-1. **Check Gmail Account** - Verify app password for `mzimahomes@gmail.com`
+1. **Check Gmail Account** - Verify app password for `system@example.com`
 2. **Review SMTP Logs** - Look for authentication errors
 3. **Test Configuration** - Run `node test-corrected-email-config.js`
 4. **Verify Environment** - Ensure `.env.local` is loaded correctly

@@ -5,9 +5,9 @@
 Based on comprehensive analysis, your "Access denied: You do not have permission to perform this action" error is caused by:
 
 ### **Critical Data Mismatch**
-- **Property landlord_id:** `7ef41199-9161-4dea-8c90-0511ee310b3a`
+- **Property landlord_id:** `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
 - **Property user_id:** `be74c5f6-f485-42ca-9d71-1e81bb81f53f`
-- **Current user:** `abeljoshua04@gmail.com` (ID: `16d2d9e9-accb-4a79-bb74-52a734169f12`)
+- **Current user:** `user@example.com` (ID: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
 
 **The Problem:** The current user has NO property access because:
 1. They are not the landlord of any property
@@ -38,7 +38,7 @@ WHERE id IN (
 Add the current user to the existing property:
 
 ```sql
--- Grant access to the current user (abeljoshua04@gmail.com)
+-- Grant access to the current user (user@example.com)
 INSERT INTO property_users (
   property_id, 
   user_id, 
@@ -50,7 +50,7 @@ INSERT INTO property_users (
 ) 
 SELECT 
   id as property_id,
-  '16d2d9e9-accb-4a79-bb74-52a734169f12' as user_id,
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' as user_id,
   'PROPERTY_MANAGER' as role,
   'ACTIVE' as status,
   NOW() as accepted_at,
@@ -283,7 +283,7 @@ async function testPropertyUsersAccess() {
 3. Run the property users access test
 
 ### **Step 4: Verify in Application**
-1. Log in as `abeljoshua04@gmail.com`
+1. Log in as `user@example.com`
 2. Try to access properties
 3. Try to create a new property
 
@@ -315,7 +315,7 @@ ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
 ## 🎉 EXPECTED RESULTS
 
 After applying these fixes:
-1. **Current user** (`abeljoshua04@gmail.com`) will have access to properties
+1. **Current user** (`user@example.com`) will have access to properties
 2. **Data consistency** between properties and property_users will be fixed
 3. **RLS policies** will work correctly
 4. **Access denied errors** will be resolved

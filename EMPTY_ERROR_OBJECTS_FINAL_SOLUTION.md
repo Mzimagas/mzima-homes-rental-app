@@ -112,7 +112,7 @@ if (authError.__isAuthError || authError.message?.includes('Auth session missing
 
 ### **Step 4: Test Authentication Flow**
 - If authentication error appears, click "Sign In" button
-- Log in as Abel: `abeljoshua04@gmail.com`
+- Log in as Abel: `user@example.com`
 - Return to User Management to see successful loading
 
 ## 🎯 **Expected Behavior After Fix**
@@ -204,7 +204,7 @@ The invitation system now provides:
 2. **Navigate to User Management** (`/dashboard/users`)
 3. **Open browser console** to see detailed error information
 4. **If authentication error appears**, click "Sign In" button to log in
-5. **Log in as Abel** (`abeljoshua04@gmail.com`) to establish proper session
+5. **Log in as Abel** (`user@example.com`) to establish proper session
 6. **Return to User Management** to see invitations load successfully
 
 **The mysterious empty error objects are now a thing of the past! You'll see clear, detailed error information that helps you understand and resolve any issues.** 🔧✨

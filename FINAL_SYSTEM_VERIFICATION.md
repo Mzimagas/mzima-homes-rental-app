@@ -19,7 +19,7 @@
 
 ### **2. Abel's Authentication ✅**
 ```
-✅ Login: abeljoshua04@gmail.com successful
+✅ Login: user@example.com successful
 ✅ User ID: 00edf885-d6d7-47bc-b932-c92548d261e2
 ✅ Property Access: 1 property (Kariakor VWHC Rental Property)
 ✅ Role: OWNER with full permissions
@@ -27,7 +27,7 @@
 
 ### **3. Existing Landlord Authentication ✅**
 ```
-✅ Login: landlord@mzimahomes.com successful
+✅ Login: landlord@example.com successful
 ✅ Multi-user system: Compatible with existing users
 ✅ Property access: Maintained through migration
 ```
@@ -115,7 +115,7 @@
 
 ### **Test 1: Abel's Login and Dashboard**
 - [ ] Navigate to http://localhost:3000/auth/login
-- [ ] Login with: abeljoshua04@gmail.com / password123
+- [ ] Login with: user@example.com / userPassword123
 - [ ] Verify dashboard shows property data (not 0 properties)
 - [ ] Check for any "Access denied" errors
 
@@ -132,7 +132,7 @@
 - [ ] Verify new user can access dashboard
 
 ### **Test 4: Existing Landlord**
-- [ ] Login with: landlord@mzimahomes.com / MzimaHomes2024!
+- [ ] Login with: landlord@example.com / SecurePassword123!
 - [ ] Verify existing functionality maintained
 - [ ] Check property access and management features
 

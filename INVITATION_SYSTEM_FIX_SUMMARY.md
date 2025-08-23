@@ -66,7 +66,7 @@ catch (err) {
 ## 📱 **How to Test the Fix**
 
 ### **1. Access User Management**
-1. **Login as Abel**: Use `abeljoshua04@gmail.com`
+1. **Login as Abel**: Use `user@example.com`
 2. **Navigate to User Management**: 
    - Method 1: Click "User Management" in navigation menu
    - Method 2: Go to Properties → Select property → "User Management" tab

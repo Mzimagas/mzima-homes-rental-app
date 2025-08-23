@@ -60,9 +60,9 @@ The Mzima Homes rental application was showing an email confirmation screen sayi
 ```
 
 ## 🔑 **Working Credentials**
-- **Email**: `landlord@mzimahomes.com`
-- **Password**: `MzimaHomes2024!`
-- **User ID**: `7ef41199-9161-4dea-8c90-0511ee310b3a`
+- **Email**: `[REMOVED FOR SECURITY]`
+- **Password**: `[REMOVED FOR SECURITY]`
+- **User ID**: `[REMOVED FOR SECURITY]`
 
 ## 📋 **Files Created/Updated**
 

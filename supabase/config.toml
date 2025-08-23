@@ -94,8 +94,8 @@ port = 54324
 # Uncomment to expose additional ports for testing user applications that send emails.
 # smtp_port = 54325
 # pop3_port = 54326
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# admin_email = "your-admin@email.com"
+# sender_name = "Your App Name"
 
 [storage]
 enabled = true
@@ -186,7 +186,7 @@ otp_expiry = 3600
 # host = "smtp.sendgrid.net"
 # port = 587
 # user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
+# password = "env(YOUR_SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
@@ -207,7 +207,7 @@ max_frequency = "5s"
 
 # Use pre-defined map of phone number to OTP for testing.
 # [auth.sms.test_otp]
-# 4152127777 = "123456"
+# phone_number = "otp_code"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -264,7 +264,7 @@ max_frequency = "5s"
 enabled = false
 client_id = ""
 # DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
-secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+client_secret = "env(YOUR_APPLE_SECRET)"
 # Overrides the default auth redirectUrl.
 redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,

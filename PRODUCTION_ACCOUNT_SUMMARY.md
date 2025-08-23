@@ -8,15 +8,15 @@ A real production user account has been successfully created to replace the test
 ## 🔑 **Production Account Details**
 
 ### **✅ Account Information**
-- **Email**: `mzimahomes.manager@gmail.com`
-- **Password**: `MzimaHomes2024!Secure`
+- **Email**: `manager@example.com`
+- **Password**: `SecurePassword123!Secure`
 - **Full Name**: `Mzima Property Manager`
 - **Role**: `Property Manager` (OWNER permissions)
 - **User ID**: `be74c5f6-f485-42ca-9d71-1e81bb81f53f`
 - **Status**: Active and email confirmed
 
 ### **✅ Security Features**
-- **Real Credentials**: No test passwords like "password123"
+- **Real Credentials**: No test passwords like "userPassword123"
 - **Strong Password**: Complex password with special characters
 - **Professional Email**: Business-appropriate email address
 - **Auto-Confirmed**: Email verification completed automatically
@@ -86,7 +86,7 @@ A real production user account has been successfully created to replace the test
 - ✅ **Production Ready**: Only real accounts in system
 
 ### **✅ Existing Accounts Preserved**
-- ✅ **landlord@mzimahomes.com**: Original account maintained
+- ✅ **landlord@example.com**: Original account maintained
 - ✅ **Data Integrity**: All existing data preserved
 - ✅ **Backward Compatibility**: Existing functionality intact
 
@@ -94,7 +94,7 @@ A real production user account has been successfully created to replace the test
 
 ### **✅ Ready for Immediate Use**
 1. **Login Page**: http://localhost:3000/auth/login
-2. **Production Credentials**: `mzimahomes.manager@gmail.com` / `MzimaHomes2024!Secure`
+2. **Production Credentials**: `manager@example.com` / `SecurePassword123!Secure`
 3. **Full Access**: Complete property management capabilities
 4. **Multi-User Ready**: Can invite and manage other users
 5. **Professional Setup**: Real business credentials
@@ -110,8 +110,8 @@ A real production user account has been successfully created to replace the test
 
 ### **Step 1: Login Test**
 1. Navigate to: http://localhost:3000/auth/login
-2. Enter email: `mzimahomes.manager@gmail.com`
-3. Enter password: `MzimaHomes2024!Secure`
+2. Enter email: `[USE YOUR ACTUAL ADMIN EMAIL]`
+3. Enter password: `[USE YOUR ACTUAL PASSWORD]`
 4. Click login
 5. **Expected**: Successful login and redirect to dashboard
 
@@ -177,8 +177,8 @@ After applying the remaining fixes:
 
 ### **🔑 Production Credentials**
 ```
-Email: mzimahomes.manager@gmail.com
-Password: MzimaHomes2024!Secure
+Email: manager@example.com
+Password: SecurePassword123!Secure
 Status: Ready for production use
 Access: Full property management capabilities
 ```

@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import UserWorkflowNavigation, { UserTab } from '../../../components/users/UserManagementTabs'
-import UserAddition from '../../../components/users/UserAddition'
+import ComprehensiveUserManagement from '../../../components/users/ComprehensiveUserManagement'
 import GranularPermissionManager from '../../../components/properties/components/GranularPermissionManager'
+import DeletedUsersManagement from '../../../components/users/DeletedUsersManagement'
 
 export default function UserManagementPage() {
   const [activeTab, setActiveTab] = useState<UserTab>('addition')
@@ -29,11 +30,11 @@ export default function UserManagementPage() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">User Addition</h2>
-                  <p className="text-gray-600">Create new user accounts with initial role assignments</p>
+                  <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
+                  <p className="text-gray-600">View existing users and create new user accounts</p>
                 </div>
               </div>
-              <UserAddition />
+              <ComprehensiveUserManagement />
             </div>
           )}
 
@@ -46,6 +47,18 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <GranularPermissionManager />
+            </div>
+          )}
+
+          {activeTab === 'deleted' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Deleted Users Management</h2>
+                  <p className="text-gray-600">Restore or permanently delete soft deleted users</p>
+                </div>
+              </div>
+              <DeletedUsersManagement />
             </div>
           )}
         </div>

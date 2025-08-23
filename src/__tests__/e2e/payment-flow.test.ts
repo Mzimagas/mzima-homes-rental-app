@@ -5,10 +5,10 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Payment Flow E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // Login as a landlord user
+    // Login as a test user
     await page.goto('/auth/login')
-    await page.fill('[data-testid="email-input"]', 'landlord@example.com')
-    await page.fill('[data-testid="password-input"]', 'password123')
+    await page.fill('[data-testid="email-input"]', process.env.TEST_USER_EMAIL || 'test@example.com')
+    await page.fill('[data-testid="password-input"]', process.env.TEST_USER_PASSWORD || 'TestPassword123!')
     await page.click('[data-testid="login-button"]')
     
     // Wait for dashboard to load

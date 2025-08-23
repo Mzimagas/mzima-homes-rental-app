@@ -160,34 +160,9 @@ export default function AdvancedRoleManager() {
 
   const availableRoles = RoleManagementService.getAllRoles()
 
-  // Demo data for demonstration purposes
-  const demoUserRoles = [
-    {
-      id: 'demo-1',
-      user_id: 'demo-user-1',
-      role: 'property_manager',
-      assigned_at: new Date().toISOString(),
-      assigned_by: 'demo-admin',
-      is_active: true
-    },
-    {
-      id: 'demo-2',
-      user_id: 'demo-user-1',
-      role: 'finance_manager',
-      assigned_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      assigned_by: 'demo-admin',
-      is_active: false
-    }
-  ]
-
-  const demoUsers = [
-    {
-      id: 'demo-user-1',
-      email: 'demo@example.com',
-      created_at: new Date().toISOString(),
-      last_sign_in_at: new Date().toISOString()
-    }
-  ]
+  // TODO: Replace with real data from your user management system
+  const demoUserRoles: any[] = [] // Empty - replace with real user role data
+  const demoUsers: any[] = [] // Empty - replace with real user data
 
   const displayUserRoles = demoMode ? demoUserRoles : userRoles
   const displayUsers = demoMode ? demoUsers : users

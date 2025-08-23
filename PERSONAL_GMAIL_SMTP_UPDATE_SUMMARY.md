@@ -10,13 +10,13 @@
 ## 📧 Email Configuration Changes
 
 ### **Previous Configuration**
-- **SMTP User:** `mzimahomes@gmail.com`
+- **SMTP User:** `system@example.com`
 - **SMTP Password:** `Tsavo@2015`
 - **Status:** Company/project-specific email
 
 ### **New Configuration**
-- **SMTP User:** `mzimagas@gmail.com`
-- **SMTP Password:** `nauo vchp drwl ejjc`
+- **SMTP User:** `admin@example.com`
+- **SMTP Password:** `xxxx xxxx xxxx xxxx`
 - **Status:** Personal Gmail account with app password
 
 ### **Unchanged Settings**
@@ -57,14 +57,14 @@
 
 Configuration Summary:
    SMTP Server: smtp.gmail.com:587
-   Authentication: mzimagas@gmail.com
+   Authentication: admin@example.com
    From Address: noreply@mzimahomes.com
    Security: Gmail App Password + STARTTLS
    Status: ✅ Ready
 ```
 
 ### **Email Validation Tests**
-- ✅ `mzimagas@gmail.com` - Valid
+- ✅ `admin@example.com` - Valid
 - ✅ `user@gmail.com` - Valid
 - ✅ `newuser@yahoo.com` - Valid
 - ❌ `test@example.com` - Blocked (as expected)
@@ -88,9 +88,9 @@ Configuration Summary:
 ## 🔒 Security Configuration
 
 ### **Gmail Account Security**
-- **Account:** `mzimagas@gmail.com`
+- **Account:** `admin@example.com`
 - **2FA:** Required and enabled
-- **App Password:** `nauo vchp drwl ejjc`
+- **App Password:** `xxxx xxxx xxxx xxxx`
 - **Format:** Valid Gmail app password (16 chars with spaces)
 - **Permissions:** SMTP sending only
 
@@ -98,7 +98,7 @@ Configuration Summary:
 1. **Authentication:** Gmail app password
 2. **Encryption:** STARTTLS on port 587
 3. **From Address:** `noreply@mzimahomes.com` (branded)
-4. **Reply-To:** `mzimagas@gmail.com` (personal)
+4. **Reply-To:** `admin@example.com` (personal)
 5. **Validation:** Prevents invalid/test emails
 
 ## 🎯 Benefits & Impact
@@ -130,7 +130,7 @@ Email Validation (Enhanced)
          ↓
 Supabase Auth.signUp()
          ↓
-SMTP Connection (mzimagas@gmail.com)
+SMTP Connection (admin@example.com)
          ↓
 Gmail SMTP Server (smtp.gmail.com:587)
          ↓
@@ -188,9 +188,9 @@ Account Activated
 ### **Common Issues & Solutions**
 
 1. **SMTP Authentication Failure**
-   - ✅ Verify app password: `nauo vchp drwl ejjc`
+   - ✅ Verify app password: `xxxx xxxx xxxx xxxx`
    - ✅ Check 2FA is enabled on Gmail
-   - ✅ Confirm username: `mzimagas@gmail.com`
+   - ✅ Confirm username: `admin@example.com`
 
 2. **Emails Not Delivered**
    - ✅ Check Gmail sent folder
@@ -204,7 +204,7 @@ Account Activated
    - ✅ Check for invalid email patterns
 
 ### **Emergency Contacts**
-- **Gmail Account:** Direct access via `mzimagas@gmail.com`
+- **Gmail Account:** Direct access via `admin@example.com`
 - **Supabase Support:** Dashboard email delivery section
 - **Application Logs:** Check SMTP connection errors
 
@@ -214,13 +214,13 @@ Account Activated
 ```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=mzimagas@gmail.com
-SMTP_PASS=nauo vchp drwl ejjc
+SMTP_USER=admin@example.com
+SMTP_PASS=xxxx xxxx xxxx xxxx
 ```
 
 ### **Email Settings**
 - **From:** noreply@mzimahomes.com
-- **Reply-To:** mzimagas@gmail.com
+- **Reply-To:** admin@example.com
 - **From Name:** Mzima Homes
 
 ### **Validation Status**

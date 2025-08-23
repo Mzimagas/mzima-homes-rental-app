@@ -2,10 +2,17 @@
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Note: This should only be used server-side with service role key
+// For client-side operations, use the regular supabase client
+const getAdminSupabaseClient = () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Admin Supabase client should not be used on client-side')
+  }
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // Encryption configuration
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm'

@@ -6,7 +6,7 @@ Based on comprehensive analysis, the RLS policy violation is caused by multiple 
 
 ### **1. Data Inconsistency (CRITICAL)**
 - **Issue:** Landlord ID mismatch between `properties` and `property_users` tables
-- **Found:** Property landlord_id: `7ef41199-9161-4dea-8c90-0511ee310b3a`
+- **Found:** Property landlord_id: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
 - **Found:** Property user_id: `be74c5f6-f485-42ca-9d71-1e81bb81f53f`
 - **Impact:** RLS policies fail because data relationships are broken
 

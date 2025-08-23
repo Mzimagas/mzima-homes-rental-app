@@ -33,8 +33,8 @@ The property loading failures in the Mzima Homes rental application have been **
 
 ### ✅ **Production User Verification**
 ```
-✅ Email: mzimahomes.manager@gmail.com
-✅ Password: MzimaHomes2024!Secure
+✅ Email: manager@example.com
+✅ Password: SecurePassword123!Secure
 ✅ Property Access: OWNER role for "Kariakor VWHC Rental Property"
 ✅ Permissions: Full property management capabilities
 ✅ Status: Ready for production use
@@ -60,8 +60,8 @@ The property loading failures in the Mzima Homes rental application have been **
 
 ### **Login Credentials**
 - **URL**: http://localhost:3000/auth/login
-- **Email**: `mzimahomes.manager@gmail.com`
-- **Password**: `MzimaHomes2024!Secure`
+- **Email**: `manager@example.com`
+- **Password**: `SecurePassword123!Secure`
 
 ### **Expected Dashboard Behavior**
 - ✅ **Loads without errors**: No more "Failed to load properties" messages
@@ -81,7 +81,7 @@ The property loading failures in the Mzima Homes rental application have been **
 
 ### **✅ Original Requirements: 100% COMPLETE**
 1. ✅ **Applied RLS Fix**: Emergency recursion fix successfully executed
-2. ✅ **Verified Production User**: mzimahomes.manager@gmail.com fully functional
+2. ✅ **Verified Production User**: manager@example.com fully functional
 3. ✅ **Tested Dashboard**: Should load properly with real property data
 4. ✅ **Confirmed RLS Policies**: Working correctly after fix
 5. ✅ **Verified Property Management**: CRUD operations functional
@@ -128,8 +128,8 @@ The Mzima Homes rental application is now **100% functional** with:
 
 ### **✅ Production Credentials**
 ```
-Email: mzimahomes.manager@gmail.com
-Password: MzimaHomes2024!Secure
+Email: manager@example.com
+Password: SecurePassword123!Secure
 Access: Full property management
 Status: Ready for business use
 ```

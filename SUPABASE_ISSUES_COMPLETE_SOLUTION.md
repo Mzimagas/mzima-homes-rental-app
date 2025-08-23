@@ -95,13 +95,13 @@ Instead of the mysterious empty error objects.
 
 #### **Step 1: User Must Log In**
 1. **Navigate to login page**: `/auth/login`
-2. **Sign in as Abel**: `abeljoshua04@gmail.com` with correct password
+2. **Sign in as Abel**: `user@example.com` with correct password
 3. **Establish browser session**: This creates the authentication context needed for RLS policies
 
 #### **Step 2: Verify Authentication**
 After login, the enhanced error handling will show:
 ```
-✅ User authenticated: [user-id] abeljoshua04@gmail.com
+✅ User authenticated: [user-id] user@example.com
 ✅ Property access confirmed: { role: 'OWNER', status: 'ACTIVE' }
 ✅ Invitations loaded successfully: { count: 0, data: [] }
 ```
@@ -148,7 +148,7 @@ After login, the enhanced error handling will show:
 1. **Navigate to User Management**: `/dashboard/users`
 2. **Observe clear error message**: "Authentication required: Please sign in..."
 3. **Click "Sign In" button**: Redirects to login page
-4. **Log in as Abel**: `abeljoshua04@gmail.com`
+4. **Log in as Abel**: `user@example.com`
 5. **Return to User Management**: Should now work without 403 errors
 
 ### **Step 4: Verify User Management**
@@ -211,7 +211,7 @@ After login, the enhanced error handling will show:
 2. **Check browser console** - should be clean of warnings
 3. **Test dashboard** - financial data should load correctly
 4. **Navigate to User Management** - will show clear authentication requirement
-5. **Log in as Abel** (`abeljoshua04@gmail.com`) to establish session
+5. **Log in as Abel** (`user@example.com`) to establish session
 6. **Return to User Management** - should now work perfectly
 
 **All Supabase-related issues have been systematically identified and resolved. The application now provides clear, user-friendly error messages and guidance instead of mysterious errors!** 🔧✨

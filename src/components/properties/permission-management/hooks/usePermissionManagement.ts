@@ -43,8 +43,10 @@ export const usePermissionManagement = () => {
   // Save permissions to localStorage (replace with API call)
   const savePermissions = useCallback((permissions: UserPermissions[]) => {
     try {
+      console.log('Saving permissions to localStorage:', permissions)
       localStorage.setItem('userPermissions', JSON.stringify(permissions))
       setUserPermissions(permissions)
+      console.log('Permissions saved successfully. Total count:', permissions.length)
     } catch (error) {
       console.error('Error saving permissions:', error)
     }
@@ -54,9 +56,14 @@ export const usePermissionManagement = () => {
   const loadPermissions = useCallback(() => {
     try {
       const saved = localStorage.getItem('userPermissions')
+      console.log('Loading permissions from localStorage:', saved)
       if (saved) {
         const permissions = JSON.parse(saved)
+        console.log('Loaded permissions:', permissions, 'Count:', permissions.length)
         setUserPermissions(permissions)
+      } else {
+        console.log('No permissions found in localStorage')
+        setUserPermissions([])
       }
     } catch (error) {
       console.error('Error loading permissions:', error)
@@ -70,14 +77,20 @@ export const usePermissionManagement = () => {
     propertyId?: string,
     isGlobal: boolean = false
   ) => {
+    console.log('Adding permission for:', { userId, email, propertyId, isGlobal })
     const newPermission = createDefaultUserPermissions(userId, email, isGlobal)
     if (propertyId) {
       newPermission.propertyId = propertyId
     }
-    
+
+    console.log('Created permission:', newPermission)
+    console.log('Current permissions before adding:', userPermissions)
+
     const updatedPermissions = [...userPermissions, newPermission]
+    console.log('Updated permissions array:', updatedPermissions)
+
     savePermissions(updatedPermissions)
-    
+
     return newPermission
   }, [userPermissions, savePermissions])
 
@@ -105,9 +118,9 @@ export const usePermissionManagement = () => {
     const newPermissions = targetUserIds.map(userId => ({
       ...sourcePermission,
       userId,
-      email: `user-${userId}@example.com` // Replace with actual user lookup
+      email: sourcePermission.email // Keep the original email for now, should be updated with actual user lookup
     }))
-    
+
     const updatedPermissions = [...userPermissions, ...newPermissions]
     savePermissions(updatedPermissions)
   }, [userPermissions, savePermissions])

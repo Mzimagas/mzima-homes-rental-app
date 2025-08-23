@@ -16,11 +16,11 @@ The production deployment shows a white screen because environment variables are
    **Environment**: Production, Preview, Development
 
    **Variable Name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcnh2bmFrcGhrcGtjc3Npc3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxMjgyMDAsImV4cCI6MjA2ODcwNDIwMH0.RF2m00A8IQhdHzOaEA5SSx9-8PmOSWmcQSmYCZDOdRk`
+   **Value**: `[REMOVED FOR SECURITY - GET FROM SUPABASE DASHBOARD]`
    **Environment**: Production, Preview, Development
 
    **Variable Name**: `SUPABASE_SERVICE_ROLE_KEY`
-   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcnh2bmFrcGhrcGtjc3Npc3htIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzEyODIwMCwiZXhwIjoyMDY4NzA0MjAwfQ.-xTAx5L0wtIlVVr177eTPtap-iJbTwDRJsyTloKV2PM`
+   **Value**: `[REMOVED FOR SECURITY - GET FROM SUPABASE DASHBOARD]`
    **Environment**: Production, Preview, Development
 
    **Variable Name**: `NEXT_PUBLIC_APP_NAME`

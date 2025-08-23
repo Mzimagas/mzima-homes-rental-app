@@ -12,7 +12,7 @@ The Mzima Homes rental application is experiencing **infinite recursion in RLS p
 
 ### **✅ Working Components**
 - ✅ **Authentication**: Login/logout working perfectly
-- ✅ **Production User**: mzimahomes.manager@gmail.com account active
+- ✅ **Production User**: manager@example.com account active
 - ✅ **Functions**: `get_user_accessible_properties` working correctly
 - ✅ **Multi-User System**: Role-based permissions functional
 
@@ -54,7 +54,7 @@ The Mzima Homes rental application is experiencing **infinite recursion in RLS p
 - ✅ **CRUD operations** working correctly
 
 ### **✅ Application Functionality**
-- ✅ **Login**: mzimahomes.manager@gmail.com / MzimaHomes2024!Secure
+- ✅ **Login**: manager@example.com / SecurePassword123!Secure
 - ✅ **Dashboard**: Shows real property statistics
 - ✅ **Property Creation**: Works without errors
 - ✅ **Tenant Management**: Full access and functionality
@@ -80,7 +80,7 @@ Run: `node test-after-rls-fix.js`
 
 ### **Manual Testing**
 1. **Login** at http://localhost:3000/auth/login
-2. **Use credentials**: mzimahomes.manager@gmail.com / MzimaHomes2024!Secure
+2. **Use credentials**: manager@example.com / SecurePassword123!Secure
 3. **Verify dashboard** shows real property data
 4. **Test property management** features
 5. **Confirm no "Failed to load properties" errors**
@@ -146,8 +146,8 @@ After applying the RLS fix:
 
 ### **✅ Production Credentials**
 ```
-Email: mzimahomes.manager@gmail.com
-Password: MzimaHomes2024!Secure
+Email: manager@example.com
+Password: SecurePassword123!Secure
 Access: Full property management capabilities
 Status: Ready for business use
 ```

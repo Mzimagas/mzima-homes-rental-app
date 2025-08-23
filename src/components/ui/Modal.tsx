@@ -38,9 +38,26 @@ export function Modal({ isOpen, onClose, title, children, initialFocusRef }: Mod
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                {title && <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">{title}</Dialog.Title>}
-                <div className="mt-2">{children}</div>
+              <Dialog.Panel className="w-full max-w-2xl max-h-[90vh] transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
+                {title && (
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <Dialog.Title as="h3" className="text-xl font-semibold leading-6 text-gray-900">
+                      {title}
+                    </Dialog.Title>
+                    <button
+                      onClick={onClose}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      aria-label="Close modal"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+                <div className={`overflow-y-auto ${title ? 'max-h-[calc(90vh-5rem)]' : 'max-h-[90vh] p-6'}`}>
+                  {children}
+                </div>
               </Dialog.Panel>
             </Transition.Child>
           </div>

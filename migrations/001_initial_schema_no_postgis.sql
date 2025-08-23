@@ -273,10 +273,10 @@ COMMENT ON TABLE user_profiles IS 'System user profiles with roles and permissio
 COMMENT ON TABLE activities_audit IS 'Audit trail for all system activities and changes';
 
 -- Insert initial admin user (update with actual admin details)
-INSERT INTO user_profiles (id, email, full_name, role, department, is_active) 
+INSERT INTO user_profiles (id, email, full_name, role, department, is_active)
 VALUES (
     uuid_generate_v4(),
-    'admin@mzimahomes.com',
+    'admin@example.com',
     'System Administrator',
     'super_admin',
     'IT',

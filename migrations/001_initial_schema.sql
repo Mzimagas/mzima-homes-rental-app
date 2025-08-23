@@ -291,7 +291,7 @@ END $$;
 INSERT INTO user_profiles (id, email, full_name, role, department, is_active)
 VALUES (
     uuid_generate_v4(),
-    'admin@mzimahomes.com',
+    'admin@example.com',
     'System Administrator',
     'super_admin',
     'IT',

@@ -11,57 +11,89 @@ export const useUserSelection = () => {
     loadingUsers: false
   })
 
-  // Enhanced mock users data with more realistic scenarios
-  const mockUsers: User[] = [
-    { id: '1', email: 'admin@mzimahomes.com', name: 'John Admin', role: 'admin', isActive: true },
-    { id: '2', email: 'supervisor@mzimahomes.com', name: 'Sarah Supervisor', role: 'supervisor', isActive: true },
-    { id: '3', email: 'staff@mzimahomes.com', name: 'Mike Staff', role: 'staff', isActive: true },
-    { id: '4', email: 'member@mzimahomes.com', name: 'Lisa Member', role: 'member', isActive: true },
-    { id: '5', email: 'property.manager@mzimahomes.com', name: 'David Manager', role: 'staff', isActive: true },
-    { id: '6', email: 'finance@mzimahomes.com', name: 'Emma Finance', role: 'supervisor', isActive: true },
-    { id: '7', email: 'legal@mzimahomes.com', name: 'Robert Legal', role: 'member', isActive: true },
-    { id: '8', email: 'inactive.user@mzimahomes.com', name: 'Inactive User', role: 'member', isActive: false },
-    { id: '9', email: 'temp.contractor@external.com', name: 'Temp Contractor', role: 'member', isActive: true },
-    { id: '10', email: 'consultant@external.com', name: 'External Consultant', role: 'member', isActive: false }
-  ]
+  // Empty mock users - replace with real API call in production
+  // This component is designed to work with real user data from your authentication system
+  const mockUsers: User[] = []
 
   // Load available users
   const loadUsers = useCallback(async () => {
     setState(prev => ({ ...prev, loadingUsers: true }))
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      setState(prev => ({ 
-        ...prev, 
-        availableUsers: mockUsers,
-        loadingUsers: false 
+      // Fetch real users from the API
+      const response = await fetch('/api/admin/users')
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch users')
+      }
+
+      const data = await response.json()
+
+      // Transform the data to match the User interface
+      const users: User[] = (data.users || []).map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        name: user.full_name,
+        role: 'member', // Default role, you can map this from user data
+        isActive: user.status !== 'inactive'
+      }))
+
+      setState(prev => ({
+        ...prev,
+        availableUsers: users,
+        loadingUsers: false
       }))
     } catch (error) {
       console.error('Error loading users:', error)
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         availableUsers: [],
-        loadingUsers: false 
+        loadingUsers: false
       }))
     }
   }, [])
 
   // Handle user search
-  const handleUserSearch = useCallback((searchTerm: string) => {
-    setState(prev => ({ ...prev, searchTerm }))
-    
-    if (!searchTerm.trim()) {
-      setState(prev => ({ ...prev, availableUsers: mockUsers }))
-      return
+  const handleUserSearch = useCallback(async (searchTerm: string) => {
+    setState(prev => ({ ...prev, searchTerm, loadingUsers: true }))
+
+    try {
+      // Fetch users with search term
+      const url = new URL('/api/admin/users', window.location.origin)
+      if (searchTerm.trim()) {
+        url.searchParams.set('search', searchTerm)
+      }
+
+      const response = await fetch(url.toString())
+
+      if (!response.ok) {
+        throw new Error('Failed to search users')
+      }
+
+      const data = await response.json()
+
+      // Transform the data to match the User interface
+      const users: User[] = (data.users || []).map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        name: user.full_name,
+        role: 'member', // Default role
+        isActive: user.status !== 'inactive'
+      }))
+
+      setState(prev => ({
+        ...prev,
+        availableUsers: users,
+        loadingUsers: false
+      }))
+    } catch (error) {
+      console.error('Error searching users:', error)
+      setState(prev => ({
+        ...prev,
+        availableUsers: [],
+        loadingUsers: false
+      }))
     }
-
-    const filteredUsers = mockUsers.filter(user =>
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.name && user.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
-
-    setState(prev => ({ ...prev, availableUsers: filteredUsers }))
   }, [])
 
   // Toggle user selection

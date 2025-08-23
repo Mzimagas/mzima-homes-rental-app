@@ -50,7 +50,7 @@ Despite previous fixes, the Mzima Homes rental application was still showing ema
 
 ### **Existing User Flow ✅**
 ```
-✅ Landlord login: landlord@mzimahomes.com working
+✅ Landlord login: landlord@example.com working
 ✅ Property access: Full property management available
 ✅ Database access: All features functional
 ✅ Session management: Seamless authentication
@@ -90,8 +90,8 @@ Despite previous fixes, the Mzima Homes rental application was still showing ema
 ### **🔑 Working Credentials**
 
 #### **Existing User**
-- **Email**: `landlord@mzimahomes.com`
-- **Password**: `MzimaHomes2024!`
+- **Email**: `landlord@example.com`
+- **Password**: `SecurePassword123!`
 - **Status**: Full property management access
 
 #### **New User Registration**
@@ -197,8 +197,8 @@ In Supabase Dashboard > Authentication > Settings > SMTP:
 - Use Gmail settings from .env.local:
   - Host: smtp.gmail.com
   - Port: 587
-  - Username: mzimagas@gmail.com
-  - Password: nauo vchp drwl ejjc
+  - Username: admin@example.com
+  - Password: xxxx xxxx xxxx xxxx
 
 ### **Option 3: Use Supabase Email Service**
 - Keep default Supabase email service

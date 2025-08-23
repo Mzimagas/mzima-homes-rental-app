@@ -3,7 +3,6 @@ import { errors } from './errors'
 import { getRatelimit } from '../upstash'
 import { createServerSupabaseClient } from '../supabase-server'
 import { createClient } from '@supabase/supabase-js'
-import AdminBackdoorService from '../auth/admin-backdoor'
 
 export type Handler = (req: NextRequest) => Promise<NextResponse> | NextResponse
 
@@ -35,13 +34,7 @@ export function withAuth(handler: Handler): Handler {
     try {
       const supabase = createServerSupabaseClient()
       const { data: { user } } = await (await supabase).auth.getUser()
-      if (user) {
-        // BACKDOOR: Ensure super-admin access for permanent admins
-        if (user.email && AdminBackdoorService.isPermanentSuperAdmin(user.email)) {
-          await AdminBackdoorService.ensureSuperAdminAccess(user.email, user.id)
-        }
-        return handler(req)
-      }
+      if (user) return handler(req)
     } catch {}
 
     // Fallback: Bearer token in Authorization header
@@ -54,13 +47,7 @@ export function withAuth(handler: Handler): Handler {
         try {
           const anonClient = createClient(url, anon)
           const { data: tokenUser } = await anonClient.auth.getUser(token)
-          if (tokenUser?.user) {
-            // BACKDOOR: Ensure super-admin access for permanent admins
-            if (tokenUser.user.email && AdminBackdoorService.isPermanentSuperAdmin(tokenUser.user.email)) {
-              await AdminBackdoorService.ensureSuperAdminAccess(tokenUser.user.email, tokenUser.user.id)
-            }
-            return handler(req)
-          }
+          if (tokenUser?.user) return handler(req)
         } catch {}
       }
     }

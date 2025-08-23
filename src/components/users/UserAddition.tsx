@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '../ui'
+import { useAuth } from '../../lib/auth-context'
 
 interface NewUser {
   email: string
@@ -12,7 +13,13 @@ interface NewUser {
   initialRole: string
 }
 
-export default function UserAddition() {
+interface UserAdditionProps {
+  onUserAdded?: () => void
+}
+
+export default function UserAddition({ onUserAdded }: UserAdditionProps) {
+  const { user } = useAuth()
+
   const [formData, setFormData] = useState<NewUser>({
     email: '',
     fullName: '',
@@ -24,6 +31,7 @@ export default function UserAddition() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<NewUser>>({})
   const [successMessage, setSuccessMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const roles = [
     { value: 'admin', label: '👑 Administrator', description: 'Full system access' },
@@ -80,39 +88,66 @@ export default function UserAddition() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
+
+    // Check if user is authenticated
+    if (!user) {
+      setErrorMessage('You must be logged in to create users. Please log in and try again.')
+      return
+    }
 
     setIsSubmitting(true)
     setSuccessMessage('')
+    setErrorMessage('')
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
       // Generate default password (phone number)
       const defaultPassword = formData.phoneNumber.replace(/[\s\-\(\)]/g, '')
 
-      // Save to localStorage for demo
-      const existingUsers = JSON.parse(localStorage.getItem('mzima_users') || '[]')
-      const newUser = {
-        id: `user_${Date.now()}`,
-        memberNumber: formData.memberNumber.toUpperCase(),
+      // Create user via API endpoint
+      console.log('Submitting user data:', {
         email: formData.email,
         fullName: formData.fullName,
+        memberNumber: formData.memberNumber.toUpperCase(),
         phoneNumber: formData.phoneNumber,
         idPassportNumber: formData.idPassportNumber,
         role: formData.initialRole,
-        defaultPassword: defaultPassword,
-        mustChangePassword: true,
-        profileComplete: false,
-        nextOfKinComplete: false,
-        createdAt: new Date().toISOString(),
-        status: 'pending_first_login'
+        defaultPassword: defaultPassword
+      })
+
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          fullName: formData.fullName,
+          memberNumber: formData.memberNumber.toUpperCase(),
+          phoneNumber: formData.phoneNumber,
+          idPassportNumber: formData.idPassportNumber,
+          role: formData.initialRole,
+          defaultPassword: defaultPassword
+        })
+      })
+
+      console.log('API Response status:', response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('API Error:', errorData)
+
+        // Handle specific error cases
+        if (response.status === 401) {
+          throw new Error('You must be logged in as an administrator to create users. Please log in and try again.')
+        }
+
+        throw new Error(errorData.error || 'Failed to create user')
       }
 
-      existingUsers.push(newUser)
-      localStorage.setItem('mzima_users', JSON.stringify(existingUsers))
+      const result = await response.json()
+      console.log('API Success:', result)
 
       setSuccessMessage(`✅ User "${formData.fullName}" (Member #${formData.memberNumber.toUpperCase()}) has been successfully added with ${roles.find(r => r.value === formData.initialRole)?.label} role. Default password: ${defaultPassword} (must change on first login)`)
 
@@ -126,9 +161,23 @@ export default function UserAddition() {
         initialRole: 'viewer'
       })
       setErrors({})
-      
+
+      // Notify parent component
+      if (onUserAdded) {
+        onUserAdded()
+      }
+
     } catch (error) {
       console.error('Error adding user:', error)
+      const errorMsg = error instanceof Error ? error.message : 'Failed to create user. Please try again.'
+      setErrorMessage(errorMsg)
+
+      // If it's a specific field error, also set field error
+      if (errorMsg.includes('email')) {
+        setErrors({ email: errorMsg })
+      } else if (errorMsg.includes('member number')) {
+        setErrors({ memberNumber: errorMsg })
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -140,6 +189,29 @@ export default function UserAddition() {
       setErrors(prev => ({ ...prev, [field]: undefined }))
     }
     setSuccessMessage('')
+  }
+
+  // Show authentication warning if user is not logged in
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">Authentication Required</h3>
+              <p className="mt-1 text-sm text-yellow-700">
+                You must be logged in as an administrator to create new users. Please log in and try again.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -157,6 +229,12 @@ export default function UserAddition() {
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
             <p className="text-sm text-green-700">{successMessage}</p>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-700">{errorMessage}</p>
           </div>
         )}
 
