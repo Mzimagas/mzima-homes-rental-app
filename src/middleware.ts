@@ -23,8 +23,23 @@ export async function middleware(req: NextRequest) {
     })
   }
 
-  const supabase = createMiddlewareClient({ req, res })
-  const { data: { session } } = await supabase.auth.getSession()
+  // Avoid Invalid URL by skipping Supabase when env is missing/placeholders
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const authConfigured = !!(
+    supabaseUrl &&
+    supabaseKey &&
+    /^https?:\/\//.test(supabaseUrl) &&
+    !supabaseUrl.includes('your-supabase-url-here') &&
+    !supabaseKey.includes('your-anon-key-here')
+  )
+
+  let session: any = null
+  if (authConfigured) {
+    const supabase = createMiddlewareClient({ req, res }, { supabaseUrl, supabaseKey })
+    const result = await supabase.auth.getSession()
+    session = result.data.session
+  }
 
   const url = req.nextUrl
   const pathname = url.pathname

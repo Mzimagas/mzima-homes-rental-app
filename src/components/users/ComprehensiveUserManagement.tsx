@@ -568,6 +568,16 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                       {/* Primary Actions */}
                       <div className="grid grid-cols-2 gap-2 mb-2">
                         <button
+                          onClick={() => setEditingUser(user)}
+                          className="flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-medium transition-all duration-200 transform hover:scale-105 shadow-sm"
+                          title="Edit User"
+                        >
+                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          <span>Edit</span>
+                        </button>
+                        <button
                           onClick={() => setViewingUser(user)}
                           className="flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs font-medium transition-all duration-200 transform hover:scale-105 shadow-sm"
                           title="View Details"
@@ -577,16 +587,6 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                           <span>View</span>
-                        </button>
-                        <button
-                          onClick={() => setEditingUser(user)}
-                          className="flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-medium transition-all duration-200 transform hover:scale-105 shadow-sm"
-                          title="Edit User"
-                        >
-                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          <span>Edit</span>
                         </button>
                       </div>
 
@@ -619,140 +619,127 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                   </div>
                 </div>
               ) : (
-                // Enhanced User-Friendly List View
-                <div key={user.id} className="bg-white rounded-xl border-2 border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300 group">
-                  <div className="p-6">
+                // Enhanced User-Friendly List View (compact)
+                <div key={user.id} className="w-full border border-gray-300 rounded-md bg-white hover:border-gray-400 transition-colors group">
+                  <div className="px-3 py-2.5">
                     <div className="flex items-center justify-between">
                       {/* Enhanced User Info */}
-                      <div className="flex items-center space-x-6 flex-1">
+                      <div className="flex items-center space-x-3 flex-1">
                         {/* Large Avatar */}
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg ring-4 ring-white ${
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
                           user.isActive
-                            ? 'bg-gradient-to-br from-blue-400 to-blue-600'
-                            : 'bg-gradient-to-br from-gray-400 to-gray-600'
+                            ? 'bg-gradient-to-br from-blue-500 to-blue-600'
+                            : 'bg-gradient-to-br from-gray-400 to-gray-500'
                         }`}>
                           {getInitials(user.name)}
                         </div>
 
                         {/* User Details */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-4 mb-2">
-                            <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                          <div className="flex items-center space-x-3 mb-1">
+                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                               {user.name || 'Unnamed User'}
                             </h3>
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold shadow-sm ${
-                              user.isActive
-                                ? 'bg-green-50 text-green-700 border-2 border-green-200'
-                                : 'bg-red-50 text-red-700 border-2 border-red-200'
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                             }`}>
-                              <div className={`w-2 h-2 rounded-full mr-2 ${
-                                user.isActive ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-                              }`}></div>
+                              <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`}></span>
                               {user.isActive ? 'Active' : 'Inactive'}
                             </span>
                             {user.profileComplete && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700">
-                                ✅ Complete
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                                </svg>
+                                Complete
                               </span>
                             )}
                           </div>
 
-                          {/* Contact Info Grid */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                                <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Email</p>
-                                <p className="font-medium text-gray-900 truncate">{user.email}</p>
-                              </div>
+                          {/* Contact Info (compact, wraps to 1–2 lines) */}
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                            <div className="flex items-center min-w-0">
+                              <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                              </svg>
+                              <span className="truncate">{user.email}</span>
                             </div>
-
-                            <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
-                                <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Member ID</p>
-                                <p className="font-medium text-gray-900">#{user.memberNumber}</p>
-                              </div>
+                            <div className="flex items-center font-medium">
+                              <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                              </svg>
+                              #{user.memberNumber}
                             </div>
-
                             {user.phoneNumber && (
-                              <div className="flex items-center space-x-2">
-                                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                                  <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-500">Phone</p>
-                                  <p className="font-medium text-gray-900">{user.phoneNumber}</p>
-                                </div>
+                              <div className="flex items-center min-w-0">
+                                <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                </svg>
+                                <span className="truncate">{user.phoneNumber}</span>
                               </div>
                             )}
-
-                            <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
-                                <svg className="w-3 h-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a1 1 0 011 1v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8a1 1 0 011-1h3z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Joined</p>
-                                <p className="font-medium text-gray-900">{formatDate(user.createdAt)}</p>
-                              </div>
+                            <div className="flex items-center">
+                              <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a1 1 0 011 1v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8a1 1 0 011-1h3z" />
+                              </svg>
+                              {formatDate(user.createdAt)}
                             </div>
+                            {user.lastLogin && (
+                              <div className="flex items-center">
+                                <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {formatDate(user.lastLogin)}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
 
                       {/* Enhanced Actions */}
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setEditingUser(user)}
+                          className="flex items-center px-3 py-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors text-xs font-medium"
+                          title="Edit User"
+                        >
+                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Edit
+                        </button>
                         <button
                           onClick={() => setViewingUser(user)}
-                          className="flex items-center space-x-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-md"
+                          className="flex items-center px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors text-xs font-medium"
+                          title="View Details"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          <span>View</span>
-                        </button>
-                        <button
-                          onClick={() => setEditingUser(user)}
-                          className="flex items-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-md"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          <span>Edit</span>
+                          View
                         </button>
                         <button
                           onClick={() => handleDeleteUser(user.id)}
                           disabled={deletingUserId === user.id}
-                          className={`flex items-center space-x-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
+                          className={`flex items-center px-3 py-1 rounded-md transition-colors text-xs font-medium ${
                             deletingUserId === user.id
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-2 border-red-200 hover:border-red-300 transform hover:scale-105'
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-red-600 hover:text-red-700 hover:bg-red-50'
                           }`}
+                          title="Delete User"
                         >
                           {deletingUserId === user.id ? (
                             <>
-                              <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
-                              <span>Deleting...</span>
+                              <div className="w-3 h-3 animate-spin rounded-full border border-gray-300 border-t-gray-600 mr-1"></div>
+                              Deleting...
                             </>
                           ) : (
                             <>
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
-                              <span>Remove</span>
+                              Delete
                             </>
                           )}
                         </button>

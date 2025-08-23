@@ -19,6 +19,7 @@ const baseNavigation = [
 ]
 
 const userManagementNavItem = { name: 'User Management', href: '/dashboard/users', icon: 'user-group' }
+const auditTrailNavItem = { name: 'Audit Trail', href: '/dashboard/audit', icon: 'document' }
 
 const icons = {
   home: (
@@ -110,6 +111,11 @@ export default function DashboardLayout({
   if (canManageAnyUsers) {
     // Insert User Management after Tenants
     navigation.splice(3, 0, userManagementNavItem)
+    // Insert Audit Trail immediately after User Management
+    navigation.splice(4, 0, auditTrailNavItem)
+  } else {
+    // Even if user cannot manage users, expose Audit Trail as read-only section
+    navigation.splice(4, 0, auditTrailNavItem)
   }
 
   useEffect(() => {

@@ -5,6 +5,15 @@ import { logger, shouldLogAuth } from './logger'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+// Guard for valid env to avoid Invalid URL at runtime
+const isValidEnv = (url?: string | null, key?: string | null) => {
+  if (!url || !key) return false
+  if (url.includes('your-supabase-url-here') || key.includes('your-anon-key-here')) return false
+  if (!/^https?:\/\//.test(url)) return false
+  try { new URL(url) } catch { return false }
+  return true
+}
+
 if (!supabaseUrl || !supabaseAnonKey) {
   logger.error('Supabase configuration missing', {
     hasUrl: !!supabaseUrl,
@@ -16,7 +25,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Build a real client when env vars are present; otherwise a safe stub for dev
 let supabase: any
 
-if (supabaseUrl && supabaseAnonKey) {
+if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
   // Enhanced client configuration with better error handling and retry logic
   // Create single instance to prevent multiple GoTrueClient warnings
   supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
@@ -75,6 +84,14 @@ if (supabaseUrl && supabaseAnonKey) {
         async challenge() { return { data: null, error: { message: 'Supabase not configured' } } },
       },
       async getUser() { return { data: { user: null }, error: null } },
+      async getSession() { return { data: { session: null }, error: null } },
+      onAuthStateChange(cb: any) {
+        const subscription = { unsubscribe() {} }
+        try { cb('INITIAL_SESSION', null) } catch {}
+        return { data: { subscription } }
+      },
+      async resetPasswordForEmail() { return { data: null, error: { message: 'Supabase not configured' } } },
+
       async updateUser() { return { data: null, error: { message: 'Supabase not configured' } } },
     },
     rpc: async () => ({ data: null, error: { message: 'Supabase not configured' } }),

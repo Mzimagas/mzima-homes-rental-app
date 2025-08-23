@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '../../../../../../../lib/supabase-server'
+import { createServerSupabaseClient } from '../../../../../../lib/supabase-server'
 
 // DELETE - Permanently delete a soft deleted user
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
