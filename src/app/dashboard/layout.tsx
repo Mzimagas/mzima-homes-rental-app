@@ -9,6 +9,7 @@ import { usePathname, useRouter } from 'next/navigation'
 const baseNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: 'home' },
   { name: 'Properties', href: '/dashboard/properties', icon: 'building' },
+  { name: 'Rental Management', href: '/dashboard/rental-management', icon: 'rental' },
   { name: 'Tenants', href: '/dashboard/tenants', icon: 'users' },
   { name: 'Payments', href: '/dashboard/payments', icon: 'credit-card' },
   { name: 'Accounting', href: '/dashboard/accounting', icon: 'calculator' },
@@ -88,6 +89,11 @@ const icons = {
   plug: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v6m4-6v6M7 10h10a2 2 0 012 2v1a5 5 0 01-5 5h-4a5 5 0 01-5-5v-1a2 2 0 012-2z" />
+    </svg>
+  ),
+  rental: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0zM8 21v-4a2 2 0 012-2h2a2 2 0 012 2v4M3 7l9-4 9 4" />
     </svg>
   ),
 }
