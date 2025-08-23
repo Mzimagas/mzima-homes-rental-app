@@ -5,28 +5,15 @@ import { Button, TextField } from '../../ui'
 import { LoadingCard } from '../../ui/loading'
 import { ErrorCard } from '../../ui/error'
 import Modal from '../../ui/Modal'
-import { RentalTenant, TenantFormData } from '../types/rental-management.types'
+import { RentalTenant } from '../types/rental-management.types'
 import { RentalManagementService } from '../services/rental-management.service'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import TenantForm from '../../tenants/tenant-form'
 
 interface TenantManagementProps {
   onDataChange?: () => void
 }
 
-const tenantSchema = z.object({
-  full_name: z.string().min(1, 'Full name is required'),
-  phone: z.string().min(1, 'Phone number is required'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  national_id: z.string().min(1, 'National ID is required'),
-  employer: z.string().optional(),
-  emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().optional(),
-  emergency_contact_relationship: z.string().optional(),
-  emergency_contact_email: z.string().email('Invalid email').optional().or(z.literal('')),
-  notes: z.string().optional(),
-})
+
 
 export default function TenantManagement({ onDataChange }: TenantManagementProps) {
   const [tenants, setTenants] = useState<RentalTenant[]>([])
@@ -36,16 +23,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
   const [selectedTenant, setSelectedTenant] = useState<RentalTenant | null>(null)
   const [showTenantModal, setShowTenantModal] = useState(false)
   const [showAddTenantModal, setShowAddTenantModal] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors }
-  } = useForm<TenantFormData>({
-    resolver: zodResolver(tenantSchema)
-  })
+
+
 
   useEffect(() => {
     loadTenants()
@@ -76,21 +56,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     setShowTenantModal(true)
   }
 
-  const handleAddTenant = async (data: TenantFormData) => {
-    try {
-      setSubmitting(true)
-      await RentalManagementService.createTenant(data)
-      await loadTenants()
-      setShowAddTenantModal(false)
-      reset()
-      onDataChange?.()
-    } catch (err: any) {
-      console.error('Error creating tenant:', err)
-      setError(err.message || 'Failed to create tenant')
-    } finally {
-      setSubmitting(false)
-    }
-  }
+
 
   const getTenantStatus = (tenant: RentalTenant) => {
     if (tenant.current_unit) {
@@ -224,93 +190,21 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
         isOpen={showAddTenantModal}
         onClose={() => {
           setShowAddTenantModal(false)
-          reset()
         }}
         title="Add New Tenant"
       >
-        <form onSubmit={handleSubmit(handleAddTenant)} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TextField
-              label="Full Name *"
-              {...register('full_name')}
-              error={errors.full_name?.message}
-            />
-            <TextField
-              label="Phone Number *"
-              {...register('phone')}
-              error={errors.phone?.message}
-            />
-            <TextField
-              label="Email"
-              type="email"
-              {...register('email')}
-              error={errors.email?.message}
-            />
-            <TextField
-              label="National ID *"
-              {...register('national_id')}
-              error={errors.national_id?.message}
-            />
-            <TextField
-              label="Employer"
-              {...register('employer')}
-              error={errors.employer?.message}
-            />
-          </div>
-
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Emergency Contact</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <TextField
-                label="Contact Name"
-                {...register('emergency_contact_name')}
-                error={errors.emergency_contact_name?.message}
-              />
-              <TextField
-                label="Contact Phone"
-                {...register('emergency_contact_phone')}
-                error={errors.emergency_contact_phone?.message}
-              />
-              <TextField
-                label="Relationship"
-                {...register('emergency_contact_relationship')}
-                error={errors.emergency_contact_relationship?.message}
-              />
-              <TextField
-                label="Contact Email"
-                type="email"
-                {...register('emergency_contact_email')}
-                error={errors.emergency_contact_email?.message}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-            <textarea
-              {...register('notes')}
-              rows={3}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Additional notes about the tenant..."
-            />
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setShowAddTenantModal(false)
-                reset()
-              }}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" loading={submitting}>
-              Add Tenant
-            </Button>
-          </div>
-        </form>
+        <div className="p-6">
+          <TenantForm
+            onSuccess={async () => {
+              setShowAddTenantModal(false)
+              await loadTenants()
+              onDataChange?.()
+            }}
+            onCancel={() => {
+              setShowAddTenantModal(false)
+            }}
+          />
+        </div>
       </Modal>
 
       {/* Tenant Detail Modal */}

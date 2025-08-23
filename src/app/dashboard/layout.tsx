@@ -9,7 +9,7 @@ import { usePathname, useRouter } from 'next/navigation'
 const baseNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: 'home' },
   { name: 'Properties', href: '/dashboard/properties', icon: 'building' },
-  { name: 'Rental Management', href: '/dashboard/rental-management', icon: 'rental' },
+
   { name: 'Tenants', href: '/dashboard/tenants', icon: 'users' },
   { name: 'Payments', href: '/dashboard/payments', icon: 'credit-card' },
   { name: 'Accounting', href: '/dashboard/accounting', icon: 'calculator' },
@@ -20,6 +20,7 @@ const baseNavigation = [
 ]
 
 const userManagementNavItem = { name: 'User Management', href: '/dashboard/users', icon: 'user-group' }
+const rentalManagementNavItem = { name: 'Rental Management', href: '/dashboard/rental-management', icon: 'rental' }
 const auditTrailNavItem = { name: 'Audit Trail', href: '/dashboard/audit', icon: 'document' }
 
 const icons = {
@@ -112,16 +113,24 @@ export default function DashboardLayout({
   // Check if user has user management permissions for any property
   const canManageAnyUsers = properties.some(property => property.can_manage_users)
 
-  // Build navigation array based on permissions
+  // Build navigation array with required ordering:
+  // - If User Management is present, place Rental Management directly below it
+  // - If not, place Rental Management after Properties (default)
   const navigation = [...baseNavigation]
+
   if (canManageAnyUsers) {
     // Insert User Management after Tenants
     navigation.splice(3, 0, userManagementNavItem)
-    // Insert Audit Trail immediately after User Management
-    navigation.splice(4, 0, auditTrailNavItem)
+    // Place Rental Management directly after User Management
+    navigation.splice(4, 0, rentalManagementNavItem)
+    // Insert Audit Trail immediately after Rental Management
+    navigation.splice(5, 0, auditTrailNavItem)
   } else {
-    // Even if user cannot manage users, expose Audit Trail as read-only section
-    navigation.splice(4, 0, auditTrailNavItem)
+    // Insert Rental Management after Properties
+    const propertiesIdx = navigation.findIndex(i => i.href === '/dashboard/properties')
+    navigation.splice(propertiesIdx + 1, 0, rentalManagementNavItem)
+    // Insert Audit Trail after Rental Management
+    navigation.splice(propertiesIdx + 2, 0, auditTrailNavItem)
   }
 
   useEffect(() => {
