@@ -42,7 +42,7 @@ export default function UserManagementPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Permission Management</h2>
-                  <p className="text-gray-600">Manage user permissions, access control, and role assignments</p>
+                  <p className="text-gray-600">Manage user permissions, access control, and role assignments with lifecycle-based filtering</p>
                 </div>
               </div>
               <GranularPermissionManager />
