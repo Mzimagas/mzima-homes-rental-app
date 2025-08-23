@@ -20,6 +20,9 @@ interface UserPermissions {
   propertyId?: string // For property-specific permissions
   sections: SectionPermission[]
   isGlobal: boolean
+  assignedAt?: string
+  assignedBy?: string
+  status?: 'active' | 'pending' | 'expired'
 }
 
 interface Property {
@@ -40,6 +43,132 @@ export default function GranularPermissionManager() {
   // Dropdown state for property selection
   const [showPropertyDropdown, setShowPropertyDropdown] = useState(false)
   const [propertySearchTerm, setPropertySearchTerm] = useState('')
+
+  // Enhanced user selection state
+  const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [userSearchTerm, setUserSearchTerm] = useState('')
+
+  // Enhanced permissions management state
+  const [permissionSearchTerm, setPermissionSearchTerm] = useState('')
+  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
+  const [sortField, setSortField] = useState<'email' | 'role' | 'assignedAt' | 'property'>('assignedAt')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [filterRoleTemplate, setFilterRoleTemplate] = useState<string>('all')
+  const [filterScope, setFilterScope] = useState<'all' | 'global' | 'property'>('all')
+  const [filterLevel, setFilterLevel] = useState<'all' | 'view' | 'edit'>('all')
+
+  // Intelligent filter dependencies
+  const getAvailableScopeOptions = () => {
+    const baseOptions = [
+      { value: 'all', label: 'All Scopes', available: true },
+      { value: 'global', label: '🌐 Global Permissions', available: true },
+      { value: 'property', label: '🏠 Property-Specific', available: true }
+    ]
+
+    // Role-based scope restrictions
+    if (filterRoleTemplate === 'admin') {
+      // Admins typically have global authority
+      return baseOptions.map(opt => ({
+        ...opt,
+        recommended: opt.value === 'global',
+        available: opt.value !== 'property' || opt.value === 'all'
+      }))
+    }
+
+    if (filterRoleTemplate === 'member') {
+      // Members typically limited to property-specific
+      return baseOptions.map(opt => ({
+        ...opt,
+        recommended: opt.value === 'property',
+        available: opt.value !== 'global' || opt.value === 'all'
+      }))
+    }
+
+    return baseOptions
+  }
+
+  const getAvailableLevelOptions = () => {
+    const baseOptions = [
+      { value: 'all', label: 'All Permission Levels', available: true },
+      { value: 'view', label: '👁️ View Only', available: true },
+      { value: 'edit', label: '✏️ Edit Access', available: true }
+    ]
+
+    // Role-based level restrictions
+    if (filterRoleTemplate === 'admin') {
+      // Admins should have edit access
+      return baseOptions.map(opt => ({
+        ...opt,
+        recommended: opt.value === 'edit',
+        available: opt.value !== 'view' || opt.value === 'all'
+      }))
+    }
+
+    if (filterRoleTemplate === 'supervisor') {
+      // Supervisors typically view-only
+      return baseOptions.map(opt => ({
+        ...opt,
+        recommended: opt.value === 'view',
+        available: opt.value !== 'edit' || opt.value === 'all'
+      }))
+    }
+
+    if (filterRoleTemplate === 'member') {
+      // Members limited to view
+      return baseOptions.map(opt => ({
+        ...opt,
+        recommended: opt.value === 'view',
+        available: opt.value !== 'edit' || opt.value === 'all'
+      }))
+    }
+
+    // Scope-based level restrictions
+    if (filterScope === 'global' && filterRoleTemplate !== 'admin' && filterRoleTemplate !== 'all') {
+      // Global permissions for non-admins should be limited
+      return baseOptions.map(opt => ({
+        ...opt,
+        available: opt.value === 'view' || opt.value === 'all',
+        warning: opt.value === 'edit' ? 'Global edit access typically restricted to administrators' : undefined
+      }))
+    }
+
+    return baseOptions
+  }
+
+  // Smart filter change handlers with cascading logic
+  const handleRoleTemplateChange = (newRole: string) => {
+    setFilterRoleTemplate(newRole)
+
+    // Auto-adjust scope based on role
+    if (newRole === 'admin' && filterScope === 'property') {
+      setFilterScope('global') // Admins typically global
+    }
+    if (newRole === 'member' && filterScope === 'global') {
+      setFilterScope('property') // Members typically property-specific
+    }
+
+    // Auto-adjust level based on role
+    if (newRole === 'admin' && filterLevel === 'view') {
+      setFilterLevel('edit') // Admins should have edit
+    }
+    if ((newRole === 'supervisor' || newRole === 'member') && filterLevel === 'edit') {
+      setFilterLevel('view') // Supervisors/Members typically view-only
+    }
+  }
+
+  const handleScopeChange = (newScope: 'all' | 'global' | 'property') => {
+    setFilterScope(newScope)
+
+    // Auto-adjust level for global scope
+    if (newScope === 'global' && filterLevel === 'edit' &&
+        filterRoleTemplate !== 'admin' && filterRoleTemplate !== 'all') {
+      setFilterLevel('view') // Non-admins with global scope should be view-only
+    }
+  }
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
+  const [showBulkActions, setShowBulkActions] = useState(false)
 
   // Form state for detailed permissions
   const [formState, setFormState] = useState<{
@@ -121,6 +250,257 @@ export default function GranularPermissionManager() {
     setPropertySearchTerm('')
   }
 
+  // Enhanced user management functions
+  const filteredUsers = availableUsers.filter(user =>
+    user.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+  )
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  const isDuplicateUser = (email: string) => {
+    return availableUsers.some(user => user.email.toLowerCase() === email.toLowerCase())
+  }
+
+  const isNewEmail = userSearchTerm.includes('@') &&
+    validateEmail(userSearchTerm) &&
+    !isDuplicateUser(userSearchTerm)
+
+  const getEmailInputFeedback = () => {
+    if (!userSearchTerm) return null
+    if (!userSearchTerm.includes('@')) return null
+    if (!validateEmail(userSearchTerm)) return { type: 'error', message: 'Invalid email format' }
+    if (isDuplicateUser(userSearchTerm)) return { type: 'warning', message: 'User already exists' }
+    return { type: 'success', message: 'Press Enter to add user' }
+  }
+
+  const handleUserSearch = (value: string) => {
+    setUserSearchTerm(value)
+    setShowUserDropdown(value.length > 0 || selectedUsers.length > 0)
+  }
+
+  const handleAddUserFromSearch = () => {
+    if (isNewEmail) {
+      addUserByEmail()
+      setUserSearchTerm('')
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && isNewEmail) {
+      handleAddUserFromSearch()
+    }
+  }
+
+  const selectAllUsers = () => {
+    setSelectedUsers(availableUsers.map(user => user.id))
+  }
+
+  const clearAllUsers = () => {
+    setSelectedUsers([])
+  }
+
+  const removeUserFromSelection = (userId: string) => {
+    setSelectedUsers(prev => prev.filter(id => id !== userId))
+  }
+
+  // Get role template classification for a permission
+  const getRoleTemplate = (permission: UserPermissions): string => {
+    const sectionLevels = permission.sections.map(s => s.level)
+    const hasEdit = sectionLevels.includes('edit')
+    const hasView = sectionLevels.includes('view')
+    const hasNone = sectionLevels.includes('none')
+
+    // Check for specific role template patterns
+    const editSections = permission.sections.filter(s => s.level === 'edit').map(s => s.section)
+    const viewSections = permission.sections.filter(s => s.level === 'view').map(s => s.section)
+    const noneSections = permission.sections.filter(s => s.level === 'none').map(s => s.section)
+
+    // Admin: All sections have edit
+    if (permission.sections.every(s => s.level === 'edit')) {
+      return 'admin'
+    }
+
+    // Supervisor: All sections have view
+    if (permission.sections.every(s => s.level === 'view')) {
+      return 'supervisor'
+    }
+
+    // Staff: Direct Addition and Property Handover have edit, others view/none
+    if (editSections.includes('direct_addition') && editSections.includes('property_handover') &&
+        viewSections.includes('purchase_pipeline') &&
+        noneSections.includes('subdivision_process') && noneSections.includes('audit_trail')) {
+      return 'staff'
+    }
+
+    // Member: No direct addition or audit trail, others view
+    if (noneSections.includes('direct_addition') && noneSections.includes('audit_trail') &&
+        viewSections.includes('purchase_pipeline') && viewSections.includes('subdivision_process') &&
+        viewSections.includes('property_handover')) {
+      return 'member'
+    }
+
+    // Custom: Doesn't match any template
+    return 'custom'
+  }
+
+  // Enhanced permission management functions
+  const filteredAndSortedPermissions = () => {
+    let filtered = userPermissions.filter(permission => {
+      const matchesSearch = permission.email.toLowerCase().includes(permissionSearchTerm.toLowerCase()) ||
+        permission.sections.some(section => sections.find(s => s.id === section.section)?.name.toLowerCase().includes(permissionSearchTerm.toLowerCase()))
+
+      const matchesRoleTemplate = filterRoleTemplate === 'all' || getRoleTemplate(permission) === filterRoleTemplate
+      const matchesScope = filterScope === 'all' ||
+        (filterScope === 'global' && permission.isGlobal) ||
+        (filterScope === 'property' && !permission.isGlobal)
+      const matchesLevel = filterLevel === 'all' || permission.sections.some(section => section.level === filterLevel)
+
+      return matchesSearch && matchesRoleTemplate && matchesScope && matchesLevel
+    })
+
+    // Sort permissions
+    filtered.sort((a, b) => {
+      let aValue: string | number, bValue: string | number
+
+      switch (sortField) {
+        case 'email':
+          aValue = a.email
+          bValue = b.email
+          break
+        case 'role':
+          aValue = a.sections[0]?.level || ''
+          bValue = b.sections[0]?.level || ''
+          break
+        case 'property':
+          aValue = a.isGlobal ? 'Global' : (properties.find(p => p.id === a.propertyId)?.name || '')
+          bValue = b.isGlobal ? 'Global' : (properties.find(p => p.id === b.propertyId)?.name || '')
+          break
+        case 'assignedAt':
+        default:
+          aValue = new Date(a.assignedAt || Date.now()).getTime()
+          bValue = new Date(b.assignedAt || Date.now()).getTime()
+          break
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+      }
+    })
+
+    return filtered
+  }
+
+  const paginatedPermissions = () => {
+    const filtered = filteredAndSortedPermissions()
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filtered.slice(startIndex, startIndex + itemsPerPage)
+  }
+
+  const totalPermissions = filteredAndSortedPermissions().length
+  const totalPages = Math.ceil(totalPermissions / itemsPerPage)
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('desc')
+    }
+  }
+
+  const togglePermissionSelection = (index: number) => {
+    setSelectedPermissions(prev =>
+      prev.includes(index)
+        ? prev.filter(i => i !== index)
+        : [...prev, index]
+    )
+  }
+
+  const selectAllPermissions = () => {
+    const allIndexes = paginatedPermissions().map((_, index) => (currentPage - 1) * itemsPerPage + index)
+    setSelectedPermissions(allIndexes)
+  }
+
+  const clearPermissionSelection = () => {
+    setSelectedPermissions([])
+  }
+
+  const bulkRemovePermissions = () => {
+    if (selectedPermissions.length === 0) return
+
+    const confirmRemove = confirm(`Remove ${selectedPermissions.length} permission assignment(s)?`)
+    if (confirmRemove) {
+      const filteredPerms = filteredAndSortedPermissions()
+      const toRemove = selectedPermissions.map(index => filteredPerms[index - (currentPage - 1) * itemsPerPage])
+
+      const newPermissions = userPermissions.filter(perm =>
+        !toRemove.some(remove =>
+          remove.userId === perm.userId &&
+          remove.propertyId === perm.propertyId
+        )
+      )
+
+      savePermissions(newPermissions)
+      setSelectedPermissions([])
+      alert(`✅ Removed ${selectedPermissions.length} permission assignment(s)`)
+    }
+  }
+
+  const duplicatePermissions = (sourcePermission: UserPermissions) => {
+    if (selectedUsers.length === 0) {
+      alert('Please select target users first')
+      return
+    }
+
+    const confirmDuplicate = confirm(`Copy permissions from ${sourcePermission.email} to ${selectedUsers.length} selected user(s)?`)
+    if (confirmDuplicate) {
+      const newPermissions = [...userPermissions]
+
+      selectedUsers.forEach(userId => {
+        const user = availableUsers.find(u => u.id === userId)
+        if (!user) return
+
+        const duplicatedPermission: UserPermissions = {
+          ...sourcePermission,
+          userId,
+          email: user.email,
+          assignedAt: new Date().toISOString()
+        }
+
+        // Remove existing permission for this user/property combination
+        const existingIndex = newPermissions.findIndex(p =>
+          p.userId === userId &&
+          (p.propertyId === duplicatedPermission.propertyId || (!p.propertyId && !duplicatedPermission.propertyId))
+        )
+
+        if (existingIndex >= 0) {
+          newPermissions[existingIndex] = duplicatedPermission
+        } else {
+          newPermissions.push(duplicatedPermission)
+        }
+      })
+
+      savePermissions(newPermissions)
+      setSelectedUsers([])
+      alert(`✅ Copied permissions to ${selectedUsers.length} user(s)`)
+    }
+  }
+
+  const toggleRowExpansion = (index: number) => {
+    const newExpanded = new Set(expandedRows)
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index)
+    } else {
+      newExpanded.add(index)
+    }
+    setExpandedRows(newExpanded)
+  }
+
   // Load saved permissions
   useEffect(() => {
     const saved = localStorage.getItem('mzima_granular_permissions')
@@ -133,19 +513,24 @@ export default function GranularPermissionManager() {
     }
   }, [])
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element
+
       if (showPropertyDropdown && !target.closest('.property-dropdown')) {
         setShowPropertyDropdown(false)
         setPropertySearchTerm('')
+      }
+
+      if (showUserDropdown && !target.closest('.user-selection-dropdown')) {
+        setShowUserDropdown(false)
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showPropertyDropdown])
+  }, [showPropertyDropdown, showUserDropdown])
 
   // Save permissions
   const savePermissions = (permissions: UserPermissions[]) => {
@@ -164,16 +549,18 @@ export default function GranularPermissionManager() {
 
   // Add new user by email
   const addUserByEmail = () => {
-    if (!newUserEmail.trim()) return
+    const email = userSearchTerm.trim() || newUserEmail.trim()
+    if (!email) return
 
     const newUser = {
       id: `user_${Date.now()}`,
-      email: newUserEmail.trim()
+      email: email
     }
 
     availableUsers.push(newUser)
     setSelectedUsers([...selectedUsers, newUser.id])
     setNewUserEmail('')
+    setUserSearchTerm('')
   }
 
   // Reset form state
@@ -458,7 +845,9 @@ export default function GranularPermissionManager() {
             section: section.id,
             level: formState.sectionPermissions[section.id],
             details: { ...formState.detailPermissions[section.id] }
-          }))
+          })),
+          assignedAt: new Date().toISOString(),
+          assignedBy: 'current_user' // In real app, get from auth context
         }
 
         // Remove existing permission for this user/property combination
@@ -585,98 +974,585 @@ export default function GranularPermissionManager() {
         </div>
       </div>
 
-      {/* User Selection */}
+      {/* Enhanced User Selection */}
       <div className="p-4 bg-gray-50 rounded-lg">
         <h4 className="font-medium text-gray-900 mb-3">Select Users</h4>
-        
-        {/* Add user by email */}
-        <div className="flex space-x-2 mb-3">
-          <input
-            type="email"
-            placeholder="Enter email address"
-            value={newUserEmail}
-            onChange={(e) => setNewUserEmail(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-          />
-          <Button
-            onClick={addUserByEmail}
-            variant="outline"
-            className="text-sm"
-          >
-            Add User
-          </Button>
-        </div>
 
-        {/* User selection */}
-        <div className="space-y-2 max-h-40 overflow-y-auto">
-          {availableUsers.map(user => (
-            <label key={user.id} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={selectedUsers.includes(user.id)}
-                onChange={() => toggleUserSelection(user.id)}
-                className="text-blue-600"
-              />
-              <span className="text-sm">{user.email}</span>
-            </label>
-          ))}
-        </div>
-        
+        {/* Selected Users as Tags */}
         {selectedUsers.length > 0 && (
-          <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-blue-800">
-            ✓ {selectedUsers.length} user(s) selected
+          <div className="mb-3">
+            <div className="flex flex-wrap gap-2">
+              {selectedUsers.map(userId => {
+                const user = availableUsers.find(u => u.id === userId)
+                return user ? (
+                  <span
+                    key={userId}
+                    className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                  >
+                    {user.email}
+                    <button
+                      onClick={() => removeUserFromSelection(userId)}
+                      className="ml-2 text-blue-600 hover:text-blue-800 transition-colors"
+                      title="Remove user"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ) : null
+              })}
+            </div>
           </div>
         )}
+
+        {/* Bulk Actions - Only show when relevant */}
+        {availableUsers.length > 3 && (
+          <div className="flex gap-2 mb-3">
+            <Button
+              onClick={selectAllUsers}
+              variant="outline"
+              className="text-green-600 border-green-200 hover:bg-green-50 text-xs"
+            >
+              ✓ Select All ({availableUsers.length})
+            </Button>
+            {selectedUsers.length > 0 && (
+              <Button
+                onClick={clearAllUsers}
+                variant="outline"
+                className="text-red-600 border-red-200 hover:bg-red-50 text-xs"
+              >
+                ✗ Clear All ({selectedUsers.length})
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Search & Add Input */}
+        <div className="relative user-selection-dropdown">
+          <input
+            type="email"
+            placeholder="Search users or add new email..."
+            value={userSearchTerm}
+            onChange={(e) => handleUserSearch(e.target.value)}
+            onKeyPress={handleKeyPress}
+            onFocus={() => setShowUserDropdown(true)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+
+          {/* Input Feedback */}
+          {(() => {
+            const feedback = getEmailInputFeedback()
+            if (!feedback) return null
+
+            const colors = {
+              error: 'text-red-600 bg-red-50 border-red-200',
+              warning: 'text-orange-600 bg-orange-50 border-orange-200',
+              success: 'text-green-600 bg-green-50 border-green-200'
+            }
+
+            return (
+              <div className={`mt-2 px-3 py-2 rounded-md text-xs border ${colors[feedback.type]}`}>
+                {feedback.message}
+              </div>
+            )
+          })()}
+
+          {/* Dropdown with filtered users */}
+          {showUserDropdown && (filteredUsers.length > 0 || isNewEmail) && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+
+              {/* Add New User Option */}
+              {isNewEmail && (
+                <button
+                  type="button"
+                  onClick={handleAddUserFromSearch}
+                  className="w-full px-4 py-3 text-left hover:bg-green-50 transition-colors border-b border-gray-100 text-green-700"
+                >
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium">➕ Add "{userSearchTerm}"</span>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">Add this email as a new user</p>
+                </button>
+              )}
+
+              {/* Filtered Users */}
+              {filteredUsers.map(user => (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => toggleUserSelection(user.id)}
+                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                    selectedUsers.includes(user.id) ? 'bg-blue-50' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => {}} // Handled by button click
+                        className="text-blue-600"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className="text-sm">{user.email}</span>
+                    </div>
+                    {selectedUsers.includes(user.id) && (
+                      <span className="text-blue-600 text-sm">✓</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+
+              {/* No Results */}
+              {filteredUsers.length === 0 && !isNewEmail && userSearchTerm && (
+                <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                  No users found matching "{userSearchTerm}"
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Quick Stats */}
+        <div className="mt-3 text-sm text-gray-600">
+          {selectedUsers.length} of {availableUsers.length} users selected
+        </div>
       </div>
 
 
 
-      {/* Current Permissions Display */}
+      {/* Enhanced Current Permissions Display */}
       <div className="space-y-4">
-        <h4 className="font-medium text-gray-900">Current Permissions</h4>
+        <div className="flex items-center justify-between">
+          <h4 className="font-medium text-gray-900">Current Permissions</h4>
+          {selectedPermissions.length > 0 && (
+            <Button
+              onClick={() => setShowBulkActions(!showBulkActions)}
+              variant="outline"
+              className="text-blue-600 border-blue-200 hover:bg-blue-50 text-sm"
+            >
+              Bulk Actions ({selectedPermissions.length})
+            </Button>
+          )}
+        </div>
+
         {userPermissions.length === 0 ? (
           <p className="text-gray-500 text-sm">No permissions assigned yet</p>
         ) : (
-          <div className="space-y-3">
-            {userPermissions.map((userPerm, index) => (
-              <div key={index} className="p-3 border rounded-lg bg-white">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <span className="font-medium text-sm">{userPerm.email}</span>
-                    <span className="ml-2 text-xs text-gray-500">
-                      {userPerm.isGlobal ? '🌐 Global' : `🏠 Property-specific`}
-                    </span>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      const newPermissions = userPermissions.filter((_, i) => i !== index)
-                      savePermissions(newPermissions)
-                    }}
-                    variant="outline"
-                    className="text-red-600 border-red-200 hover:bg-red-50 text-xs"
-                  >
-                    Remove
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {userPerm.sections.map(section => (
-                    <span
-                      key={section.section}
-                      className={`px-2 py-1 rounded text-xs ${
-                        section.level === 'edit'
-                          ? 'bg-orange-100 text-orange-800'
-                          : section.level === 'view'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}
+          <>
+            {/* Search and Filters */}
+            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+              {/* Smart Filter Indicator */}
+              {(filterRoleTemplate !== 'all' || filterScope !== 'all' || filterLevel !== 'all') && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-blue-600">🧠</span>
+                      <span className="text-sm font-medium text-blue-900">Smart Filtering Active</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setFilterRoleTemplate('all')
+                        setFilterScope('all')
+                        setFilterLevel('all')
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
                     >
-                      {sections.find(s => s.id === section.section)?.name} ({section.level})
-                    </span>
-                  ))}
+                      Clear All Filters
+                    </button>
+                  </div>
+                  <div className="text-xs text-blue-700 mt-1">
+                    Filters are intelligently adjusted based on real-world permission patterns.
+                    ⭐ indicates recommended combinations.
+                  </div>
+                </div>
+              )}
+              {/* Search Bar */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search by user email or section..."
+                    value={permissionSearchTerm}
+                    onChange={(e) => setPermissionSearchTerm(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={10}>10 per page</option>
+                    <option value={20}>20 per page</option>
+                    <option value={50}>50 per page</option>
+                    <option value={100}>100 per page</option>
+                  </select>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {/* Filter Dropdowns */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* First Filter: Role Templates */}
+                <div>
+                  <select
+                    value={filterRoleTemplate}
+                    onChange={(e) => handleRoleTemplateChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Role Templates</option>
+                    <option value="admin">👑 Administrator</option>
+                    <option value="supervisor">👁️ Supervisor</option>
+                    <option value="staff">📝 Staff</option>
+                    <option value="member">👤 Member</option>
+                    <option value="custom">🔧 Custom Permissions</option>
+                  </select>
+                </div>
+
+                {/* Second Filter: Global vs Property Specific */}
+                <div>
+                  <select
+                    value={filterScope}
+                    onChange={(e) => handleScopeChange(e.target.value as 'all' | 'global' | 'property')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {getAvailableScopeOptions().map(option => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        disabled={!option.available}
+                        className={option.recommended ? 'font-medium bg-blue-50' : ''}
+                      >
+                        {option.label}
+                        {option.recommended ? ' ⭐' : ''}
+                        {!option.available ? ' (Not applicable)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {filterRoleTemplate !== 'all' && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {filterRoleTemplate === 'admin' && '⭐ Admins typically have global authority'}
+                      {filterRoleTemplate === 'member' && '⭐ Members typically limited to specific properties'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Third Filter: Permission Levels */}
+                <div>
+                  <select
+                    value={filterLevel}
+                    onChange={(e) => setFilterLevel(e.target.value as 'all' | 'view' | 'edit')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {getAvailableLevelOptions().map(option => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        disabled={!option.available}
+                        className={option.recommended ? 'font-medium bg-blue-50' : ''}
+                      >
+                        {option.label}
+                        {option.recommended ? ' ⭐' : ''}
+                        {!option.available ? ' (Not typical)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {(() => {
+                    const levelOptions = getAvailableLevelOptions()
+                    const currentOption = levelOptions.find(opt => opt.value === filterLevel)
+                    if (currentOption?.warning) {
+                      return (
+                        <div className="text-xs text-orange-600 mt-1">
+                          ⚠️ {currentOption.warning}
+                        </div>
+                      )
+                    }
+                    if (filterRoleTemplate !== 'all') {
+                      return (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {filterRoleTemplate === 'admin' && '⭐ Admins typically have edit access'}
+                          {filterRoleTemplate === 'supervisor' && '⭐ Supervisors typically have view-only access'}
+                          {filterRoleTemplate === 'member' && '⭐ Members typically have view-only access'}
+                        </div>
+                      )
+                    }
+                    return null
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* Bulk Actions Panel */}
+            {showBulkActions && selectedPermissions.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-blue-900">
+                    {selectedPermissions.length} permission(s) selected
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={bulkRemovePermissions}
+                      variant="outline"
+                      className="text-red-600 border-red-200 hover:bg-red-50 text-sm"
+                    >
+                      🗑️ Remove Selected
+                    </Button>
+                    <Button
+                      onClick={clearPermissionSelection}
+                      variant="outline"
+                      className="text-gray-600 border-gray-200 hover:bg-gray-50 text-sm"
+                    >
+                      Clear Selection
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Permissions Table */}
+            <div className="bg-white border rounded-lg overflow-hidden">
+              {/* Table Header */}
+              <div className="bg-gray-50 px-4 py-3 border-b">
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedPermissions.length === paginatedPermissions().length && paginatedPermissions().length > 0}
+                    onChange={() => selectedPermissions.length === paginatedPermissions().length ? clearPermissionSelection() : selectAllPermissions()}
+                    className="text-blue-600"
+                  />
+                  <div className="flex-1 grid grid-cols-5 gap-4 text-sm font-medium text-gray-700">
+                    <button
+                      onClick={() => handleSort('email')}
+                      className="text-left hover:text-blue-600 flex items-center"
+                    >
+                      User Email
+                      {sortField === 'email' && (
+                        <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </button>
+                    <span className="text-left">Role Template</span>
+                    <button
+                      onClick={() => handleSort('property')}
+                      className="text-left hover:text-blue-600 flex items-center"
+                    >
+                      Scope
+                      {sortField === 'property' && (
+                        <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleSort('role')}
+                      className="text-left hover:text-blue-600 flex items-center"
+                    >
+                      Permissions
+                      {sortField === 'role' && (
+                        <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleSort('assignedAt')}
+                      className="text-left hover:text-blue-600 flex items-center"
+                    >
+                      Assigned
+                      {sortField === 'assignedAt' && (
+                        <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </button>
+                  </div>
+                  <div className="w-32 text-sm font-medium text-gray-700">Actions</div>
+                </div>
+              </div>
+
+              {/* Table Body */}
+              <div className="divide-y divide-gray-200">
+                {paginatedPermissions().map((userPerm, index) => {
+                  const globalIndex = (currentPage - 1) * itemsPerPage + index
+                  const isExpanded = expandedRows.has(globalIndex)
+
+                  return (
+                    <div key={globalIndex}>
+                      {/* Main Row */}
+                      <div className="px-4 py-3 hover:bg-gray-50">
+                        <div className="flex items-center space-x-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedPermissions.includes(globalIndex)}
+                            onChange={() => togglePermissionSelection(globalIndex)}
+                            className="text-blue-600"
+                          />
+                          <div className="flex-1 grid grid-cols-5 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium text-gray-900">{userPerm.email}</span>
+                              <div className="text-xs text-gray-500">
+                                {userPerm.assignedAt && new Date(userPerm.assignedAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div>
+                              {(() => {
+                                const roleTemplate = getRoleTemplate(userPerm)
+                                const roleTemplateLabels = {
+                                  admin: '👑 Admin',
+                                  supervisor: '👁️ Supervisor',
+                                  staff: '📝 Staff',
+                                  member: '👤 Member',
+                                  custom: '🔧 Custom'
+                                }
+                                const roleTemplateColors = {
+                                  admin: 'bg-purple-100 text-purple-800',
+                                  supervisor: 'bg-blue-100 text-blue-800',
+                                  staff: 'bg-teal-100 text-teal-800',
+                                  member: 'bg-green-100 text-green-800',
+                                  custom: 'bg-gray-100 text-gray-800'
+                                }
+                                return (
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleTemplateColors[roleTemplate as keyof typeof roleTemplateColors]}`}>
+                                    {roleTemplateLabels[roleTemplate as keyof typeof roleTemplateLabels]}
+                                  </span>
+                                )
+                              })()}
+                            </div>
+                            <div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                userPerm.isGlobal
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {userPerm.isGlobal ? '🌐 Global' : '🏠 Property'}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {userPerm.sections.slice(0, 2).map(section => (
+                                <span
+                                  key={section.section}
+                                  className={`px-2 py-1 rounded text-xs ${
+                                    section.level === 'edit'
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : section.level === 'view'
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}
+                                >
+                                  {sections.find(s => s.id === section.section)?.name}
+                                </span>
+                              ))}
+                              {userPerm.sections.length > 2 && (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                  +{userPerm.sections.length - 2} more
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {userPerm.assignedBy && `By: ${userPerm.assignedBy}`}
+                            </div>
+                          </div>
+                          <div className="w-32 flex items-center space-x-2">
+                            <Button
+                              onClick={() => toggleRowExpansion(globalIndex)}
+                              variant="outline"
+                              className="text-xs px-2 py-1"
+                            >
+                              {isExpanded ? '▲' : '▼'}
+                            </Button>
+                            <Button
+                              onClick={() => duplicatePermissions(userPerm)}
+                              variant="outline"
+                              className="text-xs px-2 py-1 text-blue-600"
+                              title="Duplicate to selected users"
+                            >
+                              📋
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                const newPermissions = userPermissions.filter((_, i) => i !== globalIndex)
+                                savePermissions(newPermissions)
+                              }}
+                              variant="outline"
+                              className="text-xs px-2 py-1 text-red-600"
+                            >
+                              🗑️
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expanded Row Details */}
+                      {isExpanded && (
+                        <div className="px-4 py-3 bg-gray-50 border-t">
+                          <div className="space-y-3">
+                            <h5 className="font-medium text-gray-900">Detailed Permissions:</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {userPerm.sections.map(section => (
+                                <div key={section.section} className="p-3 bg-white rounded border">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="font-medium text-sm">
+                                      {sections.find(s => s.id === section.section)?.name}
+                                    </span>
+                                    <span className={`px-2 py-1 rounded text-xs ${
+                                      section.level === 'edit'
+                                        ? 'bg-orange-100 text-orange-800'
+                                        : section.level === 'view'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-gray-100 text-gray-600'
+                                    }`}>
+                                      {section.level}
+                                    </span>
+                                  </div>
+                                  {section.section !== 'audit_trail' && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {Object.entries(section.details).map(([detail, level]) => (
+                                        level !== 'none' && (
+                                          <span
+                                            key={detail}
+                                            className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs"
+                                          >
+                                            {detail.replace(/_/g, ' ')}: {level}
+                                          </span>
+                                        )
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalPermissions)} of {totalPermissions} permissions
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                    className="text-sm"
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                    className="text-sm"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

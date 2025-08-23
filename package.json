@@ -12,7 +12,12 @@
     "test:ui": "vitest",
     "e2e": "playwright test",
     "test-db": "node test-connection.js",
-    "test-functions": "node test-functions.js"
+    "test-functions": "node test-functions.js",
+    "migrate": "node scripts/run-migrations.js",
+    "migrate:show": "node scripts/show-migrations.js",
+    "migrate:verify": "node scripts/run-migrations.js --verify-only",
+    "db:reset": "echo 'WARNING: This will reset your database. Use with caution.'",
+    "db:seed": "node scripts/seed-database.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",
