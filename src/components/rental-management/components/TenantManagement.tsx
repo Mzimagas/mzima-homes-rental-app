@@ -10,6 +10,7 @@ import { RentalManagementService } from '../services/rental-management.service'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import supabase from '../../../lib/supabase-client'
 
 interface TenantManagementProps {
   onDataChange?: () => void
@@ -32,7 +33,13 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
   const [tenants, setTenants] = useState<RentalTenant[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
+  // Search and filter state (to mirror /dashboard/tenants)
+  const [q, setQ] = useState('')
+  const [properties, setProperties] = useState<Array<{ id: string; name: string }>>([])
+  const [units, setUnits] = useState<Array<{ id: string; unit_label: string; property_id: string }>>([])
+  const [propertyId, setPropertyId] = useState('')
+  const [unitId, setUnitId] = useState('')
+
   const [selectedTenant, setSelectedTenant] = useState<RentalTenant | null>(null)
   const [showTenantModal, setShowTenantModal] = useState(false)
   const [showAddTenantModal, setShowAddTenantModal] = useState(false)
@@ -51,6 +58,40 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     loadTenants()
   }, [])
 
+  // Load accessible properties similar to TenantList
+  useEffect(() => {
+    const loadProps = async () => {
+      try {
+        const { data: accessible, error: rpcErr } = await supabase.rpc('get_user_properties_simple')
+        if (rpcErr) throw rpcErr
+        const ids = (accessible || []).map((p: any) => (typeof p === 'string' ? p : p?.property_id)).filter(Boolean)
+        if (ids.length === 0) { setProperties([]); return }
+        const { data, error } = await supabase.from('properties').select('id, name').in('id', ids).order('name')
+        if (error) throw error
+        setProperties(data || [])
+      } catch (e) {
+        console.error('[TenantManagement] loadProps error', e)
+      }
+    }
+    loadProps()
+  }, [])
+
+  // Load units when property changes
+  useEffect(() => {
+    const loadUnits = async () => {
+      setUnits([])
+      setUnitId('')
+      if (!propertyId) return
+      const { data, error } = await supabase
+        .from('units')
+        .select('id, unit_label, property_id')
+        .eq('property_id', propertyId)
+        .order('unit_label')
+      if (!error) setUnits(data || [])
+    }
+    loadUnits()
+  }, [propertyId])
+
   const loadTenants = async () => {
     try {
       setLoading(true)
@@ -65,11 +106,17 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     }
   }
 
-  const filteredTenants = tenants.filter(tenant =>
-    tenant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tenant.phone.includes(searchTerm) ||
-    tenant.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredTenants = tenants.filter(tenant => {
+    const matchesQ = !q || (
+      tenant.full_name.toLowerCase().includes(q.toLowerCase()) ||
+      (tenant.phone || '').toLowerCase().includes(q.toLowerCase()) ||
+      (tenant.email || '').toLowerCase().includes(q.toLowerCase())
+    )
+    const matchesProperty = !propertyId || ((tenant as any).current_unit?.property_id === propertyId)
+    const activeAgreementUnitId = (tenant as any)?.tenancy_agreements?.find((a: any) => a.status === 'ACTIVE')?.unit_id
+    const matchesUnit = !unitId || (activeAgreementUnitId === unitId)
+    return matchesQ && matchesProperty && matchesUnit
+  })
 
   const handleTenantClick = (tenant: RentalTenant) => {
     setSelectedTenant(tenant)
@@ -127,14 +174,30 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       </div>
 
       {/* Search and Filters */}
-      <div className="flex space-x-4">
-        <div className="flex-1">
-          <TextField
-            placeholder="Search tenants by name, phone, or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <TextField
+          placeholder="Search by name..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <select className="border rounded px-3 py-2" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
+          <option value="">All properties</option>
+          {properties.map(p => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+        <select className="border rounded px-3 py-2" value={unitId} onChange={(e) => setUnitId(e.target.value)} disabled={!propertyId}>
+          <option value="">All units</option>
+          {units.map(u => (
+            <option key={u.id} value={u.id}>{u.unit_label || 'Unit'}</option>
+          ))}
+        </select>
+        <button
+          onClick={() => { setQ(''); setPropertyId(''); setUnitId('') }}
+          className="px-3 py-2 text-sm bg-gray-100 border rounded hover:bg-gray-200"
+        >
+          Clear Filters
+        </button>
         <Button onClick={loadTenants} variant="secondary">
           Refresh
         </Button>
@@ -211,7 +274,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
           <div className="text-6xl mb-4">👥</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Tenants Found</h3>
           <p className="text-gray-500 mb-4">
-            {searchTerm ? 'No tenants match your search criteria.' : 'Get started by adding your first tenant.'}
+            {q ? 'No tenants match your search criteria.' : 'Get started by adding your first tenant.'}
           </p>
           <Button onClick={() => setShowAddTenantModal(true)} variant="primary">
             Add Tenant
