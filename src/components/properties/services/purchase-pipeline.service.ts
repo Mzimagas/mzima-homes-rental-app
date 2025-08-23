@@ -1,4 +1,4 @@
-import supabase from '../../../lib/supabase-client'
+import { supabase } from '../../../lib/supabase-client'
 import { 
   PurchaseItem, 
   PipelineStageData, 
@@ -20,11 +20,18 @@ export class PurchasePipelineService {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error loading purchases:', error)
+        throw new Error(`Failed to load purchases: ${error.message || 'Unknown database error'}`)
+      }
       return (data as PurchaseItem[]) || []
     } catch (error) {
       console.error('Error loading purchases:', error)
-      throw error
+      if (error instanceof Error) {
+        throw error
+      } else {
+        throw new Error('Failed to load purchases: Unknown error')
+      }
     }
   }
 
@@ -53,6 +60,9 @@ export class PurchasePipelineService {
         target_completion_date: values.targetCompletionDate || null,
         legal_representative: values.legalRepresentative || null,
         financing_source: values.financingSource || null,
+        contract_reference: values.contractReference || null,
+        title_deed_status: values.titleDeedStatus || null,
+        survey_status: values.surveyStatus || null,
         expected_rental_income_kes: values.expectedRentalIncome || null,
         expected_roi_percentage: values.expectedRoi || null,
         risk_assessment: values.riskAssessment || null,
@@ -64,11 +74,21 @@ export class PurchasePipelineService {
         created_by: user.id,
       }
 
+      console.log('Attempting to insert purchase data:', purchaseData)
       const { error } = await supabase.from('purchase_pipeline').insert([purchaseData])
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error details:', error)
+        throw new Error(`Failed to create purchase: ${error.message || 'Unknown database error'}`)
+      }
+      console.log('Purchase created successfully')
     } catch (error) {
       console.error('Error creating purchase:', error)
-      throw error
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      if (error instanceof Error) {
+        throw error
+      } else {
+        throw new Error('Failed to create purchase: Unknown error')
+      }
     }
   }
 
@@ -88,6 +108,9 @@ export class PurchasePipelineService {
         target_completion_date: values.targetCompletionDate || null,
         legal_representative: values.legalRepresentative || null,
         financing_source: values.financingSource || null,
+        contract_reference: values.contractReference || null,
+        title_deed_status: values.titleDeedStatus || null,
+        survey_status: values.surveyStatus || null,
         expected_rental_income_kes: values.expectedRentalIncome || null,
         expected_roi_percentage: values.expectedRoi || null,
         risk_assessment: values.riskAssessment || null,
@@ -100,10 +123,17 @@ export class PurchasePipelineService {
         .update(updateData)
         .eq('id', purchaseId)
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error updating purchase:', error)
+        throw new Error(`Failed to update purchase: ${error.message || 'Unknown database error'}`)
+      }
     } catch (error) {
       console.error('Error updating purchase:', error)
-      throw error
+      if (error instanceof Error) {
+        throw error
+      } else {
+        throw new Error('Failed to update purchase: Unknown error')
+      }
     }
   }
 
@@ -123,7 +153,10 @@ export class PurchasePipelineService {
         .eq('id', purchaseId)
         .single()
 
-      if (fetchError) throw fetchError
+      if (fetchError) {
+        console.error('Error fetching purchase data:', fetchError)
+        throw new Error(`Failed to fetch purchase data: ${fetchError.message || 'Unknown database error'}`)
+      }
 
       const currentStages = purchase.pipeline_stages as PipelineStageData[]
       
@@ -173,11 +206,15 @@ export class PurchasePipelineService {
 
       if (error) {
         console.error('Supabase error details:', error)
-        throw error
+        throw new Error(`Failed to update stage status: ${error.message || 'Unknown database error'}`)
       }
     } catch (error) {
       console.error('Error updating stage status:', error)
-      throw error
+      if (error instanceof Error) {
+        throw error
+      } else {
+        throw new Error('Failed to update stage status: Unknown error')
+      }
     }
   }
 

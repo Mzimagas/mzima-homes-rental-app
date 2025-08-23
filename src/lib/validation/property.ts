@@ -87,14 +87,14 @@ export const getPropertyTypeLabel = (type: PropertyType): string => {
 // Enhanced property schema with conditional validation
 export const enhancedPropertySchema = propertySchema.refine((data) => {
   // For land properties, certain fields might be required in the future
-  if (isLandProperty(data.propertyType)) {
+  if (isLandProperty(data.property_type)) {
     // Land-specific validation can be added here
     return true
   }
   return true
 }, {
   message: 'Invalid property configuration for the selected type',
-  path: ['propertyType']
+  path: ['property_type']
 })
 
 // Property type categories for UI grouping

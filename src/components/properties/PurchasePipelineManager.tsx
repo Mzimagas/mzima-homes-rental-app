@@ -3,19 +3,22 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Button } from '../ui'
 import PurchaseList from './components/PurchaseList'
-import PurchaseForm from './components/PurchaseForm'
+import SecurePurchaseForm from './components/SecurePurchaseForm'
 import StageModal from './components/StageModal'
 import PropertySearch from './components/PropertySearch'
 import { PurchasePipelineService } from './services/purchase-pipeline.service'
+import { FieldSecurityService, ChangeRequest } from '../../lib/security/field-security.service'
 import {
   PurchasePipelineManagerProps,
-  PurchaseItem
+  PurchaseItem,
+  PurchasePipelineFormValues
 } from './types/purchase-pipeline.types'
 
 export default function PurchasePipelineManager({
   onPropertyTransferred,
   searchTerm = '',
-  onSearchChange
+  onSearchChange,
+  userRole = 'property_manager'
 }: PurchasePipelineManagerProps) {
   // State management
   const [purchases, setPurchases] = useState<PurchaseItem[]>([])
@@ -75,6 +78,41 @@ export default function PurchasePipelineManager({
     loadPurchases()
     setShowForm(false)
     setEditingPurchase(null)
+  }
+
+  // Handle secure form submission with change tracking
+  const handleSecureFormSubmit = async (values: PurchasePipelineFormValues, changeRequests: ChangeRequest[]) => {
+    try {
+      if (editingPurchase) {
+        // For updates, validate changes first
+        if (changeRequests.length > 0) {
+          const validation = await FieldSecurityService.validateChangeRequest(
+            editingPurchase.id,
+            changeRequests,
+            userRole,
+            editingPurchase.current_stage
+          )
+
+          if (!validation.valid) {
+            throw new Error(`Cannot save changes: ${validation.errors.join(', ')}`)
+          }
+
+          if (validation.requiresApproval) {
+            // Changes require approval - they will be handled by the SecurePurchaseForm
+            return
+          }
+        }
+
+        await PurchasePipelineService.updatePurchase(editingPurchase.id, values)
+      } else {
+        await PurchasePipelineService.createPurchase(values)
+      }
+
+      handlePurchaseCreated()
+    } catch (error) {
+      console.error('Error saving purchase:', error)
+      throw error
+    }
   }
 
   const handleStageClick = (stageId: number, purchaseId: string) => {
@@ -171,12 +209,13 @@ export default function PurchasePipelineManager({
         transferringId={transferringId}
       />
 
-      {/* Purchase Form Modal */}
-      <PurchaseForm
+      {/* Secure Purchase Form Modal */}
+      <SecurePurchaseForm
         isOpen={showForm}
         onClose={handleCloseForm}
         editingPurchase={editingPurchase}
-        onPurchaseCreated={handlePurchaseCreated}
+        onSubmit={handleSecureFormSubmit}
+        userRole={userRole}
       />
 
       {/* Stage Modal */}

@@ -2,12 +2,13 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect } from 'react'
 import { Button, TextField, FormField } from '../../ui'
 import Modal from '../../ui/Modal'
 import AddressAutocomplete from '../../location/AddressAutocomplete'
 import { PropertyTypeEnum } from '../../../lib/validation/property'
 import { PurchasePipelineService } from '../services/purchase-pipeline.service'
-import { 
+import {
   PurchaseFormProps,
   PurchasePipelineFormValues,
   purchasePipelineSchema
@@ -27,27 +28,63 @@ export default function PurchaseForm({
     watch,
     formState: { errors, isSubmitting }
   } = useForm<PurchasePipelineFormValues>({
-    resolver: zodResolver(purchasePipelineSchema),
-    defaultValues: editingPurchase ? {
-      propertyName: editingPurchase.property_name,
-      propertyAddress: editingPurchase.property_address,
-      propertyType: editingPurchase.property_type as any,
-      sellerName: editingPurchase.seller_name || '',
-      sellerPhone: editingPurchase.seller_contact || '',
-      askingPrice: editingPurchase.asking_price_kes || undefined,
-      negotiatedPrice: editingPurchase.negotiated_price_kes || undefined,
-      depositPaid: editingPurchase.deposit_paid_kes || undefined,
-      targetCompletionDate: editingPurchase.target_completion_date || '',
-      legalRepresentative: editingPurchase.legal_representative || '',
-      financingSource: editingPurchase.financing_source || '',
-      expectedRentalIncome: editingPurchase.expected_rental_income_kes || undefined,
-      expectedRoi: editingPurchase.expected_roi_percentage || undefined,
-      riskAssessment: editingPurchase.risk_assessment || '',
-      propertyConditionNotes: editingPurchase.property_condition_notes || '',
-    } : {}
+    resolver: zodResolver(purchasePipelineSchema)
   })
 
   const propertyAddress = watch('propertyAddress')
+
+  // Reset form when modal opens/closes or when editingPurchase changes
+  useEffect(() => {
+    if (isOpen) {
+      if (editingPurchase) {
+        console.log('Editing purchase data:', editingPurchase)
+        console.log('Property condition notes:', editingPurchase.property_condition_notes)
+        reset({
+          propertyName: editingPurchase.property_name,
+          propertyAddress: editingPurchase.property_address,
+          propertyType: editingPurchase.property_type as any,
+          sellerName: editingPurchase.seller_name || '',
+          sellerPhone: editingPurchase.seller_contact || '',
+          sellerEmail: editingPurchase.seller_email || '',
+          askingPrice: editingPurchase.asking_price_kes || undefined,
+          negotiatedPrice: editingPurchase.negotiated_price_kes || undefined,
+          depositPaid: editingPurchase.deposit_paid_kes || undefined,
+          targetCompletionDate: editingPurchase.target_completion_date || '',
+          legalRepresentative: editingPurchase.legal_representative || '',
+          financingSource: editingPurchase.financing_source || '',
+          contractReference: editingPurchase.contract_reference || '',
+          titleDeedStatus: editingPurchase.title_deed_status || '',
+          surveyStatus: editingPurchase.survey_status || '',
+          expectedRentalIncome: editingPurchase.expected_rental_income_kes || undefined,
+          expectedRoi: editingPurchase.expected_roi_percentage || undefined,
+          riskAssessment: editingPurchase.risk_assessment || '',
+          propertyConditionNotes: editingPurchase.property_condition_notes || '',
+        })
+      } else {
+        reset({
+          propertyName: '',
+          propertyAddress: '',
+          propertyType: 'HOME' as any,
+          sellerName: '',
+          sellerPhone: '',
+          sellerEmail: '',
+          askingPrice: undefined,
+          negotiatedPrice: undefined,
+          depositPaid: undefined,
+          targetCompletionDate: '',
+          legalRepresentative: '',
+          financingSource: '',
+          contractReference: '',
+          titleDeedStatus: '',
+          surveyStatus: '',
+          expectedRentalIncome: undefined,
+          expectedRoi: undefined,
+          riskAssessment: '',
+          propertyConditionNotes: '',
+        })
+      }
+    }
+  }, [isOpen, editingPurchase, reset])
 
   const onSubmit = async (values: PurchasePipelineFormValues) => {
     try {
@@ -235,6 +272,38 @@ export default function PurchaseForm({
                   id={id}
                   {...register('financingSource')}
                   placeholder="Bank, personal funds, etc."
+                />
+              )}
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField name="contractReference" label="Contract Reference" error={errors.contractReference?.message}>
+              {({ id }) => (
+                <TextField
+                  id={id}
+                  {...register('contractReference')}
+                  placeholder="Contract/Agreement number"
+                />
+              )}
+            </FormField>
+
+            <FormField name="titleDeedStatus" label="Title Deed Status" error={errors.titleDeedStatus?.message}>
+              {({ id }) => (
+                <TextField
+                  id={id}
+                  {...register('titleDeedStatus')}
+                  placeholder="e.g., Verified, Pending, Issues"
+                />
+              )}
+            </FormField>
+
+            <FormField name="surveyStatus" label="Survey Status" error={errors.surveyStatus?.message}>
+              {({ id }) => (
+                <TextField
+                  id={id}
+                  {...register('surveyStatus')}
+                  placeholder="e.g., Completed, Scheduled, Pending"
                 />
               )}
             </FormField>

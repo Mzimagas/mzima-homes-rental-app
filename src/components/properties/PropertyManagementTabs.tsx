@@ -7,6 +7,10 @@ import SubdivisionProcessManager from './SubdivisionProcessManager'
 import WorkflowNavigation from './components/WorkflowNavigation'
 import PropertiesTab from './components/PropertiesTab'
 import HandoverPipelineManager from './components/HandoverPipelineManager'
+import AuditTrailDashboard from './components/AuditTrailDashboard'
+import SecurityTestPanel from './components/SecurityTestPanel'
+import AdvancedRoleManager from './components/AdvancedRoleManager'
+import { RoleManagementService } from '../../lib/auth/role-management.service'
 
 import { PropertyManagementService } from './services/property-management.service'
 import { 
@@ -34,10 +38,24 @@ export default function PropertyManagementTabs({
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>({})
   const [savingChanges, setSavingChanges] = useState<{ [propertyId: string]: boolean }>({})
 
-  // Load properties on component mount
+  // User role for security features
+  const [userRole, setUserRole] = useState<string>('property_manager')
+
+  // Load properties and user role on component mount
   useEffect(() => {
     loadProperties()
+    loadUserRole()
   }, [])
+
+  const loadUserRole = async () => {
+    try {
+      const role = await RoleManagementService.getCurrentUserRole()
+      setUserRole(role)
+    } catch (error) {
+      console.error('Error loading user role:', error)
+      setUserRole('viewer') // Fallback to viewer role
+    }
+  }
 
   const loadProperties = async () => {
     try {
@@ -147,6 +165,7 @@ export default function PropertyManagementTabs({
             onPropertyTransferred={handlePropertyTransferred}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            userRole={userRole}
           />
         )}
 
@@ -164,6 +183,26 @@ export default function PropertyManagementTabs({
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
           />
+        )}
+
+        {activeTab === 'audit' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Security & Audit Trail</h2>
+                <p className="text-gray-600">Monitor changes, manage approvals, and ensure data integrity</p>
+              </div>
+            </div>
+
+            {/* Security Test Panel */}
+            <SecurityTestPanel />
+
+            {/* Advanced Role Manager */}
+            <AdvancedRoleManager />
+
+            {/* Audit Trail Dashboard */}
+            <AuditTrailDashboard userRole={userRole} />
+          </div>
         )}
 
 

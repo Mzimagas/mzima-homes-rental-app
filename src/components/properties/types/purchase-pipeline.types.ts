@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PropertyTypeEnum } from '../../../lib/validation/property'
 
 // Phone number validation regex (consistent with tenant validation)
 export const phoneRegex = /^\+?[0-9\s\-()]+$/
@@ -77,8 +78,8 @@ export const PIPELINE_STAGES: PipelineStage[] = [
 export const purchasePipelineSchema = z.object({
   propertyName: z.string().min(1, 'Property name is required'),
   propertyAddress: z.string().min(1, 'Property address is required'),
-  propertyType: z.enum(['RESIDENTIAL', 'COMMERCIAL', 'LAND', 'MIXED_USE'], {
-    errorMap: () => ({ message: 'Please select a property type' })
+  propertyType: PropertyTypeEnum.refine((val) => val !== undefined, {
+    message: 'Please select a property type'
   }),
   sellerName: z.string().min(1, 'Seller name is required'),
   sellerPhone: z.string().regex(phoneRegex, 'Enter a valid phone number').optional().or(z.literal('')),
@@ -89,6 +90,9 @@ export const purchasePipelineSchema = z.object({
   targetCompletionDate: z.string().optional(),
   legalRepresentative: z.string().optional(),
   financingSource: z.string().optional(),
+  contractReference: z.string().optional(),
+  titleDeedStatus: z.string().optional(),
+  surveyStatus: z.string().optional(),
   expectedRentalIncome: z.number().min(0, 'Expected rental income cannot be negative').optional(),
   expectedRoi: z.number().min(0).max(100, 'ROI must be between 0-100%').optional(),
   riskAssessment: z.string().optional(),
@@ -115,6 +119,7 @@ export interface PurchaseItem {
   property_type: string
   seller_name?: string
   seller_contact?: string
+  seller_email?: string
   asking_price_kes?: number
   negotiated_price_kes?: number
   deposit_paid_kes?: number
@@ -122,6 +127,9 @@ export interface PurchaseItem {
   target_completion_date?: string
   legal_representative?: string
   financing_source?: string
+  contract_reference?: string
+  title_deed_status?: string
+  survey_status?: string
   expected_rental_income_kes?: number
   expected_roi_percentage?: number
   risk_assessment?: string
@@ -139,6 +147,7 @@ export interface PurchasePipelineManagerProps {
   onPropertyTransferred?: (propertyId: string) => void
   searchTerm?: string
   onSearchChange?: (searchTerm: string) => void
+  userRole?: string
 }
 
 export interface ProgressTrackerProps {

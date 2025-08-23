@@ -245,7 +245,7 @@ export interface PendingChanges {
   }
 }
 
-export type ActiveTab = 'properties' | 'purchase' | 'subdivision' | 'handover'
+export type ActiveTab = 'properties' | 'purchase' | 'subdivision' | 'handover' | 'audit'
 
 // Predefined acquisition cost types
 export const ACQUISITION_COST_TYPES: AcquisitionCostType[] = [
