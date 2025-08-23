@@ -14,8 +14,9 @@ interface UserSelectorProps {
 
 export default function UserSelector({ onSelectionChange, onFeedback, selectedProperty = 'global', className = '' }: UserSelectorProps) {
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null)
-  const [compactMode, setCompactMode] = useState(false)
+  const [focusedChipIndex, setFocusedChipIndex] = useState<number>(-1)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   
   const {
     selectedUsers,
@@ -80,8 +81,6 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
     }
   }, [showDropdown, toggleDropdown])
 
-  const selectedUserDetails = getSelectedUserDetails()
-
   // Get property scope display text
   const getPropertyScopeDisplay = () => {
     switch (selectedProperty) {
@@ -135,10 +134,77 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
       })
     }
 
-    // Auto-close dropdown after selection
-    if (showDropdown) {
-      toggleDropdown()
+    // Clear search term but keep dropdown open for multiple selections
+    handleUserSearch('')
+    // Don't auto-close dropdown - let user continue selecting or close manually
+
+    // Refocus the input field to allow immediate typing for next selection
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+      }
+    }, 0)
+
+    // Focus back to input for continued typing
+    if (inputRef.current) {
+      inputRef.current.focus()
     }
+  }
+
+  // Enhanced keyboard navigation for chips and input
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const selectedUserDetails = getSelectedUserDetails()
+
+    // Handle backspace to remove last chip when input is empty
+    if (e.key === 'Backspace' && searchTerm === '' && selectedUserDetails.length > 0) {
+      if (focusedChipIndex === -1) {
+        // Focus on last chip
+        setFocusedChipIndex(selectedUserDetails.length - 1)
+      } else {
+        // Remove focused chip
+        const userToRemove = selectedUserDetails[focusedChipIndex]
+        toggleUserSelection(userToRemove.id)
+        setFocusedChipIndex(-1)
+        setFeedback({
+          type: 'success',
+          message: `Removed ${userToRemove.email} from selection`
+        })
+      }
+      e.preventDefault()
+      return
+    }
+
+    // Handle arrow navigation between chips
+    if (e.key === 'ArrowLeft' && searchTerm === '') {
+      if (focusedChipIndex === -1 && selectedUserDetails.length > 0) {
+        setFocusedChipIndex(selectedUserDetails.length - 1)
+      } else if (focusedChipIndex > 0) {
+        setFocusedChipIndex(focusedChipIndex - 1)
+      }
+      e.preventDefault()
+      return
+    }
+
+    if (e.key === 'ArrowRight' && focusedChipIndex !== -1) {
+      if (focusedChipIndex < selectedUserDetails.length - 1) {
+        setFocusedChipIndex(focusedChipIndex + 1)
+      } else {
+        setFocusedChipIndex(-1)
+        if (inputRef.current) {
+          inputRef.current.focus()
+        }
+      }
+      e.preventDefault()
+      return
+    }
+
+    // Clear chip focus when typing
+    if (e.key.length === 1) {
+      setFocusedChipIndex(-1)
+    }
+
+    // Handle original key press logic
+    handleKeyPress(e)
   }
 
   // Enhanced select all with validation
@@ -197,27 +263,105 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
         </div>
       )}
       
-      {/* User Search and Selection */}
+      {/* Gmail-Style Multi-Select Input */}
       <div className="relative" ref={dropdownRef}>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search users or add new email..."
-            value={searchTerm}
-            onChange={(e) => handleUserSearch(e.target.value)}
-            onKeyDown={handleKeyPress}
-            onFocus={() => !showDropdown && toggleDropdown()}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          {showDropdown && (
-            <button
-              type="button"
-              onClick={toggleDropdown}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
-          )}
+        <div className={`min-h-[48px] w-full px-3 py-2 border rounded-lg bg-white transition-all ${
+          selectedUsers.length >= 10
+            ? 'border-orange-300 bg-orange-50'
+            : 'border-gray-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500'
+        }`}>
+          <div className="flex flex-wrap items-center gap-1">
+            {/* Selected User Chips */}
+            {getSelectedUserDetails().map((user, index) => (
+              <div
+                key={user.id}
+                className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                  focusedChipIndex === index
+                    ? 'bg-blue-200 border-2 border-blue-400 text-blue-900'
+                    : 'bg-blue-100 border border-blue-200 text-blue-800'
+                }`}
+              >
+                <span className="max-w-[120px] truncate">
+                  {user.name || user.email.split('@')[0]}
+                </span>
+                {user.role && (
+                  <span className="px-1 py-0.5 bg-blue-200 text-blue-700 rounded text-xs">
+                    {user.role}
+                  </span>
+                )}
+                {!user.isActive && (
+                  <span className="px-1 py-0.5 bg-red-200 text-red-700 rounded text-xs">
+                    !
+                  </span>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleUserSelection(user.id)
+                    setFeedback({
+                      type: 'success',
+                      message: `Removed ${user.email} from selection`
+                    })
+                    setFocusedChipIndex(-1)
+                  }}
+                  className="ml-1 text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full w-4 h-4 flex items-center justify-center transition-colors"
+                  title={`Remove ${user.email}`}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+            {/* Search Input */}
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={
+                selectedUsers.length >= 10
+                  ? "Maximum 10 users selected"
+                  : getSelectedUserDetails().length === 0
+                    ? "Search users or add new email..."
+                    : "Add more users..."
+              }
+              value={searchTerm}
+              onChange={(e) => {
+                handleUserSearch(e.target.value)
+                // Open dropdown when user starts typing (if not already open)
+                if (!showDropdown && selectedUsers.length < 10) {
+                  toggleDropdown()
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              onClick={() => {
+                // Open dropdown when input is clicked (if not already open)
+                if (!showDropdown && selectedUsers.length < 10) {
+                  toggleDropdown()
+                }
+              }}
+              onFocus={() => {
+                setFocusedChipIndex(-1)
+                // Open dropdown when input is focused (if not already open)
+                if (!showDropdown && selectedUsers.length < 10) {
+                  toggleDropdown()
+                }
+              }}
+              className={`flex-1 min-w-[120px] outline-none text-sm py-1 bg-transparent ${
+                selectedUsers.length >= 10 ? 'text-gray-400 cursor-not-allowed' : ''
+              }`}
+              disabled={selectedUsers.length >= 10}
+            />
+
+            {/* Dropdown Toggle/Close Button */}
+            {showDropdown && (
+              <button
+                type="button"
+                onClick={toggleDropdown}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         {/* User Dropdown */}
@@ -283,105 +427,57 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
         )}
       </div>
 
-      {/* Selected Users Display */}
-      {selectedUserDetails.length > 0 && (
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Selected Users ({selectedUserDetails.length})
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCompactMode(!compactMode)}
-                className="text-xs text-gray-700 hover:text-gray-900 px-2 py-1 rounded border border-gray-300 hover:bg-gray-50 bg-white font-medium"
-                title={compactMode ? 'Show detailed view' : 'Show compact view'}
-              >
-                {compactMode ? '📋 Details' : '🔗 Compact'}
-              </button>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleEnhancedSelectAll}
-                  disabled={availableUsers.filter(u => u.isActive).length === 0}
-                  variant="secondary"
-                  className="text-green-700 border-green-300 hover:bg-green-50 hover:text-green-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400"
-                >
-                  ✓ Select All Active ({availableUsers.filter(u => u.isActive).length})
-                </Button>
-                {selectedUsers.length > 0 && (
-                  <Button
-                    onClick={() => {
-                      clearAllUsers()
-                      setFeedback({
-                        type: 'success',
-                        message: 'Cleared all user selections'
-                      })
-                    }}
-                    variant="secondary"
-                    className="text-red-700 border-red-300 hover:bg-red-50 hover:text-red-800 text-xs font-medium"
-                  >
-                    ✗ Clear All ({selectedUsers.length})
-                  </Button>
-                )}
-              </div>
-            </div>
+      {/* Bulk Actions for Selected Users */}
+      {getSelectedUserDetails().length > 0 && (
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-gray-600">
+            {getSelectedUserDetails().length} user{getSelectedUserDetails().length === 1 ? '' : 's'} selected
+          </span>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleEnhancedSelectAll}
+              disabled={availableUsers.filter(u => u.isActive).length === 0}
+              variant="secondary"
+              className="text-green-700 border-green-300 hover:bg-green-50 hover:text-green-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400"
+            >
+              ✓ Select All Active ({availableUsers.filter(u => u.isActive).length})
+            </Button>
+            <Button
+              onClick={() => {
+                clearAllUsers()
+                setFeedback({
+                  type: 'success',
+                  message: 'Cleared all user selections'
+                })
+                setFocusedChipIndex(-1)
+              }}
+              variant="secondary"
+              className="text-red-700 border-red-300 hover:bg-red-50 hover:text-red-800 text-xs font-medium"
+            >
+              ✗ Clear All
+            </Button>
           </div>
-
-          {compactMode ? (
-            <div className="text-sm text-gray-700 bg-white rounded p-2 border">
-              {selectedUserDetails.map(user => user.name || user.email.split('@')[0]).join(', ')}
-              {selectedUserDetails.length > 3 && ` and ${selectedUserDetails.length - 3} more`}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-              {selectedUserDetails.map(user => (
-                <div
-                  key={user.id}
-                  className="inline-flex items-center space-x-2 px-3 py-1.5 bg-blue-100 border border-blue-200 rounded-full text-sm"
-                >
-                  <div className="flex items-center space-x-1">
-                    <span className="font-medium text-blue-900">
-                      {user.name || user.email.split('@')[0]}
-                    </span>
-                    {user.role && (
-                      <span className="px-1.5 py-0.5 bg-blue-200 text-blue-800 rounded text-xs">
-                        {user.role}
-                      </span>
-                    )}
-                    {!user.isActive && (
-                      <span className="px-1.5 py-0.5 bg-red-200 text-red-800 rounded text-xs">
-                        inactive
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => {
-                      toggleUserSelection(user.id)
-                      setFeedback({
-                        type: 'success',
-                        message: `Removed ${user.email} from selection`
-                      })
-                    }}
-                    className="text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
-                    title={`Remove ${user.email}`}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
       {/* User Selection Summary */}
-      {selectedUserDetails.length === 0 && (
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-          <p className="text-sm text-yellow-800">
-            👤 No users selected. Search and select users to assign permissions.
+      {getSelectedUserDetails().length === 0 && (
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800">
+            👤 Start typing to search and select users for permission assignment
           </p>
-          <div className="mt-2 text-xs text-yellow-700">
-            💡 Tip: You can select up to 10 users at once for bulk permission assignment.
+          <div className="mt-2 text-xs text-blue-700">
+            💡 Tips: Use ← → arrows to navigate chips, Backspace to remove, up to 10 users max
           </div>
+        </div>
+      )}
+
+      {/* Selection Limit Warning */}
+      {getSelectedUserDetails().length >= 10 && (
+        <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded-md">
+          <p className="text-xs text-orange-800">
+            ⚠️ Maximum selection limit reached (10 users). Remove some users to add more.
+          </p>
         </div>
       )}
     </div>

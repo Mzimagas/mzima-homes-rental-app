@@ -221,13 +221,13 @@ export default function PermissionAssignmentModal({
                         </Button>
                       </div>
 
-                      {/* Detail Permissions */}
-                      {isExpanded && (
+                      {/* Detail Permissions - Only show for sections that have detail permissions */}
+                      {isExpanded && section.section !== 'audit_trail' && (
                         <div className="p-3 border-t border-gray-200">
-                          <h6 className="text-sm font-medium text-gray-700 mb-2">Detail Permissions</h6>
-                          <div className="grid grid-cols-2 gap-3">
+                          <h6 className="text-sm font-medium text-gray-700 mb-3">Detail Permissions</h6>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {DEFAULT_DETAIL_PERMISSIONS.map(detail => (
-                              <div key={detail} className="flex items-center justify-between">
+                              <div key={detail} className="flex items-center gap-2">
                                 <span className="text-sm text-gray-600 capitalize">
                                   {detail.replace('_', ' ')}
                                 </span>
@@ -247,6 +247,15 @@ export default function PermissionAssignmentModal({
                                 </select>
                               </div>
                             ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Audit Trail specific note */}
+                      {isExpanded && section.section === 'audit_trail' && (
+                        <div className="p-3 border-t border-gray-200">
+                          <div className="text-sm text-gray-600 italic">
+                            🔍 Audit trail permissions control access to system logs and audit records. No detail permissions apply.
                           </div>
                         </div>
                       )}

@@ -25,16 +25,28 @@ export const DEFAULT_DETAIL_PERMISSIONS: DetailPermission[] = [
 ]
 
 // Create default section permission
-export const createDefaultSectionPermission = (section: Section, level: PermissionLevel = 'none'): SectionPermission => ({
-  section,
-  level,
-  details: {
-    basic_info: level,
-    location: level,
-    financials: level,
-    documents: level
+export const createDefaultSectionPermission = (section: Section, level: PermissionLevel = 'none'): SectionPermission => {
+  // Audit trail doesn't have detail permissions - it's just about viewing logs
+  if (section === 'audit_trail') {
+    return {
+      section,
+      level,
+      details: {} as Record<DetailPermission, PermissionLevel>
+    }
   }
-})
+
+  // Other sections have the standard detail permissions
+  return {
+    section,
+    level,
+    details: {
+      basic_info: level,
+      location: level,
+      financials: level,
+      documents: level
+    }
+  }
+}
 
 // Create default user permissions
 export const createDefaultUserPermissions = (userId: string, email: string, isGlobal: boolean = false): UserPermissions => ({

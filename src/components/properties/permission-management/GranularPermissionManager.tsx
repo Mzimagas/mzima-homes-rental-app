@@ -116,24 +116,33 @@ export default function GranularPermissionManager() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1">
           <h2 className="text-2xl font-bold text-gray-900">Permission Management</h2>
           <p className="text-sm text-gray-600 mt-1">
             Follow the steps below to assign permissions: 1) Select scope → 2) Choose users → 3) Assign permissions
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between sm:justify-end space-x-3">
           <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-sm font-medium">3</span>
           <Button
             onClick={openAssignModal}
             disabled={!canAssignPermissions}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] px-4 py-2 text-sm sm:text-base"
+            size="md"
           >
-            {canAssignPermissions
-              ? `Assign Permissions (${selectedUsers.length} users)`
-              : 'Select Users to Assign Permissions'
-            }
+            <span className="hidden sm:inline">
+              {canAssignPermissions
+                ? `Assign Permissions (${selectedUsers.length} users)`
+                : 'Select Users to Assign Permissions'
+              }
+            </span>
+            <span className="sm:hidden">
+              {canAssignPermissions
+                ? `Assign (${selectedUsers.length})`
+                : 'Select Users'
+              }
+            </span>
           </Button>
         </div>
       </div>
