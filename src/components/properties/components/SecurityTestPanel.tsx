@@ -34,43 +34,34 @@ export default function SecurityTestPanel() {
 
   const loadUserInfo = async () => {
     try {
-      console.log('🔄 Auto-refreshing security context...')
-      let role = await RoleManagementService.getCurrentUserRole()
+      console.log('🔄 Refreshing security context...')
+      const role = await RoleManagementService.getCurrentUserRole()
       console.log('Current role:', role)
 
-      // Auto-assign default role if user has no role (better UX)
-      if (!role || role === 'viewer') {
-        console.log('No role found, attempting auto-assignment...')
-        try {
-          const { data: result, error } = await supabase.rpc('assign_default_role')
-          if (!error && result?.success) {
-            console.log('✅ Auto-assigned default role')
-            role = await RoleManagementService.getCurrentUserRole() // Refresh after assignment
-          }
-        } catch (autoAssignError) {
-          console.log('Auto-assignment not available:', autoAssignError)
+      let perms = await RoleManagementService.getCurrentUserPermissions()
+      console.log('User permissions:', perms)
+
+      // Fallback: If permissions are empty but we have a role, get permissions from role definition
+      if ((!perms || perms.length === 0) && role) {
+        console.log('Permissions empty, using fallback for role:', role)
+        const allRoles = RoleManagementService.getAllRoles()
+        const roleDefinition = allRoles.find(r => r.role === role)
+        if (roleDefinition) {
+          perms = roleDefinition.permissions
+          console.log('Fallback permissions from role definition:', perms)
         }
       }
 
-      const perms = await RoleManagementService.getCurrentUserPermissions()
-      console.log('User permissions:', perms)
-
       setUserRole(role)
-      setPermissions(perms)
+      setPermissions(perms || [])
     } catch (error) {
       console.error('Error loading user info:', error)
     }
   }
 
-  // Auto-refresh user info on component mount and periodically
+  // Load user info once on component mount
   React.useEffect(() => {
     loadUserInfo()
-
-    // Auto-refresh every 30 seconds to keep security context current
-    const interval = setInterval(loadUserInfo, 30000)
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval)
   }, [])
 
   const testFieldSecurity = async () => {
@@ -214,37 +205,136 @@ export default function SecurityTestPanel() {
 
   const simulateSecurityEvent = async () => {
     try {
-      // Create a test audit log entry to demonstrate the system
-      const { data: { user } } = await supabase.auth.getUser()
+      console.log('🔒 Starting security event simulation...')
+
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) {
+        console.error('Authentication error:', authError)
+        alert(`Authentication error: ${authError.message}`)
+        return
+      }
+
       if (!user) {
         alert('Please log in first')
         return
       }
 
+      console.log('User authenticated:', user.email)
+
       // Generate a valid UUID for the test
       const testPurchaseId = '00000000-0000-0000-0000-' + Date.now().toString().padStart(12, '0').slice(-12)
+      console.log('Generated test purchase ID:', testPurchaseId)
 
-      const { error } = await supabase
+      // First, check if the table exists and is accessible
+      const { data: testQuery, error: testError } = await supabase
         .from('purchase_pipeline_audit_log')
-        .insert({
-          purchase_id: testPurchaseId,
-          operation_type: 'UPDATE',
-          changed_fields: ['security_test'],
-          old_values: { security_test: 'before' },
-          new_values: { security_test: 'after' },
-          changed_by: user.id,
-          requires_approval: true
-        })
+        .select('id')
+        .limit(1)
 
-      if (error) {
-        console.error('Error simulating security event:', error)
-        alert(`Failed to simulate security event: ${error.message}`)
+      if (testError) {
+        console.error('Table access test failed:', testError)
+        alert(`Cannot access audit log table: ${testError.message}\n\nThis might be due to:\n- Table doesn't exist\n- Permission issues\n- RLS policies blocking access`)
+        return
+      }
+
+      console.log('Table access test passed')
+
+      // Try to insert the test event
+      const insertData = {
+        purchase_id: testPurchaseId,
+        operation_type: 'UPDATE',
+        changed_fields: ['security_test'],
+        old_values: { security_test: 'before' },
+        new_values: { security_test: 'after' },
+        changed_by: user.id,
+        requires_approval: true
+      }
+
+      console.log('Attempting to insert:', insertData)
+
+      const { data: insertResult, error: insertError } = await supabase
+        .from('purchase_pipeline_audit_log')
+        .insert(insertData)
+        .select()
+
+      if (insertError) {
+        console.error('Insert error:', insertError)
+        alert(`Failed to simulate security event:\n\nError: ${insertError.message}\nCode: ${insertError.code}\n\nThis might be due to:\n- Missing required fields\n- Data type mismatches\n- RLS policies\n- Permission issues`)
       } else {
+        console.log('Insert successful:', insertResult)
         alert(`🔒 Security event simulated successfully!\n\nPurchase ID: ${testPurchaseId}\nOperation: UPDATE\nUser: ${user.email}\nRequires Approval: Yes\n\nCheck the audit trail for the new entry.`)
       }
     } catch (error) {
       console.error('Error simulating security event:', error)
-      alert('Failed to simulate security event')
+      console.error('Error details:', JSON.stringify(error, null, 2))
+
+      if (error instanceof Error) {
+        alert(`Failed to simulate security event:\n\nError: ${error.message}\n\nCheck the browser console for more details.`)
+      } else {
+        alert(`Failed to simulate security event:\n\nUnknown error occurred. Check the browser console for details.`)
+      }
+    }
+  }
+
+  // Fallback simulation method that doesn't require database access
+  const simulateSecurityEventFallback = () => {
+    const timestamp = new Date()
+    const testEvent = {
+      id: Date.now(),
+      timestamp,
+      eventType: 'INSERT',
+      table: 'purchase_pipeline_audit_log',
+      purchaseId: '00000000-0000-0000-0000-' + Date.now().toString().padStart(12, '0').slice(-12),
+      operationType: 'SIMULATION',
+      changedBy: 'current_user',
+      requiresApproval: true
+    }
+
+    // Add to real-time events feed for demonstration
+    setRealtimeEvents(prev => [testEvent, ...prev.slice(0, 9)])
+
+    alert(`🔒 Security Event Simulated (Demo Mode)!\n\nEvent Type: ${testEvent.eventType}\nOperation: ${testEvent.operationType}\nPurchase ID: ${testEvent.purchaseId}\nTime: ${timestamp.toLocaleTimeString()}\n\nThis is a demonstration event added to the live feed.`)
+  }
+
+  // Debug function to test permission loading specifically
+  const debugPermissions = async () => {
+    try {
+      console.log('🔍 Debug: Testing permission loading...')
+
+      // Test 1: Get current user role
+      const role = await RoleManagementService.getCurrentUserRole()
+      console.log('Debug - Current role:', role)
+
+      // Test 2: Get all role definitions
+      const allRoles = RoleManagementService.getAllRoles()
+      console.log('Debug - All role definitions:', allRoles)
+
+      // Test 3: Find role definition for current role
+      const roleDefinition = allRoles.find(r => r.role === role)
+      console.log('Debug - Role definition for', role, ':', roleDefinition)
+
+      // Test 4: Get permissions via service
+      const perms = await RoleManagementService.getCurrentUserPermissions()
+      console.log('Debug - Permissions from service:', perms)
+
+      // Test 5: Get permissions directly from role definition
+      const directPerms = roleDefinition?.permissions || []
+      console.log('Debug - Permissions from definition:', directPerms)
+
+      // Update UI with direct permissions if service fails
+      if (perms && perms.length > 0) {
+        setPermissions(perms)
+        alert(`✅ Permissions loaded via service:\n${perms.join(', ')}`)
+      } else if (directPerms.length > 0) {
+        setPermissions(directPerms)
+        alert(`✅ Permissions loaded via fallback:\n${directPerms.join(', ')}`)
+      } else {
+        alert('❌ No permissions found. Check console for details.')
+      }
+    } catch (error) {
+      console.error('Debug permissions error:', error)
+      alert('❌ Permission debug failed. Check console for details.')
     }
   }
 
@@ -265,76 +355,107 @@ export default function SecurityTestPanel() {
             onClick={loadUserInfo}
             variant="outline"
             disabled={testing}
-            className="bg-green-50 hover:bg-green-100 border-green-200"
+            className="bg-white hover:bg-blue-50 border-2 border-blue-500 text-blue-700 hover:text-blue-800 font-medium shadow-sm relative z-10"
           >
-            🔄 Refresh Now
+            <span className="relative z-20">🔄 Refresh Security Context</span>
           </Button>
 
-          <Button
-            onClick={runSecurityTests}
-            disabled={testing}
-            className="bg-purple-50 hover:bg-purple-100 border-purple-200"
-          >
-            {testing ? '⏳ Running Tests...' : '🧪 Run Security Tests'}
-          </Button>
+          {/* Security Tests - Admin/Development Only */}
+          {(userRole === 'admin' || process.env.NODE_ENV === 'development') && (
+            <Button
+              onClick={runSecurityTests}
+              disabled={testing}
+              className="bg-white hover:bg-purple-50 border-2 border-purple-500 text-purple-700 hover:text-purple-800 font-medium shadow-sm relative z-10"
+            >
+              <span className="relative z-20">
+                {testing ? '⏳ Running Tests...' : '🧪 Security Tests (Admin)'}
+              </span>
+            </Button>
+          )}
 
           <Button
             onClick={generateSecurityReport}
             variant="outline"
             disabled={testing}
-            className="bg-orange-50 hover:bg-orange-100 border-orange-200"
+            className="bg-white hover:bg-orange-50 border-2 border-orange-500 text-orange-700 hover:text-orange-800 font-medium shadow-sm relative z-10"
           >
-            📊 Security Report
+            <span className="relative z-20">📊 Security Report</span>
           </Button>
 
-          <Button
-            onClick={testFieldSecurity}
-            variant="outline"
-            disabled={testing}
-            className="bg-cyan-50 hover:bg-cyan-100 border-cyan-200"
-          >
-            🛡️ Test Field Security
-          </Button>
+          {/* Field Security Tests - Admin/Development Only */}
+          {(userRole === 'admin' || process.env.NODE_ENV === 'development') && (
+            <Button
+              onClick={testFieldSecurity}
+              variant="outline"
+              disabled={testing}
+              className="bg-white hover:bg-teal-50 border-2 border-teal-500 text-teal-700 hover:text-teal-800 font-medium shadow-sm relative z-10"
+            >
+              <span className="relative z-20">🛡️ Field Security (Admin)</span>
+            </Button>
+          )}
 
           {!realtimeMonitoring ? (
             <Button
               onClick={startRealtimeMonitoring}
               variant="outline"
               disabled={testing}
-              className="bg-red-50 hover:bg-red-100 border-red-200 relative"
+              className="bg-white hover:bg-red-50 border-2 border-red-500 text-red-700 hover:text-red-800 font-medium shadow-sm relative z-10"
             >
-              📡 Start Live Monitoring
+              <span className="relative z-20">📡 Start Live Monitoring</span>
             </Button>
           ) : (
             <Button
               onClick={stopRealtimeMonitoring}
               variant="outline"
-              className="bg-red-100 hover:bg-red-200 border-red-300 relative animate-pulse"
+              className="bg-red-50 hover:bg-red-100 border-2 border-red-500 text-red-700 hover:text-red-800 font-medium shadow-sm relative z-10 animate-pulse"
             >
-              <span className="flex items-center space-x-1">
+              <span className="flex items-center space-x-1 relative z-20">
                 <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
                 <span>🔴 LIVE ({realtimeEvents.length})</span>
               </span>
             </Button>
           )}
 
-          <Button
-            onClick={simulateSecurityEvent}
-            variant="outline"
-            disabled={testing}
-            className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200"
-          >
-            ⚡ Simulate Event
-          </Button>
+          {/* Development/Admin Tools */}
+          {(userRole === 'admin' || process.env.NODE_ENV === 'development') && (
+            <>
+              <Button
+                onClick={simulateSecurityEvent}
+                variant="outline"
+                disabled={testing}
+                className="bg-white hover:bg-amber-50 border-2 border-amber-500 text-amber-700 hover:text-amber-800 font-medium shadow-sm relative z-10"
+              >
+                <span className="relative z-20">⚡ Simulate Event</span>
+              </Button>
 
-          <Button
-            onClick={debugUserInfo}
-            variant="outline"
-            disabled={testing}
-            className="bg-gray-50 hover:bg-gray-100 border-gray-200"
-          >
-            🔍 Debug Info
-          </Button>
+              <Button
+                onClick={simulateSecurityEventFallback}
+                variant="outline"
+                disabled={testing}
+                className="bg-white hover:bg-green-50 border-2 border-green-500 text-green-700 hover:text-green-800 font-medium shadow-sm relative z-10"
+              >
+                <span className="relative z-20">🎭 Demo Event</span>
+              </Button>
+
+              <Button
+                onClick={debugUserInfo}
+                variant="outline"
+                disabled={testing}
+                className="bg-white hover:bg-slate-50 border-2 border-slate-500 text-slate-700 hover:text-slate-800 font-medium shadow-sm relative z-10"
+              >
+                <span className="relative z-20">🔍 Debug Info</span>
+              </Button>
+
+              <Button
+                onClick={debugPermissions}
+                variant="outline"
+                disabled={testing}
+                className="bg-white hover:bg-indigo-50 border-2 border-indigo-500 text-indigo-700 hover:text-indigo-800 font-medium shadow-sm relative z-10"
+              >
+                <span className="relative z-20">🔑 Fix Permissions</span>
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -346,8 +467,8 @@ export default function SecurityTestPanel() {
             <h4 className="font-medium text-green-900 mb-2">✅ Security Role Active</h4>
             <div className="text-sm text-green-800">
               <p><strong>Role:</strong> {userRole}</p>
-              <p><strong>Permissions:</strong> {permissions.length > 0 ? permissions.join(', ') : 'Loading...'}</p>
-              <p className="mt-2 text-xs">🔄 Auto-refreshes every 30 seconds | Security system active</p>
+              <p><strong>Permissions:</strong> {permissions.length > 0 ? permissions.join(', ') : 'No permissions loaded'}</p>
+              <p className="mt-2 text-xs">Security system active and ready for use</p>
             </div>
           </div>
         ) : (
@@ -355,8 +476,7 @@ export default function SecurityTestPanel() {
             <h4 className="font-medium text-yellow-900 mb-2">⚠️ No Security Role Found</h4>
             <div className="text-sm text-yellow-800">
               <p>No active security role detected for your account.</p>
-              <p className="mt-1">🔄 Auto-checking every 30 seconds for role updates...</p>
-              <p className="mt-1 text-xs">Contact your administrator if you need role assignment.</p>
+              <p className="mt-1 text-xs">Click "Refresh Now" to check for role updates or contact your administrator.</p>
             </div>
           </div>
         )}

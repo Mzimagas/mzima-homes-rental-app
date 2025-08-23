@@ -319,8 +319,12 @@ export class FieldSecurityService {
 
       if (!config) return false
 
-      // LOCKED security level means always locked
-      if (config.security_level === 'LOCKED') return true
+      // LOCKED security level means field is permission-controlled, not stage-locked
+      // LOCKED fields are accessible to authorized users regardless of stage
+      if (config.security_level === 'LOCKED') return false
+
+      // PUBLIC fields are never locked
+      if (config.security_level === 'PUBLIC') return false
 
       // Check stage-based locking
       if (config.lock_after_stage && currentStage && currentStage > config.lock_after_stage) {

@@ -9,7 +9,7 @@ import PropertiesTab from './components/PropertiesTab'
 import HandoverPipelineManager from './components/HandoverPipelineManager'
 import AuditTrailDashboard from './components/AuditTrailDashboard'
 import SecurityTestPanel from './components/SecurityTestPanel'
-import AdvancedRoleManager from './components/AdvancedRoleManager'
+import GranularPermissionManager from './components/GranularPermissionManager'
 import { RoleManagementService } from '../../lib/auth/role-management.service'
 
 import { PropertyManagementService } from './services/property-management.service'
@@ -185,6 +185,20 @@ export default function PropertyManagementTabs({
           />
         )}
 
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
+                <p className="text-gray-600">Manage user permissions, access control, and role assignments</p>
+              </div>
+            </div>
+
+            {/* Section-Based Permission Management */}
+            <GranularPermissionManager />
+          </div>
+        )}
+
         {activeTab === 'audit' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -196,9 +210,6 @@ export default function PropertyManagementTabs({
 
             {/* Security Test Panel */}
             <SecurityTestPanel />
-
-            {/* Advanced Role Manager */}
-            <AdvancedRoleManager />
 
             {/* Audit Trail Dashboard */}
             <AuditTrailDashboard userRole={userRole} />

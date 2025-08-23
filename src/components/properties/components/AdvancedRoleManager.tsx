@@ -30,6 +30,18 @@ export default function AdvancedRoleManager() {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [error, setError] = useState<string>('')
   const [demoMode, setDemoMode] = useState(false)
+  const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set())
+
+  // Toggle role expansion
+  const toggleRoleExpansion = (roleId: string) => {
+    const newExpanded = new Set(expandedRoles)
+    if (newExpanded.has(roleId)) {
+      newExpanded.delete(roleId)
+    } else {
+      newExpanded.add(roleId)
+    }
+    setExpandedRoles(newExpanded)
+  }
 
   useEffect(() => {
     loadData()
@@ -361,24 +373,77 @@ export default function AdvancedRoleManager() {
         )}
       </div>
 
-      {/* Role Definitions Reference */}
-      <div className="mt-8 pt-6 border-t">
-        <h4 className="font-medium text-gray-900 mb-4">Available Roles & Permissions</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {availableRoles.slice(0, 6).map(role => (
-            <div key={role.role} className="p-3 border rounded-lg">
-              <div className="flex items-center space-x-2 mb-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(role.role)}`}>
-                  {role.display_name}
-                </span>
-                <span className="text-xs text-gray-500">Level {role.hierarchy_level}</span>
+      {/* Role Definitions Reference - Compact with Expandable Permissions */}
+      <div className="mt-6 pt-4 border-t">
+        <h4 className="font-medium text-gray-900 mb-3 text-base sm:text-lg">Available Roles & Permissions</h4>
+        <div className="space-y-2">
+          {availableRoles.slice(0, 6).map(role => {
+            const isExpanded = expandedRoles.has(role.role)
+
+            return (
+              <div key={role.role} className="border rounded-lg bg-gray-50">
+                {/* Compact Row */}
+                <div
+                  className="p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => toggleRoleExpansion(role.role)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(role.role)}`}>
+                          {role.display_name}
+                        </span>
+                        <span className="text-xs text-gray-500">L{role.hierarchy_level}</span>
+                        <span className="text-xs text-blue-600 font-medium">
+                          {role.permissions.length} perms
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">{role.description}</p>
+                    </div>
+                    <div className="ml-2 flex-shrink-0">
+                      <span className={`text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                        ▼
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expandable Permissions */}
+                {isExpanded && (
+                  <div className="px-3 pb-3 border-t border-gray-200 bg-white">
+                    <div className="pt-3">
+                      <h5 className="text-xs font-semibold text-gray-800 uppercase tracking-wide mb-2">
+                        Permissions ({role.permissions.length}):
+                      </h5>
+                      {/* Mobile: Vertical list */}
+                      <div className="block sm:hidden space-y-1">
+                        {role.permissions.map(permission => (
+                          <div
+                            key={permission}
+                            className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded border-l-2 border-blue-300"
+                          >
+                            • {permission === '*' ? '🔓 ALL PERMISSIONS' : permission.replace(/_/g, ' ')}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Desktop: Badge layout */}
+                      <div className="hidden sm:flex flex-wrap gap-1">
+                        {role.permissions.map(permission => (
+                          <span
+                            key={permission}
+                            className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-mono"
+                            title={permission}
+                          >
+                            {permission === '*' ? '🔓 ALL PERMISSIONS' : permission.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="text-sm text-gray-600 mb-2">{role.description}</p>
-              <div className="text-xs text-gray-500">
-                {role.permissions.length} permissions
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>

@@ -11,7 +11,7 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
       <h2 className="text-xl font-bold text-gray-900 mb-3 text-center">Property Management Workflows</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-2">
         {/* Direct Addition */}
         <button
           onClick={() => onTabChange('properties')}
@@ -80,6 +80,24 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
             <div>
               <h3 className={`font-bold text-base transition-colors ${activeTab === 'handover' ? 'text-purple-900' : 'text-purple-800'}`}>Property Handover</h3>
               <p className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'handover' ? 'text-purple-700' : 'text-purple-600'}`}>Manage financial settlements and property handover processes</p>
+            </div>
+          </div>
+        </button>
+
+        {/* User Management */}
+        <button
+          onClick={() => onTabChange('users')}
+          className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
+            activeTab === 'users'
+              ? 'from-teal-100 to-cyan-100 border-teal-400 shadow-md ring-2 ring-teal-300 ring-opacity-50 scale-102'
+              : 'from-teal-50 to-cyan-50 border-teal-200 hover:shadow-md hover:from-teal-100 hover:to-cyan-100'
+          }`}
+        >
+          <div className="flex flex-col items-center text-center space-y-1">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'users' ? 'bg-teal-200' : 'bg-teal-100'}`}>👥</div>
+            <div>
+              <h3 className={`font-bold text-base transition-colors ${activeTab === 'users' ? 'text-teal-900' : 'text-teal-800'}`}>User Management</h3>
+              <p className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'users' ? 'text-teal-700' : 'text-teal-600'}`}>Manage user permissions and access control</p>
             </div>
           </div>
         </button>
