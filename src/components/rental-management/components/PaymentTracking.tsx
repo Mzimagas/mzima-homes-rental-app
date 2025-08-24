@@ -10,6 +10,9 @@ import { RentalManagementService } from '../services/rental-management.service'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import PaymentAnalytics from '../../payments/payment-analytics'
+import RentBalancesSection from '../../payments/rent-balances-section'
+import UtilitiesSection from '../../payments/utilities-section'
 
 interface PaymentTrackingProps {
   onDataChange?: () => void
@@ -35,6 +38,7 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [tenants, setTenants] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<'tracking' | 'analytics' | 'rent' | 'utilities'>('tracking')
 
   const {
     register,
@@ -95,15 +99,43 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Payment Tracking</h2>
-          <p className="text-sm text-gray-500">Track rent payments and collection</p>
+          <h2 className="text-xl font-semibold text-gray-900">Payment Management</h2>
+          <p className="text-sm text-gray-500">Comprehensive payment tracking and analytics</p>
         </div>
         <Button variant="primary" onClick={() => setShowPaymentModal(true)}>
           Record Payment
         </Button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {[
+            { key: 'tracking', label: 'Payment Tracking', icon: '💳' },
+            { key: 'analytics', label: 'Analytics', icon: '📊' },
+            { key: 'rent', label: 'Rent Balances', icon: '🏠' },
+            { key: 'utilities', label: 'Utility Balances', icon: '⚡' }
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as any)}
+              className={`${
+                activeTab === tab.key
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'tracking' && (
+        <>
+          {/* Search and Filters */}
       <div className="flex space-x-4">
         <div className="flex-1">
           <TextField
@@ -344,6 +376,29 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
           </div>
         </form>
       </Modal>
+        </>
+      )}
+
+      {/* Analytics Tab */}
+      {activeTab === 'analytics' && (
+        <div className="space-y-6">
+          <PaymentAnalytics />
+        </div>
+      )}
+
+      {/* Rent Balances Tab */}
+      {activeTab === 'rent' && (
+        <div className="space-y-6">
+          <RentBalancesSection />
+        </div>
+      )}
+
+      {/* Utilities Tab */}
+      {activeTab === 'utilities' && (
+        <div className="space-y-6">
+          <UtilitiesSection />
+        </div>
+      )}
     </div>
   )
 }

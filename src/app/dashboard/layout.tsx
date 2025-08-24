@@ -10,7 +10,6 @@ const baseNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: 'home' },
   { name: 'Properties', href: '/dashboard/properties', icon: 'building' },
   { name: 'Rental Management', href: '/dashboard/rental-management', icon: 'rental' },
-  { name: 'Payments', href: '/dashboard/payments', icon: 'credit-card' },
   { name: 'Accounting', href: '/dashboard/accounting', icon: 'calculator' },
   { name: 'Maintenance', href: '/dashboard/maintenance', icon: 'wrench' },
   { name: 'Documents', href: '/dashboard/documents', icon: 'document' },
