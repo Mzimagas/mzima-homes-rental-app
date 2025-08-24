@@ -9,7 +9,6 @@ import LeaseManagement from './components/LeaseManagement'
 import PaymentTracking from './components/PaymentTracking'
 import MaintenanceManagement from './components/MaintenanceManagement'
 import PropertyInspections from './components/PropertyInspections'
-import FinancialReports from './components/FinancialReports'
 import { RentalManagementTab } from './types/rental-management.types'
 
 interface RentalManagementTabsProps {
@@ -36,7 +35,6 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
     { id: 'payments', name: 'Payments', icon: '💳' },
     { id: 'maintenance', name: 'Maintenance', icon: '🔧' },
     { id: 'inspections', name: 'Inspections', icon: '🔍' },
-    { id: 'reports', name: 'Reports', icon: '📈' },
   ] as const
 
   const handleTabChange = (tabId: RentalManagementTab) => {
@@ -119,10 +117,6 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
           
           {activeTab === 'inspections' && (
             <PropertyInspections onDataChange={handleDataChange} />
-          )}
-          
-          {activeTab === 'reports' && (
-            <FinancialReports onDataChange={handleDataChange} />
           )}
         </div>
       </div>
