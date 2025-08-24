@@ -50,13 +50,8 @@ export default function TenantList({
   const hasAdminAccess = userProperties.some(p =>
     ['OWNER', 'PROPERTY_MANAGER'].includes(p.user_role)
   )
-  const newTenantHref = useMemo(() => {
-    const params = new URLSearchParams()
-    if (propertyId) params.set('propertyId', propertyId)
-    if (unitId) params.set('unitId', unitId)
-    const qs = params.toString()
-    return qs ? `/dashboard/tenants/new?${qs}` : '/dashboard/tenants/new'
-  }, [propertyId, unitId])
+  // Note: newTenantHref is no longer used since standalone tenant dashboard is removed
+  // The component now relies on onCreateTenant callback for tenant creation
 
 
 
@@ -246,7 +241,9 @@ export default function TenantList({
             New Tenant
           </button>
         ) : (
-          <Link className="ml-auto inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded" href={newTenantHref}>New Tenant</Link>
+          <div className="ml-auto text-gray-500 text-sm">
+            Tenant creation not available in this context
+          </div>
         )}
       </div>
 
@@ -289,7 +286,7 @@ export default function TenantList({
                           View
                         </button>
                       ) : (
-                        <Link className="text-blue-600 hover:underline" href={`/dashboard/tenants/${t.id}`}>View</Link>
+                        <span className="text-gray-500 text-sm">View not available</span>
                       )}
                     </td>
                   </tr>

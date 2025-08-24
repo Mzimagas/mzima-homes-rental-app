@@ -10,7 +10,6 @@ const baseNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: 'home' },
   { name: 'Properties', href: '/dashboard/properties', icon: 'building' },
   { name: 'Rental Management', href: '/dashboard/rental-management', icon: 'rental' },
-  { name: 'Tenants', href: '/dashboard/tenants', icon: 'users' },
   { name: 'Payments', href: '/dashboard/payments', icon: 'credit-card' },
   { name: 'Accounting', href: '/dashboard/accounting', icon: 'calculator' },
   { name: 'Maintenance', href: '/dashboard/maintenance', icon: 'wrench' },
@@ -115,7 +114,7 @@ export default function DashboardLayout({
   // Build navigation array based on permissions
   const navigation = [...baseNavigation]
   if (canManageAnyUsers) {
-    // Insert User Management after Tenants
+    // Insert User Management after Rental Management
     navigation.splice(3, 0, userManagementNavItem)
     // Insert Audit Trail immediately after User Management
     navigation.splice(4, 0, auditTrailNavItem)
@@ -243,7 +242,7 @@ export default function DashboardLayout({
                   </div>
                   <input
                     className="block w-full h-full pl-8 pr-3 py-2 border-transparent text-gray-900 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-0 focus:border-transparent sm:text-sm"
-                    placeholder="Search properties, tenants..."
+                    placeholder="Search properties..."
                     type="search"
                   />
                 </div>

@@ -183,8 +183,8 @@ export default function TenantDetail({ id }: { id: string }) {
           ) : (
             // Show normal actions for active tenants
             <>
-              <Link className="px-3 py-2 rounded border" href={`/dashboard/tenants/${id}/edit`}>Edit</Link>
-              <Link className="px-3 py-2 rounded border" href={`/dashboard/tenants/${id}/move`}>Move Tenant</Link>
+              <span className="px-3 py-2 rounded border text-gray-500">Edit (use inline management)</span>
+              <span className="px-3 py-2 rounded border text-gray-500">Move (use inline management)</span>
               <button className="px-3 py-2 rounded border text-red-600" onClick={onDelete}>Delete</button>
             </>
           )}
