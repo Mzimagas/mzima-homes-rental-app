@@ -17,18 +17,26 @@ interface TenantManagementProps {
   onDataChange?: () => void
 }
 
+const phoneRegex = /^\+?[0-9\s\-()]+$/
+
 const tenantSchema = z.object({
-  full_name: z.string().min(1, 'Full name is required'),
-  phone: z.string().min(1, 'Phone number is required'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  national_id: z.string().min(1, 'National ID is required'),
-  employer: z.string().optional(),
-  emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().optional(),
-  emergency_contact_relationship: z.string().optional(),
-  emergency_contact_email: z.string().email('Invalid email').optional().or(z.literal('')),
-  notes: z.string().optional(),
-})
+  full_name: z.string().min(1, 'Full name is required').max(120),
+  phone: z.string().min(1, 'Phone is required').regex(phoneRegex, 'Enter a valid phone number'),
+  alternate_phone: z.string().regex(phoneRegex, 'Enter a valid phone number').optional().or(z.literal('')),
+  email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+  national_id: z.string().min(1, 'National ID is required').max(40),
+  employer: z.string().max(120).optional().or(z.literal('')),
+  emergency_contact_name: z.string().max(120).optional().or(z.literal('')),
+  emergency_contact_phone: z.string().regex(phoneRegex, 'Enter a valid phone number').optional().or(z.literal('')),
+  emergency_contact_relationship: z.string().max(60).optional().or(z.literal('')),
+  emergency_contact_email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+}).refine((val) => {
+  // Emergency contact name and phone should be provided together
+  const hasName = !!val.emergency_contact_name
+  const hasPhone = !!val.emergency_contact_phone
+  return (hasName && hasPhone) || (!hasName && !hasPhone)
+}, { message: 'Emergency contact name and phone must be provided together', path: ['emergency_contact_name'] })
 
 export default function TenantManagement({ onDataChange }: TenantManagementProps) {
   const [tenants, setTenants] = useState<RentalTenant[]>([])
@@ -308,9 +316,14 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
         .update({
           full_name: data.full_name,
           phone: data.phone,
+          alternate_phone: data.alternate_phone,
           email: data.email,
-          id_number: data.id_number,
-          emergency_contact: data.emergency_contact,
+          national_id: data.national_id,
+          employer: data.employer,
+          emergency_contact_name: data.emergency_contact_name,
+          emergency_contact_phone: data.emergency_contact_phone,
+          emergency_contact_relationship: data.emergency_contact_relationship,
+          emergency_contact_email: data.emergency_contact_email,
           notes: data.notes
         })
         .eq('id', editingTenant.id)
@@ -495,74 +508,172 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
         }}
         title="Add New Tenant"
       >
-        <form onSubmit={handleSubmit(handleAddTenant)} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TextField
-              label="Full Name *"
-              {...register('full_name')}
-              error={errors.full_name?.message}
-            />
-            <TextField
-              label="Phone Number *"
-              {...register('phone')}
-              error={errors.phone?.message}
-            />
-            <TextField
-              label="Email"
-              type="email"
-              {...register('email')}
-              error={errors.email?.message}
-            />
-            <TextField
-              label="National ID *"
-              {...register('national_id')}
-              error={errors.national_id?.message}
-            />
-            <TextField
-              label="Employer"
-              {...register('employer')}
-              error={errors.employer?.message}
-            />
-          </div>
-
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Emergency Contact</h4>
+        <form onSubmit={handleSubmit(handleAddTenant)} className="p-6 space-y-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <TextField
-                label="Contact Name"
-                {...register('emergency_contact_name')}
-                error={errors.emergency_contact_name?.message}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name <span className="text-red-600">*</span>
+                </label>
+                <input
+                  {...register('full_name')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter full name"
+                />
+                {errors.full_name && (
+                  <p className="text-xs text-red-600 mt-1">{errors.full_name.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone <span className="text-red-600">*</span>
+                </label>
+                <input
+                  {...register('phone')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter phone number"
+                />
+                {errors.phone && (
+                  <p className="text-xs text-red-600 mt-1">{errors.phone.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Alternate Phone (optional)
+                </label>
+                <input
+                  {...register('alternate_phone')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter alternate phone number"
+                />
+                {errors.alternate_phone && (
+                  <p className="text-xs text-red-600 mt-1">{errors.alternate_phone.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  {...register('email')}
+                  type="email"
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter email address"
+                />
+                {errors.email && (
+                  <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  National ID <span className="text-red-600">*</span>
+                </label>
+                <input
+                  {...register('national_id')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter national ID number"
+                />
+                {errors.national_id && (
+                  <p className="text-xs text-red-600 mt-1">{errors.national_id.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employer</label>
+                <input
+                  {...register('employer')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter employer name"
+                />
+                {errors.employer && (
+                  <p className="text-xs text-red-600 mt-1">{errors.employer.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <textarea
+                {...register('notes')}
+                rows={3}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="e.g., employer information, special requirements, etc."
               />
-              <TextField
-                label="Contact Phone"
-                {...register('emergency_contact_phone')}
-                error={errors.emergency_contact_phone?.message}
-              />
-              <TextField
-                label="Relationship"
-                {...register('emergency_contact_relationship')}
-                error={errors.emergency_contact_relationship?.message}
-              />
-              <TextField
-                label="Contact Email"
-                type="email"
-                {...register('emergency_contact_email')}
-                error={errors.emergency_contact_email?.message}
-              />
+              {errors.notes && (
+                <p className="text-xs text-red-600 mt-1">{errors.notes.message}</p>
+              )}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-            <textarea
-              {...register('notes')}
-              rows={3}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Additional notes about the tenant..."
-            />
+          {/* Emergency Contact Information */}
+          <div className="space-y-4 border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-900">Emergency Contact Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Emergency Contact Name
+                </label>
+                <input
+                  {...register('emergency_contact_name')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter contact name"
+                />
+                {errors.emergency_contact_name && (
+                  <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_name.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Emergency Contact Phone
+                </label>
+                <input
+                  {...register('emergency_contact_phone')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter contact phone"
+                />
+                {errors.emergency_contact_phone && (
+                  <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_phone.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Emergency Contact Relationship
+                </label>
+                <input
+                  {...register('emergency_contact_relationship')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="e.g., Spouse, Parent, Sibling"
+                />
+                {errors.emergency_contact_relationship && (
+                  <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_relationship.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Emergency Contact Email (optional)
+                </label>
+                <input
+                  {...register('emergency_contact_email')}
+                  type="email"
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter contact email"
+                />
+                {errors.emergency_contact_email && (
+                  <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_email.message}</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          {/* Form Actions */}
+          <div className="flex justify-end space-x-3 pt-6 border-t">
             <Button
               type="button"
               variant="secondary"
@@ -574,7 +685,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
               Cancel
             </Button>
             <Button type="submit" variant="primary" loading={submitting}>
-              Add Tenant
+              Create Tenant
             </Button>
           </div>
         </form>
@@ -877,102 +988,183 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
         title="Edit Tenant"
       >
         {editingTenant && (
-          <form onSubmit={handleSubmit(handleUpdateTenant)} className="space-y-6">
-            {/* Full Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                {...register('full_name')}
-                defaultValue={editingTenant.full_name}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter full name"
-              />
-              {errors.full_name && (
-                <p className="text-red-500 text-sm mt-1">{errors.full_name.message}</p>
-              )}
+          <form onSubmit={handleSubmit(handleUpdateTenant)} className="p-6 space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    {...register('full_name')}
+                    defaultValue={editingTenant.full_name}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter full name"
+                  />
+                  {errors.full_name && (
+                    <p className="text-xs text-red-600 mt-1">{errors.full_name.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    {...register('phone')}
+                    defaultValue={editingTenant.phone}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter phone number"
+                  />
+                  {errors.phone && (
+                    <p className="text-xs text-red-600 mt-1">{errors.phone.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Alternate Phone (optional)
+                  </label>
+                  <input
+                    {...register('alternate_phone')}
+                    defaultValue={editingTenant.alternate_phone || ''}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter alternate phone number"
+                  />
+                  {errors.alternate_phone && (
+                    <p className="text-xs text-red-600 mt-1">{errors.alternate_phone.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    {...register('email')}
+                    type="email"
+                    defaultValue={editingTenant.email || ''}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter email address"
+                  />
+                  {errors.email && (
+                    <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    National ID <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    {...register('national_id')}
+                    defaultValue={editingTenant.national_id || ''}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter national ID number"
+                  />
+                  {errors.national_id && (
+                    <p className="text-xs text-red-600 mt-1">{errors.national_id.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employer</label>
+                  <input
+                    {...register('employer')}
+                    defaultValue={editingTenant.employer || ''}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter employer name"
+                  />
+                  {errors.employer && (
+                    <p className="text-xs text-red-600 mt-1">{errors.employer.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  {...register('notes')}
+                  defaultValue={editingTenant.notes || ''}
+                  rows={3}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="e.g., employer information, special requirements, etc."
+                />
+                {errors.notes && (
+                  <p className="text-xs text-red-600 mt-1">{errors.notes.message}</p>
+                )}
+              </div>
             </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                {...register('phone')}
-                defaultValue={editingTenant.phone}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter phone number"
-              />
-              {errors.phone && (
-                <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
-              )}
+            {/* Emergency Contact Information */}
+            <div className="space-y-4 border-t pt-6">
+              <h3 className="text-lg font-medium text-gray-900">Emergency Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Emergency Contact Name
+                  </label>
+                  <input
+                    {...register('emergency_contact_name')}
+                    defaultValue={editingTenant.emergency_contact_name || ''}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter contact name"
+                  />
+                  {errors.emergency_contact_name && (
+                    <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_name.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Emergency Contact Phone
+                  </label>
+                  <input
+                    {...register('emergency_contact_phone')}
+                    defaultValue={editingTenant.emergency_contact_phone || ''}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter contact phone"
+                  />
+                  {errors.emergency_contact_phone && (
+                    <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_phone.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Emergency Contact Relationship
+                  </label>
+                  <input
+                    {...register('emergency_contact_relationship')}
+                    defaultValue={editingTenant.emergency_contact_relationship || ''}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="e.g., Spouse, Parent, Sibling"
+                  />
+                  {errors.emergency_contact_relationship && (
+                    <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_relationship.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Emergency Contact Email (optional)
+                  </label>
+                  <input
+                    {...register('emergency_contact_email')}
+                    type="email"
+                    defaultValue={editingTenant.emergency_contact_email || ''}
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter contact email"
+                  />
+                  {errors.emergency_contact_email && (
+                    <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_email.message}</p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                {...register('email')}
-                defaultValue={editingTenant.email || ''}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter email address"
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* ID Number */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                ID Number
-              </label>
-              <input
-                type="text"
-                {...register('id_number')}
-                defaultValue={editingTenant.id_number || ''}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter ID number"
-              />
-            </div>
-
-            {/* Emergency Contact */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Emergency Contact
-              </label>
-              <input
-                type="text"
-                {...register('emergency_contact')}
-                defaultValue={editingTenant.emergency_contact || ''}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter emergency contact"
-              />
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notes
-              </label>
-              <textarea
-                {...register('notes')}
-                defaultValue={editingTenant.notes || ''}
-                rows={3}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Additional notes about the tenant"
-              />
-            </div>
-
-            {/* Submit Buttons */}
-            <div className="flex space-x-3">
+            {/* Form Actions */}
+            <div className="flex justify-end space-x-3 pt-6 border-t">
               <Button
                 type="button"
                 variant="secondary"
@@ -981,17 +1173,11 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   setEditingTenant(null)
                   reset()
                 }}
-                className="flex-1"
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={submitting}
-                className="flex-1"
-              >
-                {submitting ? 'Updating...' : 'Update Tenant'}
+              <Button type="submit" variant="primary" loading={submitting}>
+                Update Tenant
               </Button>
             </div>
           </form>

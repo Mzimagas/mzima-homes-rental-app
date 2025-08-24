@@ -234,6 +234,7 @@ export interface RentalPropertyFormData {
 export interface TenantFormData {
   full_name: string
   phone: string
+  alternate_phone?: string
   email?: string
   national_id: string
   employer?: string
