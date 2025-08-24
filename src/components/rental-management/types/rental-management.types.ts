@@ -215,7 +215,6 @@ export type RentalManagementTab =
   | 'maintenance'
   | 'inspections'
   | 'reports'
-  | 'documents'
 
 // Form types
 export interface RentalPropertyFormData {
