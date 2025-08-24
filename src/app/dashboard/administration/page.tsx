@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import { usePropertyAccess } from '../../../lib/property-access-context'
+import { usePropertyAccess } from '../../../hooks/usePropertyAccess'
 
 // Import administration components (to be created)
 import UserManagement from '../../../components/administration/UserManagement'
