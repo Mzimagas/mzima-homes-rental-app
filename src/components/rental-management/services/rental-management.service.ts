@@ -354,4 +354,104 @@ export class RentalManagementService {
       throw new Error('Failed to load rent roll')
     }
   }
+
+  // Payment methods (placeholder implementations)
+  static async getPayments(): Promise<any[]> {
+    try {
+      // TODO: Implement when payments table is ready
+      return []
+    } catch (error) {
+      console.error('Error getting payments:', error)
+      throw new Error('Failed to load payments')
+    }
+  }
+
+  static async createPayment(paymentData: any): Promise<any> {
+    try {
+      // TODO: Implement when payments table is ready
+      console.log('Payment data to be saved:', paymentData)
+      return { id: 'temp-id', ...paymentData }
+    } catch (error) {
+      console.error('Error creating payment:', error)
+      throw new Error('Failed to create payment')
+    }
+  }
+
+  // Inspection methods (placeholder implementations)
+  static async getInspections(): Promise<any[]> {
+    try {
+      // TODO: Implement when inspections table is ready
+      return []
+    } catch (error) {
+      console.error('Error getting inspections:', error)
+      throw new Error('Failed to load inspections')
+    }
+  }
+
+  static async createInspection(inspectionData: any): Promise<any> {
+    try {
+      // TODO: Implement when inspections table is ready
+      console.log('Inspection data to be saved:', inspectionData)
+      return { id: 'temp-id', ...inspectionData }
+    } catch (error) {
+      console.error('Error creating inspection:', error)
+      throw new Error('Failed to create inspection')
+    }
+  }
+
+  // Document methods (placeholder implementations)
+  static async getDocuments(): Promise<any[]> {
+    try {
+      // TODO: Implement when documents table and Supabase Storage are ready
+      return []
+    } catch (error) {
+      console.error('Error getting documents:', error)
+      throw new Error('Failed to load documents')
+    }
+  }
+
+  static async uploadDocument(file: File, metadata: any): Promise<any> {
+    try {
+      // TODO: Implement Supabase Storage upload
+      console.log('Document to be uploaded:', file.name, metadata)
+      return { id: 'temp-id', name: file.name, ...metadata }
+    } catch (error) {
+      console.error('Error uploading document:', error)
+      throw new Error('Failed to upload document')
+    }
+  }
+
+  // Report generation methods (placeholder implementations)
+  static async generateIncomeStatement(propertyId?: string, dateRange?: string): Promise<any> {
+    try {
+      // TODO: Implement income statement generation
+      console.log('Generating income statement for:', propertyId, dateRange)
+      return { type: 'income_statement', data: {} }
+    } catch (error) {
+      console.error('Error generating income statement:', error)
+      throw new Error('Failed to generate income statement')
+    }
+  }
+
+  static async generateCashFlowReport(propertyId?: string, dateRange?: string): Promise<any> {
+    try {
+      // TODO: Implement cash flow report generation
+      console.log('Generating cash flow report for:', propertyId, dateRange)
+      return { type: 'cash_flow', data: {} }
+    } catch (error) {
+      console.error('Error generating cash flow report:', error)
+      throw new Error('Failed to generate cash flow report')
+    }
+  }
+
+  static async generateVacancyReport(propertyId?: string, dateRange?: string): Promise<any> {
+    try {
+      // TODO: Implement vacancy report generation
+      console.log('Generating vacancy report for:', propertyId, dateRange)
+      return { type: 'vacancy_report', data: {} }
+    } catch (error) {
+      console.error('Error generating vacancy report:', error)
+      throw new Error('Failed to generate vacancy report')
+    }
+  }
 }
