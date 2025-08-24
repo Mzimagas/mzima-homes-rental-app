@@ -8,6 +8,7 @@ import Modal from '../../ui/Modal'
 import { LeaseAgreement, LeaseFormData } from '../types/rental-management.types'
 import { RentalManagementService } from '../services/rental-management.service'
 import { UnitAllocationService } from '../services/unit-allocation.service'
+import { ConflictPreventionService, ConflictCheckResult } from '../services/conflict-prevention.service'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -48,6 +49,9 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
     availableFrom?: string;
   }>>({})
   const [loadingAvailability, setLoadingAvailability] = useState(false)
+  const [conflictCheck, setConflictCheck] = useState<ConflictCheckResult | null>(null)
+  const [showConflictModal, setShowConflictModal] = useState(false)
+  const [checkingConflicts, setCheckingConflicts] = useState(false)
 
   const {
     register,
@@ -198,9 +202,46 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
     }
   }
 
+  const checkForConflicts = async (data: LeaseFormData) => {
+    try {
+      setCheckingConflicts(true)
+
+      const conflictResult = await ConflictPreventionService.checkAllocationConflicts({
+        tenantId: data.tenant_id,
+        unitId: data.unit_id,
+        startDate: data.start_date,
+        endDate: data.end_date,
+        monthlyRent: data.monthly_rent_kes,
+        notes: data.notes
+      })
+
+      setConflictCheck(conflictResult)
+
+      if (conflictResult.hasConflicts) {
+        setShowConflictModal(true)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error checking conflicts:', error)
+      setError('Failed to check for conflicts')
+      return false
+    } finally {
+      setCheckingConflicts(false)
+    }
+  }
+
   const handleAddLease = async (data: LeaseFormData) => {
     try {
       setSubmitting(true)
+
+      // First check for conflicts
+      const canProceed = await checkForConflicts(data)
+      if (!canProceed) {
+        setSubmitting(false)
+        return
+      }
 
       // Use atomic allocation service
       const result = await UnitAllocationService.allocateUnitToTenant(
@@ -225,6 +266,42 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
       onDataChange?.()
     } catch (err: any) {
       console.error('Error creating lease:', err)
+      setError(err.message || 'Failed to create lease agreement')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const proceedWithConflicts = async () => {
+    if (!conflictCheck) return
+
+    try {
+      setSubmitting(true)
+      setShowConflictModal(false)
+
+      // Get form data
+      const formData = getValues()
+
+      // Use atomic allocation service with override
+      const result = await UnitAllocationService.allocateUnitToTenant(
+        formData.tenant_id,
+        formData.unit_id,
+        formData
+      )
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create lease agreement')
+      }
+
+      alert('Lease created successfully despite conflicts!')
+
+      await loadLeases()
+      setShowAddLeaseModal(false)
+      reset()
+      resetForm()
+      onDataChange?.()
+    } catch (err: any) {
+      console.error('Error creating lease with conflicts:', err)
       setError(err.message || 'Failed to create lease agreement')
     } finally {
       setSubmitting(false)
@@ -595,19 +672,151 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
             <Button
               type="submit"
               variant="primary"
-              loading={submitting}
+              loading={submitting || checkingConflicts}
               disabled={
                 submitting ||
+                checkingConflicts ||
                 !selectedUnit ||
                 !selectedTenant ||
                 !startDate ||
                 (selectedUnit && unitAvailability[selectedUnit] && !unitAvailability[selectedUnit].available)
               }
             >
-              Create Lease
+              {checkingConflicts ? 'Checking Conflicts...' : submitting ? 'Creating...' : 'Create Lease'}
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Conflict Resolution Modal */}
+      <Modal
+        isOpen={showConflictModal}
+        onClose={() => {
+          setShowConflictModal(false)
+          setConflictCheck(null)
+        }}
+        title="Allocation Conflicts Detected"
+      >
+        {conflictCheck && (
+          <div className="space-y-6">
+            {/* Conflict Summary */}
+            <div className={`p-4 rounded-lg border ${
+              conflictCheck.canProceed ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'
+            }`}>
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-2xl">
+                  {conflictCheck.canProceed ? '⚠️' : '🚫'}
+                </span>
+                <h3 className={`font-medium ${
+                  conflictCheck.canProceed ? 'text-yellow-800' : 'text-red-800'
+                }`}>
+                  {conflictCheck.conflicts.length} Conflict{conflictCheck.conflicts.length !== 1 ? 's' : ''} Found
+                </h3>
+              </div>
+              <p className={`text-sm ${
+                conflictCheck.canProceed ? 'text-yellow-700' : 'text-red-700'
+              }`}>
+                {conflictCheck.recommendedAction}
+              </p>
+            </div>
+
+            {/* Conflict Details */}
+            <div className="space-y-4">
+              {conflictCheck.conflicts.map((conflict, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{conflict.message}</h4>
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
+                        conflict.severity === 'CRITICAL' ? 'bg-red-100 text-red-800' :
+                        conflict.severity === 'WARNING' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {conflict.severity}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Suggested Resolutions */}
+                  {conflict.suggestedResolutions.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Suggested Resolutions:</h5>
+                      <div className="space-y-2">
+                        {conflict.suggestedResolutions.map((resolution, resIndex) => (
+                          <div key={resIndex} className="bg-gray-50 rounded p-3">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <h6 className="font-medium text-gray-900 text-sm">{resolution.title}</h6>
+                                <p className="text-xs text-gray-600 mt-1">{resolution.description}</p>
+                              </div>
+                              <div className="flex items-center space-x-2 ml-3">
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  resolution.risk === 'LOW' ? 'bg-green-100 text-green-700' :
+                                  resolution.risk === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {resolution.risk} Risk
+                                </span>
+                                {resolution.automated && (
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => {
+                                      // Handle automated resolution
+                                      alert('Automated resolution not yet implemented')
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    Auto-Fix
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowConflictModal(false)
+                  setConflictCheck(null)
+                }}
+              >
+                Cancel
+              </Button>
+
+              {conflictCheck.canProceed && (
+                <Button
+                  variant="primary"
+                  onClick={proceedWithConflicts}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Creating...' : 'Proceed Anyway'}
+                </Button>
+              )}
+
+              {!conflictCheck.canProceed && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowConflictModal(false)
+                    setConflictCheck(null)
+                  }}
+                >
+                  Resolve Conflicts First
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Lease Detail Modal */}

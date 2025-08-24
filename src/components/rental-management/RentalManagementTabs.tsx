@@ -11,6 +11,7 @@ import MaintenanceRequests from './components/MaintenanceRequests'
 import PropertyInspections from './components/PropertyInspections'
 import FinancialReports from './components/FinancialReports'
 import DocumentStorage from './components/DocumentStorage'
+import SmartAllocationDashboard from './components/SmartAllocationDashboard'
 import { RentalManagementTab } from './types/rental-management.types'
 
 interface RentalManagementTabsProps {
@@ -34,6 +35,7 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
     { id: 'properties', name: 'Properties', icon: '🏠' },
     { id: 'tenants', name: 'Tenants', icon: '👥' },
     { id: 'leases', name: 'Leases', icon: '📋' },
+    { id: 'smart-allocation', name: 'Smart Allocation', icon: '🤖' },
     { id: 'payments', name: 'Payments', icon: '💳' },
     { id: 'maintenance', name: 'Maintenance', icon: '🔧' },
     { id: 'inspections', name: 'Inspections', icon: '🔍' },
@@ -110,7 +112,11 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
           {activeTab === 'leases' && (
             <LeaseManagement onDataChange={handleDataChange} />
           )}
-          
+
+          {activeTab === 'smart-allocation' && (
+            <SmartAllocationDashboard onDataChange={handleDataChange} />
+          )}
+
           {activeTab === 'payments' && (
             <PaymentTracking onDataChange={handleDataChange} />
           )}
