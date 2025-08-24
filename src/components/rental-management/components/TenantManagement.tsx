@@ -11,6 +11,7 @@ import { UnitAllocationService } from '../services/unit-allocation.service'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { formatUnitAllocation, extractUnitPropertyData } from '../utils/unit-display.utils'
 import supabase from '../../../lib/supabase-client'
 
 interface TenantManagementProps {
@@ -443,11 +444,17 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                           {tenant.email && (
                             <p className="text-sm text-gray-500">{tenant.email}</p>
                           )}
-                          {tenant.current_unit && (
-                            <p className="text-sm text-blue-600">
-                              Unit: {(tenant.current_unit as any)?.unit_label}
-                            </p>
-                          )}
+                          {tenant.current_unit && (() => {
+                            const { unit, property } = extractUnitPropertyData(tenant)
+                            const unitDisplay = formatUnitAllocation(unit, property, {
+                              fallbackText: 'Unit assignment pending'
+                            })
+                            return (
+                              <p className="text-sm text-blue-600 font-medium">
+                                📍 {unitDisplay}
+                              </p>
+                            )
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -726,19 +733,29 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
             </div>
 
             {/* Current Lease */}
-            {selectedTenant.current_unit && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Current Lease</h3>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium text-blue-900">
-                    Unit: {(selectedTenant.current_unit as any)?.unit_label}
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    Property: {(selectedTenant.current_unit as any)?.properties?.name}
-                  </p>
+            {selectedTenant.current_unit && (() => {
+              const { unit, property } = extractUnitPropertyData(selectedTenant)
+              const unitDisplay = formatUnitAllocation(unit, property)
+
+              return (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Current Assignment</h3>
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-blue-600">📍</span>
+                      <p className="text-sm font-medium text-blue-900">
+                        {unitDisplay}
+                      </p>
+                    </div>
+                    {unit?.monthly_rent_kes && (
+                      <p className="text-sm text-blue-700">
+                        Monthly Rent: KES {unit.monthly_rent_kes.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* Reallocation History */}
             <div>
@@ -835,20 +852,25 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
               <p className="text-sm text-gray-700">
                 <strong>Phone:</strong> {reallocationTenant.phone}
               </p>
-              {reallocationTenant.current_unit && (
-                <div className="mt-2 p-3 bg-blue-50 rounded border">
-                  <p className="text-sm font-medium text-blue-900">Current Assignment:</p>
-                  <p className="text-sm text-blue-700">
-                    Unit: {(reallocationTenant.current_unit as any)?.unit_label}
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    Property: {(reallocationTenant.current_unit as any)?.properties?.name}
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    Current Rent: KES {((reallocationTenant.current_unit as any)?.monthly_rent_kes || 0).toLocaleString()}/month
-                  </p>
-                </div>
-              )}
+              {reallocationTenant.current_unit && (() => {
+                const { unit, property } = extractUnitPropertyData(reallocationTenant)
+                const unitDisplay = formatUnitAllocation(unit, property)
+
+                return (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <p className="text-sm font-medium text-blue-900 mb-2">Current Assignment:</p>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-blue-600">📍</span>
+                      <p className="text-sm font-medium text-blue-700">{unitDisplay}</p>
+                    </div>
+                    {unit?.monthly_rent_kes && (
+                      <p className="text-sm text-blue-700">
+                        Current Rent: KES {unit.monthly_rent_kes.toLocaleString()}/month
+                      </p>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
 
             {/* New Unit Selection */}
@@ -864,11 +886,23 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                 <option value="">Choose a unit...</option>
                 {availableUnits.map((unit) => {
                   const isCurrentUnit = unit.id === (reallocationTenant.current_unit as any)?.id
+                  const unitData = {
+                    id: unit.id,
+                    unit_label: unit.unit_label,
+                    property_id: unit.property_id,
+                    monthly_rent_kes: unit.monthly_rent_kes
+                  }
+                  const propertyData = {
+                    id: unit.properties.id,
+                    name: unit.properties.name
+                  }
+                  const optionText = formatUnitAllocation(unitData, propertyData, {
+                    includeRent: true
+                  }) + (isCurrentUnit ? ' (Current Unit)' : '')
+
                   return (
                     <option key={unit.id} value={unit.id}>
-                      {unit.properties.name} - {unit.unit_label}
-                      {unit.monthly_rent_kes ? ` (KES ${unit.monthly_rent_kes.toLocaleString()}/month)` : ''}
-                      {isCurrentUnit ? ' (Current Unit)' : ''}
+                      {optionText}
                     </option>
                   )
                 })}
@@ -880,26 +914,40 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
 
             {/* New Unit Details */}
             {selectedNewUnit && (
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-medium text-green-900 mb-2">New Unit Details</h4>
+              <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                <h4 className="font-medium text-green-900 mb-3">New Assignment Details</h4>
                 {(() => {
                   const newUnit = availableUnits.find(u => u.id === selectedNewUnit)
                   if (!newUnit) return null
+
+                  const unitData = {
+                    id: newUnit.id,
+                    unit_label: newUnit.unit_label,
+                    property_id: newUnit.property_id,
+                    monthly_rent_kes: newUnit.monthly_rent_kes
+                  }
+                  const propertyData = {
+                    id: newUnit.properties.id,
+                    name: newUnit.properties.name
+                  }
+                  const unitDisplay = formatUnitAllocation(unitData, propertyData)
+                  const isCurrentUnit = newUnit.id === (reallocationTenant.current_unit as any)?.id
+
                   return (
                     <div>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-green-600">📍</span>
+                        <p className="text-sm font-medium text-green-900">{unitDisplay}</p>
+                      </div>
                       <p className="text-sm text-green-700">
-                        <strong>Property:</strong> {newUnit.properties.name}
+                        Monthly Rent: KES {(newUnit.monthly_rent_kes || 0).toLocaleString()}
                       </p>
-                      <p className="text-sm text-green-700">
-                        <strong>Unit:</strong> {newUnit.unit_label}
-                      </p>
-                      <p className="text-sm text-green-700">
-                        <strong>Monthly Rent:</strong> KES {(newUnit.monthly_rent_kes || 0).toLocaleString()}
-                      </p>
-                      {newUnit.id === (reallocationTenant.current_unit as any)?.id && (
-                        <p className="text-sm text-yellow-700 font-medium mt-1">
-                          ⚠️ This is the tenant's current unit
-                        </p>
+                      {isCurrentUnit && (
+                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                          <p className="text-sm text-yellow-700 font-medium">
+                            ⚠️ This is the tenant's current unit
+                          </p>
+                        </div>
                       )}
                     </div>
                   )

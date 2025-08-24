@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import supabase from '../../../lib/supabase-client'
+import { formatUnitOption } from '../utils/unit-display.utils'
 
 interface LeaseManagementProps {
   onDataChange?: () => void
@@ -556,15 +557,29 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
                   const availability = unit.availability
                   const isAvailable = availability?.available === true
 
+                  const unitData = {
+                    id: unit.id,
+                    unit_label: unit.unit_label,
+                    property_id: unit.property_id,
+                    monthly_rent_kes: unit.monthly_rent_kes
+                  }
+                  const propertyData = {
+                    id: unit.properties.id,
+                    name: unit.properties.name
+                  }
+
+                  const optionText = formatUnitOption(unitData, propertyData, {
+                    showAvailability: true,
+                    isAvailable: isAvailable
+                  })
+
                   return (
                     <option
                       key={unit.id}
                       value={unit.id}
                       disabled={!isAvailable}
                     >
-                      {unit.properties.name} - {unit.unit_label}
-                      (KES {unit.monthly_rent_kes?.toLocaleString()}/month)
-                      {!isAvailable && ' - ⚠️ Not Available'}
+                      {optionText}
                       {availability?.availableFrom && ` - Available from ${availability.availableFrom}`}
                     </option>
                   )
@@ -622,25 +637,41 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
               return selectedUnitData?.availability?.available === true
             })() && (
               <div className="md:col-span-2 bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="font-medium text-green-900 mb-2">Selected Unit Details</h4>
+                <h4 className="font-medium text-green-900 mb-3">Selected Unit Details</h4>
                 {(() => {
                   const unit = availableUnits.find(u => u.id === selectedUnit)
                   if (!unit) return null
+
+                  const unitData = {
+                    id: unit.id,
+                    unit_label: unit.unit_label,
+                    property_id: unit.property_id,
+                    monthly_rent_kes: unit.monthly_rent_kes
+                  }
+                  const propertyData = {
+                    id: unit.properties.id,
+                    name: unit.properties.name
+                  }
+                  const unitDisplay = formatUnitOption(unitData, propertyData)
+
                   return (
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-green-700"><strong>Property:</strong> {unit.properties.name}</p>
-                        <p className="text-green-700"><strong>Unit:</strong> {unit.unit_label}</p>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-green-600">📍</span>
+                        <p className="text-sm font-medium text-green-900">{unitDisplay}</p>
                       </div>
-                      <div>
-                        <p className="text-green-700"><strong>Monthly Rent:</strong> KES {unit.monthly_rent_kes?.toLocaleString()}</p>
-                        <p className="text-green-700"><strong>Status:</strong> Available ✅</p>
-                      </div>
-                      <div>
-                        <p className="text-green-700"><strong>Lease Period:</strong></p>
-                        <p className="text-green-700">
-                          {startDate && new Date(startDate).toLocaleDateString()} - {endDate ? new Date(endDate).toLocaleDateString() : 'Ongoing'}
-                        </p>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-green-700"><strong>Status:</strong> Available ✅</p>
+                          <p className="text-green-700"><strong>Lease Period:</strong></p>
+                          <p className="text-green-700">
+                            {startDate && new Date(startDate).toLocaleDateString()} - {endDate ? new Date(endDate).toLocaleDateString() : 'Ongoing'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-green-700"><strong>Ready for:</strong> Immediate occupancy</p>
+                          <p className="text-green-700"><strong>Lease Type:</strong> Standard rental agreement</p>
+                        </div>
                       </div>
                     </div>
                   )

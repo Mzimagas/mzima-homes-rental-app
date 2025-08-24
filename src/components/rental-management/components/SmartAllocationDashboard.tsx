@@ -6,6 +6,7 @@ import { Modal } from '../../ui/Modal'
 import { UnitAllocationService } from '../services/unit-allocation.service'
 import { useRealTimeOccupancy } from '../hooks/useRealTimeOccupancy'
 import supabase from '../../../lib/supabase-client'
+import { formatUnitAllocation, formatUnitOption } from '../utils/unit-display.utils'
 
 interface AllocationSuggestion {
   id: string
@@ -416,11 +417,31 @@ export default function SmartAllocationDashboard({ onDataChange }: SmartAllocati
                       className="border rounded-lg p-3 hover:bg-blue-50 cursor-pointer transition-colors"
                       onClick={() => handleQuickAllocation(suggestion)}
                     >
-                      <div className="font-medium text-gray-900">{unit.property_name}</div>
-                      <div className="text-sm text-gray-600">{unit.unit_label}</div>
-                      <div className="text-sm font-medium text-green-600">
-                        KES {unit.monthly_rent_kes.toLocaleString()}/month
-                      </div>
+                      {(() => {
+                        const unitData = {
+                          id: unit.id,
+                          unit_label: unit.unit_label,
+                          property_id: '',
+                          monthly_rent_kes: unit.monthly_rent_kes
+                        }
+                        const propertyData = {
+                          id: '',
+                          name: unit.property_name
+                        }
+                        const unitDisplay = formatUnitAllocation(unitData, propertyData)
+
+                        return (
+                          <div>
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-blue-600">📍</span>
+                              <div className="font-medium text-gray-900">{unitDisplay}</div>
+                            </div>
+                            <div className="text-sm font-medium text-green-600">
+                              KES {unit.monthly_rent_kes.toLocaleString()}/month
+                            </div>
+                          </div>
+                        )
+                      })()}
                       <div className="text-xs text-blue-600 mt-1">
                         Score: {unit.score}/30
                       </div>
@@ -487,11 +508,25 @@ export default function SmartAllocationDashboard({ onDataChange }: SmartAllocati
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Choose a unit...</option>
-                {selectedSuggestion.suggestedUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.property_name} - {unit.unit_label} (KES {unit.monthly_rent_kes.toLocaleString()}/month)
-                  </option>
-                ))}
+                {selectedSuggestion.suggestedUnits.map((unit) => {
+                  const unitData = {
+                    id: unit.id,
+                    unit_label: unit.unit_label,
+                    property_id: '',
+                    monthly_rent_kes: unit.monthly_rent_kes
+                  }
+                  const propertyData = {
+                    id: '',
+                    name: unit.property_name
+                  }
+                  const optionText = formatUnitOption(unitData, propertyData)
+
+                  return (
+                    <option key={unit.id} value={unit.id}>
+                      {optionText}
+                    </option>
+                  )
+                })}
               </select>
             </div>
 
