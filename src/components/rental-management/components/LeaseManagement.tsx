@@ -7,6 +7,7 @@ import { ErrorCard } from '../../ui/error'
 import Modal from '../../ui/Modal'
 import { LeaseAgreement, LeaseFormData } from '../types/rental-management.types'
 import { RentalManagementService } from '../services/rental-management.service'
+import { UnitAllocationService } from '../services/unit-allocation.service'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -35,6 +36,18 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
   const [showLeaseModal, setShowLeaseModal] = useState(false)
   const [showAddLeaseModal, setShowAddLeaseModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [tenants, setTenants] = useState<any[]>([])
+  const [availableUnits, setAvailableUnits] = useState<any[]>([])
+  const [selectedTenant, setSelectedTenant] = useState('')
+  const [selectedUnit, setSelectedUnit] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [unitAvailability, setUnitAvailability] = useState<Record<string, {
+    available: boolean;
+    conflictingLeases?: any[];
+    availableFrom?: string;
+  }>>({})
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
 
   const {
     register,
@@ -47,7 +60,14 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
 
   useEffect(() => {
     loadLeases()
+    loadTenants()
   }, [])
+
+  useEffect(() => {
+    if (startDate) {
+      loadAvailableUnits(startDate, endDate)
+    }
+  }, [startDate, endDate])
 
   const loadLeases = async () => {
     try {
@@ -79,13 +99,129 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
     setShowLeaseModal(true)
   }
 
+  const loadTenants = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tenants')
+        .select(`
+          id,
+          full_name,
+          phone,
+          email,
+          tenancy_agreements!left(
+            id,
+            status,
+            units(id, unit_label, properties(name))
+          )
+        `)
+        .order('full_name')
+
+      if (error) throw error
+
+      const tenantsWithCurrentUnit = data?.map(tenant => ({
+        ...tenant,
+        current_unit: tenant.tenancy_agreements?.find((agreement: any) =>
+          agreement.status === 'ACTIVE'
+        )?.units || null
+      })) || []
+
+      setTenants(tenantsWithCurrentUnit)
+    } catch (error) {
+      console.error('Error loading tenants:', error)
+      setError('Failed to load tenants')
+    }
+  }
+
+  const loadAvailableUnits = async (startDate: string, endDate?: string) => {
+    try {
+      setLoadingAvailability(true)
+
+      const { data: units, error } = await supabase
+        .from('units')
+        .select(`
+          id,
+          unit_label,
+          monthly_rent_kes,
+          is_active,
+          property_id,
+          properties!inner(id, name),
+          tenancy_agreements!left(
+            id,
+            status,
+            start_date,
+            end_date,
+            tenant_id,
+            tenants(full_name)
+          )
+        `)
+        .eq('is_active', true)
+        .order('unit_label')
+
+      if (error) throw error
+
+      // Check availability for each unit
+      const unitsWithAvailability = await Promise.all(
+        (units || []).map(async (unit) => {
+          const availability = await checkUnitAvailability(unit.id, startDate, endDate)
+          return {
+            ...unit,
+            availability
+          }
+        })
+      )
+
+      setAvailableUnits(unitsWithAvailability)
+    } catch (error) {
+      console.error('Error loading available units:', error)
+      setError('Failed to load available units')
+    } finally {
+      setLoadingAvailability(false)
+    }
+  }
+
+  const checkUnitAvailability = async (unitId: string, startDate: string, endDate?: string) => {
+    try {
+      const availability = await UnitAllocationService.checkUnitAvailability(unitId, startDate, endDate)
+
+      const result = {
+        available: availability.available,
+        conflictingLeases: availability.conflictingLeases || [],
+        availableFrom: availability.availableFrom,
+        conflictingTenant: availability.conflictingTenant
+      }
+
+      setUnitAvailability(prev => ({ ...prev, [unitId]: result }))
+      return result
+    } catch (error) {
+      console.error('Error checking unit availability:', error)
+      return { available: false, conflictingLeases: [] }
+    }
+  }
+
   const handleAddLease = async (data: LeaseFormData) => {
     try {
       setSubmitting(true)
-      await RentalManagementService.createLeaseAgreement(data)
+
+      // Use atomic allocation service
+      const result = await UnitAllocationService.allocateUnitToTenant(
+        data.tenant_id,
+        data.unit_id,
+        data
+      )
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create lease agreement')
+      }
+
+      // Show warnings if any
+      if (result.warnings && result.warnings.length > 0) {
+        alert(`Lease created successfully!\n\nWarnings:\n${result.warnings.join('\n')}`)
+      }
+
       await loadLeases()
       setShowAddLeaseModal(false)
       reset()
+      resetForm()
       onDataChange?.()
     } catch (err: any) {
       console.error('Error creating lease:', err)
@@ -93,6 +229,14 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const resetForm = () => {
+    setSelectedTenant('')
+    setSelectedUnit('')
+    setStartDate('')
+    setEndDate('')
+    setUnitAvailability({})
   }
 
   const getLeaseStatus = (lease: LeaseAgreement) => {
@@ -253,6 +397,7 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
         onClose={() => {
           setShowAddLeaseModal(false)
           reset()
+          resetForm()
         }}
         title="Create New Lease Agreement"
       >
@@ -262,43 +407,153 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
               <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
               <select
                 {...register('tenant_id')}
+                value={selectedTenant}
+                onChange={(e) => setSelectedTenant(e.target.value)}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="">Select Tenant</option>
-                {/* TODO: Load tenants dynamically */}
+                {tenants.map(tenant => (
+                  <option key={tenant.id} value={tenant.id}>
+                    {tenant.full_name}
+                    {tenant.current_unit && ` (Currently in ${tenant.current_unit.unit_label})`}
+                  </option>
+                ))}
               </select>
               {errors.tenant_id && (
                 <p className="text-xs text-red-600 mt-1">{errors.tenant_id.message}</p>
               )}
+              {selectedTenant && tenants.find(t => t.id === selectedTenant)?.current_unit && (
+                <p className="text-xs text-yellow-600 mt-1">
+                  ⚠️ This tenant currently has an active lease. Creating a new lease will require handling the existing one.
+                </p>
+              )}
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+              <input
+                type="date"
+                {...register('start_date')}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              {errors.start_date && (
+                <p className="text-xs text-red-600 mt-1">{errors.start_date.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date (Optional)</label>
+              <input
+                type="date"
+                {...register('end_date')}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              {errors.end_date && (
+                <p className="text-xs text-red-600 mt-1">{errors.end_date.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Available Units *
+                {loadingAvailability && <span className="text-blue-600">(Checking availability...)</span>}
+              </label>
               <select
                 {...register('unit_id')}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                value={selectedUnit}
+                onChange={(e) => setSelectedUnit(e.target.value)}
+                disabled={!startDate || loadingAvailability}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
               >
-                <option value="">Select Unit</option>
-                {/* TODO: Load available units dynamically */}
+                <option value="">
+                  {!startDate ? 'Select start date first' : 'Select Available Unit'}
+                </option>
+                {availableUnits.map(unit => {
+                  const availability = unitAvailability[unit.id]
+                  const isAvailable = availability?.available !== false
+
+                  return (
+                    <option
+                      key={unit.id}
+                      value={unit.id}
+                      disabled={!isAvailable}
+                    >
+                      {unit.properties.name} - {unit.unit_label}
+                      (KES {unit.monthly_rent_kes?.toLocaleString()}/month)
+                      {!isAvailable && ' - ⚠️ Not Available'}
+                      {availability?.availableFrom && ` - Available from ${availability.availableFrom}`}
+                    </option>
+                  )
+                })}
               </select>
               {errors.unit_id && (
                 <p className="text-xs text-red-600 mt-1">{errors.unit_id.message}</p>
               )}
             </div>
 
-            <TextField
-              label="Start Date *"
-              type="date"
-              {...register('start_date')}
-              error={errors.start_date?.message}
-            />
+            {/* Unit Conflict Warning */}
+            {selectedUnit && unitAvailability[selectedUnit] && !unitAvailability[selectedUnit].available && (
+              <div className="md:col-span-2 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">Unit Availability Conflict</h3>
+                    <div className="mt-2 text-sm text-yellow-700">
+                      <p>This unit is not available for the selected dates.</p>
+                      {unitAvailability[selectedUnit].conflictingLeases?.map((lease, index) => (
+                        <p key={index} className="mt-1">
+                          • Occupied by {lease.tenants?.full_name}
+                          {lease.end_date ? ` until ${new Date(lease.end_date).toLocaleDateString()}` : ' (ongoing lease)'}
+                        </p>
+                      ))}
+                      {unitAvailability[selectedUnit].availableFrom && (
+                        <p className="mt-2 font-medium">
+                          Available from: {new Date(unitAvailability[selectedUnit].availableFrom!).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            <TextField
-              label="End Date"
-              type="date"
-              {...register('end_date')}
-              error={errors.end_date?.message}
-            />
+            {/* Selected Unit Details */}
+            {selectedUnit && unitAvailability[selectedUnit]?.available && (
+              <div className="md:col-span-2 bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="font-medium text-green-900 mb-2">Selected Unit Details</h4>
+                {(() => {
+                  const unit = availableUnits.find(u => u.id === selectedUnit)
+                  if (!unit) return null
+                  return (
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-green-700"><strong>Property:</strong> {unit.properties.name}</p>
+                        <p className="text-green-700"><strong>Unit:</strong> {unit.unit_label}</p>
+                      </div>
+                      <div>
+                        <p className="text-green-700"><strong>Monthly Rent:</strong> KES {unit.monthly_rent_kes?.toLocaleString()}</p>
+                        <p className="text-green-700"><strong>Status:</strong> Available ✅</p>
+                      </div>
+                      <div>
+                        <p className="text-green-700"><strong>Lease Period:</strong></p>
+                        <p className="text-green-700">
+                          {startDate && new Date(startDate).toLocaleDateString()} - {endDate ? new Date(endDate).toLocaleDateString() : 'Ongoing'}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
 
             <TextField
               label="Monthly Rent (KES) *"
@@ -332,11 +587,23 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
               onClick={() => {
                 setShowAddLeaseModal(false)
                 reset()
+                resetForm()
               }}
             >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={submitting}>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={submitting}
+              disabled={
+                submitting ||
+                !selectedUnit ||
+                !selectedTenant ||
+                !startDate ||
+                (selectedUnit && unitAvailability[selectedUnit] && !unitAvailability[selectedUnit].available)
+              }
+            >
               Create Lease
             </Button>
           </div>

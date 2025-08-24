@@ -7,6 +7,7 @@ import { ErrorCard } from '../../ui/error'
 import Modal from '../../ui/Modal'
 import { RentalTenant, TenantFormData } from '../types/rental-management.types'
 import { RentalManagementService } from '../services/rental-management.service'
+import { UnitAllocationService } from '../services/unit-allocation.service'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -202,53 +203,27 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     try {
       setReallocating(true)
 
-      // Get current active tenancy agreement
-      const { data: currentAgreements, error: fetchError } = await supabase
-        .from('tenancy_agreements')
-        .select('*')
-        .eq('tenant_id', reallocationTenant.id)
-        .eq('status', 'ACTIVE')
+      // Use atomic reallocation service
+      const result = await UnitAllocationService.reallocateTenant(
+        reallocationTenant.id,
+        selectedNewUnit,
+        {
+          effectiveDate: new Date().toISOString().split('T')[0],
+          terminateCurrentLease: true,
+          notes: reallocationNotes || 'Unit reallocation requested by user'
+        }
+      )
 
-      if (fetchError) throw fetchError
-
-      const currentAgreement = currentAgreements?.[0]
-
-      if (currentAgreement) {
-        // End current tenancy agreement
-        const { error: endError } = await supabase
-          .from('tenancy_agreements')
-          .update({
-            status: 'TERMINATED',
-            end_date: new Date().toISOString().split('T')[0],
-            notes: `${currentAgreement.notes || ''}\n\nTerminated for unit reallocation: ${reallocationNotes || 'No notes provided'}`
-          })
-          .eq('id', currentAgreement.id)
-
-        if (endError) throw endError
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to reallocate tenant')
       }
 
-      // Get new unit details for rent amount
-      const { data: newUnitData, error: unitError } = await supabase
-        .from('units')
-        .select('monthly_rent_kes')
-        .eq('id', selectedNewUnit)
-        .single()
-
-      if (unitError) throw unitError
-
-      // Create new tenancy agreement for new unit
-      const { error: createError } = await supabase
-        .from('tenancy_agreements')
-        .insert({
-          tenant_id: reallocationTenant.id,
-          unit_id: selectedNewUnit,
-          start_date: new Date().toISOString().split('T')[0],
-          monthly_rent_kes: newUnitData.monthly_rent_kes,
-          status: 'ACTIVE',
-          notes: `Unit reallocation from previous unit. ${reallocationNotes || ''}`
-        })
-
-      if (createError) throw createError
+      // Show success message with warnings if any
+      let message = 'Tenant successfully reallocated to new unit!'
+      if (result.warnings && result.warnings.length > 0) {
+        message += `\n\nDetails:\n${result.warnings.join('\n')}`
+      }
+      alert(message)
 
       // Refresh tenant data
       await loadTenants()
@@ -259,10 +234,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       setReallocationNotes('')
       onDataChange?.()
 
-      alert('Tenant successfully reallocated to new unit!')
     } catch (error) {
       console.error('Error reallocating tenant:', error)
-      setError('Failed to reallocate tenant. Please try again.')
+      setError(error instanceof Error ? error.message : 'Failed to reallocate tenant. Please try again.')
     } finally {
       setReallocating(false)
     }

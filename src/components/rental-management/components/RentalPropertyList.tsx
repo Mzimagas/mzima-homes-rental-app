@@ -8,6 +8,7 @@ import Modal from '../../ui/Modal'
 import PropertyForm from '../../properties/property-form'
 import { RentalProperty } from '../types/rental-management.types'
 import { RentalManagementService } from '../services/rental-management.service'
+import { usePropertyRealTime } from '../hooks/useRealTimeOccupancy'
 
 interface RentalPropertyListProps {
   onDataChange?: () => void

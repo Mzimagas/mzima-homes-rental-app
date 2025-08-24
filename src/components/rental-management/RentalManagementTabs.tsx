@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
+import { useRealTimeOccupancy } from './hooks/useRealTimeOccupancy'
 import RentalPropertyList from './components/RentalPropertyList'
 import TenantManagement from './components/TenantManagement'
 import LeaseManagement from './components/LeaseManagement'
@@ -20,6 +21,14 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<RentalManagementTab>('properties')
   const [loading, setLoading] = useState(false)
+
+  // Real-time occupancy data
+  const {
+    isConnected,
+    lastUpdate,
+    getOccupancyStats,
+    recentEvents
+  } = useRealTimeOccupancy()
 
   const tabs = [
     { id: 'properties', name: 'Properties', icon: '🏠' },
@@ -45,7 +54,8 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
       {/* Tab Navigation */}
       <div className="bg-white shadow rounded-lg">
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
+          <div className="flex justify-between items-center px-6 py-2">
+            <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -60,7 +70,31 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
                 <span>{tab.name}</span>
               </button>
             ))}
-          </nav>
+            </nav>
+
+            {/* Real-time Status Indicator */}
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className={`${isConnected ? 'text-green-700' : 'text-red-700'}`}>
+                  {isConnected ? 'Live' : 'Offline'}
+                </span>
+              </div>
+
+              {lastUpdate && (
+                <div className="text-gray-500">
+                  Last update: {lastUpdate.toLocaleTimeString()}
+                </div>
+              )}
+
+              {recentEvents.length > 0 && (
+                <div className="flex items-center space-x-1 text-blue-600">
+                  <span className="text-xs">🔄</span>
+                  <span>{recentEvents.length} recent changes</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Tab Content */}
