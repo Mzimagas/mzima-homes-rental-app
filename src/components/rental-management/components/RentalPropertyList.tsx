@@ -19,6 +19,7 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedProperty, setSelectedProperty] = useState<RentalProperty | null>(null)
   const [showPropertyModal, setShowPropertyModal] = useState(false)
+  const [showAllPropertyTypes, setShowAllPropertyTypes] = useState(false)
 
   useEffect(() => {
     loadProperties()
@@ -38,10 +39,17 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
     }
   }
 
-  const filteredProperties = properties.filter(property =>
-    property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.physical_address?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredProperties = properties.filter(property => {
+    // Search filter
+    const matchesSearch = property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.physical_address?.toLowerCase().includes(searchTerm.toLowerCase())
+
+    // Property type filter - show only rentable properties by default (excludes land-only properties)
+    const rentableTypes = ['HOME', 'HOSTEL', 'STALL']
+    const matchesType = showAllPropertyTypes || rentableTypes.includes(property.property_type || '')
+
+    return matchesSearch && matchesType
+  })
 
   const handlePropertyClick = (property: RentalProperty) => {
     setSelectedProperty(property)
@@ -52,6 +60,48 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
     if (rate >= 90) return 'text-green-600 bg-green-100'
     if (rate >= 70) return 'text-yellow-600 bg-yellow-100'
     return 'text-red-600 bg-red-100'
+  }
+
+  const getPropertyTypeColor = (type: string) => {
+    switch (type) {
+      case 'HOME':
+        return 'bg-blue-100 text-blue-800'
+      case 'HOSTEL':
+        return 'bg-purple-100 text-purple-800'
+      case 'STALL':
+        return 'bg-orange-100 text-orange-800'
+      case 'RESIDENTIAL_LAND':
+        return 'bg-green-100 text-green-800'
+      case 'COMMERCIAL_LAND':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'AGRICULTURAL_LAND':
+        return 'bg-emerald-100 text-emerald-800'
+      case 'MIXED_USE_LAND':
+        return 'bg-gray-100 text-gray-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getPropertyTypeLabel = (type: string) => {
+    switch (type) {
+      case 'HOME':
+        return '🏠 Home'
+      case 'HOSTEL':
+        return '🏨 Hostel'
+      case 'STALL':
+        return '🏪 Stall'
+      case 'RESIDENTIAL_LAND':
+        return '🏞️ Residential Land'
+      case 'COMMERCIAL_LAND':
+        return '🏢 Commercial Land'
+      case 'AGRICULTURAL_LAND':
+        return '🌾 Agricultural Land'
+      case 'MIXED_USE_LAND':
+        return '🏗️ Mixed Use Land'
+      default:
+        return type || 'Unknown'
+    }
   }
 
   if (loading) {
@@ -73,16 +123,23 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Rental Properties</h2>
-          <p className="text-sm text-gray-500">Manage your rental property portfolio</p>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {showAllPropertyTypes ? 'All Properties' : 'Rental Properties'}
+          </h2>
+          <p className="text-sm text-gray-500">
+            {showAllPropertyTypes
+              ? 'Manage all property types in your portfolio'
+              : 'Manage your rentable properties (homes, hostels, and stalls)'
+            }
+          </p>
         </div>
         <Button onClick={() => setShowPropertyModal(true)} variant="primary">
           Add Property
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="flex space-x-4">
+      {/* Search and Filters */}
+      <div className="flex flex-wrap items-center gap-2">
         <div className="flex-1">
           <TextField
             placeholder="Search properties..."
@@ -90,6 +147,16 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <button
+          onClick={() => setShowAllPropertyTypes(!showAllPropertyTypes)}
+          className={`px-3 py-2 text-sm border rounded transition-colors ${
+            showAllPropertyTypes
+              ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200'
+              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+          }`}
+        >
+          {showAllPropertyTypes ? 'Show Rentable Only' : 'Show All Property Types'}
+        </button>
         <Button onClick={loadProperties} variant="secondary">
           Refresh
         </Button>
@@ -112,8 +179,8 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                     <p className="text-sm text-gray-500">{property.physical_address}</p>
                   </div>
                   <div className="text-right">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {property.property_type}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPropertyTypeColor(property.property_type || '')}`}>
+                      {getPropertyTypeLabel(property.property_type || '')}
                     </span>
                   </div>
                 </div>
