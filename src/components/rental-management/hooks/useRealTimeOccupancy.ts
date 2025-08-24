@@ -36,14 +36,68 @@ export const useRealTimeOccupancy = () => {
   // Initialize occupancy data
   const loadInitialOccupancyData = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      // Try to use the optimized view first, fallback to manual query if view doesn't exist
+      let data, error
+
+      // First try the optimized view
+      const viewResult = await supabase
         .from('unit_occupancy_summary')
         .select('*')
+
+      if (viewResult.error && viewResult.error.code === '42P01') {
+        // View doesn't exist, use manual query with existing tables
+        const manualResult = await supabase
+          .from('units')
+          .select(`
+            id,
+            unit_label,
+            monthly_rent_kes,
+            property_id,
+            properties!inner(id, name),
+            tenancy_agreements!left(
+              id,
+              tenant_id,
+              start_date,
+              end_date,
+              monthly_rent_kes,
+              status,
+              tenants!inner(id, full_name)
+            )
+          `)
+          .eq('is_active', true)
+
+        if (manualResult.error) throw manualResult.error
+
+        // Transform manual query result to match view format
+        data = manualResult.data?.map(unit => {
+          const activeAgreement = unit.tenancy_agreements?.find((agreement: any) =>
+            agreement.status === 'ACTIVE'
+          )
+
+          return {
+            unit_id: unit.id,
+            unit_label: unit.unit_label,
+            property_id: unit.property_id,
+            property_name: (unit.properties as any)?.name,
+            monthly_rent_kes: unit.monthly_rent_kes,
+            occupancy_status: activeAgreement ? 'OCCUPIED' : 'VACANT',
+            tenant_id: activeAgreement?.tenant_id,
+            tenant_name: activeAgreement?.tenants?.full_name,
+            lease_start: activeAgreement?.start_date,
+            lease_end: activeAgreement?.end_date,
+            actual_rent: activeAgreement?.monthly_rent_kes
+          }
+        })
+        error = null
+      } else {
+        data = viewResult.data
+        error = viewResult.error
+      }
 
       if (error) throw error
 
       const occupancyMap: OccupancyData = {}
-      data?.forEach((unit) => {
+      data?.forEach((unit: any) => {
         occupancyMap[unit.unit_id] = {
           occupied: unit.occupancy_status === 'OCCUPIED',
           tenant_id: unit.tenant_id,
@@ -58,6 +112,8 @@ export const useRealTimeOccupancy = () => {
       setOccupancyData(occupancyMap)
     } catch (error) {
       console.error('Error loading initial occupancy data:', error)
+      // Set empty occupancy data to prevent crashes
+      setOccupancyData({})
     }
   }, [])
 
