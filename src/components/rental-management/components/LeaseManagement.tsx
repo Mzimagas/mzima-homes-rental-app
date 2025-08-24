@@ -12,6 +12,7 @@ import { ConflictPreventionService, ConflictCheckResult } from '../services/conf
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import supabase from '../../../lib/supabase-client'
 
 interface LeaseManagementProps {
   onDataChange?: () => void
