@@ -5,6 +5,7 @@ import { Button, TextField } from '../../ui'
 import { LoadingCard } from '../../ui/loading'
 import { ErrorCard } from '../../ui/error'
 import Modal from '../../ui/Modal'
+import PropertyForm from '../../properties/property-form'
 import { RentalProperty } from '../types/rental-management.types'
 import { RentalManagementService } from '../services/rental-management.service'
 
@@ -19,6 +20,13 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedProperty, setSelectedProperty] = useState<RentalProperty | null>(null)
   const [showPropertyModal, setShowPropertyModal] = useState(false)
+  const [showPropertyForm, setShowPropertyForm] = useState(false)
+  const [editingProperty, setEditingProperty] = useState<RentalProperty | null>(null)
+  const [showUnitsModal, setShowUnitsModal] = useState(false)
+  const [unitsProperty, setUnitsProperty] = useState<RentalProperty | null>(null)
+  const [showRentRollModal, setShowRentRollModal] = useState(false)
+  const [rentRollData, setRentRollData] = useState<any>(null)
+  const [loadingRentRoll, setLoadingRentRoll] = useState(false)
 
   // Rental-focused filters
   const [occupancyFilter, setOccupancyFilter] = useState('')
@@ -98,6 +106,45 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
     setShowPropertyModal(true)
   }
 
+  const handleAddProperty = () => {
+    setEditingProperty(null)
+    setShowPropertyForm(true)
+  }
+
+  const handleEditProperty = (property: RentalProperty) => {
+    setEditingProperty(property)
+    setShowPropertyForm(true)
+    setShowPropertyModal(false)
+  }
+
+  const handlePropertyFormSuccess = (propertyId: string) => {
+    setShowPropertyForm(false)
+    setEditingProperty(null)
+    loadProperties() // Refresh the list
+    onDataChange?.()
+  }
+
+  const handleViewUnits = (property: RentalProperty) => {
+    setUnitsProperty(property)
+    setShowUnitsModal(true)
+    setShowPropertyModal(false)
+  }
+
+  const handleGenerateRentRoll = async (property: RentalProperty) => {
+    setLoadingRentRoll(true)
+    try {
+      const rentRoll = await RentalManagementService.getRentRoll(property.id)
+      setRentRollData(rentRoll)
+      setShowRentRollModal(true)
+      setShowPropertyModal(false)
+    } catch (error) {
+      console.error('Error generating rent roll:', error)
+      setError('Failed to generate rent roll')
+    } finally {
+      setLoadingRentRoll(false)
+    }
+  }
+
   const getOccupancyColor = (rate: number) => {
     if (rate >= 90) return 'text-green-600 bg-green-100'
     if (rate >= 70) return 'text-yellow-600 bg-yellow-100'
@@ -170,7 +217,7 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
             Manage your rentable properties with advanced filtering
           </p>
         </div>
-        <Button onClick={() => setShowPropertyModal(true)} variant="primary">
+        <Button onClick={handleAddProperty} variant="primary">
           Add Property
         </Button>
       </div>
@@ -387,7 +434,7 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
           <p className="text-gray-500 mb-4">
             {searchTerm ? 'No properties match your search criteria.' : 'Get started by adding your first rental property.'}
           </p>
-          <Button onClick={() => setShowPropertyModal(true)} variant="primary">
+          <Button onClick={handleAddProperty} variant="primary">
             Add Property
           </Button>
         </div>
@@ -451,20 +498,254 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
 
               {/* Action Buttons */}
               <div className="flex space-x-3">
-                <Button variant="primary" className="flex-1">
-                  View Units
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={() => handleViewUnits(selectedProperty)}
+                >
+                  View Units ({selectedProperty.units?.length || 0})
                 </Button>
-                <Button variant="secondary" className="flex-1">
-                  Generate Rent Roll
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => handleGenerateRentRoll(selectedProperty)}
+                  disabled={loadingRentRoll}
+                >
+                  {loadingRentRoll ? 'Generating...' : 'Generate Rent Roll'}
                 </Button>
-                <Button variant="secondary">
+                <Button
+                  variant="secondary"
+                  onClick={() => handleEditProperty(selectedProperty)}
+                >
                   Edit Property
                 </Button>
               </div>
             </div>
-          ) : (
-            <div>
-              <p className="text-gray-500">Property creation form will be implemented here.</p>
+          ) : null}
+        </div>
+      </Modal>
+
+      {/* Property Form Modal */}
+      <PropertyForm
+        isOpen={showPropertyForm}
+        onClose={() => {
+          setShowPropertyForm(false)
+          setEditingProperty(null)
+        }}
+        property={editingProperty}
+        onSuccess={handlePropertyFormSuccess}
+      />
+
+      {/* Units Modal */}
+      <Modal
+        isOpen={showUnitsModal}
+        onClose={() => {
+          setShowUnitsModal(false)
+          setUnitsProperty(null)
+        }}
+        title={unitsProperty ? `Units in ${unitsProperty.name}` : 'Property Units'}
+      >
+        <div className="p-6">
+          {unitsProperty && (
+            <div className="space-y-4">
+              {/* Property Summary */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Units</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {unitsProperty.units?.length || 0}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Occupied</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {unitsProperty.occupied_units || 0}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Vacant</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {(unitsProperty.units?.length || 0) - (unitsProperty.occupied_units || 0)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Units List */}
+              {unitsProperty.units && unitsProperty.units.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium text-gray-900">Units</h4>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        // TODO: Implement unit addition functionality
+                        alert('Unit addition functionality will be implemented in the next phase')
+                      }}
+                    >
+                      Add Unit
+                    </Button>
+                  </div>
+                  {unitsProperty.units.map((unit) => (
+                    <div key={unit.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h5 className="font-medium text-gray-900">{unit.unit_label}</h5>
+                          <p className="text-sm text-gray-600">
+                            Rent: KES {(unit.monthly_rent_kes || 0).toLocaleString()}/month
+                          </p>
+                          {unit.tenant && (
+                            <p className="text-sm text-green-600">
+                              Tenant: {unit.tenant.full_name}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          unit.tenant
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {unit.tenant ? 'Occupied' : 'Vacant'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">🏠</div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Units Found</h4>
+                  <p className="text-gray-500 mb-4">This property doesn't have any units yet.</p>
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      // TODO: Implement unit addition functionality
+                      alert('Unit addition functionality will be implemented in the next phase')
+                    }}
+                  >
+                    Add First Unit
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Rent Roll Modal */}
+      <Modal
+        isOpen={showRentRollModal}
+        onClose={() => {
+          setShowRentRollModal(false)
+          setRentRollData(null)
+        }}
+        title={rentRollData ? `Rent Roll - ${rentRollData.property_name}` : 'Rent Roll'}
+      >
+        <div className="p-6">
+          {rentRollData && (
+            <div className="space-y-6">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg text-center">
+                  <p className="text-sm text-blue-600">Total Units</p>
+                  <p className="text-2xl font-bold text-blue-800">{rentRollData.total_units}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg text-center">
+                  <p className="text-sm text-green-600">Occupied</p>
+                  <p className="text-2xl font-bold text-green-800">{rentRollData.occupied_units}</p>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg text-center">
+                  <p className="text-sm text-yellow-600">Vacancy Rate</p>
+                  <p className="text-2xl font-bold text-yellow-800">{rentRollData.vacancy_rate.toFixed(1)}%</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg text-center">
+                  <p className="text-sm text-purple-600">Collection Rate</p>
+                  <p className="text-2xl font-bold text-purple-800">{rentRollData.collection_rate.toFixed(1)}%</p>
+                </div>
+              </div>
+
+              {/* Financial Summary */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">Financial Summary</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Monthly Rent</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      KES {rentRollData.total_monthly_rent.toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Collected Rent</p>
+                    <p className="text-lg font-semibold text-green-600">
+                      KES {rentRollData.collected_rent.toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Outstanding Rent</p>
+                    <p className="text-lg font-semibold text-red-600">
+                      KES {rentRollData.outstanding_rent.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Units Table */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Unit Details</h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Unit
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tenant
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Monthly Rent
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Balance
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {rentRollData.units.map((unit: any) => (
+                        <tr key={unit.unit_id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {unit.unit_label}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {unit.tenant_name || 'Vacant'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            KES {unit.monthly_rent.toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              unit.rent_status === 'CURRENT' ? 'bg-green-100 text-green-800' :
+                              unit.rent_status === 'OVERDUE' ? 'bg-red-100 text-red-800' :
+                              unit.rent_status === 'PARTIAL' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {unit.rent_status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            KES {unit.balance.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </div>
