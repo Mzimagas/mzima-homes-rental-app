@@ -11,13 +11,10 @@ const baseNavigation = [
   { name: 'Properties', href: '/dashboard/properties', icon: 'building' },
   { name: 'Rental Management', href: '/dashboard/rental-management', icon: 'rental' },
   { name: 'Accounting', href: '/dashboard/accounting', icon: 'calculator' },
-  { name: 'Documents', href: '/dashboard/documents', icon: 'document' },
+  { name: 'Administration', href: '/dashboard/administration', icon: 'administration' },
   { name: 'Notifications', href: '/dashboard/notifications', icon: 'bell' },
   { name: 'Reports', href: '/dashboard/reports', icon: 'chart' },
 ]
-
-const userManagementNavItem = { name: 'User Management', href: '/dashboard/users', icon: 'user-group' }
-const auditTrailNavItem = { name: 'Audit Trail', href: '/dashboard/audit', icon: 'document' }
 
 const icons = {
   home: (
@@ -93,6 +90,12 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0zM8 21v-4a2 2 0 012-2h2a2 2 0 012 2v4M3 7l9-4 9 4" />
     </svg>
   ),
+  administration: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
 }
 
 export default function DashboardLayout({
@@ -109,17 +112,8 @@ export default function DashboardLayout({
   // Check if user has user management permissions for any property
   const canManageAnyUsers = properties.some(property => property.can_manage_users)
 
-  // Build navigation array based on permissions
+  // Build navigation array - Administration tab is now included in baseNavigation
   const navigation = [...baseNavigation]
-  if (canManageAnyUsers) {
-    // Insert User Management after Rental Management
-    navigation.splice(3, 0, userManagementNavItem)
-    // Insert Audit Trail immediately after User Management
-    navigation.splice(4, 0, auditTrailNavItem)
-  } else {
-    // Even if user cannot manage users, expose Audit Trail as read-only section
-    navigation.splice(4, 0, auditTrailNavItem)
-  }
 
   useEffect(() => {
     if (!loading && !user) {
