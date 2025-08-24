@@ -211,7 +211,6 @@ export type RentalManagementTab =
   | 'properties'
   | 'tenants'
   | 'leases'
-  | 'smart-allocation'
   | 'payments'
   | 'maintenance'
   | 'inspections'
