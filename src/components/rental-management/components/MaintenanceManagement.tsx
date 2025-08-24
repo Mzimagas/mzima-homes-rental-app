@@ -11,6 +11,7 @@ import MaintenanceStats from '../../maintenance/maintenance-stats'
 
 interface MaintenanceManagementProps {
   onDataChange?: () => void
+  propertyId?: string // Optional property ID for filtering
 }
 
 interface MaintenanceTicket {
@@ -43,7 +44,7 @@ interface MaintenanceStatsData {
   averageResolutionTime: number
 }
 
-export default function MaintenanceManagement({ onDataChange }: MaintenanceManagementProps) {
+export default function MaintenanceManagement({ onDataChange, propertyId }: MaintenanceManagementProps) {
   const { user } = useAuth()
   const [tickets, setTickets] = useState<MaintenanceTicket[]>([])
   const [stats, setStats] = useState<MaintenanceStatsData | null>(null)
@@ -56,7 +57,7 @@ export default function MaintenanceManagement({ onDataChange }: MaintenanceManag
 
   useEffect(() => {
     loadMaintenanceData()
-  }, [])
+  }, [propertyId])
 
   const loadMaintenanceData = async () => {
     try {
@@ -67,7 +68,7 @@ export default function MaintenanceManagement({ onDataChange }: MaintenanceManag
       const mockLandlordId = '11111111-1111-1111-1111-111111111111'
 
       // Get maintenance tickets
-      const { data: ticketsData, error: ticketsError } = await supabase
+      let query = supabase
         .from('maintenance_tickets')
         .select(`
           *,
@@ -80,6 +81,13 @@ export default function MaintenanceManagement({ onDataChange }: MaintenanceManag
           )
         `)
         .eq('units.properties.landlord_id', mockLandlordId as any)
+
+      // Filter by property if propertyId is provided
+      if (propertyId) {
+        query = query.eq('units.properties.id', propertyId)
+      }
+
+      const { data: ticketsData, error: ticketsError } = await query
         .order('created_at', { ascending: false })
 
       if (ticketsError) {

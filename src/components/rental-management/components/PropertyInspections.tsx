@@ -13,6 +13,7 @@ import { z } from 'zod'
 
 interface PropertyInspectionsProps {
   onDataChange?: () => void
+  propertyId?: string // Optional property ID for filtering
 }
 
 const inspectionSchema = z.object({
@@ -25,7 +26,7 @@ const inspectionSchema = z.object({
   notes: z.string().optional(),
 })
 
-export default function PropertyInspections({ onDataChange }: PropertyInspectionsProps) {
+export default function PropertyInspections({ onDataChange, propertyId }: PropertyInspectionsProps) {
   const [inspections, setInspections] = useState<PropertyInspection[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -51,14 +52,18 @@ export default function PropertyInspections({ onDataChange }: PropertyInspection
 
   useEffect(() => {
     loadInspections()
-    loadProperties()
-    loadTenants()
-  }, [])
+    if (!propertyId) {
+      // Only load all properties and tenants if not filtering by specific property
+      loadProperties()
+      loadTenants()
+    }
+  }, [propertyId])
 
   const loadInspections = async () => {
     try {
       setLoading(true)
-      // TODO: Implement getInspections in service
+      // TODO: Implement getInspections in service with propertyId filtering
+      // For now, using empty array but in real implementation would filter by propertyId
       setInspections([])
     } catch (error) {
       console.error('Error loading inspections:', error)
