@@ -7,7 +7,7 @@ import RentalPropertyList from './components/RentalPropertyList'
 import TenantManagement from './components/TenantManagement'
 import LeaseManagement from './components/LeaseManagement'
 import PaymentTracking from './components/PaymentTracking'
-import MaintenanceRequests from './components/MaintenanceRequests'
+import MaintenanceManagement from './components/MaintenanceManagement'
 import PropertyInspections from './components/PropertyInspections'
 import FinancialReports from './components/FinancialReports'
 import DocumentStorage from './components/DocumentStorage'
@@ -116,7 +116,7 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
           )}
           
           {activeTab === 'maintenance' && (
-            <MaintenanceRequests onDataChange={handleDataChange} />
+            <MaintenanceManagement onDataChange={handleDataChange} />
           )}
           
           {activeTab === 'inspections' && (
