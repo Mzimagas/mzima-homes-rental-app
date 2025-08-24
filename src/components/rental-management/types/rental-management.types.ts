@@ -207,15 +207,14 @@ export interface ExpenseBreakdown {
 }
 
 // Tab types for navigation
-export type RentalManagementTab = 
-  | 'dashboard' 
-  | 'properties' 
-  | 'tenants' 
-  | 'leases' 
-  | 'payments' 
-  | 'maintenance' 
-  | 'inspections' 
-  | 'reports' 
+export type RentalManagementTab =
+  | 'properties'
+  | 'tenants'
+  | 'leases'
+  | 'payments'
+  | 'maintenance'
+  | 'inspections'
+  | 'reports'
   | 'documents'
 
 // Form types
