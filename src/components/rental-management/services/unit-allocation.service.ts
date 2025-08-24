@@ -254,9 +254,29 @@ export class UnitAllocationService {
 
     } catch (error) {
       console.error('Error allocating unit to tenant:', error)
+
+      // Enhanced error handling for better debugging
+      let errorMessage = 'Failed to allocate unit'
+
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle Supabase error objects
+        const supabaseError = error as any
+        if (supabaseError.message) {
+          errorMessage = supabaseError.message
+        } else if (supabaseError.error_description) {
+          errorMessage = supabaseError.error_description
+        } else if (supabaseError.details) {
+          errorMessage = supabaseError.details
+        } else {
+          errorMessage = `Database error: ${JSON.stringify(error)}`
+        }
+      }
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to allocate unit'
+        error: errorMessage
       }
     }
   }

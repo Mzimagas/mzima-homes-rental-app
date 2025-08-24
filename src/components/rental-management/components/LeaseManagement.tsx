@@ -26,6 +26,7 @@ const leaseSchema = z.object({
   end_date: z.string().optional(),
   monthly_rent_kes: z.coerce.number().min(1, 'Monthly rent is required'),
   security_deposit: z.coerce.number().optional(),
+  pet_deposit: z.coerce.number().optional(),
   notes: z.string().optional(),
 })
 
@@ -692,6 +693,13 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
               type="number"
               {...register('security_deposit')}
               error={errors.security_deposit?.message}
+            />
+
+            <TextField
+              label="Pet Deposit (KES)"
+              type="number"
+              {...register('pet_deposit')}
+              error={errors.pet_deposit?.message}
             />
           </div>
 
