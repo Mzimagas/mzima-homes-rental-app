@@ -59,6 +59,7 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors }
   } = useForm<LeaseFormData>({
     resolver: zodResolver(leaseSchema)
