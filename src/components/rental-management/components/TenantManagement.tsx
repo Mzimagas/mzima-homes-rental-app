@@ -175,7 +175,8 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
 
       {/* Search and Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <TextField
+        <input
+          className="border rounded px-3 py-2 w-64"
           placeholder="Search by name..."
           value={q}
           onChange={(e) => setQ(e.target.value)}

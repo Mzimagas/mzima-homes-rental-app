@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
-import RentalDashboard from './components/RentalDashboard'
 import RentalPropertyList from './components/RentalPropertyList'
 import TenantManagement from './components/TenantManagement'
 import LeaseManagement from './components/LeaseManagement'
@@ -19,11 +18,10 @@ interface RentalManagementTabsProps {
 
 export default function RentalManagementTabs({ onDataRefresh }: RentalManagementTabsProps) {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<RentalManagementTab>('dashboard')
+  const [activeTab, setActiveTab] = useState<RentalManagementTab>('properties')
   const [loading, setLoading] = useState(false)
 
   const tabs = [
-    { id: 'dashboard', name: 'Dashboard', icon: '📊' },
     { id: 'properties', name: 'Properties', icon: '🏠' },
     { id: 'tenants', name: 'Tenants', icon: '👥' },
     { id: 'leases', name: 'Leases', icon: '📋' },
@@ -67,10 +65,6 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
 
         {/* Tab Content */}
         <div className="p-6">
-          {activeTab === 'dashboard' && (
-            <RentalDashboard onDataChange={handleDataChange} />
-          )}
-          
           {activeTab === 'properties' && (
             <RentalPropertyList onDataChange={handleDataChange} />
           )}
