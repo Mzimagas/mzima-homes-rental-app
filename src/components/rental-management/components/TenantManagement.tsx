@@ -50,6 +50,13 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
   const [availableUnits, setAvailableUnits] = useState<any[]>([])
   const [selectedNewUnit, setSelectedNewUnit] = useState('')
   const [reallocationNotes, setReallocationNotes] = useState('')
+  const [showEditTenantModal, setShowEditTenantModal] = useState(false)
+  const [showLeaseHistoryModal, setShowLeaseHistoryModal] = useState(false)
+  const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false)
+  const [editingTenant, setEditingTenant] = useState<RentalTenant | null>(null)
+  const [leaseHistory, setLeaseHistory] = useState<any[]>([])
+  const [paymentHistory, setPaymentHistory] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
 
   const {
     register,
@@ -258,6 +265,96 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       setError('Failed to reallocate tenant. Please try again.')
     } finally {
       setReallocating(false)
+    }
+  }
+
+  const handleEditTenant = (tenant: RentalTenant) => {
+    setEditingTenant(tenant)
+    setShowEditTenantModal(true)
+    setShowTenantModal(false)
+  }
+
+  const handleViewLeaseHistory = async (tenant: RentalTenant) => {
+    try {
+      setLoadingHistory(true)
+
+      // Load lease history for the tenant
+      const { data, error } = await supabase
+        .from('tenancy_agreements')
+        .select(`
+          *,
+          units!inner(
+            id,
+            unit_label,
+            monthly_rent_kes,
+            properties!inner(id, name)
+          )
+        `)
+        .eq('tenant_id', tenant.id)
+        .order('start_date', { ascending: false })
+
+      if (error) throw error
+
+      setLeaseHistory(data || [])
+      setShowLeaseHistoryModal(true)
+      setShowTenantModal(false)
+    } catch (error) {
+      console.error('Error loading lease history:', error)
+      setError('Failed to load lease history')
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  const handleViewPaymentHistory = async (tenant: RentalTenant) => {
+    try {
+      setLoadingHistory(true)
+
+      // TODO: Load payment history when payments table is ready
+      // For now, show placeholder
+      setPaymentHistory([])
+      setShowPaymentHistoryModal(true)
+      setShowTenantModal(false)
+    } catch (error) {
+      console.error('Error loading payment history:', error)
+      setError('Failed to load payment history')
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  const handleUpdateTenant = async (data: TenantFormData) => {
+    if (!editingTenant) return
+
+    try {
+      setSubmitting(true)
+
+      const { error } = await supabase
+        .from('tenants')
+        .update({
+          full_name: data.full_name,
+          phone: data.phone,
+          email: data.email,
+          id_number: data.id_number,
+          emergency_contact: data.emergency_contact,
+          notes: data.notes
+        })
+        .eq('id', editingTenant.id)
+
+      if (error) throw error
+
+      await loadTenants()
+      setShowEditTenantModal(false)
+      setEditingTenant(null)
+      reset()
+      onDataChange?.()
+
+      alert('Tenant updated successfully!')
+    } catch (error) {
+      console.error('Error updating tenant:', error)
+      setError('Failed to update tenant')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -590,8 +687,12 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
             </div>
 
             {/* Action Buttons */}
-            <div className="flex space-x-3">
-              <Button variant="primary" className="flex-1">
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={() => handleEditTenant(selectedTenant)}
+              >
                 Edit Tenant
               </Button>
               {selectedTenant.current_unit && (
@@ -606,10 +707,20 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   Reallocate Unit
                 </Button>
               )}
-              <Button variant="secondary" className="flex-1">
-                View Lease History
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => handleViewLeaseHistory(selectedTenant)}
+                disabled={loadingHistory}
+              >
+                {loadingHistory ? 'Loading...' : 'View Lease History'}
               </Button>
-              <Button variant="secondary">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => handleViewPaymentHistory(selectedTenant)}
+                disabled={loadingHistory}
+              >
                 Payment History
               </Button>
             </div>
@@ -779,6 +890,274 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Edit Tenant Modal */}
+      <Modal
+        isOpen={showEditTenantModal}
+        onClose={() => {
+          setShowEditTenantModal(false)
+          setEditingTenant(null)
+          reset()
+        }}
+        title="Edit Tenant"
+      >
+        {editingTenant && (
+          <form onSubmit={handleSubmit(handleUpdateTenant)} className="space-y-6">
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                {...register('full_name')}
+                defaultValue={editingTenant.full_name}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter full name"
+              />
+              {errors.full_name && (
+                <p className="text-red-500 text-sm mt-1">{errors.full_name.message}</p>
+              )}
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                {...register('phone')}
+                defaultValue={editingTenant.phone}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter phone number"
+              />
+              {errors.phone && (
+                <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                {...register('email')}
+                defaultValue={editingTenant.email || ''}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter email address"
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              )}
+            </div>
+
+            {/* ID Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                ID Number
+              </label>
+              <input
+                type="text"
+                {...register('id_number')}
+                defaultValue={editingTenant.id_number || ''}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter ID number"
+              />
+            </div>
+
+            {/* Emergency Contact */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Emergency Contact
+              </label>
+              <input
+                type="text"
+                {...register('emergency_contact')}
+                defaultValue={editingTenant.emergency_contact || ''}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter emergency contact"
+              />
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Notes
+              </label>
+              <textarea
+                {...register('notes')}
+                defaultValue={editingTenant.notes || ''}
+                rows={3}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Additional notes about the tenant"
+              />
+            </div>
+
+            {/* Submit Buttons */}
+            <div className="flex space-x-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowEditTenantModal(false)
+                  setEditingTenant(null)
+                  reset()
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={submitting}
+                className="flex-1"
+              >
+                {submitting ? 'Updating...' : 'Update Tenant'}
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Lease History Modal */}
+      <Modal
+        isOpen={showLeaseHistoryModal}
+        onClose={() => {
+          setShowLeaseHistoryModal(false)
+          setLeaseHistory([])
+        }}
+        title={selectedTenant ? `Lease History - ${selectedTenant.full_name}` : 'Lease History'}
+      >
+        <div className="space-y-6">
+          {leaseHistory.length > 0 ? (
+            <div className="space-y-4">
+              {leaseHistory.map((lease) => (
+                <div key={lease.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-medium text-gray-900">
+                        {lease.units.properties.name} - {lease.units.unit_label}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        Monthly Rent: KES {lease.monthly_rent_kes.toLocaleString()}
+                      </p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      lease.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                      lease.status === 'TERMINATED' ? 'bg-red-100 text-red-800' :
+                      lease.status === 'EXPIRED' ? 'bg-gray-100 text-gray-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {lease.status}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Start Date:</p>
+                      <p className="font-medium">{new Date(lease.start_date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">End Date:</p>
+                      <p className="font-medium">
+                        {lease.end_date ? new Date(lease.end_date).toLocaleDateString() : 'Ongoing'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {lease.notes && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded">
+                      <p className="text-sm text-gray-700">{lease.notes}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-4">📋</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Lease History</h3>
+              <p className="text-gray-500">This tenant has no lease agreements on record.</p>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Payment History Modal */}
+      <Modal
+        isOpen={showPaymentHistoryModal}
+        onClose={() => {
+          setShowPaymentHistoryModal(false)
+          setPaymentHistory([])
+        }}
+        title={selectedTenant ? `Payment History - ${selectedTenant.full_name}` : 'Payment History'}
+      >
+        <div className="space-y-6">
+          {paymentHistory.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Method
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paymentHistory.map((payment) => (
+                    <tr key={payment.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(payment.payment_date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        KES {payment.amount.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {payment.payment_method}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          payment.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                          payment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {payment.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-4">💳</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Payment History</h3>
+              <p className="text-gray-500 mb-4">
+                This tenant has no payment records yet. Payment tracking will be available once the payments system is fully implemented.
+              </p>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Coming Soon:</strong> Complete payment tracking with rent collection, payment methods, and financial reporting.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   )
