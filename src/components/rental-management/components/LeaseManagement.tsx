@@ -552,8 +552,9 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
                   {!startDate ? 'Select start date first' : 'Select Available Unit'}
                 </option>
                 {availableUnits.map(unit => {
-                  const availability = unitAvailability[unit.id]
-                  const isAvailable = availability?.available !== false
+                  // Use the availability data attached to the unit
+                  const availability = unit.availability
+                  const isAvailable = availability?.available === true
 
                   return (
                     <option
@@ -575,7 +576,10 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
             </div>
 
             {/* Unit Conflict Warning */}
-            {selectedUnit && unitAvailability[selectedUnit] && !unitAvailability[selectedUnit].available && (
+            {selectedUnit && (() => {
+              const selectedUnitData = availableUnits.find(u => u.id === selectedUnit)
+              return selectedUnitData?.availability && !selectedUnitData.availability.available
+            })() && (
               <div className="md:col-span-2 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
@@ -587,17 +591,25 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
                     <h3 className="text-sm font-medium text-yellow-800">Unit Availability Conflict</h3>
                     <div className="mt-2 text-sm text-yellow-700">
                       <p>This unit is not available for the selected dates.</p>
-                      {unitAvailability[selectedUnit].conflictingLeases?.map((lease, index) => (
-                        <p key={index} className="mt-1">
-                          • Occupied by {lease.tenants?.full_name}
-                          {lease.end_date ? ` until ${new Date(lease.end_date).toLocaleDateString()}` : ' (ongoing lease)'}
-                        </p>
-                      ))}
-                      {unitAvailability[selectedUnit].availableFrom && (
-                        <p className="mt-2 font-medium">
-                          Available from: {new Date(unitAvailability[selectedUnit].availableFrom!).toLocaleDateString()}
-                        </p>
-                      )}
+                      {(() => {
+                        const selectedUnitData = availableUnits.find(u => u.id === selectedUnit)
+                        const availability = selectedUnitData?.availability
+                        return (
+                          <>
+                            {availability?.conflictingLeases?.map((lease, index) => (
+                              <p key={index} className="mt-1">
+                                • Occupied by {availability.conflictingTenant}
+                                {lease.end_date ? ` until ${new Date(lease.end_date).toLocaleDateString()}` : ' (ongoing lease)'}
+                              </p>
+                            ))}
+                            {availability?.availableFrom && (
+                              <p className="mt-2 font-medium">
+                                Available from: {new Date(availability.availableFrom).toLocaleDateString()}
+                              </p>
+                            )}
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -605,7 +617,10 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
             )}
 
             {/* Selected Unit Details */}
-            {selectedUnit && unitAvailability[selectedUnit]?.available && (
+            {selectedUnit && (() => {
+              const selectedUnitData = availableUnits.find(u => u.id === selectedUnit)
+              return selectedUnitData?.availability?.available === true
+            })() && (
               <div className="md:col-span-2 bg-green-50 border border-green-200 rounded-lg p-4">
                 <h4 className="font-medium text-green-900 mb-2">Selected Unit Details</h4>
                 {(() => {
@@ -680,7 +695,11 @@ export default function LeaseManagement({ onDataChange }: LeaseManagementProps) 
                 !selectedUnit ||
                 !selectedTenant ||
                 !startDate ||
-                (selectedUnit && unitAvailability[selectedUnit] && !unitAvailability[selectedUnit].available)
+                (() => {
+                  if (!selectedUnit) return false
+                  const selectedUnitData = availableUnits.find(u => u.id === selectedUnit)
+                  return selectedUnitData?.availability && !selectedUnitData.availability.available
+                })()
               }
             >
               {checkingConflicts ? 'Checking Conflicts...' : submitting ? 'Creating...' : 'Create Lease'}

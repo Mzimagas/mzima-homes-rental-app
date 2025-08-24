@@ -56,9 +56,19 @@ export class UnitAllocationService {
 
       const result = data?.[0]
 
+      // If no result returned, it means no conflicts (unit is available)
+      if (!result) {
+        return {
+          available: true,
+          conflictingLeases: [],
+          availableFrom: undefined,
+          conflictingTenant: undefined
+        }
+      }
+
       return {
-        available: result?.available || false,
-        conflictingLeases: result?.conflicting_lease_id ? [{
+        available: result.available === true,
+        conflictingLeases: result.conflicting_lease_id ? [{
           id: result.conflicting_lease_id,
           tenant_id: '',
           unit_id: unitId,
@@ -66,8 +76,8 @@ export class UnitAllocationService {
           end_date: result.conflict_end,
           status: 'ACTIVE'
         }] : [],
-        availableFrom: result?.available_from,
-        conflictingTenant: result?.conflicting_tenant
+        availableFrom: result.available_from,
+        conflictingTenant: result.conflicting_tenant
       }
     } catch (error) {
       console.error('Error checking unit availability:', error)
