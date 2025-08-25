@@ -410,7 +410,7 @@ export default function DashboardLayout({
             </div>
 
             {/* Mobile Search */}
-            <div className="mt-3">
+            <div className="mt-3 md:hidden">
               <EnhancedGlobalSearch className="w-full" placeholder="Search..." />
             </div>
           </div>
