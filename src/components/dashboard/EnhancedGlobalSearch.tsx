@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react'
 import { useDashboardActions } from '../../hooks/useDashboardActions'
 import { universalSearchService, SearchResult, SearchSuggestion } from '../../services/UniversalSearchService'
 import { useRouter } from 'next/navigation'
@@ -16,8 +16,9 @@ interface EnhancedGlobalSearchProps {
 
 /**
  * Enhanced Global Search component with universal search capabilities
+ * Memoized for performance optimization
  */
-export default function EnhancedGlobalSearch({ 
+const EnhancedGlobalSearch = memo(function EnhancedGlobalSearch({
   className = '',
   placeholder = 'Search properties, tenants, payments...',
   onResultSelect,
@@ -375,7 +376,9 @@ export default function EnhancedGlobalSearch({
       )}
     </div>
   )
-}
+})
+
+export default EnhancedGlobalSearch
 
 // Debounce utility function
 function debounce<T extends (...args: any[]) => any>(
