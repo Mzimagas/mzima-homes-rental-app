@@ -2,21 +2,15 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useDashboardActions } from '../../hooks/useDashboardActions'
-import { Property, Tenant, Payment } from '../../lib/types/database'
-import { RentalManagementService } from '../rental-management/services/rental-management.service'
-
-interface SearchResult {
-  id: string
-  type: 'property' | 'tenant' | 'payment' | 'unit'
-  title: string
-  subtitle: string
-  data: any
-}
+import { universalSearchService, SearchResult, SearchSuggestion } from '../../services/UniversalSearchService'
+import { useRouter } from 'next/navigation'
 
 interface GlobalSearchProps {
   className?: string
   placeholder?: string
   onResultSelect?: (result: SearchResult) => void
+  showRecentSearches?: boolean
+  maxResults?: number
 }
 
 /**

@@ -5,7 +5,7 @@ import { useAuth } from '../../lib/auth-context'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
 import { DashboardProvider } from '../../contexts/DashboardContext'
 import ContextualHeader from '../../components/dashboard/ContextualHeader'
-import GlobalSearch from '../../components/dashboard/GlobalSearch'
+import EnhancedGlobalSearch from '../../components/dashboard/EnhancedGlobalSearch'
 import { useSidebarSwipe } from '../../hooks/useSwipeGesture'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -394,7 +394,7 @@ export default function DashboardLayout({
 
             {/* Mobile Search */}
             <div className="mt-3">
-              <GlobalSearch className="w-full" placeholder="Search..." />
+              <EnhancedGlobalSearch className="w-full" placeholder="Search..." />
             </div>
           </div>
 
@@ -402,7 +402,7 @@ export default function DashboardLayout({
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
               {/* Desktop Global Search */}
               <div className="hidden md:block mb-6">
-                <GlobalSearch className="max-w-md" />
+                <EnhancedGlobalSearch className="max-w-md" />
               </div>
 
               {/* Contextual Header */}
