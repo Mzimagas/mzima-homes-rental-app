@@ -235,44 +235,33 @@ const DashboardContext = createContext<{
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
   
-  // Persist context to localStorage (optimized)
-  const persistStateRef = useRef<NodeJS.Timeout>()
-
+  // Persist context to localStorage (debounced)
   useEffect(() => {
-    // Clear previous timeout
-    if (persistStateRef.current) {
-      clearTimeout(persistStateRef.current)
-    }
-
-    // Only persist significant state changes
     const persistableState = {
       selectedProperty: state.selectedProperty,
       selectedTenant: state.selectedTenant,
       selectedUnit: state.selectedUnit,
+      searchTerm: state.searchTerm,
+      activeFilters: state.activeFilters,
       currentTab: state.currentTab,
-      sidebarCollapsed: state.sidebarCollapsed
+      sidebarCollapsed: state.sidebarCollapsed,
+      quickActionsVisible: state.quickActionsVisible
     }
 
-    // Debounce with longer delay and ref cleanup
-    persistStateRef.current = setTimeout(() => {
-      try {
-        localStorage.setItem('dashboardContext', JSON.stringify(persistableState))
-      } catch (error) {
-        console.warn('Failed to persist dashboard context:', error)
-      }
-    }, 1000) // Increased to 1 second for better performance
+    // Debounce localStorage writes to prevent excessive updates
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('dashboardContext', JSON.stringify(persistableState))
+    }, 500)
 
-    return () => {
-      if (persistStateRef.current) {
-        clearTimeout(persistStateRef.current)
-      }
-    }
+    return () => clearTimeout(timeoutId)
   }, [
-    state.selectedProperty?.id, // Only track ID changes, not full object
-    state.selectedTenant?.id,
-    state.selectedUnit?.id,
+    state.selectedProperty,
+    state.selectedTenant,
+    state.selectedUnit,
+    state.searchTerm,
     state.currentTab,
-    state.sidebarCollapsed
+    state.sidebarCollapsed,
+    state.quickActionsVisible
   ])
   
   // Restore context from localStorage on mount

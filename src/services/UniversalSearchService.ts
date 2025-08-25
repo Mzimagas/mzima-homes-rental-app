@@ -45,8 +45,6 @@ export class UniversalSearchService {
   private indexingInProgress = false
   private recentSearches: string[] = []
   private savedSearches: Map<string, string> = new Map()
-  private searchCache: Map<string, { results: SearchResult[], timestamp: number }> = new Map()
-  private readonly CACHE_DURATION = 30000 // 30 seconds cache
 
   private constructor() {
     this.loadRecentSearches()
@@ -65,13 +63,6 @@ export class UniversalSearchService {
    */
   async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
     if (!query.trim()) return []
-
-    // Check cache first
-    const cacheKey = `${query}-${JSON.stringify(options)}`
-    const cached = this.searchCache.get(cacheKey)
-    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      return cached.results
-    }
 
     // Ensure index is up to date
     await this.ensureIndexFreshness()
@@ -103,24 +94,7 @@ export class UniversalSearchService {
     const sortedResults = this.sortResults(filteredResults, sortBy)
 
     // Apply pagination
-    const paginatedResults = sortedResults.slice(offset, offset + limit)
-
-    // Cache results
-    this.searchCache.set(cacheKey, {
-      results: paginatedResults,
-      timestamp: Date.now()
-    })
-
-    // Clean old cache entries (keep cache size manageable)
-    if (this.searchCache.size > 100) {
-      const oldestEntries = Array.from(this.searchCache.entries())
-        .sort(([,a], [,b]) => a.timestamp - b.timestamp)
-        .slice(0, 50)
-
-      oldestEntries.forEach(([key]) => this.searchCache.delete(key))
-    }
-
-    return paginatedResults
+    return sortedResults.slice(offset, offset + limit)
   }
 
   /**
@@ -273,19 +247,10 @@ export class UniversalSearchService {
   // Private methods
 
   private async ensureIndexFreshness(): Promise<void> {
-    // Only rebuild if index is empty or explicitly requested
-    // Remove automatic time-based rebuilding to improve performance
-    if (this.searchIndex.size === 0 && !this.indexingInProgress) {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    if (this.lastIndexUpdate < fiveMinutesAgo || this.searchIndex.size === 0) {
       await this.buildIndex()
     }
-  }
-
-  /**
-   * Force index rebuild (call this when data actually changes)
-   */
-  async forceIndexRebuild(): Promise<void> {
-    this.lastIndexUpdate = new Date(0) // Reset timestamp
-    await this.buildIndex()
   }
 
   private performSearch(query: string, items: BaseSearchItem[]): SearchResult[] {
