@@ -169,40 +169,7 @@ export class RentalManagementService {
     }
   }
 
-  // Lease Agreements
-  static async getLeaseAgreements(): Promise<LeaseAgreement[]> {
-    try {
-      const { data, error } = await supabase
-        .from('tenancy_agreements')
-        .select(`
-          *,
-          tenants(
-            id,
-            full_name,
-            phone,
-            email
-          ),
-          units(
-            id,
-            unit_label,
-            property_id,
-            properties(
-              id,
-              name,
-              physical_address
-            )
-          )
-        `)
-        .order('created_at', { ascending: false })
 
-      if (error) throw error
-
-      return data || []
-    } catch (error) {
-      console.error('Error getting lease agreements:', error)
-      throw new Error('Failed to load lease agreements')
-    }
-  }
 
   // Maintenance Requests
   static async getMaintenanceRequests(): Promise<MaintenanceRequest[]> {
