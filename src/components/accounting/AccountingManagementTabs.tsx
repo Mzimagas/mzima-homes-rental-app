@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import AccountingWorkflowNavigation, { AccountingTab } from './components/AccountingWorkflowNavigation'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
 import { AcquisitionFinancialsService } from '../properties/services/acquisition-financials.service'
+import { perf } from '../../lib/performance-monitor'
 
 // Shared currency formatter aligning with properties utils
 function formatCurrency(amount: number) {
@@ -44,22 +45,21 @@ export default function AccountingManagementTabs() {
       return
     }
 
-    const startTime = performance.now()
     setLoading(true)
     setError(null)
 
     try {
-      // Load data with timeout and individual error handling
-      const results = await Promise.allSettled(
-        properties.map(async (p) => {
-          try {
-            // Add timeout to prevent hanging
-            const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Request timeout')), 5000)
-            )
-
-            const dataPromise = AcquisitionFinancialsService.loadAllFinancialData(p.property_id)
-            const { costs, payments } = await Promise.race([dataPromise, timeoutPromise]) as any
+      // Load data with timeout and individual error handling using performance monitor
+      const results = await perf.measure(
+        'accounting-data-load',
+        async () => Promise.allSettled(
+          properties.map(async (p) => {
+            try {
+              const { costs, payments } = await perf.withTimeout(
+                AcquisitionFinancialsService.loadAllFinancialData(p.property_id),
+                5000,
+                `property-${p.property_name}-financial-data`
+              )
 
             const acquisitionCosts = (costs || []).reduce((sum: number, c: any) => sum + Number(c.amount_kes || 0), 0)
             const purchaseInstallments = (payments || []).reduce((sum: number, x: any) => sum + Number(x.amount_kes || 0), 0)
@@ -80,7 +80,8 @@ export default function AccountingManagementTabs() {
               purchaseInstallments: 0,
             }
           }
-        })
+        }),
+        { propertyCount: properties.length }
       )
 
       // Extract successful results and handle failures gracefully
@@ -95,9 +96,6 @@ export default function AccountingManagementTabs() {
       if (failedCount > 0) {
         console.warn(`${failedCount} properties failed to load financial data`)
       }
-
-      const endTime = performance.now()
-      console.log(`Accounting data loaded in ${Math.round(endTime - startTime)}ms for ${properties.length} properties`)
 
     } catch (err) {
       console.error('Error loading accounting data:', err)
