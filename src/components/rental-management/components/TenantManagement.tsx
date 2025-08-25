@@ -5,9 +5,10 @@ import { Button, TextField } from '../../ui'
 import { LoadingCard } from '../../ui/loading'
 import { ErrorCard } from '../../ui/error'
 import Modal from '../../ui/Modal'
-import { RentalTenant, TenantFormData } from '../types/rental-management.types'
+import { RentalTenant, TenantFormData, LeaseAgreement, LeaseFormData } from '../types/rental-management.types'
 import { RentalManagementService } from '../services/rental-management.service'
 import { UnitAllocationService } from '../services/unit-allocation.service'
+import { ConflictPreventionService } from '../services/conflict-prevention.service'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -39,6 +40,17 @@ const tenantSchema = z.object({
   return (hasName && hasPhone) || (!hasName && !hasPhone)
 }, { message: 'Emergency contact name and phone must be provided together', path: ['emergency_contact_name'] })
 
+const leaseSchema = z.object({
+  tenant_id: z.string().min(1, 'Tenant is required'),
+  unit_id: z.string().min(1, 'Unit is required'),
+  start_date: z.string().min(1, 'Start date is required'),
+  end_date: z.string().optional(),
+  monthly_rent_kes: z.coerce.number().min(1, 'Monthly rent is required'),
+  security_deposit: z.coerce.number().optional(),
+  pet_deposit: z.coerce.number().optional(),
+  notes: z.string().optional(),
+})
+
 export default function TenantManagement({ onDataChange }: TenantManagementProps) {
   const [tenants, setTenants] = useState<RentalTenant[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,6 +80,13 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
   const [paymentHistory, setPaymentHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
 
+  // Lease management state
+  const [showLeaseManagementModal, setShowLeaseManagementModal] = useState(false)
+  const [showCreateLeaseModal, setShowCreateLeaseModal] = useState(false)
+  const [selectedLeaseForManagement, setSelectedLeaseForManagement] = useState<LeaseAgreement | null>(null)
+  const [tenantForNewLease, setTenantForNewLease] = useState<RentalTenant | null>(null)
+  const [leaseSubmitting, setLeaseSubmitting] = useState(false)
+
   const {
     register,
     handleSubmit,
@@ -75,6 +94,17 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     formState: { errors }
   } = useForm<TenantFormData>({
     resolver: zodResolver(tenantSchema)
+  })
+
+  const {
+    register: registerLease,
+    handleSubmit: handleSubmitLease,
+    reset: resetLease,
+    watch: watchLease,
+    setValue: setValueLease,
+    formState: { errors: leaseErrors }
+  } = useForm<LeaseFormData>({
+    resolver: zodResolver(leaseSchema)
   })
 
   useEffect(() => {
@@ -346,6 +376,124 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     }
   }
 
+  // Lease Management Functions
+  const handleCreateLease = async (tenant: RentalTenant) => {
+    setTenantForNewLease(tenant)
+    setValueLease('tenant_id', tenant.id)
+
+    // Load available units
+    try {
+      const { data: allUnits, error } = await supabase
+        .from('units')
+        .select(`
+          id,
+          unit_label,
+          monthly_rent_kes,
+          property_id,
+          properties!inner(id, name),
+          tenancy_agreements!left(id, status, tenant_id)
+        `)
+        .order('unit_label')
+
+      if (error) throw error
+
+      // Filter to show only vacant units
+      const availableUnitsData = allUnits?.filter((unit: any) => {
+        const hasActiveTenant = unit.tenancy_agreements?.some((agreement: any) =>
+          agreement.status === 'ACTIVE'
+        )
+        return !hasActiveTenant
+      }) || []
+
+      setAvailableUnits(availableUnitsData)
+    } catch (error) {
+      console.error('Error loading available units:', error)
+      setError('Failed to load available units')
+    }
+
+    setShowCreateLeaseModal(true)
+  }
+
+  const handleManageLease = (lease: LeaseAgreement) => {
+    setSelectedLeaseForManagement(lease)
+    setShowLeaseManagementModal(true)
+  }
+
+  const onSubmitLease = async (data: LeaseFormData) => {
+    try {
+      setLeaseSubmitting(true)
+
+      // Check for conflicts
+      const conflictResult = await ConflictPreventionService.checkLeaseConflicts({
+        tenant_id: data.tenant_id,
+        unit_id: data.unit_id,
+        start_date: data.start_date,
+        end_date: data.end_date || undefined
+      })
+
+      if (!conflictResult.canProceed) {
+        alert(`Cannot create lease: ${conflictResult.conflicts.join(', ')}`)
+        return
+      }
+
+      // Create the lease
+      const { error } = await supabase
+        .from('tenancy_agreements')
+        .insert({
+          tenant_id: data.tenant_id,
+          unit_id: data.unit_id,
+          start_date: data.start_date,
+          end_date: data.end_date || null,
+          monthly_rent_kes: data.monthly_rent_kes,
+          security_deposit: data.security_deposit || 0,
+          pet_deposit: data.pet_deposit || 0,
+          status: 'ACTIVE',
+          notes: data.notes || null
+        })
+
+      if (error) throw error
+
+      await loadTenants()
+      setShowCreateLeaseModal(false)
+      setTenantForNewLease(null)
+      resetLease()
+      onDataChange?.()
+
+      alert('Lease created successfully!')
+    } catch (error) {
+      console.error('Error creating lease:', error)
+      setError('Failed to create lease')
+    } finally {
+      setLeaseSubmitting(false)
+    }
+  }
+
+  const handleTerminateLease = async (lease: LeaseAgreement) => {
+    if (!confirm('Are you sure you want to terminate this lease?')) return
+
+    try {
+      const { error } = await supabase
+        .from('tenancy_agreements')
+        .update({
+          status: 'TERMINATED',
+          end_date: new Date().toISOString().split('T')[0]
+        })
+        .eq('id', lease.id)
+
+      if (error) throw error
+
+      await loadTenants()
+      setShowLeaseManagementModal(false)
+      setSelectedLeaseForManagement(null)
+      onDataChange?.()
+
+      alert('Lease terminated successfully!')
+    } catch (error) {
+      console.error('Error terminating lease:', error)
+      setError('Failed to terminate lease')
+    }
+  }
+
   if (loading) {
     return <LoadingCard title="Loading tenants..." />
   }
@@ -365,8 +513,8 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Tenant Management</h2>
-          <p className="text-sm text-gray-500">Manage tenant information and relationships</p>
+          <h2 className="text-xl font-semibold text-gray-900">Tenants & Leases</h2>
+          <p className="text-sm text-gray-500">Manage tenant information and lease agreements</p>
         </div>
         <Button onClick={() => setShowAddTenantModal(true)} variant="primary">
           Add Tenant
@@ -415,77 +563,169 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
           <div className="divide-y divide-gray-200">
             {filteredTenants.map((tenant) => {
               const status = getTenantStatus(tenant)
+              const currentLease = tenant.current_lease
+              const hasActiveLease = currentLease && currentLease.status === 'ACTIVE'
+
               return (
-                <div
-                  key={tenant.id}
-                  className="px-6 py-4 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleTenantClick(tenant)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-sm font-medium text-blue-600">
-                            {tenant.full_name.charAt(0).toUpperCase()}
-                          </span>
+                <div key={tenant.id} className="bg-white border-b border-gray-200">
+                  {/* Tenant Header */}
+                  <div className="px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0">
+                          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-lg font-medium text-blue-600">
+                              {tenant.full_name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center space-x-3">
+                            <h3 className="text-lg font-medium text-gray-900 truncate">
+                              {tenant.full_name}
+                            </h3>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                              {status.label}
+                            </span>
+                            {hasActiveLease && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Active Lease
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-4 mt-1">
+                            <p className="text-sm text-gray-500">{tenant.phone}</p>
+                            {tenant.email && (
+                              <p className="text-sm text-gray-500">{tenant.email}</p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center space-x-3">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {tenant.full_name}
-                          </p>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                            {status.label}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-4 mt-1">
-                          <p className="text-sm text-gray-500">{tenant.phone}</p>
-                          {tenant.email && (
-                            <p className="text-sm text-gray-500">{tenant.email}</p>
-                          )}
-                          {tenant.current_unit && (() => {
-                            const { unit, property } = extractUnitPropertyData(tenant)
-                            const unitDisplay = formatUnitAllocation(unit, property, {
-                              fallbackText: 'Unit assignment pending'
-                            })
-                            return (
-                              <p className="text-sm text-blue-600 font-medium">
-                                📍 {unitDisplay}
-                              </p>
-                            )
-                          })()}
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          className="p-2 text-gray-400 hover:text-gray-600"
+                          onClick={() => {
+                            setSelectedTenant(tenant)
+                            setShowTenantModal(true)
+                          }}
+                          title="View Details"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {tenant.current_unit && (
+                  </div>
+
+                  {/* Lease Information Section */}
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    {hasActiveLease ? (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-medium text-gray-900">Current Lease</h4>
+                          <span className="text-sm text-gray-500">
+                            {currentLease.start_date} - {currentLease.end_date || 'Ongoing'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-600">Property & Unit</p>
+                            {tenant.current_unit && (() => {
+                              const { unit, property } = extractUnitPropertyData(tenant)
+                              const unitDisplay = formatUnitAllocation(unit, property, {
+                                fallbackText: 'Unit assignment pending'
+                              })
+                              return (
+                                <p className="font-medium text-blue-600">
+                                  📍 {unitDisplay}
+                                </p>
+                              )
+                            })()}
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Monthly Rent</p>
+                            <p className="font-medium">
+                              KES {currentLease.monthly_rent_kes?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Security Deposit</p>
+                            <p className="font-medium">
+                              KES {currentLease.security_deposit?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Lease Status</p>
+                            <p className="font-medium text-green-600">{currentLease.status}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-gray-500 mb-2">No active lease</p>
+                        <p className="text-sm text-gray-400">This tenant doesn't have an active lease agreement</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="px-6 py-4 bg-white border-t border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <div className="flex space-x-2">
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => handleReallocation(tenant)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleViewLeaseHistory(tenant)
+                          }}
                           className="text-xs"
                         >
-                          Reallocate Unit
+                          📋 Lease History
                         </Button>
-                      )}
-                      <button
-                        className="p-2 text-gray-400 hover:text-gray-600"
-                        onClick={() => {
-                          setSelectedTenant(tenant)
-                          setShowTenantModal(true)
-                        }}
-                        title="View Details"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-red-600" title="Delete Tenant">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                        {tenant.current_unit && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleReallocation(tenant)
+                            }}
+                            className="text-xs"
+                          >
+                            🔄 Reallocate Unit
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex space-x-2">
+                        {hasActiveLease ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleManageLease(currentLease)
+                            }}
+                            className="text-xs"
+                          >
+                            📝 Manage Lease
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCreateLease(tenant)
+                            }}
+                            className="text-xs"
+                          >
+                            ➕ Create Lease
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1364,6 +1604,218 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                 </p>
               </div>
             </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Create Lease Modal */}
+      <Modal
+        isOpen={showCreateLeaseModal}
+        onClose={() => {
+          setShowCreateLeaseModal(false)
+          setTenantForNewLease(null)
+          resetLease()
+        }}
+        title={tenantForNewLease ? `Create Lease - ${tenantForNewLease.full_name}` : 'Create Lease'}
+      >
+        <form onSubmit={handleSubmitLease(onSubmitLease)} className="p-6 space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Lease Details</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Unit <span className="text-red-600">*</span>
+                </label>
+                <select
+                  {...registerLease('unit_id')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="">Select a unit</option>
+                  {availableUnits.map((unit) => (
+                    <option key={unit.id} value={unit.id}>
+                      {unit.properties?.name} - {unit.unit_label} (KES {unit.monthly_rent_kes?.toLocaleString()}/month)
+                    </option>
+                  ))}
+                </select>
+                {leaseErrors.unit_id && (
+                  <p className="text-xs text-red-600 mt-1">{leaseErrors.unit_id.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Monthly Rent (KES) <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="number"
+                  {...registerLease('monthly_rent_kes')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter monthly rent"
+                />
+                {leaseErrors.monthly_rent_kes && (
+                  <p className="text-xs text-red-600 mt-1">{leaseErrors.monthly_rent_kes.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Start Date <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="date"
+                  {...registerLease('start_date')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+                {leaseErrors.start_date && (
+                  <p className="text-xs text-red-600 mt-1">{leaseErrors.start_date.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  End Date (Optional)
+                </label>
+                <input
+                  type="date"
+                  {...registerLease('end_date')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Security Deposit (KES)
+                </label>
+                <input
+                  type="number"
+                  {...registerLease('security_deposit')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter security deposit"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Pet Deposit (KES)
+                </label>
+                <input
+                  type="number"
+                  {...registerLease('pet_deposit')}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter pet deposit"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Notes
+              </label>
+              <textarea
+                {...registerLease('notes')}
+                rows={3}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Additional notes about the lease"
+              />
+            </div>
+          </div>
+
+          <div className="flex space-x-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowCreateLeaseModal(false)
+                setTenantForNewLease(null)
+                resetLease()
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={leaseSubmitting}
+              className="flex-1"
+            >
+              {leaseSubmitting ? 'Creating...' : 'Create Lease'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Lease Management Modal */}
+      <Modal
+        isOpen={showLeaseManagementModal}
+        onClose={() => {
+          setShowLeaseManagementModal(false)
+          setSelectedLeaseForManagement(null)
+        }}
+        title="Lease Management"
+      >
+        <div className="p-6 space-y-6">
+          {selectedLeaseForManagement && (
+            <>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Lease Details</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">Tenant:</p>
+                    <p className="font-medium">{selectedLeaseForManagement.tenant?.full_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Property & Unit:</p>
+                    <p className="font-medium">
+                      {selectedLeaseForManagement.unit?.properties?.name} - {selectedLeaseForManagement.unit?.unit_label}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Monthly Rent:</p>
+                    <p className="font-medium">KES {selectedLeaseForManagement.monthly_rent_kes?.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Status:</p>
+                    <p className="font-medium">{selectedLeaseForManagement.status}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Start Date:</p>
+                    <p className="font-medium">{new Date(selectedLeaseForManagement.start_date).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">End Date:</p>
+                    <p className="font-medium">
+                      {selectedLeaseForManagement.end_date
+                        ? new Date(selectedLeaseForManagement.end_date).toLocaleDateString()
+                        : 'Ongoing'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setShowLeaseManagementModal(false)
+                    setSelectedLeaseForManagement(null)
+                  }}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+                {selectedLeaseForManagement.status === 'ACTIVE' && (
+                  <Button
+                    variant="danger"
+                    onClick={() => handleTerminateLease(selectedLeaseForManagement)}
+                    className="flex-1"
+                  >
+                    Terminate Lease
+                  </Button>
+                )}
+              </div>
+            </>
           )}
         </div>
       </Modal>

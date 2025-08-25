@@ -210,7 +210,6 @@ export interface ExpenseBreakdown {
 export type RentalManagementTab =
   | 'properties'
   | 'tenants'
-  | 'leases'
   | 'payments'
 
 // Form types

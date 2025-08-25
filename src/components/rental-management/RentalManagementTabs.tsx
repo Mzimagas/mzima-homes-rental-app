@@ -5,7 +5,6 @@ import { useAuth } from '../../lib/auth-context'
 import { useRealTimeOccupancy } from './hooks/useRealTimeOccupancy'
 import RentalPropertyList from './components/RentalPropertyList'
 import TenantManagement from './components/TenantManagement'
-import LeaseManagement from './components/LeaseManagement'
 import PaymentTracking from './components/PaymentTracking'
 import { RentalManagementTab } from './types/rental-management.types'
 
@@ -28,8 +27,7 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
 
   const tabs = [
     { id: 'properties', name: 'Properties', icon: '🏠' },
-    { id: 'tenants', name: 'Tenants', icon: '👥' },
-    { id: 'leases', name: 'Leases', icon: '📋' },
+    { id: 'tenants', name: 'Tenants & Leases', icon: '👥' },
     { id: 'payments', name: 'Payments', icon: '💳' },
   ] as const
 
@@ -97,10 +95,6 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
           
           {activeTab === 'tenants' && (
             <TenantManagement onDataChange={handleDataChange} />
-          )}
-          
-          {activeTab === 'leases' && (
-            <LeaseManagement onDataChange={handleDataChange} />
           )}
 
           {activeTab === 'payments' && (
