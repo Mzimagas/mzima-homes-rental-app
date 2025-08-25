@@ -14,6 +14,13 @@ function getCsrfToken(): string | null {
 
 // API service for property acquisition financials
 export class AcquisitionFinancialsService {
+  // Feature flags to disable non-existent APIs and reduce 403 errors
+  private static readonly FEATURE_FLAGS = {
+    PURCHASE_PIPELINE_API: false, // Set to true when API is implemented
+    ACQUISITION_COSTS_API: false, // Set to true when API is implemented
+    PAYMENT_INSTALLMENTS_API: false // Set to true when API is implemented
+  }
+
   private static async makeRequest(url: string, options: RequestInit = {}) {
     // Get the auth token and CSRF token
     const { data: { session } } = await supabase.auth.getSession()
@@ -258,49 +265,71 @@ export class AcquisitionFinancialsService {
     }
   }
 
-  // Combined data loading with timeout and better error handling
+  // Combined data loading with feature flags to avoid unnecessary API calls
   static async loadAllFinancialData(propertyId: string): Promise<{
     costs: AcquisitionCostEntry[]
     payments: PaymentInstallment[]
   }> {
+    // Skip API calls entirely if features are disabled to avoid 403 errors
+    if (!this.FEATURE_FLAGS.PURCHASE_PIPELINE_API &&
+        !this.FEATURE_FLAGS.ACQUISITION_COSTS_API &&
+        !this.FEATURE_FLAGS.PAYMENT_INSTALLMENTS_API) {
+      // Return empty data immediately if no APIs are available
+      return { costs: [], payments: [] }
+    }
+
     try {
       // Add timeout to prevent hanging requests
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Request timeout after 5 seconds')), 5000)
       )
 
-      // Try purchase pipeline API first with timeout
-      try {
-        const dataPromise = this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`)
-        const data = await Promise.race([dataPromise, timeoutPromise])
-        console.log('Successfully loaded from purchase pipeline API:', data)
-        return {
-          costs: data.costs || [],
-          payments: data.payments || []
-        }
-      } catch (pipelineError) {
-        // Don't log 403/404 errors as they're expected for non-existent APIs
-        if (!pipelineError.message?.includes('403') && !pipelineError.message?.includes('404')) {
+      // Try purchase pipeline API first with timeout (only if enabled)
+      if (this.FEATURE_FLAGS.PURCHASE_PIPELINE_API) {
+        try {
+          const dataPromise = this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`)
+          const data = await Promise.race([dataPromise, timeoutPromise])
+          console.log('Successfully loaded from purchase pipeline API:', data)
+          return {
+            costs: data.costs || [],
+            payments: data.payments || []
+          }
+        } catch (pipelineError) {
           console.log('Purchase pipeline API failed, trying property APIs:', pipelineError)
         }
+      }
 
-        // Fall back to property financial endpoints with timeout
-        const [costs, payments] = await Promise.allSettled([
+      // Fall back to property financial endpoints with timeout (only if enabled)
+      const promises: Promise<any>[] = []
+
+      if (this.FEATURE_FLAGS.ACQUISITION_COSTS_API) {
+        promises.push(
           Promise.race([
             this.getAcquisitionCosts(propertyId),
             timeoutPromise
-          ]).catch(() => []),
+          ]).catch(() => [])
+        )
+      } else {
+        promises.push(Promise.resolve([]))
+      }
+
+      if (this.FEATURE_FLAGS.PAYMENT_INSTALLMENTS_API) {
+        promises.push(
           Promise.race([
             this.getPaymentInstallments(propertyId),
             timeoutPromise
           ]).catch(() => [])
-        ]).then(results => [
-          results[0].status === 'fulfilled' ? results[0].value : [],
-          results[1].status === 'fulfilled' ? results[1].value : []
-        ])
-
-        return { costs, payments }
+        )
+      } else {
+        promises.push(Promise.resolve([]))
       }
+
+      const [costs, payments] = await Promise.allSettled(promises).then(results => [
+        results[0].status === 'fulfilled' ? results[0].value : [],
+        results[1].status === 'fulfilled' ? results[1].value : []
+      ])
+
+      return { costs, payments }
     } catch (error) {
       // Don't log expected errors to reduce console noise
       if (!error.message?.includes('403') && !error.message?.includes('404') && !error.message?.includes('timeout')) {
