@@ -11,7 +11,6 @@ import {
   addSummaryCardsToPDF,
   createExcelWorkbook,
   addTableToExcel,
-  addSummaryDashboardToExcel,
   saveExcelFile,
   savePDFFile,
   generateFilename,

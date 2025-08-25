@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from '../ui'
 import { User } from '../../types/user'
 
@@ -12,7 +12,7 @@ interface UserCardProps {
   onToggleStatus: (newStatus: boolean) => void
 }
 
-export default function UserCard({ user, onEdit, onView, onDelete, onToggleStatus }: UserCardProps) {
+const UserCard = React.memo(function UserCard({ user, onEdit, onView, onDelete, onToggleStatus }: UserCardProps) {
   const [isToggling, setIsToggling] = useState(false)
 
   const handleStatusToggle = async () => {
@@ -189,4 +189,6 @@ export default function UserCard({ user, onEdit, onView, onDelete, onToggleStatu
       </div>
     </div>
   )
-}
+})
+
+export default UserCard

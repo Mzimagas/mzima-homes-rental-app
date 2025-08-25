@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect, Suspense, lazy } from 'react'
+import React, { useState, useEffect, Suspense, lazy, useRef } from 'react'
 import { useAuth } from '../../../lib/auth-context'
 import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard } from '../../../components/ui/error'
 import ErrorBoundary from '../../../components/ui/ErrorBoundary'
-import { useRef } from 'react'
 
 // Lazy load heavy report components
 const FinancialReports = lazy(() => import('../../../components/reports/financial-reports'))
@@ -14,8 +13,8 @@ const OccupancyReports = lazy(() => import('../../../components/reports/occupanc
 const TenantAnalytics = lazy(() => import('../../../components/reports/tenant-analytics'))
 const PropertyReports = lazy(() => import('../../../components/reports/property-reports'))
 
-// Loading component for report tabs
-function ReportTabLoading() {
+// Loading component for report tabs - memoized to prevent unnecessary re-renders
+const ReportTabLoading = React.memo(() => {
   return (
     <div className="min-h-[400px] flex items-center justify-center">
       <div className="text-center">
@@ -24,7 +23,7 @@ function ReportTabLoading() {
       </div>
     </div>
   )
-}
+})
 
 export default function ReportsPage() {
   const { user } = useAuth()
