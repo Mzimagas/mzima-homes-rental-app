@@ -4,30 +4,21 @@ import { useState, useEffect } from 'react'
 import { Button, TextField, Select } from '../../ui'
 import { LoadingCard } from '../../ui/loading'
 import { ErrorCard } from '../../ui/error'
-import Modal from '../../ui/Modal'
+// Removed Modal import - using PaymentForm component instead
 import { PaymentRecord } from '../types/rental-management.types'
 import { RentalManagementService } from '../services/rental-management.service'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+// Removed old form imports - using PaymentForm component instead
 import PaymentAnalytics from '../../payments/payment-analytics'
 import RentBalancesSection from '../../payments/rent-balances-section'
 import UtilitiesSection from '../../payments/utilities-section'
+// Import the main dashboard payment form
+import PaymentForm from '../../payments/payment-form'
 
 interface PaymentTrackingProps {
   onDataChange?: () => void
 }
 
-const paymentSchema = z.object({
-  tenant_id: z.string().min(1, 'Tenant is required'),
-  amount: z.coerce.number().min(1, 'Amount is required'),
-  payment_date: z.string().min(1, 'Payment date is required'),
-  payment_method: z.enum(['CASH', 'BANK_TRANSFER', 'MPESA', 'CHEQUE', 'CARD']),
-  reference_number: z.string().optional(),
-  notes: z.string().optional(),
-})
-
-type PaymentFormData = z.infer<typeof paymentSchema>
+// Removed old payment schema - using PaymentForm component with its own validation
 
 export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) {
   const [payments, setPayments] = useState<PaymentRecord[]>([])
@@ -35,23 +26,14 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [tenants, setTenants] = useState<any[]>([])
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [activeTab, setActiveTab] = useState<'tracking' | 'analytics' | 'rent' | 'utilities'>('tracking')
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors }
-  } = useForm<PaymentFormData>({
-    resolver: zodResolver(paymentSchema)
-  })
+  // PaymentForm component handles its own state and validation
 
   useEffect(() => {
     loadPayments()
-    loadTenants()
+    // PaymentForm component handles its own tenant loading
   }, [])
 
   const loadPayments = async () => {
@@ -67,31 +49,13 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
     }
   }
 
-  const loadTenants = async () => {
-    try {
-      const tenantsData = await RentalManagementService.getTenants()
-      setTenants(tenantsData)
-    } catch (error) {
-      console.error('Error loading tenants:', error)
-    }
-  }
+  // Removed loadTenants - PaymentForm component handles its own tenant loading
 
-  const onSubmit = async (data: PaymentFormData) => {
-    try {
-      setSubmitting(true)
-      // TODO: Implement createPayment in service
-      console.log('Payment data:', data)
-      alert('Payment recording functionality will be implemented in the next phase')
-      setShowPaymentModal(false)
-      reset()
-      loadPayments()
-      onDataChange?.()
-    } catch (error) {
-      console.error('Error creating payment:', error)
-      setError('Failed to record payment')
-    } finally {
-      setSubmitting(false)
-    }
+  // Payment form success handler
+  const handlePaymentSuccess = () => {
+    setShowPaymentForm(false)
+    loadPayments() // Reload payment data
+    onDataChange?.() // Notify parent component
   }
 
   return (
@@ -102,7 +66,7 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
           <h2 className="text-xl font-semibold text-gray-900">Payment Management</h2>
           <p className="text-sm text-gray-500">Comprehensive payment tracking and analytics</p>
         </div>
-        <Button variant="primary" onClick={() => setShowPaymentModal(true)}>
+        <Button variant="primary" onClick={() => setShowPaymentForm(true)}>
           Record Payment
         </Button>
       </div>
@@ -136,54 +100,54 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
       {activeTab === 'tracking' && (
         <>
           {/* Search and Filters */}
-      <div className="flex space-x-4">
-        <div className="flex-1">
-          <TextField
-            placeholder="Search payments..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="w-48">
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            options={[
-              { value: 'all', label: 'All Payments' },
-              { value: 'pending', label: 'Pending' },
-              { value: 'completed', label: 'Completed' },
-              { value: 'failed', label: 'Failed' },
-            ]}
-          />
-        </div>
-        <Button variant="secondary" onClick={loadPayments}>
-          Refresh
-        </Button>
-      </div>
+          <div className="flex space-x-4">
+            <div className="flex-1">
+              <TextField
+                placeholder="Search payments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="w-48">
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                options={[
+                  { value: 'all', label: 'All Payments' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'failed', label: 'Failed' },
+                ]}
+              />
+            </div>
+            <Button variant="secondary" onClick={loadPayments}>
+              Refresh
+            </Button>
+          </div>
 
-      {/* Content */}
-      {loading ? (
-        <LoadingCard />
-      ) : error ? (
-        <ErrorCard message={error} />
-      ) : (
-        <div className="bg-white rounded-lg shadow">
-          {payments.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tenant
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Method
+          {/* Content */}
+          {loading ? (
+            <LoadingCard />
+          ) : error ? (
+            <ErrorCard message={error} />
+          ) : (
+            <div className="bg-white rounded-lg shadow">
+              {payments.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tenant
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Method
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -234,148 +198,13 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
               <p className="text-gray-500 mb-4">
                 Start tracking payments by recording your first payment.
               </p>
-              <Button variant="primary" onClick={() => setShowPaymentModal(true)}>
+              <Button variant="primary" onClick={() => setShowPaymentForm(true)}>
                 Record First Payment
               </Button>
             </div>
+              )}
+            </div>
           )}
-        </div>
-      )}
-
-      {/* Payment Modal */}
-      <Modal
-        isOpen={showPaymentModal}
-        onClose={() => {
-          setShowPaymentModal(false)
-          reset()
-        }}
-        title="Record Payment"
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Tenant Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tenant *
-            </label>
-            <select
-              {...register('tenant_id')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select a tenant</option>
-              {tenants.map((tenant) => (
-                <option key={tenant.id} value={tenant.id}>
-                  {tenant.full_name}
-                </option>
-              ))}
-            </select>
-            {errors.tenant_id && (
-              <p className="text-red-500 text-sm mt-1">{errors.tenant_id.message}</p>
-            )}
-          </div>
-
-          {/* Amount */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Amount (KES) *
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              {...register('amount')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter payment amount"
-            />
-            {errors.amount && (
-              <p className="text-red-500 text-sm mt-1">{errors.amount.message}</p>
-            )}
-          </div>
-
-          {/* Payment Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Payment Date *
-            </label>
-            <input
-              type="date"
-              {...register('payment_date')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.payment_date && (
-              <p className="text-red-500 text-sm mt-1">{errors.payment_date.message}</p>
-            )}
-          </div>
-
-          {/* Payment Method */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Payment Method *
-            </label>
-            <select
-              {...register('payment_method')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select payment method</option>
-              <option value="CASH">Cash</option>
-              <option value="MPESA">M-Pesa</option>
-              <option value="BANK_TRANSFER">Bank Transfer</option>
-              <option value="CHEQUE">Cheque</option>
-              <option value="CARD">Card</option>
-            </select>
-            {errors.payment_method && (
-              <p className="text-red-500 text-sm mt-1">{errors.payment_method.message}</p>
-            )}
-          </div>
-
-          {/* Reference Number */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Reference Number
-            </label>
-            <input
-              type="text"
-              {...register('reference_number')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Transaction reference (optional)"
-            />
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
-            </label>
-            <textarea
-              {...register('notes')}
-              rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Additional notes (optional)"
-            />
-          </div>
-
-          {/* Submit Buttons */}
-          <div className="flex space-x-3">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setShowPaymentModal(false)
-                reset()
-              }}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={submitting}
-              className="flex-1"
-            >
-              {submitting ? 'Recording...' : 'Record Payment'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
         </>
       )}
 
@@ -399,6 +228,13 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
           <UtilitiesSection />
         </div>
       )}
+
+      {/* Payment Form Modal - Using main dashboard payment form */}
+      <PaymentForm
+        isOpen={showPaymentForm}
+        onSuccess={handlePaymentSuccess}
+        onCancel={() => setShowPaymentForm(false)}
+      />
     </div>
   )
 }
