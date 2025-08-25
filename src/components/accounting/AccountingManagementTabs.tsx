@@ -61,26 +61,27 @@ export default function AccountingManagementTabs() {
                 `property-${p.property_name}-financial-data`
               )
 
-            const acquisitionCosts = (costs || []).reduce((sum: number, c: any) => sum + Number(c.amount_kes || 0), 0)
-            const purchaseInstallments = (payments || []).reduce((sum: number, x: any) => sum + Number(x.amount_kes || 0), 0)
+              const acquisitionCosts = (costs || []).reduce((sum: number, c: any) => sum + Number(c.amount_kes || 0), 0)
+              const purchaseInstallments = (payments || []).reduce((sum: number, x: any) => sum + Number(x.amount_kes || 0), 0)
 
-            return {
-              property_id: p.property_id,
-              property_name: p.property_name,
-              acquisitionCosts,
-              purchaseInstallments,
+              return {
+                property_id: p.property_id,
+                property_name: p.property_name,
+                acquisitionCosts,
+                purchaseInstallments,
+              }
+            } catch (propertyError) {
+              console.warn(`Failed to load data for property ${p.property_name}:`, propertyError)
+              // Return default values for failed properties
+              return {
+                property_id: p.property_id,
+                property_name: p.property_name,
+                acquisitionCosts: 0,
+                purchaseInstallments: 0,
+              }
             }
-          } catch (propertyError) {
-            console.warn(`Failed to load data for property ${p.property_name}:`, propertyError)
-            // Return default values for failed properties
-            return {
-              property_id: p.property_id,
-              property_name: p.property_name,
-              acquisitionCosts: 0,
-              purchaseInstallments: 0,
-            }
-          }
-        }),
+          })
+        ),
         { propertyCount: properties.length }
       )
 
