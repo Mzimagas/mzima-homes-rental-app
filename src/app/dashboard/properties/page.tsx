@@ -19,7 +19,7 @@ export default function PropertiesPage() {
   // Update current tab in dashboard context
   useEffect(() => {
     setCurrentTab('properties')
-  }, [setCurrentTab])
+  }, []) // Empty dependency array - only run once on mount
 
   const handlePropertyCreated = () => {
     // Property creation is handled within the workflow components

@@ -14,7 +14,7 @@ export default function RentalManagementPage() {
   // Update current tab in dashboard context
   useEffect(() => {
     setCurrentTab('rental-management')
-  }, [setCurrentTab])
+  }, []) // Empty dependency array - only run once on mount
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

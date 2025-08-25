@@ -87,22 +87,11 @@ export function useDashboardActions() {
 
   // Navigation actions
   const setCurrentTab = useCallback((tab: string) => {
-    // Add current navigation to history
-    const navItem: NavigationItem = {
-      path: tab,
-      timestamp: new Date(),
-      context: {
-        selectedProperty: state.selectedProperty,
-        selectedTenant: state.selectedTenant,
-        selectedUnit: state.selectedUnit,
-        searchTerm: state.searchTerm,
-        activeFilters: state.activeFilters
-      }
+    // Only update if the tab is actually different
+    if (state.currentTab !== tab) {
+      dispatch({ type: 'SET_CURRENT_TAB', payload: tab })
     }
-    
-    dispatch({ type: 'ADD_NAVIGATION_ITEM', payload: navItem })
-    dispatch({ type: 'SET_CURRENT_TAB', payload: tab })
-  }, [dispatch, state])
+  }, [dispatch, state.currentTab])
 
   // Cache management actions
   const updatePropertiesCache = useCallback((properties: Property[]) => {

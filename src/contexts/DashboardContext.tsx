@@ -235,7 +235,7 @@ const DashboardContext = createContext<{
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
   
-  // Persist context to localStorage
+  // Persist context to localStorage (debounced)
   useEffect(() => {
     const persistableState = {
       selectedProperty: state.selectedProperty,
@@ -247,9 +247,22 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       sidebarCollapsed: state.sidebarCollapsed,
       quickActionsVisible: state.quickActionsVisible
     }
-    
-    localStorage.setItem('dashboardContext', JSON.stringify(persistableState))
-  }, [state])
+
+    // Debounce localStorage writes to prevent excessive updates
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('dashboardContext', JSON.stringify(persistableState))
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [
+    state.selectedProperty,
+    state.selectedTenant,
+    state.selectedUnit,
+    state.searchTerm,
+    state.currentTab,
+    state.sidebarCollapsed,
+    state.quickActionsVisible
+  ])
   
   // Restore context from localStorage on mount
   useEffect(() => {
