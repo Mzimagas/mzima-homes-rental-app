@@ -258,33 +258,55 @@ export class AcquisitionFinancialsService {
     }
   }
 
-  // Combined data loading - try purchase pipeline first, then fall back to property APIs
+  // Combined data loading with timeout and better error handling
   static async loadAllFinancialData(propertyId: string): Promise<{
     costs: AcquisitionCostEntry[]
     payments: PaymentInstallment[]
   }> {
     try {
-      // Try purchase pipeline API first
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout after 5 seconds')), 5000)
+      )
+
+      // Try purchase pipeline API first with timeout
       try {
-        const data = await this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`)
+        const dataPromise = this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`)
+        const data = await Promise.race([dataPromise, timeoutPromise])
         console.log('Successfully loaded from purchase pipeline API:', data)
         return {
           costs: data.costs || [],
           payments: data.payments || []
         }
       } catch (pipelineError) {
-        console.log('Purchase pipeline API failed, trying property APIs:', pipelineError)
-        // Fall back to property financial endpoints
-        const [costs, payments] = await Promise.all([
-          this.getAcquisitionCosts(propertyId).catch(() => []), // Return empty array if API doesn't exist
-          this.getPaymentInstallments(propertyId).catch(() => []) // Return empty array if API doesn't exist
+        // Don't log 403/404 errors as they're expected for non-existent APIs
+        if (!pipelineError.message?.includes('403') && !pipelineError.message?.includes('404')) {
+          console.log('Purchase pipeline API failed, trying property APIs:', pipelineError)
+        }
+
+        // Fall back to property financial endpoints with timeout
+        const [costs, payments] = await Promise.allSettled([
+          Promise.race([
+            this.getAcquisitionCosts(propertyId),
+            timeoutPromise
+          ]).catch(() => []),
+          Promise.race([
+            this.getPaymentInstallments(propertyId),
+            timeoutPromise
+          ]).catch(() => [])
+        ]).then(results => [
+          results[0].status === 'fulfilled' ? results[0].value : [],
+          results[1].status === 'fulfilled' ? results[1].value : []
         ])
 
         return { costs, payments }
       }
     } catch (error) {
-      console.error('Error loading financial data:', error)
-      // Return empty data instead of throwing if it's a 404 (API not implemented yet)
+      // Don't log expected errors to reduce console noise
+      if (!error.message?.includes('403') && !error.message?.includes('404') && !error.message?.includes('timeout')) {
+        console.error('Error loading financial data:', error)
+      }
+      // Always return empty data instead of throwing to prevent UI blocking
       return { costs: [], payments: [] }
     }
   }

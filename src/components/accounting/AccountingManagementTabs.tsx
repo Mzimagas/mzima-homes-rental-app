@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import AccountingWorkflowNavigation, { AccountingTab } from './components/AccountingWorkflowNavigation'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
 import { AcquisitionFinancialsService } from '../properties/services/acquisition-financials.service'
@@ -36,39 +36,130 @@ export default function AccountingManagementTabs() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function load() {
-      if (accessLoading) return
-      if (!properties || properties.length === 0) { setRollups([]); return }
-      setLoading(true)
-      setError(null)
-      try {
-        const results: PropertyRollup[] = await Promise.all(
-          properties.map(async (p) => {
-            const { costs, payments } = await AcquisitionFinancialsService.loadAllFinancialData(p.property_id)
+  // Optimized data loading with proper error handling and timeout
+  const loadAccountingData = useCallback(async () => {
+    if (accessLoading) return
+    if (!properties || properties.length === 0) {
+      setRollups([])
+      return
+    }
+
+    const startTime = performance.now()
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Load data with timeout and individual error handling
+      const results = await Promise.allSettled(
+        properties.map(async (p) => {
+          try {
+            // Add timeout to prevent hanging
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Request timeout')), 5000)
+            )
+
+            const dataPromise = AcquisitionFinancialsService.loadAllFinancialData(p.property_id)
+            const { costs, payments } = await Promise.race([dataPromise, timeoutPromise]) as any
+
             const acquisitionCosts = (costs || []).reduce((sum: number, c: any) => sum + Number(c.amount_kes || 0), 0)
             const purchaseInstallments = (payments || []).reduce((sum: number, x: any) => sum + Number(x.amount_kes || 0), 0)
-            return { property_id: p.property_id, property_name: p.property_name, acquisitionCosts, purchaseInstallments }
-          })
-        )
-        setRollups(results)
-      } catch (e: any) {
-        console.error('Failed to load accounting rollups', e)
-        setError(e?.message || 'Failed to load accounting data')
-      } finally { setLoading(false) }
+
+            return {
+              property_id: p.property_id,
+              property_name: p.property_name,
+              acquisitionCosts,
+              purchaseInstallments,
+            }
+          } catch (propertyError) {
+            console.warn(`Failed to load data for property ${p.property_name}:`, propertyError)
+            // Return default values for failed properties
+            return {
+              property_id: p.property_id,
+              property_name: p.property_name,
+              acquisitionCosts: 0,
+              purchaseInstallments: 0,
+            }
+          }
+        })
+      )
+
+      // Extract successful results and handle failures gracefully
+      const successfulResults = results
+        .filter((result): result is PromiseFulfilledResult<PropertyRollup> => result.status === 'fulfilled')
+        .map(result => result.value)
+
+      setRollups(successfulResults)
+
+      // Log failed requests but don't block the UI
+      const failedCount = results.filter(result => result.status === 'rejected').length
+      if (failedCount > 0) {
+        console.warn(`${failedCount} properties failed to load financial data`)
+      }
+
+      const endTime = performance.now()
+      console.log(`Accounting data loaded in ${Math.round(endTime - startTime)}ms for ${properties.length} properties`)
+
+    } catch (err) {
+      console.error('Error loading accounting data:', err)
+      setError('Some accounting data could not be loaded. The system is still functional.')
+      // Set empty rollups to prevent UI blocking
+      setRollups([])
+    } finally {
+      setLoading(false)
     }
-    load()
-  }, [properties, accessLoading])
+  }, [accessLoading, properties])
+
+  useEffect(() => {
+    loadAccountingData()
+  }, [loadAccountingData])
 
   const totals = useMemo(() => ({
     acquisitionCosts: rollups.reduce((s, r) => s + r.acquisitionCosts, 0),
     purchaseInstallments: rollups.reduce((s, r) => s + r.purchaseInstallments, 0)
   }), [rollups])
 
+  // Show loading state
+  if (loading && rollups.length === 0) {
+    return (
+      <div className="space-y-6">
+        <AccountingWorkflowNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <div className="min-h-[400px] flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading accounting data...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Workflow cards header - mirrors Properties tab */}
       <AccountingWorkflowNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Error Alert */}
+      {error && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">Warning</h3>
+              <p className="text-sm text-yellow-700 mt-1">{error}</p>
+              <button
+                onClick={loadAccountingData}
+                className="text-sm text-yellow-800 underline hover:text-yellow-900 mt-2"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab Content */}
       <div className="min-h-[400px]">
@@ -82,8 +173,18 @@ export default function AccountingManagementTabs() {
         {activeTab === 'expenses' && (
           <div className="space-y-4">
             <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900">Expense Management</h3>
-              <p className="text-sm text-gray-500 mt-1">Aggregated acquisition costs and purchase price installments across your accessible properties.</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Expense Management</h3>
+                  <p className="text-sm text-gray-500 mt-1">Aggregated acquisition costs and purchase price installments across your accessible properties.</p>
+                </div>
+                {loading && (
+                  <div className="flex items-center text-sm text-gray-500">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                    Refreshing...
+                  </div>
+                )}
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                 <div>
                   <div className="text-sm text-gray-600">Acquisition Costs (Total)</div>
