@@ -6,6 +6,7 @@ import { usePropertyAccess } from '../../hooks/usePropertyAccess'
 import { DashboardProvider } from '../../contexts/DashboardContext'
 import ContextualHeader from '../../components/dashboard/ContextualHeader'
 import GlobalSearch from '../../components/dashboard/GlobalSearch'
+import { useSidebarSwipe } from '../../hooks/useSwipeGesture'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -112,6 +113,13 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const router = useRouter()
 
+  // Add swipe gesture support for sidebar
+  const sidebarSwipeHandlers = useSidebarSwipe(
+    sidebarOpen,
+    () => setSidebarOpen(true),
+    () => setSidebarOpen(false)
+  )
+
   // Check if user has user management permissions for any property
   const canManageAnyUsers = properties.some(property => property.can_manage_users)
 
@@ -139,45 +147,93 @@ export default function DashboardLayout({
 
   return (
     <DashboardProvider>
-      <div className="h-screen flex overflow-hidden bg-gray-50">
-      {/* Mobile sidebar */}
-      <div className={`fixed inset-0 flex z-40 md:hidden ${sidebarOpen ? '' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)}></div>
-        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+      <div
+        className="h-screen flex overflow-hidden bg-gray-50"
+        {...sidebarSwipeHandlers}
+      >
+      {/* Mobile sidebar with enhanced animations and touch targets */}
+      <div className={`fixed inset-0 flex z-40 md:hidden transition-opacity duration-300 ${
+        sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}>
+        <div
+          className="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity duration-300"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+        <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-white transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
-              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              className="ml-1 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-colors duration-200 hover:bg-gray-600 hover:bg-opacity-50"
               onClick={() => setSidebarOpen(false)}
+              style={{ minWidth: '44px', minHeight: '44px' }}
             >
+              <span className="sr-only">Close sidebar</span>
               <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
+
           <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-            <div className="flex-shrink-0 flex items-center px-4 gap-2">
-              <img src="/kodirent-logo.svg" alt="KodiRent" className="h-6 w-6" />
+            {/* Mobile Sidebar Header */}
+            <div className="flex-shrink-0 flex items-center px-4 gap-2 mb-6">
+              <img src="/kodirent-logo.svg" alt="KodiRent" className="h-8 w-8" />
               <h1 className="text-xl font-bold text-gray-900">KodiRent</h1>
             </div>
-            <nav className="mt-5 px-2 space-y-1">
+
+            {/* Mobile Navigation with Touch-Optimized Targets */}
+            <nav className="px-3 space-y-2">
               {navigation.map((item) => {
                 const isActive = pathname === item.href
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
+                    onClick={() => setSidebarOpen(false)}
                     className={`${
                       isActive
-                        ? 'bg-blue-100 text-blue-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    } group flex items-center px-2 py-2 text-base font-medium rounded-md`}
+                        ? 'bg-blue-100 text-blue-900 border-r-4 border-blue-500'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    } group flex items-center px-4 py-4 text-base font-medium rounded-l-md transition-colors duration-200`}
+                    style={{ minHeight: '56px' }}
                   >
-                    {icons[item.icon as keyof typeof icons]}
-                    <span className="ml-3">{item.name}</span>
+                    <div className="flex items-center justify-center w-6 h-6 mr-4">
+                      {icons[item.icon as keyof typeof icons]}
+                    </div>
+                    <span className="flex-1">{item.name}</span>
+                    {isActive && (
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    )}
                   </Link>
                 )
               })}
             </nav>
+
+            {/* Mobile User Info */}
+            <div className="mt-8 px-4 py-4 border-t border-gray-200">
+              <div className="flex items-center">
+                <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-white">
+                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium text-gray-900 truncate">{user?.email}</p>
+                  <p className="text-xs text-gray-500">{propertyAccess.accessibleProperties.length} properties</p>
+                </div>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="mt-4 w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
+                style={{ minHeight: '44px' }}
+              >
+                <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -282,10 +338,70 @@ export default function DashboardLayout({
 
         {/* Page content */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
+          {/* Mobile Header */}
+          <div className="md:hidden bg-white shadow-sm border-b border-gray-200 px-4 py-3">
+            <div className="flex items-center justify-between">
+              {/* Hamburger Menu Button */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                style={{ minWidth: '44px', minHeight: '44px' }}
+              >
+                <span className="sr-only">Open main menu</span>
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+
+              {/* Mobile Logo */}
+              <div className="flex items-center gap-2">
+                <img src="/kodirent-logo.svg" alt="KodiRent" className="h-6 w-6" />
+                <h1 className="text-lg font-bold text-gray-900">KodiRent</h1>
+              </div>
+
+              {/* Mobile User Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                  style={{ minWidth: '44px', minHeight: '44px' }}
+                >
+                  <span className="sr-only">Open user menu</span>
+                  <div className="h-6 w-6 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-medium text-white">
+                      {user?.email?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Mobile User Dropdown */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                    <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                      <div className="font-medium">{user?.email}</div>
+                      <div className="text-xs text-gray-500">{propertyAccess.accessibleProperties.length} properties</div>
+                    </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Search */}
+            <div className="mt-3">
+              <GlobalSearch className="w-full" placeholder="Search..." />
+            </div>
+          </div>
+
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              {/* Global Search */}
-              <div className="mb-6">
+              {/* Desktop Global Search */}
+              <div className="hidden md:block mb-6">
                 <GlobalSearch className="max-w-md" />
               </div>
 
