@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
+import { DashboardProvider } from '../../contexts/DashboardContext'
+import ContextualHeader from '../../components/dashboard/ContextualHeader'
+import GlobalSearch from '../../components/dashboard/GlobalSearch'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -135,7 +138,8 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
+    <DashboardProvider>
+      <div className="h-screen flex overflow-hidden bg-gray-50">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 flex z-40 md:hidden ${sidebarOpen ? '' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)}></div>
@@ -280,11 +284,21 @@ export default function DashboardLayout({
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+              {/* Global Search */}
+              <div className="mb-6">
+                <GlobalSearch className="max-w-md" />
+              </div>
+
+              {/* Contextual Header */}
+              <ContextualHeader />
+
+              {/* Page Content */}
               {children}
             </div>
           </div>
         </main>
       </div>
-    </div>
+      </div>
+    </DashboardProvider>
   )
 }

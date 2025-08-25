@@ -5,9 +5,16 @@ import { useAuth } from '../../../lib/auth-context'
 import { LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard } from '../../../components/ui/error'
 import RentalManagementTabs from '../../../components/rental-management/RentalManagementTabs'
+import { useDashboardActions } from '../../../hooks/useDashboardActions'
 
 export default function RentalManagementPage() {
   const { user, loading: authLoading } = useAuth()
+  const { setCurrentTab } = useDashboardActions()
+
+  // Update current tab in dashboard context
+  useEffect(() => {
+    setCurrentTab('rental-management')
+  }, [setCurrentTab])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

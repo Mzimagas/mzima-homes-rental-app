@@ -5,14 +5,21 @@ import { useAuth } from '../../../lib/auth-context'
 import { LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard } from '../../../components/ui/error'
 import PropertyManagementTabs from '../../../components/properties/PropertyManagementTabs'
+import { useDashboardActions } from '../../../hooks/useDashboardActions'
 
 
 
 export default function PropertiesPage() {
   const { user, loading: authLoading } = useAuth()
+  const { setCurrentTab } = useDashboardActions()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Update current tab in dashboard context
+  useEffect(() => {
+    setCurrentTab('properties')
+  }, [setCurrentTab])
 
   const handlePropertyCreated = () => {
     // Property creation is handled within the workflow components
