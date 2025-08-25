@@ -202,7 +202,7 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
                 Record First Payment
               </Button>
             </div>
-              )}
+          )}
             </div>
           )}
         </>
