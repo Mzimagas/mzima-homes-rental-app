@@ -1,15 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense, lazy } from 'react'
 import { useAuth } from '../../../lib/auth-context'
 import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard } from '../../../components/ui/error'
-import FinancialReports from '../../../components/reports/financial-reports'
-import OccupancyReports from '../../../components/reports/occupancy-reports'
-import TenantAnalytics from '../../../components/reports/tenant-analytics'
-import PropertyReports from '../../../components/reports/property-reports'
+import ErrorBoundary from '../../../components/ui/ErrorBoundary'
 import { useRef } from 'react'
+
+// Lazy load heavy report components
+const FinancialReports = lazy(() => import('../../../components/reports/financial-reports'))
+const OccupancyReports = lazy(() => import('../../../components/reports/occupancy-reports'))
+const TenantAnalytics = lazy(() => import('../../../components/reports/tenant-analytics'))
+const PropertyReports = lazy(() => import('../../../components/reports/property-reports'))
+
+// Loading component for report tabs
+function ReportTabLoading() {
+  return (
+    <div className="min-h-[400px] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading report...</p>
+      </div>
+    </div>
+  )
+}
 
 export default function ReportsPage() {
   const { user } = useAuth()
@@ -168,12 +183,16 @@ export default function ReportsPage() {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content with Lazy Loading */}
       <div className="mt-6">
-        {activeTab === 'financial' && <FinancialReports ref={financialRef} />}
-        {activeTab === 'occupancy' && <OccupancyReports ref={occupancyRef} />}
-        {activeTab === 'tenants' && <TenantAnalytics ref={tenantsRef} />}
-        {activeTab === 'properties' && <PropertyReports ref={propertiesRef} />}
+        <ErrorBoundary>
+          <Suspense fallback={<ReportTabLoading />}>
+            {activeTab === 'financial' && <FinancialReports ref={financialRef} />}
+            {activeTab === 'occupancy' && <OccupancyReports ref={occupancyRef} />}
+            {activeTab === 'tenants' && <TenantAnalytics ref={tenantsRef} />}
+            {activeTab === 'properties' && <PropertyReports ref={propertiesRef} />}
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </div>
   )

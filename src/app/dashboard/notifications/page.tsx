@@ -1,15 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense, lazy } from 'react'
 import { useAuth } from '../../../lib/auth-context'
 import { clientBusinessFunctions } from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard } from '../../../components/ui/error'
-import NotificationSettings from '../../../components/notifications/notification-settings'
-import NotificationHistory from '../../../components/notifications/notification-history'
-import NotificationTemplates from '../../../components/notifications/notification-templates'
-import AutomatedNotifications from '../../../components/notifications/automated-notifications'
-import CustomNotificationForm from '../../../components/notifications/custom-notification-form'
+import ErrorBoundary from '../../../components/ui/ErrorBoundary'
+
+// Lazy load notification components
+const NotificationSettings = lazy(() => import('../../../components/notifications/notification-settings'))
+const NotificationHistory = lazy(() => import('../../../components/notifications/notification-history'))
+const NotificationTemplates = lazy(() => import('../../../components/notifications/notification-templates'))
+const AutomatedNotifications = lazy(() => import('../../../components/notifications/automated-notifications'))
+const CustomNotificationForm = lazy(() => import('../../../components/notifications/custom-notification-form'))
+
+// Loading component for notification tabs
+function NotificationTabLoading() {
+  return (
+    <div className="min-h-[300px] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-3 text-gray-600">Loading notifications...</p>
+      </div>
+    </div>
+  )
+}
 
 interface NotificationRule {
   id: string
@@ -525,19 +540,23 @@ export default function NotificationsPage() {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content with Lazy Loading */}
       <div className="mt-6">
-        {activeTab === 'automated' && (
-          <AutomatedNotifications
-            rules={rules}
-            onRulesChange={loadNotificationData}
-            triggerCreateRule={triggerCreateRule}
-            onCreateRuleTriggered={() => setTriggerCreateRule(false)}
-          />
-        )}
-        {activeTab === 'history' && <NotificationHistory notifications={stats?.recentNotifications || []} />}
-        {activeTab === 'templates' && <NotificationTemplates />}
-        {activeTab === 'settings' && <NotificationSettings />}
+        <ErrorBoundary>
+          <Suspense fallback={<NotificationTabLoading />}>
+            {activeTab === 'automated' && (
+              <AutomatedNotifications
+                rules={rules}
+                onRulesChange={loadNotificationData}
+                triggerCreateRule={triggerCreateRule}
+                onCreateRuleTriggered={() => setTriggerCreateRule(false)}
+              />
+            )}
+            {activeTab === 'history' && <NotificationHistory notifications={stats?.recentNotifications || []} />}
+            {activeTab === 'templates' && <NotificationTemplates />}
+            {activeTab === 'settings' && <NotificationSettings />}
+          </Suspense>
+        </ErrorBoundary>
         {activeTab === 'scheduler' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">

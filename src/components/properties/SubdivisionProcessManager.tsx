@@ -285,7 +285,16 @@ export default function SubdivisionProcessManager({
   const loadData = async () => {
     try {
       setLoading(true)
-      await Promise.all([loadProperties(), loadSubdivisions()])
+      // Use Promise.allSettled for better error isolation
+      const results = await Promise.allSettled([loadProperties(), loadSubdivisions()])
+
+      // Log any failures for debugging
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const operationNames = ['Properties', 'Subdivisions']
+          console.warn(`Failed to load ${operationNames[index]}:`, result.reason)
+        }
+      })
     } finally {
       setLoading(false)
     }

@@ -20,17 +20,29 @@ export default function PropertyLifecycleTest() {
     const loadAllData = async () => {
       setLoading(true)
       try {
-        const [all, pipeline, subdivision, handover] = await Promise.all([
+        // Use Promise.allSettled for better error isolation
+        const results = await Promise.allSettled([
           getPropertiesForPermissionManagement(),
           getPurchasePipelineProperties(),
           getSubdivisionProperties(),
           getHandoverProperties()
         ])
 
-        setAllProperties(all)
-        setPipelineProperties(pipeline)
-        setSubdivisionProperties(subdivision)
-        setHandoverProperties(handover)
+        // Extract successful results and handle failures gracefully
+        const [allResult, pipelineResult, subdivisionResult, handoverResult] = results
+
+        setAllProperties(allResult.status === 'fulfilled' ? allResult.value : [])
+        setPipelineProperties(pipelineResult.status === 'fulfilled' ? pipelineResult.value : [])
+        setSubdivisionProperties(subdivisionResult.status === 'fulfilled' ? subdivisionResult.value : [])
+        setHandoverProperties(handoverResult.status === 'fulfilled' ? handoverResult.value : [])
+
+        // Log any failures for debugging
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            const apiNames = ['Properties', 'Pipeline', 'Subdivision', 'Handover']
+            console.warn(`Failed to load ${apiNames[index]} data:`, result.reason)
+          }
+        })
       } catch (error) {
         console.error('Error loading property data:', error)
       } finally {

@@ -1,13 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense, lazy } from 'react'
 import { useAuth } from '../../../lib/auth-context'
 import supabase from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
-import DocumentUpload from '../../../components/documents/document-upload'
-import DocumentList from '../../../components/documents/document-list'
-import DocumentStats from '../../../components/documents/document-stats'
+import ErrorBoundary from '../../../components/ui/ErrorBoundary'
+
+// Lazy load document components
+const DocumentUpload = lazy(() => import('../../../components/documents/document-upload'))
+const DocumentList = lazy(() => import('../../../components/documents/document-list'))
+const DocumentStats = lazy(() => import('../../../components/documents/document-stats'))
+
+// Loading component for document sections
+function DocumentSectionLoading() {
+  return (
+    <div className="min-h-[200px] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-2 text-gray-600">Loading documents...</p>
+      </div>
+    </div>
+  )
+}
 
 interface Document {
   id: string
@@ -204,8 +219,14 @@ export default function DocumentsPage() {
         </button>
       </div>
 
-      {/* Stats */}
-      {stats && <DocumentStats stats={stats} />}
+      {/* Stats with Lazy Loading */}
+      {stats && (
+        <ErrorBoundary>
+          <Suspense fallback={<DocumentSectionLoading />}>
+            <DocumentStats stats={stats} />
+          </Suspense>
+        </ErrorBoundary>
+      )}
 
       {/* Filters */}
       <div className="bg-white shadow rounded-lg p-6">
@@ -262,19 +283,27 @@ export default function DocumentsPage() {
             onAction={() => setShowUpload(true)}
           />
         ) : (
-          <DocumentList 
-            documents={filteredDocuments}
-            onDocumentDeleted={handleDocumentDeleted}
-          />
+          <ErrorBoundary>
+            <Suspense fallback={<DocumentSectionLoading />}>
+              <DocumentList
+                documents={filteredDocuments}
+                onDocumentDeleted={handleDocumentDeleted}
+              />
+            </Suspense>
+          </ErrorBoundary>
         )}
       </div>
 
-      {/* Document Upload Modal */}
-      <DocumentUpload
-        isOpen={showUpload}
-        onSuccess={handleDocumentUploaded}
-        onCancel={() => setShowUpload(false)}
-      />
+      {/* Document Upload Modal with Lazy Loading */}
+      <ErrorBoundary>
+        <Suspense fallback={null}>
+          <DocumentUpload
+            isOpen={showUpload}
+            onSuccess={handleDocumentUploaded}
+            onCancel={() => setShowUpload(false)}
+          />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   )
 }

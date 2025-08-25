@@ -262,12 +262,25 @@ export class HandoverFinancialsService {
     summary?: HandoverFinancialSummary
   }> {
     try {
-      // Load all financial data in parallel
-      const [costs, receipts, summary] = await Promise.all([
-        this.getHandoverCosts(propertyId).catch(() => []), // Return empty array if API doesn't exist
-        this.getPaymentReceipts(propertyId).catch(() => []), // Return empty array if API doesn't exist
-        this.getHandoverFinancialSummary(propertyId).catch(() => undefined) // Return undefined if API doesn't exist
+      // Load all financial data in parallel with better error isolation
+      const results = await Promise.allSettled([
+        this.getHandoverCosts(propertyId),
+        this.getPaymentReceipts(propertyId),
+        this.getHandoverFinancialSummary(propertyId)
       ])
+
+      // Extract successful results and handle failures gracefully
+      const costs = results[0].status === 'fulfilled' ? results[0].value : []
+      const receipts = results[1].status === 'fulfilled' ? results[1].value : []
+      const summary = results[2].status === 'fulfilled' ? results[2].value : undefined
+
+      // Log failures for debugging (but don't throw)
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const operationNames = ['Handover Costs', 'Payment Receipts', 'Financial Summary']
+          console.warn(`Failed to load ${operationNames[index]} for property ${propertyId}:`, result.reason)
+        }
+      })
 
       return { costs, receipts, summary }
     } catch (error) {
