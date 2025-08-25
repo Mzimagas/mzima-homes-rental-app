@@ -108,6 +108,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, signOut, loading } = useAuth()
   const propertyAccess = usePropertyAccess()
   const pathname = usePathname()
@@ -121,7 +122,23 @@ export default function DashboardLayout({
   )
 
   // Check if user has user management permissions for any property
-  const canManageAnyUsers = properties.some(property => property.can_manage_users)
+  const canManageAnyUsers = propertyAccess.accessibleProperties?.some(property => property.can_manage_users) || false
+
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      const { error } = await signOut()
+      if (error) {
+        console.error('❌ Logout failed:', error)
+        alert(`Logout failed: ${error}`)
+      } else {
+        console.log('✅ Logout successful')
+      }
+    } catch (err) {
+      console.error('❌ Logout exception:', err)
+      alert('An unexpected error occurred during logout')
+    }
+  }
 
   // Build navigation array - Administration tab is now included in baseNavigation
   const navigation = [...baseNavigation]
@@ -220,7 +237,7 @@ export default function DashboardLayout({
                 </div>
                 <div className="ml-3 flex-1">
                   <p className="text-sm font-medium text-gray-900 truncate">{user?.email}</p>
-                  <p className="text-xs text-gray-500">{propertyAccess.accessibleProperties.length} properties</p>
+                  <p className="text-xs text-gray-500">{propertyAccess.accessibleProperties?.length || 0} properties</p>
                 </div>
               </div>
               <button
@@ -379,7 +396,7 @@ export default function DashboardLayout({
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                     <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
                       <div className="font-medium">{user?.email}</div>
-                      <div className="text-xs text-gray-500">{propertyAccess.accessibleProperties.length} properties</div>
+                      <div className="text-xs text-gray-500">{propertyAccess.accessibleProperties?.length || 0} properties</div>
                     </div>
                     <button
                       onClick={handleSignOut}
