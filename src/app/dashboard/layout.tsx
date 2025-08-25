@@ -109,7 +109,7 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, signOut, loading } = useAuth()
-  const { properties } = usePropertyAccess()
+  const propertyAccess = usePropertyAccess()
   const pathname = usePathname()
   const router = useRouter()
 
