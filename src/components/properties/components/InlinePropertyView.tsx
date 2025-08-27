@@ -11,6 +11,7 @@ import {
 } from '../utils/property-management.utils'
 import supabase from '../../../lib/supabase-client'
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
+import DirectAdditionDocuments from './DirectAdditionDocuments'
 import ProgressTracker from './ProgressTracker'
 import StageModal from './StageModal'
 import SubdivisionProgressTracker from './SubdivisionProgressTracker'
@@ -278,9 +279,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
         if (uploadError) throw uploadError
 
-        // Get public URL
-        const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath)
-
+        // Store the file path for signed URL generation
         // Create document record
         const { error: dbError } = await supabase.from('documents').insert({
           entity_type: 'property',
@@ -288,7 +287,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           doc_type: 'other',
           title: file.name.split('.')[0],
           description: `Uploaded for ${property.name}`,
-          file_url: urlData.publicUrl,
+          file_url: filePath, // Store the file path instead of public URL
           file_name: file.name,
           file_size_bytes: file.size,
           mime_type: file.type,
@@ -312,9 +311,10 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
   const handleDownload = async (doc: PropertyDocument) => {
     try {
+      // Use the full file_url path instead of just the filename
       const { data, error } = await supabase.storage
         .from('documents')
-        .createSignedUrl(doc.file_url.split('/').pop() || '', 3600)
+        .createSignedUrl(doc.file_url, 3600)
 
       if (error) throw error
 
@@ -616,6 +616,14 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
         {activeTab === 'documents' && (
           <div className="space-y-6">
+            {/* Direct Addition Documents - Kenya Property Acquisition Documents */}
+            {property.property_source === 'DIRECT_ADDITION' && (
+              <DirectAdditionDocuments
+                propertyId={property.id}
+                propertyName={property.name}
+              />
+            )}
+
             {/* Purchase Pipeline Interface - Only show for purchase pipeline properties */}
             {property.property_source === 'PURCHASE_PIPELINE' && (
               <div>
