@@ -5,17 +5,20 @@
 Based on comprehensive analysis, the RLS policy violation is caused by multiple issues:
 
 ### **1. Data Inconsistency (CRITICAL)**
+
 - **Issue:** Landlord ID mismatch between `properties` and `property_users` tables
 - **Found:** Property landlord_id: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
 - **Found:** Property user_id: `be74c5f6-f485-42ca-9d71-1e81bb81f53f`
 - **Impact:** RLS policies fail because data relationships are broken
 
 ### **2. Schema Column Mismatch**
+
 - **Issue:** Properties table expects `address` column but application uses different column names
 - **Error:** "Could not find the 'address' column of 'properties' in the schema cache"
 - **Impact:** INSERT operations fail due to schema mismatch
 
 ### **3. RLS Policy Logic Issue**
+
 - **Issue:** Current policy expects property_users entry to exist BEFORE property creation
 - **Problem:** Chicken-and-egg scenario - can't create property without property_users entry
 - **Impact:** All authenticated user INSERTs fail
@@ -26,19 +29,19 @@ Based on comprehensive analysis, the RLS policy violation is caused by multiple 
 
 ```sql
 -- Fix the landlord_id mismatch in existing data
-UPDATE properties 
+UPDATE properties
 SET landlord_id = (
-  SELECT user_id 
-  FROM property_users 
-  WHERE property_id = properties.id 
-  AND role = 'OWNER' 
+  SELECT user_id
+  FROM property_users
+  WHERE property_id = properties.id
+  AND role = 'OWNER'
   LIMIT 1
 )
 WHERE landlord_id != (
-  SELECT user_id 
-  FROM property_users 
-  WHERE property_id = properties.id 
-  AND role = 'OWNER' 
+  SELECT user_id
+  FROM property_users
+  WHERE property_id = properties.id
+  AND role = 'OWNER'
   LIMIT 1
 );
 ```
@@ -49,13 +52,14 @@ Check your properties table schema and ensure it matches your application code:
 
 ```sql
 -- Check current properties table structure
-SELECT column_name, data_type 
-FROM information_schema.columns 
-WHERE table_name = 'properties' 
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'properties'
 ORDER BY ordinal_position;
 ```
 
 Common column name mismatches:
+
 - Application uses `address` but table has `physical_address`
 - Application uses `property_type` but table has `type`
 
@@ -82,8 +86,8 @@ FOR SELECT USING (
   OR
   -- Property users access
   id IN (
-    SELECT property_id FROM property_users 
-    WHERE user_id = auth.uid() 
+    SELECT property_id FROM property_users
+    WHERE user_id = auth.uid()
     AND status = 'ACTIVE'
   )
 );
@@ -94,8 +98,8 @@ FOR UPDATE USING (
   landlord_id = auth.uid()
   OR
   id IN (
-    SELECT property_id FROM property_users 
-    WHERE user_id = auth.uid() 
+    SELECT property_id FROM property_users
+    WHERE user_id = auth.uid()
     AND role IN ('OWNER', 'PROPERTY_MANAGER')
     AND status = 'ACTIVE'
   )
@@ -122,16 +126,16 @@ BEGIN
   IF owner_user_id IS NULL THEN
     RAISE EXCEPTION 'User must be authenticated';
   END IF;
-  
+
   -- Insert property (adjust column names to match your schema)
   INSERT INTO properties (name, physical_address, type, landlord_id)
   VALUES (property_name, property_address, property_type, owner_user_id)
   RETURNING id INTO new_property_id;
-  
+
   -- Create property_users entry
   INSERT INTO property_users (property_id, user_id, role, status, accepted_at)
   VALUES (new_property_id, owner_user_id, 'OWNER', 'ACTIVE', NOW());
-  
+
   RETURN new_property_id;
 END;
 $$;
@@ -154,16 +158,13 @@ if (userError || !user?.user?.id) {
 
 // Use correct column names that match your schema
 const propertyData = {
-  name: "My New Property",
-  physical_address: "123 Main Street, Nairobi", // Note: physical_address, not address
-  type: "APARTMENT", // Note: type, not property_type
-  landlord_id: user.user.id  // CRITICAL: Must match auth.uid()
+  name: 'My New Property',
+  physical_address: '123 Main Street, Nairobi', // Note: physical_address, not address
+  type: 'APARTMENT', // Note: type, not property_type
+  landlord_id: user.user.id, // CRITICAL: Must match auth.uid()
 }
 
-const { data, error } = await supabase
-  .from('properties')
-  .insert(propertyData)
-  .select()
+const { data, error } = await supabase.from('properties').insert(propertyData).select()
 
 if (error) {
   console.error('RLS Error:', error.message)
@@ -171,15 +172,13 @@ if (error) {
 }
 
 // Create property_users entry immediately after
-const { error: puError } = await supabase
-  .from('property_users')
-  .insert({
-    property_id: data[0].id,
-    user_id: user.user.id,
-    role: 'OWNER',
-    status: 'ACTIVE',
-    accepted_at: new Date().toISOString()
-  })
+const { error: puError } = await supabase.from('property_users').insert({
+  property_id: data[0].id,
+  user_id: user.user.id,
+  role: 'OWNER',
+  status: 'ACTIVE',
+  accepted_at: new Date().toISOString(),
+})
 
 if (puError) {
   console.error('Property users error:', puError.message)
@@ -200,7 +199,7 @@ if (!user?.user?.id) {
 const { data: propertyId, error } = await supabase.rpc('create_property_with_owner', {
   property_name: 'My New Property',
   property_address: '123 Main Street, Nairobi',
-  property_type: 'APARTMENT'
+  property_type: 'APARTMENT',
 })
 
 if (error) {
@@ -229,7 +228,7 @@ try {
       name: 'My New Property',
       physical_address: '123 Main Street, Nairobi',
       type: 'APARTMENT',
-      landlord_id: user.user.id
+      landlord_id: user.user.id,
     })
     .select()
     .single()
@@ -237,15 +236,13 @@ try {
   if (propError) throw propError
 
   // Create property_users entry
-  const { error: puError } = await supabase
-    .from('property_users')
-    .insert({
-      property_id: property.id,
-      user_id: user.user.id,
-      role: 'OWNER',
-      status: 'ACTIVE',
-      accepted_at: new Date().toISOString()
-    })
+  const { error: puError } = await supabase.from('property_users').insert({
+    property_id: property.id,
+    user_id: user.user.id,
+    role: 'OWNER',
+    status: 'ACTIVE',
+    accepted_at: new Date().toISOString(),
+  })
 
   if (puError) {
     // Rollback by deleting the property
@@ -266,10 +263,7 @@ try {
 
 ```javascript
 // Check what columns exist in your properties table
-const { data, error } = await supabase
-  .from('properties')
-  .select('*')
-  .limit(1)
+const { data, error } = await supabase.from('properties').select('*').limit(1)
 
 console.log('Properties table columns:', Object.keys(data[0] || {}))
 ```

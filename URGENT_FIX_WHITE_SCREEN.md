@@ -1,6 +1,7 @@
 # 🚨 URGENT: Fix White Screen Issue
 
 ## Problem
+
 The production deployment shows a white screen because environment variables are missing.
 
 ## Immediate Solution
@@ -43,6 +44,7 @@ After adding all environment variables:
 ### Step 3: Alternative - Quick CLI Redeploy
 
 Or run this command from your terminal:
+
 ```bash
 cd voi-rental-app
 npx vercel --prod
@@ -51,6 +53,7 @@ npx vercel --prod
 ## Expected Result
 
 After adding environment variables and redeploying:
+
 - White screen should be resolved
 - Application should load properly
 - Login/signup should work
@@ -66,5 +69,6 @@ After adding environment variables and redeploying:
 ## Quick Test
 
 Once fixed, test these URLs:
+
 - Main app: https://mzima-rental-2025-ev0tdhsq7-mzimagas-projects.vercel.app
 - Login page: https://mzima-rental-2025-ev0tdhsq7-mzimagas-projects.vercel.app/auth/login

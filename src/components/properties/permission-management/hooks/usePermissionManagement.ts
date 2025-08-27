@@ -1,20 +1,14 @@
 import { useState, useCallback } from 'react'
-import { 
-  UserPermissions, 
-  PermissionAssignmentState, 
+import {
+  UserPermissions,
+  PermissionAssignmentState,
   FeedbackMessage,
   FilterState,
   RoleTemplate,
-  PermissionLevel 
+  PermissionLevel,
 } from '../types'
-import { 
-  createDefaultUserPermissions,
-  hasAnyPermissions 
-} from '../utils/permissionUtils'
-import { 
-  applyRoleTemplate,
-  setAllSectionsPermission 
-} from '../utils/roleTemplates'
+import { createDefaultUserPermissions, hasAnyPermissions } from '../utils/permissionUtils'
+import { applyRoleTemplate, setAllSectionsPermission } from '../utils/roleTemplates'
 
 export const usePermissionManagement = () => {
   const [userPermissions, setUserPermissions] = useState<UserPermissions[]>([])
@@ -22,14 +16,14 @@ export const usePermissionManagement = () => {
   const [showBulkActions, setShowBulkActions] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
-  
+
   // Assignment modal state
   const [assignmentState, setAssignmentState] = useState<PermissionAssignmentState>({
     showModal: false,
     isAssigning: false,
     newUserEmail: '',
     formErrors: [],
-    feedback: null
+    feedback: null,
   })
 
   // Filter state
@@ -37,7 +31,7 @@ export const usePermissionManagement = () => {
     roleTemplate: 'all',
     scope: 'all',
     level: 'all',
-    section: 'all'
+    section: 'all',
   })
 
   // Save permissions to localStorage (replace with API call)
@@ -71,64 +65,65 @@ export const usePermissionManagement = () => {
   }, [])
 
   // Add new permission
-  const addPermission = useCallback((
-    userId: string,
-    email: string,
-    propertyId?: string,
-    isGlobal: boolean = false
-  ) => {
-    console.log('Adding permission for:', { userId, email, propertyId, isGlobal })
-    const newPermission = createDefaultUserPermissions(userId, email, isGlobal)
-    if (propertyId) {
-      newPermission.propertyId = propertyId
-    }
+  const addPermission = useCallback(
+    (userId: string, email: string, propertyId?: string, isGlobal: boolean = false) => {
+      console.log('Adding permission for:', { userId, email, propertyId, isGlobal })
+      const newPermission = createDefaultUserPermissions(userId, email, isGlobal)
+      if (propertyId) {
+        newPermission.propertyId = propertyId
+      }
 
-    console.log('Created permission:', newPermission)
-    console.log('Current permissions before adding:', userPermissions)
+      console.log('Created permission:', newPermission)
+      console.log('Current permissions before adding:', userPermissions)
 
-    const updatedPermissions = [...userPermissions, newPermission]
-    console.log('Updated permissions array:', updatedPermissions)
+      const updatedPermissions = [...userPermissions, newPermission]
+      console.log('Updated permissions array:', updatedPermissions)
 
-    savePermissions(updatedPermissions)
+      savePermissions(updatedPermissions)
 
-    return newPermission
-  }, [userPermissions, savePermissions])
+      return newPermission
+    },
+    [userPermissions, savePermissions]
+  )
 
   // Update permission
-  const updatePermission = useCallback((
-    index: number,
-    updatedPermission: UserPermissions
-  ) => {
-    const updatedPermissions = [...userPermissions]
-    updatedPermissions[index] = updatedPermission
-    savePermissions(updatedPermissions)
-  }, [userPermissions, savePermissions])
+  const updatePermission = useCallback(
+    (index: number, updatedPermission: UserPermissions) => {
+      const updatedPermissions = [...userPermissions]
+      updatedPermissions[index] = updatedPermission
+      savePermissions(updatedPermissions)
+    },
+    [userPermissions, savePermissions]
+  )
 
   // Remove permission
-  const removePermission = useCallback((index: number) => {
-    const updatedPermissions = userPermissions.filter((_, i) => i !== index)
-    savePermissions(updatedPermissions)
-  }, [userPermissions, savePermissions])
+  const removePermission = useCallback(
+    (index: number) => {
+      const updatedPermissions = userPermissions.filter((_, i) => i !== index)
+      savePermissions(updatedPermissions)
+    },
+    [userPermissions, savePermissions]
+  )
 
   // Duplicate permissions to selected users
-  const duplicatePermissions = useCallback((
-    sourcePermission: UserPermissions,
-    targetUserIds: string[]
-  ) => {
-    const newPermissions = targetUserIds.map(userId => ({
-      ...sourcePermission,
-      userId,
-      email: sourcePermission.email // Keep the original email for now, should be updated with actual user lookup
-    }))
+  const duplicatePermissions = useCallback(
+    (sourcePermission: UserPermissions, targetUserIds: string[]) => {
+      const newPermissions = targetUserIds.map((userId) => ({
+        ...sourcePermission,
+        userId,
+        email: sourcePermission.email, // Keep the original email for now, should be updated with actual user lookup
+      }))
 
-    const updatedPermissions = [...userPermissions, ...newPermissions]
-    savePermissions(updatedPermissions)
-  }, [userPermissions, savePermissions])
+      const updatedPermissions = [...userPermissions, ...newPermissions]
+      savePermissions(updatedPermissions)
+    },
+    [userPermissions, savePermissions]
+  )
 
   // Bulk remove permissions
   const bulkRemovePermissions = useCallback(() => {
-    const updatedPermissions = userPermissions.filter((_, index) => 
-      !selectedPermissions.includes(index)
+    const updatedPermissions = userPermissions.filter(
+      (_, index) => !selectedPermissions.includes(index)
     )
     savePermissions(updatedPermissions)
     setSelectedPermissions([])
@@ -137,10 +132,8 @@ export const usePermissionManagement = () => {
 
   // Toggle permission selection
   const togglePermissionSelection = useCallback((index: number) => {
-    setSelectedPermissions(prev => 
-      prev.includes(index)
-        ? prev.filter(i => i !== index)
-        : [...prev, index]
+    setSelectedPermissions((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
     )
   }, [])
 
@@ -151,28 +144,28 @@ export const usePermissionManagement = () => {
   }, [])
 
   // Apply role template to permission
-  const applyRoleTemplateToPermission = useCallback((
-    index: number,
-    templateKey: keyof typeof import('../utils/roleTemplates').ROLE_TEMPLATES
-  ) => {
-    const permission = userPermissions[index]
-    const updatedPermission = applyRoleTemplate(permission, templateKey)
-    updatePermission(index, updatedPermission)
-  }, [userPermissions, updatePermission])
+  const applyRoleTemplateToPermission = useCallback(
+    (index: number, templateKey: keyof typeof import('../utils/roleTemplates').ROLE_TEMPLATES) => {
+      const permission = userPermissions[index]
+      const updatedPermission = applyRoleTemplate(permission, templateKey)
+      updatePermission(index, updatedPermission)
+    },
+    [userPermissions, updatePermission]
+  )
 
   // Set all sections permission for a user
-  const setAllSectionsPermissionForUser = useCallback((
-    index: number,
-    level: PermissionLevel
-  ) => {
-    const permission = userPermissions[index]
-    const updatedPermission = setAllSectionsPermission(permission, level)
-    updatePermission(index, updatedPermission)
-  }, [userPermissions, updatePermission])
+  const setAllSectionsPermissionForUser = useCallback(
+    (index: number, level: PermissionLevel) => {
+      const permission = userPermissions[index]
+      const updatedPermission = setAllSectionsPermission(permission, level)
+      updatePermission(index, updatedPermission)
+    },
+    [userPermissions, updatePermission]
+  )
 
   // Filter permissions based on current filter state
   const getFilteredPermissions = useCallback(() => {
-    return userPermissions.filter(permission => {
+    return userPermissions.filter((permission) => {
       // Filter by role template
       if (filterState.roleTemplate !== 'all') {
         // Add role template matching logic here
@@ -186,14 +179,14 @@ export const usePermissionManagement = () => {
 
       // Filter by level
       if (filterState.level !== 'all') {
-        const hasLevel = permission.sections.some(s => s.level === filterState.level)
+        const hasLevel = permission.sections.some((s) => s.level === filterState.level)
         if (!hasLevel) return false
       }
 
       // Filter by section
       if (filterState.section !== 'all') {
-        const hasSection = permission.sections.some(s => 
-          s.section === filterState.section && s.level !== 'none'
+        const hasSection = permission.sections.some(
+          (s) => s.section === filterState.section && s.level !== 'none'
         )
         if (!hasSection) return false
       }
@@ -207,17 +200,17 @@ export const usePermissionManagement = () => {
     const filtered = getFilteredPermissions()
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    
+
     return {
       permissions: filtered.slice(startIndex, endIndex),
       totalCount: filtered.length,
-      totalPages: Math.ceil(filtered.length / itemsPerPage)
+      totalPages: Math.ceil(filtered.length / itemsPerPage),
     }
   }, [getFilteredPermissions, currentPage, itemsPerPage])
 
   // Assignment modal functions
   const openAssignModal = useCallback(() => {
-    setAssignmentState(prev => ({ ...prev, showModal: true }))
+    setAssignmentState((prev) => ({ ...prev, showModal: true }))
   }, [])
 
   const closeAssignModal = useCallback(() => {
@@ -226,16 +219,16 @@ export const usePermissionManagement = () => {
       isAssigning: false,
       newUserEmail: '',
       formErrors: [],
-      feedback: null
+      feedback: null,
     })
   }, [])
 
   const setFeedback = useCallback((feedback: FeedbackMessage | null) => {
-    setAssignmentState(prev => ({ ...prev, feedback }))
+    setAssignmentState((prev) => ({ ...prev, feedback }))
   }, [])
 
   const setFormErrors = useCallback((errors: string[]) => {
-    setAssignmentState(prev => ({ ...prev, formErrors: errors }))
+    setAssignmentState((prev) => ({ ...prev, formErrors: errors }))
   }, [])
 
   return {
@@ -279,6 +272,6 @@ export const usePermissionManagement = () => {
     closeAssignModal,
     setFeedback,
     setFormErrors,
-    setAssignmentState
+    setAssignmentState,
   }
 }

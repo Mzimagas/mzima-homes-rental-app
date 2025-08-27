@@ -5,11 +5,13 @@
 Based on comprehensive analysis, your "Access denied: You do not have permission to perform this action" error is caused by:
 
 ### **Critical Data Mismatch**
+
 - **Property landlord_id:** `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
 - **Property user_id:** `be74c5f6-f485-42ca-9d71-1e81bb81f53f`
 - **Current user:** `user@example.com` (ID: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
 
 **The Problem:** The current user has NO property access because:
+
 1. They are not the landlord of any property
 2. They have no entries in the `property_users` table
 3. RLS policies block access to properties they don't own
@@ -22,13 +24,13 @@ Run this SQL in your Supabase SQL Editor to fix the landlord_id mismatch:
 
 ```sql
 -- Fix the critical data inconsistency
-UPDATE properties 
+UPDATE properties
 SET landlord_id = 'be74c5f6-f485-42ca-9d71-1e81bb81f53f'
 WHERE id IN (
-  SELECT property_id 
-  FROM property_users 
-  WHERE user_id = 'be74c5f6-f485-42ca-9d71-1e81bb81f53f' 
-  AND role = 'OWNER' 
+  SELECT property_id
+  FROM property_users
+  WHERE user_id = 'be74c5f6-f485-42ca-9d71-1e81bb81f53f'
+  AND role = 'OWNER'
   AND status = 'ACTIVE'
 );
 ```
@@ -40,15 +42,15 @@ Add the current user to the existing property:
 ```sql
 -- Grant access to the current user (user@example.com)
 INSERT INTO property_users (
-  property_id, 
-  user_id, 
-  role, 
-  status, 
+  property_id,
+  user_id,
+  role,
+  status,
   accepted_at,
   created_at,
   updated_at
-) 
-SELECT 
+)
+SELECT
   id as property_id,
   'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' as user_id,
   'PROPERTY_MANAGER' as role,
@@ -56,7 +58,7 @@ SELECT
   NOW() as accepted_at,
   NOW() as created_at,
   NOW() as updated_at
-FROM properties 
+FROM properties
 WHERE landlord_id = 'be74c5f6-f485-42ca-9d71-1e81bb81f53f';
 ```
 
@@ -68,11 +70,11 @@ Update your application to handle authentication properly:
 // Check authentication before any property operations
 async function ensureAuthenticated() {
   const { data: user, error } = await supabase.auth.getUser()
-  
+
   if (error || !user?.user?.id) {
     throw new Error('Please log in to access this resource')
   }
-  
+
   return user.user
 }
 
@@ -85,7 +87,7 @@ async function checkPropertyAccess(propertyId, userId) {
     .eq('user_id', userId)
     .eq('status', 'ACTIVE')
     .single()
-  
+
   if (error || !access) {
     // Check if user is the direct landlord
     const { data: property } = await supabase
@@ -93,12 +95,12 @@ async function checkPropertyAccess(propertyId, userId) {
       .select('landlord_id')
       .eq('id', propertyId)
       .single()
-    
+
     if (property?.landlord_id !== userId) {
       throw new Error('You do not have access to this property')
     }
   }
-  
+
   return access
 }
 
@@ -106,16 +108,14 @@ async function checkPropertyAccess(propertyId, userId) {
 async function getProperties() {
   try {
     const user = await ensureAuthenticated()
-    
-    const { data: properties, error } = await supabase
-      .from('properties')
-      .select('*')
-    
+
+    const { data: properties, error } = await supabase.from('properties').select('*')
+
     if (error) {
       console.error('Property access error:', error.message)
       throw new Error('Unable to access properties. Please check your permissions.')
     }
-    
+
     return properties
   } catch (err) {
     console.error('Access denied:', err.message)
@@ -132,42 +132,36 @@ If you need to create a new property, use the authenticated user:
 async function createProperty(propertyData) {
   try {
     const user = await ensureAuthenticated()
-    
+
     // Use correct column names and set landlord_id
     const newProperty = {
       name: propertyData.name,
-      physical_address: propertyData.address,  // Note: physical_address
-      type: propertyData.type,                 // Note: type (not property_type)
-      landlord_id: user.id                     // CRITICAL: Must match auth.uid()
+      physical_address: propertyData.address, // Note: physical_address
+      type: propertyData.type, // Note: type (not property_type)
+      landlord_id: user.id, // CRITICAL: Must match auth.uid()
     }
-    
-    const { data, error } = await supabase
-      .from('properties')
-      .insert(newProperty)
-      .select()
-      .single()
-    
+
+    const { data, error } = await supabase.from('properties').insert(newProperty).select().single()
+
     if (error) {
       throw new Error(`Property creation failed: ${error.message}`)
     }
-    
+
     // Create property_users entry
-    const { error: puError } = await supabase
-      .from('property_users')
-      .insert({
-        property_id: data.id,
-        user_id: user.id,
-        role: 'OWNER',
-        status: 'ACTIVE',
-        accepted_at: new Date().toISOString()
-      })
-    
+    const { error: puError } = await supabase.from('property_users').insert({
+      property_id: data.id,
+      user_id: user.id,
+      role: 'OWNER',
+      status: 'ACTIVE',
+      accepted_at: new Date().toISOString(),
+    })
+
     if (puError) {
       // Rollback property creation
       await supabase.from('properties').delete().eq('id', data.id)
       throw new Error(`Property users creation failed: ${puError.message}`)
     }
-    
+
     return data
   } catch (err) {
     console.error('Property creation error:', err.message)
@@ -184,12 +178,12 @@ async function createProperty(propertyData) {
 async function testAuthentication() {
   try {
     const { data: user, error } = await supabase.auth.getUser()
-    
+
     if (error || !user?.user?.id) {
       console.log('❌ User not authenticated')
       return false
     }
-    
+
     console.log('✅ User authenticated:')
     console.log('   Email:', user.user.email)
     console.log('   ID:', user.user.id)
@@ -207,23 +201,23 @@ async function testAuthentication() {
 async function testPropertyAccess() {
   try {
     const user = await ensureAuthenticated()
-    
+
     const { data: properties, error } = await supabase
       .from('properties')
       .select('id, name, landlord_id')
-    
+
     if (error) {
       console.log('❌ Property access denied:', error.message)
       return false
     }
-    
+
     console.log('✅ Property access granted:')
     console.log('   Properties visible:', properties.length)
-    
-    properties.forEach(prop => {
+
+    properties.forEach((prop) => {
       console.log(`   - ${prop.name} (Landlord: ${prop.landlord_id})`)
     })
-    
+
     return true
   } catch (err) {
     console.log('❌ Property access test failed:', err.message)
@@ -238,25 +232,25 @@ async function testPropertyAccess() {
 async function testPropertyUsersAccess() {
   try {
     const user = await ensureAuthenticated()
-    
+
     const { data: propertyUsers, error } = await supabase
       .from('property_users')
       .select('property_id, role, status')
       .eq('user_id', user.id)
       .eq('status', 'ACTIVE')
-    
+
     if (error) {
       console.log('❌ Property users access denied:', error.message)
       return false
     }
-    
+
     console.log('✅ Property users access granted:')
     console.log('   User has access to:', propertyUsers.length, 'properties')
-    
-    propertyUsers.forEach(pu => {
+
+    propertyUsers.forEach((pu) => {
       console.log(`   - Property ${pu.property_id} as ${pu.role}`)
     })
-    
+
     return true
   } catch (err) {
     console.log('❌ Property users test failed:', err.message)
@@ -268,21 +262,25 @@ async function testPropertyUsersAccess() {
 ## 🎯 STEP-BY-STEP FIX PROCESS
 
 ### **Step 1: Apply SQL Fixes**
+
 1. Go to Supabase Dashboard → SQL Editor
 2. Run the data consistency fix SQL above
 3. Run the user access grant SQL above
 
 ### **Step 2: Update Application Code**
+
 1. Add authentication checks before property operations
 2. Use correct column names (`physical_address`, `type`)
 3. Always set `landlord_id = auth.uid()` for new properties
 
 ### **Step 3: Test the Fix**
+
 1. Run the authentication test
 2. Run the property access test
 3. Run the property users access test
 
 ### **Step 4: Verify in Application**
+
 1. Log in as `user@example.com`
 2. Try to access properties
 3. Try to create a new property
@@ -315,6 +313,7 @@ ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
 ## 🎉 EXPECTED RESULTS
 
 After applying these fixes:
+
 1. **Current user** (`user@example.com`) will have access to properties
 2. **Data consistency** between properties and property_users will be fixed
 3. **RLS policies** will work correctly

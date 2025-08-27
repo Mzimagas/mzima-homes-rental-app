@@ -7,8 +7,6 @@ import { Modal } from '../../ui/Modal'
 import { AcquisitionFinancialsService } from '../services/acquisition-financials.service'
 import { PurchasePriceHistoryEntry } from '../types/property-management.types'
 
-
-
 interface EnhancedPurchasePriceManagerProps {
   propertyId: string
   initialPrice: number | null
@@ -18,7 +16,7 @@ interface EnhancedPurchasePriceManagerProps {
 export default function EnhancedPurchasePriceManager({
   propertyId,
   initialPrice,
-  onPriceUpdate
+  onPriceUpdate,
 }: EnhancedPurchasePriceManagerProps) {
   const [currentPrice, setCurrentPrice] = useState<number | null>(initialPrice)
   const [inputPrice, setInputPrice] = useState<string>(initialPrice?.toString() || '')
@@ -178,31 +176,19 @@ export default function EnhancedPurchasePriceManager({
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
             {currentPrice !== null && (
-              <Button
-                onClick={handleCancel}
-                variant="secondary"
-                size="sm"
-              >
+              <Button onClick={handleCancel} variant="secondary" size="sm">
                 Cancel
               </Button>
             )}
           </div>
         ) : (
           <div className="flex space-x-2">
-            <Button
-              onClick={handleEditClick}
-              variant="secondary"
-              size="sm"
-            >
+            <Button onClick={handleEditClick} variant="secondary" size="sm">
               Edit
             </Button>
             {/* View History Button - Always available when a current price exists (shows empty state if no history) */}
             {currentPrice !== null && (
-              <Button
-                onClick={handleViewHistory}
-                variant="tertiary"
-                size="sm"
-              >
+              <Button onClick={handleViewHistory} variant="tertiary" size="sm">
                 📋 View History
               </Button>
             )}
@@ -219,8 +205,6 @@ export default function EnhancedPurchasePriceManager({
             <span className="text-gray-400">Not Set</span>
           )}
         </div>
-
-
       </div>
 
       {error && (
@@ -238,7 +222,8 @@ export default function EnhancedPurchasePriceManager({
         >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              You are about to modify the purchase price. This action will be logged for audit purposes.
+              You are about to modify the purchase price. This action will be logged for audit
+              purposes.
             </p>
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-sm">
@@ -246,16 +231,10 @@ export default function EnhancedPurchasePriceManager({
               </p>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button
-                variant="secondary"
-                onClick={() => setShowWarningModal(false)}
-              >
+              <Button variant="secondary" onClick={() => setShowWarningModal(false)}>
                 Cancel
               </Button>
-              <Button
-                variant="primary"
-                onClick={handleWarningProceed}
-              >
+              <Button variant="primary" onClick={handleWarningProceed}>
                 Proceed
               </Button>
             </div>
@@ -290,7 +269,12 @@ export default function EnhancedPurchasePriceManager({
             <div>
               <label className="block text-sm font-medium mb-2">Common reasons:</label>
               <div className="flex flex-wrap gap-2">
-                {['Market adjustment', 'Negotiation outcome', 'Appraisal update', 'Correction of error'].map((reason) => (
+                {[
+                  'Market adjustment',
+                  'Negotiation outcome',
+                  'Appraisal update',
+                  'Correction of error',
+                ].map((reason) => (
                   <Button
                     key={reason}
                     variant="tertiary"
@@ -339,9 +323,7 @@ export default function EnhancedPurchasePriceManager({
                 <span className="ml-2 text-gray-600">Loading history...</span>
               </div>
             ) : priceHistory.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No price changes recorded yet.
-              </div>
+              <div className="text-center py-8 text-gray-500">No price changes recorded yet.</div>
             ) : (
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {priceHistory.map((entry, index) => (
@@ -375,12 +357,8 @@ export default function EnhancedPurchasePriceManager({
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-200">
                       <div className="flex items-center space-x-4">
-                        <span>
-                          👤 {entry.changed_by_name || 'Unknown User'}
-                        </span>
-                        <span>
-                          🕒 {new Date(entry.changed_at).toLocaleString()}
-                        </span>
+                        <span>👤 {entry.changed_by_name || 'Unknown User'}</span>
+                        <span>🕒 {new Date(entry.changed_at).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -389,10 +367,7 @@ export default function EnhancedPurchasePriceManager({
             )}
 
             <div className="flex justify-end pt-4 border-t border-gray-200">
-              <Button
-                variant="primary"
-                onClick={() => setShowHistoryModal(false)}
-              >
+              <Button variant="primary" onClick={() => setShowHistoryModal(false)}>
                 Close
               </Button>
             </div>

@@ -2,7 +2,10 @@
 
 import React, { useState } from 'react'
 import { Button } from '../../ui'
-import { SecurityTestService, SecurityTestResult } from '../../../lib/security/security-test.service'
+import {
+  SecurityTestService,
+  SecurityTestResult,
+} from '../../../lib/security/security-test.service'
 import { FieldSecurityService } from '../../../lib/security/field-security.service'
 import { RoleManagementService } from '../../../lib/auth/role-management.service'
 import { supabase } from '../../../lib/supabase-client'
@@ -45,7 +48,7 @@ export default function SecurityTestPanel() {
       if ((!perms || perms.length === 0) && role) {
         console.log('Permissions empty, using fallback for role:', role)
         const allRoles = RoleManagementService.getAllRoles()
-        const roleDefinition = allRoles.find(r => r.role === role)
+        const roleDefinition = allRoles.find((r) => r.role === role)
         if (roleDefinition) {
           perms = roleDefinition.permissions
           console.log('Fallback permissions from role definition:', perms)
@@ -81,7 +84,9 @@ export default function SecurityTestPanel() {
 
   const debugUserInfo = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       console.log('Current authenticated user:', user)
 
       if (user) {
@@ -107,7 +112,7 @@ export default function SecurityTestPanel() {
         pendingApprovals: 0,
         securityViolations: 0,
         userActivity: {},
-        riskScore: 0
+        riskScore: 0,
       }
 
       // Get audit log statistics
@@ -117,9 +122,10 @@ export default function SecurityTestPanel() {
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
 
       metrics.totalAuditLogs = auditLogs?.length || 0
-      metrics.recentChanges = auditLogs?.filter(log =>
-        new Date(log.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-      ).length || 0
+      metrics.recentChanges =
+        auditLogs?.filter(
+          (log) => new Date(log.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+        ).length || 0
 
       // Get pending approvals
       const { data: approvals } = await supabase
@@ -130,14 +136,15 @@ export default function SecurityTestPanel() {
       metrics.pendingApprovals = approvals?.length || 0
 
       // Calculate risk score based on activity
-      metrics.riskScore = Math.min(100,
-        (metrics.recentChanges * 10) +
-        (metrics.pendingApprovals * 20) +
-        (metrics.securityViolations * 50)
+      metrics.riskScore = Math.min(
+        100,
+        metrics.recentChanges * 10 + metrics.pendingApprovals * 20 + metrics.securityViolations * 50
       )
 
       setSecurityMetrics(metrics)
-      alert(`Security Report Generated!\n\nTotal Audit Logs (7 days): ${metrics.totalAuditLogs}\nRecent Changes (24h): ${metrics.recentChanges}\nPending Approvals: ${metrics.pendingApprovals}\nRisk Score: ${metrics.riskScore}/100`)
+      alert(
+        `Security Report Generated!\n\nTotal Audit Logs (7 days): ${metrics.totalAuditLogs}\nRecent Changes (24h): ${metrics.recentChanges}\nPending Approvals: ${metrics.pendingApprovals}\nRisk Score: ${metrics.riskScore}/100`
+      )
     } catch (error) {
       console.error('Error generating security report:', error)
       alert('Failed to generate security report')
@@ -154,7 +161,8 @@ export default function SecurityTestPanel() {
     // Set up real-time subscription to audit logs
     const subscription = supabase
       .channel('security_monitoring')
-      .on('postgres_changes',
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'purchase_pipeline_audit_log' },
         (payload) => {
           const timestamp = new Date()
@@ -166,11 +174,11 @@ export default function SecurityTestPanel() {
             purchaseId: payload.new?.purchase_id || payload.old?.purchase_id || 'unknown',
             operationType: payload.new?.operation_type || 'unknown',
             changedBy: payload.new?.changed_by || 'unknown',
-            requiresApproval: payload.new?.requires_approval || false
+            requiresApproval: payload.new?.requires_approval || false,
           }
 
           // Add to real-time events feed
-          setRealtimeEvents(prev => [eventData, ...prev.slice(0, 9)]) // Keep last 10 events
+          setRealtimeEvents((prev) => [eventData, ...prev.slice(0, 9)]) // Keep last 10 events
 
           console.log('🔒 Real-time security event:', payload)
 
@@ -186,21 +194,28 @@ export default function SecurityTestPanel() {
       .subscribe()
 
     // Auto-stop after 5 minutes
-    setTimeout(() => {
-      subscription.unsubscribe()
-      setRealtimeMonitoring(false)
-      setMonitoringStartTime(null)
-      alert('⏰ Real-time monitoring automatically stopped after 5 minutes')
-    }, 5 * 60 * 1000)
+    setTimeout(
+      () => {
+        subscription.unsubscribe()
+        setRealtimeMonitoring(false)
+        setMonitoringStartTime(null)
+        alert('⏰ Real-time monitoring automatically stopped after 5 minutes')
+      },
+      5 * 60 * 1000
+    )
 
-    alert('🔒 Real-time security monitoring started!\n\n✅ Live audit log monitoring\n✅ Instant security alerts\n✅ Real-time event feed\n✅ Auto-stop in 5 minutes\n\nTry creating or editing a purchase to see it in action!')
+    alert(
+      '🔒 Real-time security monitoring started!\n\n✅ Live audit log monitoring\n✅ Instant security alerts\n✅ Real-time event feed\n✅ Auto-stop in 5 minutes\n\nTry creating or editing a purchase to see it in action!'
+    )
   }
 
   const stopRealtimeMonitoring = () => {
     setRealtimeMonitoring(false)
     setMonitoringStartTime(null)
     // Note: In a real implementation, we'd store the subscription reference to unsubscribe
-    alert(`🔒 Real-time monitoring stopped\n\nCaptured ${realtimeEvents.length} security events during this session`)
+    alert(
+      `🔒 Real-time monitoring stopped\n\nCaptured ${realtimeEvents.length} security events during this session`
+    )
   }
 
   const simulateSecurityEvent = async () => {
@@ -208,7 +223,10 @@ export default function SecurityTestPanel() {
       console.log('🔒 Starting security event simulation...')
 
       // Check authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
       if (authError) {
         console.error('Authentication error:', authError)
         alert(`Authentication error: ${authError.message}`)
@@ -223,7 +241,8 @@ export default function SecurityTestPanel() {
       console.log('User authenticated:', user.email)
 
       // Generate a valid UUID for the test
-      const testPurchaseId = '00000000-0000-0000-0000-' + Date.now().toString().padStart(12, '0').slice(-12)
+      const testPurchaseId =
+        '00000000-0000-0000-0000-' + Date.now().toString().padStart(12, '0').slice(-12)
       console.log('Generated test purchase ID:', testPurchaseId)
 
       // First, check if the table exists and is accessible
@@ -234,7 +253,9 @@ export default function SecurityTestPanel() {
 
       if (testError) {
         console.error('Table access test failed:', testError)
-        alert(`Cannot access audit log table: ${testError.message}\n\nThis might be due to:\n- Table doesn't exist\n- Permission issues\n- RLS policies blocking access`)
+        alert(
+          `Cannot access audit log table: ${testError.message}\n\nThis might be due to:\n- Table doesn't exist\n- Permission issues\n- RLS policies blocking access`
+        )
         return
       }
 
@@ -248,7 +269,7 @@ export default function SecurityTestPanel() {
         old_values: { security_test: 'before' },
         new_values: { security_test: 'after' },
         changed_by: user.id,
-        requires_approval: true
+        requires_approval: true,
       }
 
       console.log('Attempting to insert:', insertData)
@@ -260,19 +281,27 @@ export default function SecurityTestPanel() {
 
       if (insertError) {
         console.error('Insert error:', insertError)
-        alert(`Failed to simulate security event:\n\nError: ${insertError.message}\nCode: ${insertError.code}\n\nThis might be due to:\n- Missing required fields\n- Data type mismatches\n- RLS policies\n- Permission issues`)
+        alert(
+          `Failed to simulate security event:\n\nError: ${insertError.message}\nCode: ${insertError.code}\n\nThis might be due to:\n- Missing required fields\n- Data type mismatches\n- RLS policies\n- Permission issues`
+        )
       } else {
         console.log('Insert successful:', insertResult)
-        alert(`🔒 Security event simulated successfully!\n\nPurchase ID: ${testPurchaseId}\nOperation: UPDATE\nUser: ${user.email}\nRequires Approval: Yes\n\nCheck the audit trail for the new entry.`)
+        alert(
+          `🔒 Security event simulated successfully!\n\nPurchase ID: ${testPurchaseId}\nOperation: UPDATE\nUser: ${user.email}\nRequires Approval: Yes\n\nCheck the audit trail for the new entry.`
+        )
       }
     } catch (error) {
       console.error('Error simulating security event:', error)
       console.error('Error details:', JSON.stringify(error, null, 2))
 
       if (error instanceof Error) {
-        alert(`Failed to simulate security event:\n\nError: ${error.message}\n\nCheck the browser console for more details.`)
+        alert(
+          `Failed to simulate security event:\n\nError: ${error.message}\n\nCheck the browser console for more details.`
+        )
       } else {
-        alert(`Failed to simulate security event:\n\nUnknown error occurred. Check the browser console for details.`)
+        alert(
+          `Failed to simulate security event:\n\nUnknown error occurred. Check the browser console for details.`
+        )
       }
     }
   }
@@ -288,13 +317,15 @@ export default function SecurityTestPanel() {
       purchaseId: '00000000-0000-0000-0000-' + Date.now().toString().padStart(12, '0').slice(-12),
       operationType: 'SIMULATION',
       changedBy: 'current_user',
-      requiresApproval: true
+      requiresApproval: true,
     }
 
     // Add to real-time events feed for demonstration
-    setRealtimeEvents(prev => [testEvent, ...prev.slice(0, 9)])
+    setRealtimeEvents((prev) => [testEvent, ...prev.slice(0, 9)])
 
-    alert(`🔒 Security Event Simulated (Demo Mode)!\n\nEvent Type: ${testEvent.eventType}\nOperation: ${testEvent.operationType}\nPurchase ID: ${testEvent.purchaseId}\nTime: ${timestamp.toLocaleTimeString()}\n\nThis is a demonstration event added to the live feed.`)
+    alert(
+      `🔒 Security Event Simulated (Demo Mode)!\n\nEvent Type: ${testEvent.eventType}\nOperation: ${testEvent.operationType}\nPurchase ID: ${testEvent.purchaseId}\nTime: ${timestamp.toLocaleTimeString()}\n\nThis is a demonstration event added to the live feed.`
+    )
   }
 
   // Debug function to test permission loading specifically
@@ -311,7 +342,7 @@ export default function SecurityTestPanel() {
       console.log('Debug - All role definitions:', allRoles)
 
       // Test 3: Find role definition for current role
-      const roleDefinition = allRoles.find(r => r.role === role)
+      const roleDefinition = allRoles.find((r) => r.role === role)
       console.log('Debug - Role definition for', role, ':', roleDefinition)
 
       // Test 4: Get permissions via service
@@ -340,7 +371,7 @@ export default function SecurityTestPanel() {
 
   // Manual role assignment removed - now handled automatically in loadUserInfo()
 
-  const passedTests = testResults.filter(r => r.passed).length
+  const passedTests = testResults.filter((r) => r.passed).length
   const totalTests = testResults.length
 
   return (
@@ -466,8 +497,13 @@ export default function SecurityTestPanel() {
           <div className="p-4 bg-green-50 rounded-lg border border-green-200">
             <h4 className="font-medium text-green-900 mb-2">✅ Security Role Active</h4>
             <div className="text-sm text-green-800">
-              <p><strong>Role:</strong> {userRole}</p>
-              <p><strong>Permissions:</strong> {permissions.length > 0 ? permissions.join(', ') : 'No permissions loaded'}</p>
+              <p>
+                <strong>Role:</strong> {userRole}
+              </p>
+              <p>
+                <strong>Permissions:</strong>{' '}
+                {permissions.length > 0 ? permissions.join(', ') : 'No permissions loaded'}
+              </p>
               <p className="mt-2 text-xs">Security system active and ready for use</p>
             </div>
           </div>
@@ -476,20 +512,22 @@ export default function SecurityTestPanel() {
             <h4 className="font-medium text-yellow-900 mb-2">⚠️ No Security Role Found</h4>
             <div className="text-sm text-yellow-800">
               <p>No active security role detected for your account.</p>
-              <p className="mt-1 text-xs">Click "Refresh Now" to check for role updates or contact your administrator.</p>
+              <p className="mt-1 text-xs">
+                Click "Refresh Now" to check for role updates or contact your administrator.
+              </p>
             </div>
           </div>
         )}
 
         {/* Real-time Monitoring Status */}
-        <div className={`p-4 rounded-lg border ${realtimeMonitoring
-          ? 'bg-red-50 border-red-200'
-          : 'bg-gray-50 border-gray-200'
-        }`}>
-          <h4 className={`font-medium mb-2 ${realtimeMonitoring
-            ? 'text-red-900'
-            : 'text-gray-900'
-          }`}>
+        <div
+          className={`p-4 rounded-lg border ${
+            realtimeMonitoring ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+          }`}
+        >
+          <h4
+            className={`font-medium mb-2 ${realtimeMonitoring ? 'text-red-900' : 'text-gray-900'}`}
+          >
             {realtimeMonitoring ? (
               <div className="flex items-center space-x-2">
                 <span className="animate-pulse">🔴</span>
@@ -499,10 +537,7 @@ export default function SecurityTestPanel() {
               '📡 Real-time Monitoring'
             )}
           </h4>
-          <div className={`text-sm ${realtimeMonitoring
-            ? 'text-red-800'
-            : 'text-gray-600'
-          }`}>
+          <div className={`text-sm ${realtimeMonitoring ? 'text-red-800' : 'text-gray-600'}`}>
             {realtimeMonitoring ? (
               <>
                 <p>🟢 Live monitoring all security events</p>
@@ -531,22 +566,33 @@ export default function SecurityTestPanel() {
           <h4 className="font-medium text-blue-900 mb-3">📊 Security Metrics (Last 7 Days)</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-800">{securityMetrics.totalAuditLogs}</div>
+              <div className="text-2xl font-bold text-blue-800">
+                {securityMetrics.totalAuditLogs}
+              </div>
               <div className="text-xs text-blue-600">Total Audit Logs</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-800">{securityMetrics.recentChanges}</div>
+              <div className="text-2xl font-bold text-orange-800">
+                {securityMetrics.recentChanges}
+              </div>
               <div className="text-xs text-orange-600">Recent Changes (24h)</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-800">{securityMetrics.pendingApprovals}</div>
+              <div className="text-2xl font-bold text-red-800">
+                {securityMetrics.pendingApprovals}
+              </div>
               <div className="text-xs text-red-600">Pending Approvals</div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${
-                securityMetrics.riskScore < 30 ? 'text-green-800' :
-                securityMetrics.riskScore < 70 ? 'text-yellow-800' : 'text-red-800'
-              }`}>
+              <div
+                className={`text-2xl font-bold ${
+                  securityMetrics.riskScore < 30
+                    ? 'text-green-800'
+                    : securityMetrics.riskScore < 70
+                      ? 'text-yellow-800'
+                      : 'text-red-800'
+                }`}
+              >
                 {securityMetrics.riskScore}
               </div>
               <div className="text-xs text-gray-600">Risk Score</div>
@@ -558,9 +604,7 @@ export default function SecurityTestPanel() {
       {/* Real-time Events Feed */}
       {realtimeMonitoring && realtimeEvents.length > 0 && (
         <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-          <h4 className="font-medium text-yellow-900 mb-3">
-            🔴 LIVE Security Events Feed
-          </h4>
+          <h4 className="font-medium text-yellow-900 mb-3">🔴 LIVE Security Events Feed</h4>
           <div className="space-y-2 max-h-40 overflow-y-auto">
             {realtimeEvents.map((event) => (
               <div key={event.id} className="p-2 bg-white rounded border text-sm">
@@ -570,9 +614,8 @@ export default function SecurityTestPanel() {
                       {event.eventType} - {event.operationType}
                     </span>
                     <div className="text-xs text-yellow-700 mt-1">
-                      Purchase: {event.purchaseId} |
-                      User: {event.changedBy} |
-                      Approval: {event.requiresApproval ? 'Required' : 'Not Required'}
+                      Purchase: {event.purchaseId} | User: {event.changedBy} | Approval:{' '}
+                      {event.requiresApproval ? 'Required' : 'Not Required'}
                     </div>
                   </div>
                   <span className="text-xs text-yellow-600">
@@ -593,11 +636,13 @@ export default function SecurityTestPanel() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-gray-900">Test Results</h4>
-            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-              passedTests === totalTests 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
+            <div
+              className={`px-3 py-1 rounded-full text-sm font-medium ${
+                passedTests === totalTests
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
               {passedTests}/{totalTests} Passed
             </div>
           </div>
@@ -607,27 +652,33 @@ export default function SecurityTestPanel() {
               <div
                 key={index}
                 className={`p-4 rounded-lg border ${
-                  result.passed 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-red-50 border-red-200'
+                  result.passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
                 }`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
-                      <span className={`text-lg ${result.passed ? 'text-green-600' : 'text-red-600'}`}>
+                      <span
+                        className={`text-lg ${result.passed ? 'text-green-600' : 'text-red-600'}`}
+                      >
                         {result.passed ? '✅' : '❌'}
                       </span>
-                      <h5 className={`font-medium ${result.passed ? 'text-green-900' : 'text-red-900'}`}>
+                      <h5
+                        className={`font-medium ${result.passed ? 'text-green-900' : 'text-red-900'}`}
+                      >
                         {result.testName}
                       </h5>
                     </div>
-                    <p className={`mt-1 text-sm ${result.passed ? 'text-green-700' : 'text-red-700'}`}>
+                    <p
+                      className={`mt-1 text-sm ${result.passed ? 'text-green-700' : 'text-red-700'}`}
+                    >
                       {result.message}
                     </p>
                     {result.details && (
                       <details className="mt-2">
-                        <summary className="text-xs text-gray-600 cursor-pointer">Show Details</summary>
+                        <summary className="text-xs text-gray-600 cursor-pointer">
+                          Show Details
+                        </summary>
                         <pre className="mt-1 text-xs text-gray-600 bg-gray-100 p-2 rounded overflow-auto">
                           {JSON.stringify(result.details, null, 2)}
                         </pre>
@@ -646,16 +697,18 @@ export default function SecurityTestPanel() {
               <div className="text-green-700">
                 <p className="font-medium">🎉 All security tests passed!</p>
                 <p className="text-sm mt-1">
-                  The security system is properly implemented and ready for production use.
-                  All audit trails, field-level security, role-based access control, and approval workflows are functioning correctly.
+                  The security system is properly implemented and ready for production use. All
+                  audit trails, field-level security, role-based access control, and approval
+                  workflows are functioning correctly.
                 </p>
               </div>
             ) : (
               <div className="text-red-700">
                 <p className="font-medium">⚠️ Some security tests failed</p>
                 <p className="text-sm mt-1">
-                  Please review the failed tests above and address any issues before deploying to production.
-                  Security is critical for protecting sensitive financial and property data.
+                  Please review the failed tests above and address any issues before deploying to
+                  production. Security is critical for protecting sensitive financial and property
+                  data.
                 </p>
               </div>
             )}

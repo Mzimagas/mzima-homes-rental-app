@@ -13,7 +13,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -37,8 +39,7 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin
-      .rpc('get_user_accessible_properties', { user_uuid: userId })
+    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       // Fallback: Check if user owns the property directly
@@ -81,19 +82,24 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
 // Validation schema for purchase price update
 const purchasePriceSchema = z.object({
   purchase_price_agreement_kes: z.number().nonnegative('Purchase price must be non-negative'),
-  change_reason: z.string().min(10, 'Change reason must be at least 10 characters').optional()
+  change_reason: z.string().min(10, 'Change reason must be at least 10 characters').optional(),
 })
 
 // PATCH /api/properties/[id]/purchase-price - Update purchase price in sales agreement
-export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const PATCH = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id from path /api/properties/[id]/purchase-price
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
@@ -124,7 +130,9 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
 
     // If price is changing and we have an existing price, require a reason
     if (oldPrice !== null && oldPrice !== newPrice && !parsed.data.change_reason) {
-      return errors.badRequest('Change reason is required when modifying an existing purchase price')
+      return errors.badRequest(
+        'Change reason is required when modifying an existing purchase price'
+      )
     }
 
     // Record price change history if price is changing (including initial set)
@@ -133,7 +141,7 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
         // Determine reason: require for edits, auto-label for initial set
         const reason =
           oldPrice === null
-            ? (parsed.data.change_reason || 'Initial purchase price entry')
+            ? parsed.data.change_reason || 'Initial purchase price entry'
             : parsed.data.change_reason!
 
         // Optionally fetch a human-friendly name
@@ -178,7 +186,7 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
       .update({
         purchase_price_agreement_kes: newPrice,
         purchase_price_last_updated_at: new Date().toISOString(),
-        purchase_price_last_updated_by: userId
+        purchase_price_last_updated_by: userId,
       })
       .eq('id', propertyId)
       .select('id, name, purchase_price_agreement_kes, purchase_price_last_updated_at')

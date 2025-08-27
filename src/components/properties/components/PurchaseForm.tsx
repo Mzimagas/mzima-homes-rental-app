@@ -11,14 +11,14 @@ import { PurchasePipelineService } from '../services/purchase-pipeline.service'
 import {
   PurchaseFormProps,
   PurchasePipelineFormValues,
-  purchasePipelineSchema
+  purchasePipelineSchema,
 } from '../types/purchase-pipeline.types'
 
 export default function PurchaseForm({
   isOpen,
   onClose,
   editingPurchase,
-  onPurchaseCreated
+  onPurchaseCreated,
 }: PurchaseFormProps) {
   const {
     register,
@@ -26,9 +26,9 @@ export default function PurchaseForm({
     reset,
     setValue,
     watch,
-    formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting },
   } = useForm<PurchasePipelineFormValues>({
-    resolver: zodResolver(purchasePipelineSchema)
+    resolver: zodResolver(purchasePipelineSchema),
   })
 
   const propertyAddress = watch('propertyAddress')
@@ -93,7 +93,7 @@ export default function PurchaseForm({
       } else {
         await PurchasePipelineService.createPurchase(values)
       }
-      
+
       reset()
       onClose()
       onPurchaseCreated()
@@ -118,18 +118,18 @@ export default function PurchaseForm({
         {/* Property Information */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Property Information</h3>
-          
+
           <FormField name="propertyName" label="Property Name" error={errors.propertyName?.message}>
             {({ id }) => (
-              <TextField
-                id={id}
-                {...register('propertyName')}
-                placeholder="Enter property name"
-              />
+              <TextField id={id} {...register('propertyName')} placeholder="Enter property name" />
             )}
           </FormField>
 
-          <FormField name="propertyAddress" label="Property Address" error={errors.propertyAddress?.message}>
+          <FormField
+            name="propertyAddress"
+            label="Property Address"
+            error={errors.propertyAddress?.message}
+          >
             {({ id }) => (
               <AddressAutocomplete
                 value={propertyAddress || ''}
@@ -164,7 +164,7 @@ export default function PurchaseForm({
         {/* Seller Information */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Seller Information</h3>
-          
+
           <FormField name="sellerName" label="Seller Name" error={errors.sellerName?.message}>
             {({ id }) => (
               <TextField
@@ -178,11 +178,7 @@ export default function PurchaseForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField name="sellerPhone" label="Seller Phone" error={errors.sellerPhone?.message}>
               {({ id }) => (
-                <TextField
-                  id={id}
-                  {...register('sellerPhone')}
-                  placeholder="Phone number"
-                />
+                <TextField id={id} {...register('sellerPhone')} placeholder="Phone number" />
               )}
             </FormField>
 
@@ -202,9 +198,13 @@ export default function PurchaseForm({
         {/* Financial Information */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Financial Information</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField name="askingPrice" label="Asking Price (KES)" error={errors.askingPrice?.message}>
+            <FormField
+              name="askingPrice"
+              label="Asking Price (KES)"
+              error={errors.askingPrice?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -215,7 +215,11 @@ export default function PurchaseForm({
               )}
             </FormField>
 
-            <FormField name="negotiatedPrice" label="Negotiated Price (KES)" error={errors.negotiatedPrice?.message}>
+            <FormField
+              name="negotiatedPrice"
+              label="Negotiated Price (KES)"
+              error={errors.negotiatedPrice?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -228,7 +232,11 @@ export default function PurchaseForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField name="depositPaid" label="Deposit Paid (KES)" error={errors.depositPaid?.message}>
+            <FormField
+              name="depositPaid"
+              label="Deposit Paid (KES)"
+              error={errors.depositPaid?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -239,14 +247,12 @@ export default function PurchaseForm({
               )}
             </FormField>
 
-            <FormField name="targetCompletionDate" label="Target Completion Date" error={errors.targetCompletionDate?.message}>
-              {({ id }) => (
-                <TextField
-                  id={id}
-                  {...register('targetCompletionDate')}
-                  type="date"
-                />
-              )}
+            <FormField
+              name="targetCompletionDate"
+              label="Target Completion Date"
+              error={errors.targetCompletionDate?.message}
+            >
+              {({ id }) => <TextField id={id} {...register('targetCompletionDate')} type="date" />}
             </FormField>
           </div>
         </div>
@@ -254,9 +260,13 @@ export default function PurchaseForm({
         {/* Additional Information */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField name="legalRepresentative" label="Legal Representative" error={errors.legalRepresentative?.message}>
+            <FormField
+              name="legalRepresentative"
+              label="Legal Representative"
+              error={errors.legalRepresentative?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -266,7 +276,11 @@ export default function PurchaseForm({
               )}
             </FormField>
 
-            <FormField name="financingSource" label="Financing Source" error={errors.financingSource?.message}>
+            <FormField
+              name="financingSource"
+              label="Financing Source"
+              error={errors.financingSource?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -278,7 +292,11 @@ export default function PurchaseForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField name="contractReference" label="Contract Reference" error={errors.contractReference?.message}>
+            <FormField
+              name="contractReference"
+              label="Contract Reference"
+              error={errors.contractReference?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -288,7 +306,11 @@ export default function PurchaseForm({
               )}
             </FormField>
 
-            <FormField name="titleDeedStatus" label="Title Deed Status" error={errors.titleDeedStatus?.message}>
+            <FormField
+              name="titleDeedStatus"
+              label="Title Deed Status"
+              error={errors.titleDeedStatus?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -298,7 +320,11 @@ export default function PurchaseForm({
               )}
             </FormField>
 
-            <FormField name="surveyStatus" label="Survey Status" error={errors.surveyStatus?.message}>
+            <FormField
+              name="surveyStatus"
+              label="Survey Status"
+              error={errors.surveyStatus?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -310,7 +336,11 @@ export default function PurchaseForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField name="expectedRentalIncome" label="Expected Rental Income (KES/month)" error={errors.expectedRentalIncome?.message}>
+            <FormField
+              name="expectedRentalIncome"
+              label="Expected Rental Income (KES/month)"
+              error={errors.expectedRentalIncome?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -321,7 +351,11 @@ export default function PurchaseForm({
               )}
             </FormField>
 
-            <FormField name="expectedRoi" label="Expected ROI (%)" error={errors.expectedRoi?.message}>
+            <FormField
+              name="expectedRoi"
+              label="Expected ROI (%)"
+              error={errors.expectedRoi?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -335,7 +369,11 @@ export default function PurchaseForm({
             </FormField>
           </div>
 
-          <FormField name="riskAssessment" label="Risk Assessment" error={errors.riskAssessment?.message}>
+          <FormField
+            name="riskAssessment"
+            label="Risk Assessment"
+            error={errors.riskAssessment?.message}
+          >
             {({ id }) => (
               <textarea
                 id={id}
@@ -347,7 +385,11 @@ export default function PurchaseForm({
             )}
           </FormField>
 
-          <FormField name="propertyConditionNotes" label="Property Condition Notes" error={errors.propertyConditionNotes?.message}>
+          <FormField
+            name="propertyConditionNotes"
+            label="Property Condition Notes"
+            error={errors.propertyConditionNotes?.message}
+          >
             {({ id }) => (
               <textarea
                 id={id}
@@ -362,18 +404,10 @@ export default function PurchaseForm({
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-3">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleClose}
-          >
+          <Button type="button" variant="secondary" onClick={handleClose}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={isSubmitting}
-          >
+          <Button type="submit" variant="primary" disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : editingPurchase ? 'Update Purchase' : 'Create Purchase'}
           </Button>
         </div>

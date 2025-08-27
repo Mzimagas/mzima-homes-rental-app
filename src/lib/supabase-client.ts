@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '../lib/types/database'
 import { logger, shouldLogAuth } from './logger'
+import { logError, logWarning } from './error-handling/error-logger'
+import { withRetry } from './error-handling/retry-service'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -10,7 +12,11 @@ const isValidEnv = (url?: string | null, key?: string | null) => {
   if (!url || !key) return false
   if (url.includes('your-supabase-url-here') || key.includes('your-anon-key-here')) return false
   if (!/^https?:\/\//.test(url)) return false
-  try { new URL(url) } catch { return false }
+  try {
+    new URL(url)
+  } catch {
+    return false
+  }
   return true
 }
 
@@ -28,15 +34,15 @@ let supabase: any
 if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
   // Enhanced client configuration with better error handling and retry logic
   // Create single instance to prevent multiple GoTrueClient warnings
-  supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  supabase = createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
     },
     global: {
       headers: {
-        'X-Client-Info': 'voi-rental-app@1.0.0'
+        'X-Client-Info': 'voi-rental-app@1.0.0',
       },
       // Custom fetch that logs but does not throw on non-2xx (let supabase-js handle it)
       fetch: async (url, options = {}) => {
@@ -45,11 +51,12 @@ if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
           const res = await fetch(url as any, options as any)
           if (!res.ok) {
             // Do not consume body; just log status and url
-            if (shouldLogAuth()) logger.warn('Supabase fetch non-OK', {
-              status: res.status,
-              statusText: res.statusText,
-              url: typeof url === 'string' ? url : (url as any)?.toString?.() || ''
-            })
+            if (shouldLogAuth())
+              logger.warn('Supabase fetch non-OK', {
+                status: res.status,
+                statusText: res.statusText,
+                url: typeof url === 'string' ? url : (url as any)?.toString?.() || '',
+              })
           }
           return res
         } catch (error: any) {
@@ -57,45 +64,77 @@ if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
           logger.error('Supabase fetch error', error)
           throw error
         }
-      }
+      },
     },
     // Add database configuration
     db: {
-      schema: 'public'
+      schema: 'public',
     },
     // Add realtime configuration
     realtime: {
       params: {
-        eventsPerSecond: 10
-      }
-    }
+        eventsPerSecond: 10,
+      },
+    },
   })
 } else {
   // Minimal stub client for local/dev when env is missing
   const stub: any = {
     auth: {
-      async signInWithPassword() { return { data: null, error: { message: 'Supabase not configured: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY' } } },
-      async signUp() { return { data: null, error: { message: 'Supabase not configured' } } },
-      async signOut() { return { error: null } },
-      mfa: {
-        async enroll() { return { data: null, error: { message: 'Supabase not configured' } } },
-        async verify() { return { data: null, error: { message: 'Supabase not configured' } } },
-        async listFactors() { return { data: { totp: [] }, error: null } },
-        async challenge() { return { data: null, error: { message: 'Supabase not configured' } } },
+      async signInWithPassword() {
+        return {
+          data: null,
+          error: {
+            message:
+              'Supabase not configured: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY',
+          },
+        }
       },
-      async getUser() { return { data: { user: null }, error: null } },
-      async getSession() { return { data: { session: null }, error: null } },
+      async signUp() {
+        return { data: null, error: { message: 'Supabase not configured' } }
+      },
+      async signOut() {
+        return { error: null }
+      },
+      mfa: {
+        async enroll() {
+          return { data: null, error: { message: 'Supabase not configured' } }
+        },
+        async verify() {
+          return { data: null, error: { message: 'Supabase not configured' } }
+        },
+        async listFactors() {
+          return { data: { totp: [] }, error: null }
+        },
+        async challenge() {
+          return { data: null, error: { message: 'Supabase not configured' } }
+        },
+      },
+      async getUser() {
+        return { data: { user: null }, error: null }
+      },
+      async getSession() {
+        return { data: { session: null }, error: null }
+      },
       onAuthStateChange(cb: any) {
         const subscription = { unsubscribe() {} }
-        try { cb('INITIAL_SESSION', null) } catch {}
+        try {
+          cb('INITIAL_SESSION', null)
+        } catch {}
         return { data: { subscription } }
       },
-      async resetPasswordForEmail() { return { data: null, error: { message: 'Supabase not configured' } } },
+      async resetPasswordForEmail() {
+        return { data: null, error: { message: 'Supabase not configured' } }
+      },
 
-      async updateUser() { return { data: null, error: { message: 'Supabase not configured' } } },
+      async updateUser() {
+        return { data: null, error: { message: 'Supabase not configured' } }
+      },
     },
     rpc: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
-    from: () => ({ select: async () => ({ data: null, error: { message: 'Supabase not configured' } })})
+    from: () => ({
+      select: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
+    }),
   }
   supabase = stub
 }
@@ -122,13 +161,13 @@ export function handleSupabaseError(error: any) {
     originalError: error?.error || null,
     // Handle Edge Function errors
     status: error?.status || error?.context?.status || null,
-    statusText: error?.statusText || error?.context?.statusText || ''
+    statusText: error?.statusText || error?.context?.statusText || '',
   }
 
   // Log the full error for debugging with better formatting
   console.error('Supabase error details:', {
     ...errorProps,
-    fullError: error
+    fullError: error,
   })
 
   // Handle Edge Function errors (404, 500, etc.)
@@ -153,7 +192,8 @@ export function handleSupabaseError(error: any) {
   }
 
   if (errorProps.code === 'PGRST202') {
-    const functionName = errorProps.message.match(/function\s+(\w+\.\w+)/)?.[1] || 'unknown function'
+    const functionName =
+      errorProps.message.match(/function\s+(\w+\.\w+)/)?.[1] || 'unknown function'
     return `Database function not found: ${functionName}. This function may not be deployed or the migration may not have been applied.`
   }
 
@@ -198,12 +238,19 @@ export function handleSupabaseError(error: any) {
   }
 
   // Handle authentication errors
-  if (errorProps.message?.includes('JWT') || errorProps.message?.includes('auth') || errorProps.message?.includes('not authenticated')) {
+  if (
+    errorProps.message?.includes('JWT') ||
+    errorProps.message?.includes('auth') ||
+    errorProps.message?.includes('not authenticated')
+  ) {
     return 'Authentication required: Please sign in again'
   }
 
   // Handle relationship errors
-  if (errorProps.message?.includes('relationship') || errorProps.message?.includes('schema cache')) {
+  if (
+    errorProps.message?.includes('relationship') ||
+    errorProps.message?.includes('schema cache')
+  ) {
     return `Database relationship error: ${errorProps.message}. Please check table relationships and column names.`
   }
 
@@ -247,10 +294,10 @@ export async function callRPC<T = any>(
 export const clientBusinessFunctions = {
   // Generate monthly rent invoices
   async runMonthlyRent(periodStart: string, dueDate?: string) {
-    return callRPC<{ invoices_created: number; total_amount_kes: number }[]>(
-      'run_monthly_rent',
-      { p_period_start: periodStart, p_due_date: dueDate }
-    )
+    return callRPC<{ invoices_created: number; total_amount_kes: number }[]>('run_monthly_rent', {
+      p_period_start: periodStart,
+      p_due_date: dueDate,
+    })
   },
 
   // Get tenant outstanding balance
@@ -270,7 +317,11 @@ export const clientBusinessFunctions = {
   async ensureUtilityAccount(params: {
     tenantId: string
     unitId: string
-    type: 'ELECTRICITY_PREPAID' | 'ELECTRICITY_POSTPAID' | 'WATER_DIRECT_TAVEVO' | 'WATER_INTERNAL_SUBMETER'
+    type:
+      | 'ELECTRICITY_PREPAID'
+      | 'ELECTRICITY_POSTPAID'
+      | 'WATER_DIRECT_TAVEVO'
+      | 'WATER_INTERNAL_SUBMETER'
     lowThresholdKes?: number | null
     creditLimitKes?: number | null
   }) {
@@ -283,7 +334,12 @@ export const clientBusinessFunctions = {
     })
   },
 
-  async recordUtilityTopup(accountId: string, amountKes: number, paymentId?: string, description?: string) {
+  async recordUtilityTopup(
+    accountId: string,
+    amountKes: number,
+    paymentId?: string,
+    description?: string
+  ) {
     return callRPC<string>('record_utility_topup', {
       p_account_id: accountId,
       p_amount_kes: amountKes,
@@ -310,25 +366,29 @@ export const clientBusinessFunctions = {
 
   // Get property statistics
   async getPropertyStats(propertyId: string) {
-    return callRPC<{
-      total_units: number
-      occupied_units: number
-      vacant_units: number
-      occupancy_rate: number
-      monthly_rent_potential: number
-      monthly_rent_actual: number
-    }[]>('get_property_stats', { p_property_id: propertyId })
+    return callRPC<
+      {
+        total_units: number
+        occupied_units: number
+        vacant_units: number
+        occupancy_rate: number
+        monthly_rent_potential: number
+        monthly_rent_actual: number
+      }[]
+    >('get_property_stats', { p_property_id: propertyId })
   },
 
   // Get tenant payment history
   async getTenantPaymentHistory(tenantId: string, limit = 50) {
-    return callRPC<{
-      payment_date: string
-      amount_kes: number
-      method: string
-      tx_ref: string | null
-      allocated_to_invoices: any[]
-    }[]>('get_tenant_payment_history', { p_tenant_id: tenantId, p_limit: limit })
+    return callRPC<
+      {
+        payment_date: string
+        amount_kes: number
+        method: string
+        tx_ref: string | null
+        allocated_to_invoices: any[]
+      }[]
+    >('get_tenant_payment_history', { p_tenant_id: tenantId, p_limit: limit })
   },
 
   // Apply payment to tenant account
@@ -365,10 +425,16 @@ export const clientBusinessFunctions = {
   // Helper function to get user's landlord IDs with auto-setup option
   async getUserLandlordIds(autoSetup: boolean = false) {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
 
       if (userError || !user) {
-        return { data: null, error: handleSupabaseError(userError || new Error('User not authenticated')) }
+        return {
+          data: null,
+          error: handleSupabaseError(userError || new Error('User not authenticated')),
+        }
       }
 
       // Use the RPC function to get landlord IDs (respects RLS policies)
@@ -403,7 +469,10 @@ export const clientBusinessFunctions = {
   // Helper function to set up landlord access for the current user
   async setupLandlordAccess() {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
 
       if (userError || !user) {
         return { success: false, message: 'User not authenticated' }
@@ -417,7 +486,10 @@ export const clientBusinessFunctions = {
         .limit(1)
 
       if (checkError) {
-        return { success: false, message: `Error checking existing landlords: ${checkError.message}` }
+        return {
+          success: false,
+          message: `Error checking existing landlords: ${checkError.message}`,
+        }
       }
 
       let landlordId: string
@@ -429,31 +501,38 @@ export const clientBusinessFunctions = {
         // Create new landlord record
         const { data: newLandlord, error: createError } = await supabase
           .from('landlords')
-          .insert([{
-            full_name: user.user_metadata?.full_name || (user.email || 'Unknown User').split('@')[0],
-            email: user.email || '',
-            phone: user.user_metadata?.phone || '+254700000000'
-          }])
+          .insert([
+            {
+              full_name:
+                user.user_metadata?.full_name || (user.email || 'Unknown User').split('@')[0],
+              email: user.email || '',
+              phone: user.user_metadata?.phone || '+254700000000',
+            },
+          ])
           .select()
           .single()
 
         if (createError) {
-          return { success: false, message: `Error creating landlord record: ${createError.message}` }
+          return {
+            success: false,
+            message: `Error creating landlord record: ${createError.message}`,
+          }
         }
 
         landlordId = newLandlord.id
       }
 
       // Create user role assignment
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
+      const { error: roleError } = await supabase.from('user_roles').insert([
+        {
           user_id: user.id,
           landlord_id: landlordId,
-          role: 'LANDLORD'
-        }])
+          role: 'LANDLORD',
+        },
+      ])
 
-      if (roleError && roleError.code !== '23505') { // Ignore duplicate key errors
+      if (roleError && roleError.code !== '23505') {
+        // Ignore duplicate key errors
         return { success: false, message: `Error creating user role: ${roleError.message}` }
       }
 
@@ -502,7 +581,7 @@ export const clientBusinessFunctions = {
       // Add landlord_id to the rule
       const ruleWithLandlordId = {
         ...rule,
-        landlord_id: landlordId
+        landlord_id: landlordId,
       }
 
       const { data, error } = await supabase
@@ -534,10 +613,7 @@ export const clientBusinessFunctions = {
 
   async deleteNotificationRule(id: string) {
     try {
-      const { data, error } = await supabase
-        .from('notification_rules')
-        .delete()
-        .eq('id', id)
+      const { data, error } = await supabase.from('notification_rules').delete().eq('id', id)
 
       return { data, error: error ? handleSupabaseError(error) : null }
     } catch (err) {
@@ -548,9 +624,15 @@ export const clientBusinessFunctions = {
   async getNotificationTemplates() {
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
       if (userError || !user) {
-        return { data: null, error: handleSupabaseError(userError || new Error('User not authenticated')) }
+        return {
+          data: null,
+          error: handleSupabaseError(userError || new Error('User not authenticated')),
+        }
       }
 
       const { data, error } = await supabase
@@ -568,15 +650,21 @@ export const clientBusinessFunctions = {
   async createNotificationTemplate(template: any) {
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
       if (userError || !user) {
-        return { data: null, error: handleSupabaseError(userError || new Error('User not authenticated')) }
+        return {
+          data: null,
+          error: handleSupabaseError(userError || new Error('User not authenticated')),
+        }
       }
 
       // Add landlord_id to the template
       const templateWithLandlordId = {
         ...template,
-        landlord_id: user.id
+        landlord_id: user.id,
       }
 
       const { data, error } = await supabase
@@ -666,7 +754,7 @@ export const clientBusinessFunctions = {
         send_during_business_hours_only: settings.general.send_during_business_hours_only,
         max_retries: settings.general.max_retries,
         retry_interval_minutes: settings.general.retry_interval_minutes,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
       let result
@@ -696,21 +784,26 @@ export const clientBusinessFunctions = {
   async processNotifications() {
     try {
       const { data, error } = await supabase.functions.invoke('process-notifications', {
-        body: {}
+        body: {},
       })
 
       if (error) {
         // EDGE_FUNCTION_FALLBACK: Return mock response when function is not deployed
-        if (error.message?.includes('not deployed') || error.message?.includes('404') || error.message?.includes('Failed to send')) {
-          console.warn('Edge Function not deployed, returning mock response');
+        if (
+          error.message?.includes('not deployed') ||
+          error.message?.includes('404') ||
+          error.message?.includes('Failed to send')
+        ) {
+          console.warn('Edge Function not deployed, returning mock response')
           return {
             data: {
               status: 'not_deployed',
-              message: 'Edge Functions are not deployed. Please deploy them to enable this feature.',
-              processed: 0
+              message:
+                'Edge Functions are not deployed. Please deploy them to enable this feature.',
+              processed: 0,
             },
-            error: null
-          };
+            error: null,
+          }
         }
         return { data: null, error: error.message }
       }
@@ -720,14 +813,14 @@ export const clientBusinessFunctions = {
       console.error('Process notifications error:', err)
 
       // EDGE_FUNCTION_FALLBACK: Handle network errors gracefully
-      console.warn('Edge Function error, returning fallback response:', err.message);
+      console.warn('Edge Function error, returning fallback response:', err.message)
       return {
         data: {
           status: 'not_deployed',
           message: 'Edge Functions are not available. Please deploy them to enable this feature.',
-          processed: 0
+          processed: 0,
         },
-        error: null
+        error: null,
       }
     }
   },
@@ -738,7 +831,8 @@ export const clientBusinessFunctions = {
         body: {
           to: email,
           subject: 'Test Email - Notification Settings',
-          message: 'This is a test email to verify your notification settings are working correctly.',
+          message:
+            'This is a test email to verify your notification settings are working correctly.',
           settings: {
             smtp_host: settings.email.smtp_host,
             smtp_port: settings.email.smtp_port,
@@ -746,8 +840,8 @@ export const clientBusinessFunctions = {
             smtp_password: settings.email.smtp_password,
             from_email: settings.email.from_email,
             from_name: settings.email.from_name,
-          }
-        }
+          },
+        },
       })
 
       if (error) {
@@ -771,8 +865,8 @@ export const clientBusinessFunctions = {
             api_key: settings.sms.api_key,
             api_secret: settings.sms.api_secret,
             sender_id: settings.sms.sender_id,
-          }
-        }
+          },
+        },
       })
 
       if (error) {
@@ -788,7 +882,7 @@ export const clientBusinessFunctions = {
   async triggerCronScheduler() {
     try {
       const { data, error } = await supabase.functions.invoke('cron-scheduler', {
-        body: {}
+        body: {},
       })
 
       if (error) {
@@ -805,13 +899,15 @@ export const clientBusinessFunctions = {
     try {
       const { data, error } = await supabase.rpc('get_cron_job_stats', {
         p_job_name: jobName || null,
-        p_days: days
+        p_days: days,
       })
 
       if (error) {
         // If the function doesn't exist, return mock data with a helpful message
         if (error.code === 'PGRST202' || error.message?.includes('get_cron_job_stats')) {
-          console.warn('Cron job stats function not found. Returning mock data. Please apply migration 007_cron_job_history.sql')
+          console.warn(
+            'Cron job stats function not found. Returning mock data. Please apply migration 007_cron_job_history.sql'
+          )
 
           // Return mock data structure that matches the expected format
           const mockData = [
@@ -823,7 +919,7 @@ export const clientBusinessFunctions = {
               success_rate: 0,
               last_run: null,
               last_status: 'not_deployed',
-              avg_duration_seconds: null
+              avg_duration_seconds: null,
             },
             {
               job_name: 'mark-overdue-invoices',
@@ -833,7 +929,7 @@ export const clientBusinessFunctions = {
               success_rate: 0,
               last_run: null,
               last_status: 'not_deployed',
-              avg_duration_seconds: null
+              avg_duration_seconds: null,
             },
             {
               job_name: 'cleanup-old-notifications',
@@ -843,13 +939,13 @@ export const clientBusinessFunctions = {
               success_rate: 0,
               last_run: null,
               last_status: 'not_deployed',
-              avg_duration_seconds: null
-            }
+              avg_duration_seconds: null,
+            },
           ]
 
           return {
-            data: jobName ? mockData.filter(job => job.job_name === jobName) : mockData,
-            error: null
+            data: jobName ? mockData.filter((job) => job.job_name === jobName) : mockData,
+            error: null,
           }
         }
 
@@ -889,9 +985,8 @@ export const clientBusinessFunctions = {
         // Create notification entries for all tenants
         for (const tenant of tenants || []) {
           for (const channel of notificationData.channels) {
-            const contact = channel === 'email' ? tenant.email :
-                           channel === 'sms' ? tenant.phone :
-                           tenant.id // for in-app notifications
+            const contact =
+              channel === 'email' ? tenant.email : channel === 'sms' ? tenant.phone : tenant.id // for in-app notifications
 
             notifications.push({
               landlord_id: landlordId,
@@ -904,7 +999,7 @@ export const clientBusinessFunctions = {
               message: notificationData.message,
               status: notificationData.sendImmediately ? 'pending' : 'scheduled',
               sent_at: notificationData.sendImmediately ? new Date().toISOString() : null,
-              scheduled_for: notificationData.scheduledFor || null
+              scheduled_for: notificationData.scheduledFor || null,
             })
           }
         }
@@ -925,9 +1020,8 @@ export const clientBusinessFunctions = {
           }
 
           for (const channel of notificationData.channels) {
-            const contact = channel === 'email' ? tenant.email :
-                           channel === 'sms' ? tenant.phone :
-                           tenant.id // for in-app notifications
+            const contact =
+              channel === 'email' ? tenant.email : channel === 'sms' ? tenant.phone : tenant.id // for in-app notifications
 
             notifications.push({
               landlord_id: landlordId,
@@ -940,7 +1034,7 @@ export const clientBusinessFunctions = {
               message: notificationData.message,
               status: notificationData.sendImmediately ? 'pending' : 'scheduled',
               sent_at: notificationData.sendImmediately ? new Date().toISOString() : null,
-              scheduled_for: notificationData.scheduledFor || null
+              scheduled_for: notificationData.scheduledFor || null,
             })
           }
         }
@@ -999,7 +1093,8 @@ export const clientBusinessFunctions = {
       // Assigned tenants (have current_unit_id in scoped units)
       const { data: assigned, error: assignedErr } = await supabase
         .from('tenants')
-        .select(`
+        .select(
+          `
           id,
           full_name,
           email,
@@ -1013,7 +1108,8 @@ export const clientBusinessFunctions = {
               name
             )
           )
-        `)
+        `
+        )
         .eq('status', 'ACTIVE')
         .in('current_unit_id', unitIds.length ? unitIds : ['00000000-0000-0000-0000-000000000000'])
         .order('full_name')
@@ -1029,7 +1125,9 @@ export const clientBusinessFunctions = {
           .in('unit_id', unitIds.length ? unitIds : ['00000000-0000-0000-0000-000000000000'])
         if (taErr) return { data: null, error: handleSupabaseError(taErr) }
 
-        const tenantIds = Array.from(new Set((taTenantIds || []).map((r: any) => r.tenant_id).filter(Boolean)))
+        const tenantIds = Array.from(
+          new Set((taTenantIds || []).map((r: any) => r.tenant_id).filter(Boolean))
+        )
         if (tenantIds.length) {
           const { data: unassigned, error: unassignedErr } = await supabase
             .from('tenants')
@@ -1061,9 +1159,15 @@ export const clientBusinessFunctions = {
   async getInAppNotifications(limit = 20) {
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
       if (userError || !user) {
-        return { data: null, error: handleSupabaseError(userError || new Error('User not authenticated')) }
+        return {
+          data: null,
+          error: handleSupabaseError(userError || new Error('User not authenticated')),
+        }
       }
 
       const { data, error } = await supabase
@@ -1090,7 +1194,7 @@ export const clientBusinessFunctions = {
     } catch (err) {
       return { data: null, error: handleSupabaseError(err) }
     }
-  }
+  },
 }
 
 // Utility functions for common queries
@@ -1099,7 +1203,8 @@ export const clientQueries = {
   async getPropertiesByLandlord(landlordId: string) {
     return supabase
       .from('properties')
-      .select(`
+      .select(
+        `
         *,
         units (
           id,
@@ -1107,7 +1212,8 @@ export const clientQueries = {
           monthly_rent_kes,
           is_active
         )
-      `)
+      `
+      )
       .eq('landlord_id', landlordId)
       .order('name')
   },
@@ -1116,7 +1222,8 @@ export const clientQueries = {
   async getTenantWithUnit(tenantId: string) {
     return supabase
       .from('tenants')
-      .select(`
+      .select(
+        `
         *,
         units (
           *,
@@ -1125,7 +1232,8 @@ export const clientQueries = {
             physical_address
           )
         )
-      `)
+      `
+      )
       .eq('id', tenantId)
       .single()
   },
@@ -1134,7 +1242,8 @@ export const clientQueries = {
   async getOutstandingInvoices(tenantId: string) {
     return supabase
       .from('rent_invoices')
-      .select(`
+      .select(
+        `
         *,
         units (
           unit_label,
@@ -1142,7 +1251,8 @@ export const clientQueries = {
             name
           )
         )
-      `)
+      `
+      )
       .eq('tenant_id', tenantId)
       .in('status', ['PENDING', 'PARTIAL', 'OVERDUE'])
       .order('due_date')
@@ -1152,7 +1262,8 @@ export const clientQueries = {
   async getRecentPayments(propertyId: string, limit = 20) {
     return supabase
       .from('payments')
-      .select(`
+      .select(
+        `
         *,
         tenants (
           full_name,
@@ -1160,10 +1271,107 @@ export const clientQueries = {
             unit_label
           )
         )
-      `)
+      `
+      )
       .eq('tenants.units.property_id', propertyId)
       .order('payment_date', { ascending: false })
       .limit(limit)
+  },
+}
+
+// Enhanced error handling wrapper for Supabase operations
+export const withErrorHandling = <T>(
+  operation: () => Promise<{ data: T | null; error: any }>,
+  context?: string
+) => {
+  return withRetry(
+    async () => {
+      const result = await operation()
+
+      if (result.error) {
+        const error = new Error(result.error.message || 'Supabase operation failed')
+        logError(error, {
+          additionalData: {
+            context: context || 'supabase_operation',
+            supabaseError: result.error,
+            code: result.error.code,
+            details: result.error.details,
+          },
+        })
+        throw error
+      }
+
+      return result.data
+    },
+    {
+      maxAttempts: 3,
+      retryCondition: (error) => {
+        const message = error.message.toLowerCase()
+        // Retry on network errors, timeouts, and temporary server errors
+        return (
+          message.includes('network') ||
+          message.includes('timeout') ||
+          message.includes('fetch') ||
+          message.includes('service unavailable') ||
+          message.includes('internal server error')
+        )
+      },
+    }
+  )
+}
+
+// Enhanced query builder with error handling
+export const createEnhancedClient = () => {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized')
+  }
+
+  return {
+    // Enhanced select with automatic retry
+    from: (table: string) => ({
+      select: (columns?: string) => ({
+        execute: () =>
+          withErrorHandling(() => supabase.from(table).select(columns), `select_from_${table}`),
+      }),
+      insert: (data: any) => ({
+        execute: () =>
+          withErrorHandling(
+            () => supabase.from(table).insert(data).select(),
+            `insert_into_${table}`
+          ),
+      }),
+      update: (data: any) => ({
+        eq: (column: string, value: any) => ({
+          execute: () =>
+            withErrorHandling(
+              () => supabase.from(table).update(data).eq(column, value).select(),
+              `update_${table}`
+            ),
+        }),
+      }),
+      delete: () => ({
+        eq: (column: string, value: any) => ({
+          execute: () =>
+            withErrorHandling(
+              () => supabase.from(table).delete().eq(column, value),
+              `delete_from_${table}`
+            ),
+        }),
+      }),
+    }),
+
+    // Enhanced auth with error handling
+    auth: {
+      signIn: (credentials: any) =>
+        withErrorHandling(() => supabase.auth.signInWithPassword(credentials), 'auth_sign_in'),
+      signUp: (credentials: any) =>
+        withErrorHandling(() => supabase.auth.signUp(credentials), 'auth_sign_up'),
+      signOut: () => withErrorHandling(() => supabase.auth.signOut(), 'auth_sign_out'),
+      getUser: () => withErrorHandling(() => supabase.auth.getUser(), 'auth_get_user'),
+    },
+
+    // Direct access to original client for complex operations
+    raw: supabase,
   }
 }
 

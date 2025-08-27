@@ -13,7 +13,10 @@ export type RateLimitOptions = {
   windowMs: number // window size in ms
 }
 
-export function checkRateLimit(key: string, opts: RateLimitOptions): { allowed: boolean; remaining: number; resetAt: number } {
+export function checkRateLimit(
+  key: string,
+  opts: RateLimitOptions
+): { allowed: boolean; remaining: number; resetAt: number } {
   const now = Date.now()
   const rec = store.get(key)
 
@@ -31,4 +34,3 @@ export function checkRateLimit(key: string, opts: RateLimitOptions): { allowed: 
 
   return { allowed: false, remaining: 0, resetAt: rec.resetAt }
 }
-

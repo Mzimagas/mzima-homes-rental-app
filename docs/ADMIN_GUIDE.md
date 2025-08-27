@@ -1,6 +1,7 @@
 # Mzima Homes Land Management System - Administrator Guide
 
 ## Table of Contents
+
 1. [System Administration](#system-administration)
 2. [Database Management](#database-management)
 3. [User Management](#user-management)
@@ -16,6 +17,7 @@
 ### Environment Setup
 
 #### Production Environment
+
 ```bash
 # Environment Variables
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -29,6 +31,7 @@ MPESA_ENVIRONMENT=production
 ```
 
 #### Development Environment
+
 ```bash
 # Development-specific variables
 NODE_ENV=development
@@ -39,6 +42,7 @@ DEBUG=true
 ### System Configuration
 
 #### Application Settings
+
 1. **Company Information**
    - Update company details in system settings
    - Configure logo and branding
@@ -55,6 +59,7 @@ DEBUG=true
    - Notification preferences
 
 #### Feature Flags
+
 ```typescript
 // Feature configuration
 const FEATURES = {
@@ -62,7 +67,7 @@ const FEATURES = {
   DOCUMENT_VERSIONING: true,
   ADVANCED_REPORTING: true,
   GEOSPATIAL_MAPPING: false, // Coming soon
-  MOBILE_APP_SYNC: false     // Future release
+  MOBILE_APP_SYNC: false, // Future release
 }
 ```
 
@@ -71,6 +76,7 @@ const FEATURES = {
 ### Database Schema Overview
 
 #### Core Tables
+
 - **parcels**: Land parcel information
 - **subdivisions**: Development projects
 - **plots**: Individual plot records
@@ -79,9 +85,10 @@ const FEATURES = {
 - **receipts**: Payment records
 
 #### Relationship Integrity
+
 ```sql
 -- Key relationships to monitor
-SELECT 
+SELECT
   table_name,
   constraint_name,
   constraint_type
@@ -93,6 +100,7 @@ WHERE table_schema = 'public'
 ### Database Maintenance
 
 #### Regular Maintenance Tasks
+
 ```sql
 -- Weekly maintenance
 VACUUM ANALYZE;
@@ -101,19 +109,20 @@ VACUUM ANALYZE;
 REINDEX DATABASE your_database_name;
 
 -- Check table sizes
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
-FROM pg_tables 
+FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 ```
 
 #### Performance Monitoring
+
 ```sql
 -- Monitor slow queries
-SELECT 
+SELECT
   query,
   calls,
   total_time,
@@ -124,7 +133,7 @@ ORDER BY mean_time DESC
 LIMIT 10;
 
 -- Check index usage
-SELECT 
+SELECT
   schemaname,
   tablename,
   indexname,
@@ -138,18 +147,20 @@ ORDER BY idx_scan DESC;
 ### Data Migration
 
 #### Migration Scripts
+
 ```sql
 -- Example: Add new column with default value
-ALTER TABLE parcels 
+ALTER TABLE parcels
 ADD COLUMN IF NOT EXISTS market_value DECIMAL(15,2) DEFAULT 0;
 
 -- Update existing records
-UPDATE parcels 
-SET market_value = acquisition_cost_total * 1.2 
+UPDATE parcels
+SET market_value = acquisition_cost_total * 1.2
 WHERE market_value = 0 AND acquisition_cost_total > 0;
 ```
 
 #### Data Validation
+
 ```sql
 -- Check data integrity
 SELECT 'Orphaned plots' as issue, COUNT(*) as count
@@ -169,6 +180,7 @@ WHERE lr_number IS NOT NULL;
 ### User Roles and Permissions
 
 #### Role Hierarchy
+
 ```
 Super Admin
 ├── Admin
@@ -180,18 +192,20 @@ Super Admin
 ```
 
 #### Permission Matrix
-| Module | Super Admin | Admin | Manager | Sales Agent | Finance | Operations | Viewer |
-|--------|-------------|-------|---------|-------------|---------|------------|--------|
-| Parcels | Full | Full | Read/Edit | Read | Read | Full | Read |
-| Subdivisions | Full | Full | Full | Read | Read | Full | Read |
-| Sales | Full | Full | Full | Full | Read | Read | Read |
-| Financial | Full | Full | Read/Edit | Read | Full | Read | Read |
-| Users | Full | Read/Edit | Read | None | None | None | None |
-| Reports | Full | Full | Full | Limited | Full | Limited | Limited |
+
+| Module       | Super Admin | Admin     | Manager   | Sales Agent | Finance | Operations | Viewer  |
+| ------------ | ----------- | --------- | --------- | ----------- | ------- | ---------- | ------- |
+| Parcels      | Full        | Full      | Read/Edit | Read        | Read    | Full       | Read    |
+| Subdivisions | Full        | Full      | Full      | Read        | Read    | Full       | Read    |
+| Sales        | Full        | Full      | Full      | Full        | Read    | Read       | Read    |
+| Financial    | Full        | Full      | Read/Edit | Read        | Full    | Read       | Read    |
+| Users        | Full        | Read/Edit | Read      | None        | None    | None       | None    |
+| Reports      | Full        | Full      | Full      | Limited     | Full    | Limited    | Limited |
 
 ### User Account Management
 
 #### Creating Users
+
 ```typescript
 // Admin interface for user creation
 const createUser = async (userData: {
@@ -205,17 +219,15 @@ const createUser = async (userData: {
   const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
     email: userData.email,
     password: generateTemporaryPassword(),
-    email_confirm: true
+    email_confirm: true,
   })
 
   // 2. Create user profile
-  const { error: profileError } = await supabase
-    .from('user_profiles')
-    .insert({
-      id: authUser.user.id,
-      ...userData,
-      is_active: true
-    })
+  const { error: profileError } = await supabase.from('user_profiles').insert({
+    id: authUser.user.id,
+    ...userData,
+    is_active: true,
+  })
 
   // 3. Send welcome email
   await sendWelcomeEmail(userData.email, temporaryPassword)
@@ -223,32 +235,26 @@ const createUser = async (userData: {
 ```
 
 #### User Deactivation
+
 ```typescript
 const deactivateUser = async (userId: string) => {
   // 1. Deactivate in auth
   await supabase.auth.admin.updateUserById(userId, {
-    ban_duration: 'none' // Permanent ban
+    ban_duration: 'none', // Permanent ban
   })
 
   // 2. Update profile
-  await supabase
-    .from('user_profiles')
-    .update({ is_active: false })
-    .eq('id', userId)
+  await supabase.from('user_profiles').update({ is_active: false }).eq('id', userId)
 
   // 3. Log action
-  await AuditService.logActivity(
-    currentUserId,
-    'deactivate_user',
-    'user',
-    userId
-  )
+  await AuditService.logActivity(currentUserId, 'deactivate_user', 'user', userId)
 }
 ```
 
 ### Bulk User Operations
 
 #### CSV Import
+
 ```typescript
 const importUsers = async (csvData: string) => {
   const users = parseCSV(csvData)
@@ -272,6 +278,7 @@ const importUsers = async (csvData: string) => {
 ### Authentication Settings
 
 #### Password Policy
+
 ```typescript
 const PASSWORD_POLICY = {
   minLength: 8,
@@ -280,23 +287,25 @@ const PASSWORD_POLICY = {
   requireNumbers: true,
   requireSpecialChars: true,
   maxAge: 90, // days
-  preventReuse: 5 // last 5 passwords
+  preventReuse: 5, // last 5 passwords
 }
 ```
 
 #### Session Management
+
 ```typescript
 const SESSION_CONFIG = {
   timeout: 8 * 60 * 60, // 8 hours
   extendOnActivity: true,
   maxConcurrentSessions: 3,
-  requireReauth: ['user_management', 'financial_transactions']
+  requireReauth: ['user_management', 'financial_transactions'],
 }
 ```
 
 ### Data Encryption
 
 #### Encryption Key Management
+
 ```bash
 # Generate new encryption key
 openssl rand -hex 32
@@ -309,32 +318,35 @@ openssl rand -hex 32
 ```
 
 #### Sensitive Data Fields
+
 ```typescript
 const ENCRYPTED_FIELDS = [
   'clients.id_number',
   'clients.kra_pin',
   'owners.id_number',
-  'bank_accounts.account_number'
+  'bank_accounts.account_number',
 ]
 ```
 
 ### Access Control
 
 #### IP Whitelisting
+
 ```typescript
 const ALLOWED_IPS = [
-  '192.168.1.0/24',    // Office network
-  '10.0.0.0/8',        // VPN network
-  '203.0.113.0/24'     // External office
+  '192.168.1.0/24', // Office network
+  '10.0.0.0/8', // VPN network
+  '203.0.113.0/24', // External office
 ]
 ```
 
 #### Rate Limiting
+
 ```typescript
 const RATE_LIMITS = {
   login: { attempts: 5, window: 15 * 60 * 1000 }, // 5 attempts per 15 minutes
-  api: { requests: 100, window: 60 * 1000 },      // 100 requests per minute
-  upload: { files: 10, window: 60 * 1000 }        // 10 files per minute
+  api: { requests: 100, window: 60 * 1000 }, // 100 requests per minute
+  upload: { files: 10, window: 60 * 1000 }, // 10 files per minute
 }
 ```
 
@@ -343,33 +355,36 @@ const RATE_LIMITS = {
 ### System Metrics
 
 #### Key Performance Indicators
+
 ```typescript
 const KPIs = {
   responseTime: '< 2 seconds',
   uptime: '> 99.5%',
   errorRate: '< 0.1%',
   concurrentUsers: '< 100',
-  databaseConnections: '< 80% of pool'
+  databaseConnections: '< 80% of pool',
 }
 ```
 
 #### Monitoring Dashboard
+
 ```typescript
 // Performance monitoring endpoints
 const monitoringEndpoints = {
   health: '/api/health',
   metrics: '/api/metrics',
   database: '/api/db-stats',
-  cache: '/api/cache-stats'
+  cache: '/api/cache-stats',
 }
 ```
 
 ### Database Performance
 
 #### Query Optimization
+
 ```sql
 -- Identify slow queries
-SELECT 
+SELECT
   query,
   calls,
   total_time,
@@ -381,7 +396,7 @@ ORDER BY mean_time DESC
 LIMIT 20;
 
 -- Check missing indexes
-SELECT 
+SELECT
   schemaname,
   tablename,
   seq_scan,
@@ -394,42 +409,45 @@ ORDER BY seq_tup_read DESC;
 ```
 
 #### Index Recommendations
+
 ```sql
 -- Create recommended indexes
-CREATE INDEX CONCURRENTLY idx_parcels_county_tenure 
-ON parcels(county, tenure) 
+CREATE INDEX CONCURRENTLY idx_parcels_county_tenure
+ON parcels(county, tenure)
 WHERE county IS NOT NULL;
 
-CREATE INDEX CONCURRENTLY idx_plots_subdivision_stage 
+CREATE INDEX CONCURRENTLY idx_plots_subdivision_stage
 ON plots(subdivision_id, stage);
 
-CREATE INDEX CONCURRENTLY idx_receipts_date_amount 
-ON receipts(paid_date, amount) 
+CREATE INDEX CONCURRENTLY idx_receipts_date_amount
+ON receipts(paid_date, amount)
 WHERE paid_date IS NOT NULL;
 ```
 
 ### Application Performance
 
 #### Caching Strategy
+
 ```typescript
 const CACHE_CONFIG = {
-  parcels: { ttl: 5 * 60 * 1000 },      // 5 minutes
-  plots: { ttl: 2 * 60 * 1000 },        // 2 minutes
-  reports: { ttl: 10 * 60 * 1000 },     // 10 minutes
-  static: { ttl: 24 * 60 * 60 * 1000 }  // 24 hours
+  parcels: { ttl: 5 * 60 * 1000 }, // 5 minutes
+  plots: { ttl: 2 * 60 * 1000 }, // 2 minutes
+  reports: { ttl: 10 * 60 * 1000 }, // 10 minutes
+  static: { ttl: 24 * 60 * 60 * 1000 }, // 24 hours
 }
 ```
 
 #### Memory Management
+
 ```typescript
 // Monitor memory usage
 const getMemoryStats = () => {
   const used = process.memoryUsage()
   return {
-    rss: Math.round(used.rss / 1024 / 1024 * 100) / 100,
-    heapTotal: Math.round(used.heapTotal / 1024 / 1024 * 100) / 100,
-    heapUsed: Math.round(used.heapUsed / 1024 / 1024 * 100) / 100,
-    external: Math.round(used.external / 1024 / 1024 * 100) / 100
+    rss: Math.round((used.rss / 1024 / 1024) * 100) / 100,
+    heapTotal: Math.round((used.heapTotal / 1024 / 1024) * 100) / 100,
+    heapUsed: Math.round((used.heapUsed / 1024 / 1024) * 100) / 100,
+    external: Math.round((used.external / 1024 / 1024) * 100) / 100,
   }
 }
 ```
@@ -439,6 +457,7 @@ const getMemoryStats = () => {
 ### Backup Strategy
 
 #### Database Backups
+
 ```bash
 #!/bin/bash
 # Daily backup script
@@ -461,6 +480,7 @@ aws s3 cp $BACKUP_DIR/backup_$DATE.sql.gz s3://your-backup-bucket/database/
 ```
 
 #### File Backups
+
 ```bash
 #!/bin/bash
 # Document backup script
@@ -482,6 +502,7 @@ aws s3 cp $BACKUP_DIR/documents_$DATE.tar.gz s3://your-backup-bucket/documents/
 ### Recovery Procedures
 
 #### Database Recovery
+
 ```bash
 # Point-in-time recovery
 pg_restore --clean --if-exists --no-owner --no-privileges \
@@ -493,6 +514,7 @@ psql $DB_NAME -c "SELECT COUNT(*) FROM clients;"
 ```
 
 #### Disaster Recovery Plan
+
 1. **Assessment** (0-15 minutes)
    - Identify scope of failure
    - Determine recovery strategy
@@ -518,6 +540,7 @@ psql $DB_NAME -c "SELECT COUNT(*) FROM clients;"
 ### M-PESA Integration
 
 #### Configuration
+
 ```typescript
 const MPESA_CONFIG = {
   environment: process.env.MPESA_ENVIRONMENT,
@@ -526,11 +549,12 @@ const MPESA_CONFIG = {
   businessShortCode: process.env.MPESA_BUSINESS_SHORT_CODE,
   passkey: process.env.MPESA_PASSKEY,
   callbackUrl: `${process.env.APP_URL}/api/mpesa/callback`,
-  timeoutUrl: `${process.env.APP_URL}/api/mpesa/timeout`
+  timeoutUrl: `${process.env.APP_URL}/api/mpesa/timeout`,
 }
 ```
 
 #### Monitoring
+
 ```typescript
 // Monitor M-PESA transactions
 const monitorMpesaTransactions = async () => {
@@ -549,6 +573,7 @@ const monitorMpesaTransactions = async () => {
 ### Email Integration
 
 #### SMTP Configuration
+
 ```typescript
 const EMAIL_CONFIG = {
   host: process.env.SMTP_HOST,
@@ -556,19 +581,20 @@ const EMAIL_CONFIG = {
   secure: process.env.SMTP_SECURE === 'true',
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
+    pass: process.env.SMTP_PASS,
+  },
 }
 ```
 
 ### Third-Party APIs
 
 #### API Rate Limiting
+
 ```typescript
 const API_LIMITS = {
   mpesa: { requests: 100, window: 60 * 1000 },
   email: { requests: 50, window: 60 * 1000 },
-  sms: { requests: 20, window: 60 * 1000 }
+  sms: { requests: 20, window: 60 * 1000 },
 }
 ```
 
@@ -577,6 +603,7 @@ const API_LIMITS = {
 ### Common Issues
 
 #### Database Connection Issues
+
 ```bash
 # Check database connectivity
 pg_isready -h localhost -p 5432
@@ -585,13 +612,14 @@ pg_isready -h localhost -p 5432
 SELECT count(*) FROM pg_stat_activity;
 
 # Kill long-running queries
-SELECT pg_terminate_backend(pid) 
-FROM pg_stat_activity 
-WHERE state = 'active' 
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE state = 'active'
   AND query_start < now() - interval '5 minutes';
 ```
 
 #### Performance Issues
+
 ```typescript
 // Check system resources
 const checkSystemHealth = async () => {
@@ -600,27 +628,28 @@ const checkSystemHealth = async () => {
     uptime: process.uptime(),
     loadAverage: os.loadavg(),
     freeMemory: os.freemem(),
-    totalMemory: os.totalmem()
+    totalMemory: os.totalmem(),
   }
-  
+
   return health
 }
 ```
 
 #### M-PESA Issues
+
 ```typescript
 // Debug M-PESA transactions
 const debugMpesaTransaction = async (checkoutRequestId: string) => {
   const transaction = await mpesaService.queryTransactionStatus(checkoutRequestId)
   console.log('Transaction Status:', transaction)
-  
+
   // Check callback logs
   const { data: callbacks } = await supabase
     .from('mpesa_transactions')
     .select('*')
     .eq('checkout_request_id', checkoutRequestId)
     .order('created_at', { ascending: false })
-  
+
   console.log('Callback History:', callbacks)
 }
 ```
@@ -628,6 +657,7 @@ const debugMpesaTransaction = async (checkoutRequestId: string) => {
 ### Log Analysis
 
 #### Application Logs
+
 ```bash
 # View recent errors
 tail -f /var/log/app/error.log | grep ERROR
@@ -640,9 +670,10 @@ awk '/ERROR/ {print $1, $2, $NF}' /var/log/app/error.log | sort | uniq -c
 ```
 
 #### Database Logs
+
 ```sql
 -- Check recent database errors
-SELECT 
+SELECT
   log_time,
   user_name,
   database_name,
@@ -656,6 +687,7 @@ ORDER BY log_time DESC;
 ## Maintenance Procedures
 
 ### Daily Tasks
+
 - [ ] Check system health dashboard
 - [ ] Review error logs
 - [ ] Monitor M-PESA transaction status
@@ -663,6 +695,7 @@ ORDER BY log_time DESC;
 - [ ] Check disk space usage
 
 ### Weekly Tasks
+
 - [ ] Database maintenance (VACUUM ANALYZE)
 - [ ] Review performance metrics
 - [ ] Update security patches
@@ -670,6 +703,7 @@ ORDER BY log_time DESC;
 - [ ] Review user activity logs
 
 ### Monthly Tasks
+
 - [ ] Full database backup verification
 - [ ] Security audit
 - [ ] Performance optimization review
@@ -677,6 +711,7 @@ ORDER BY log_time DESC;
 - [ ] Documentation updates
 
 ### Quarterly Tasks
+
 - [ ] Disaster recovery testing
 - [ ] Security penetration testing
 - [ ] Capacity planning review
@@ -685,4 +720,4 @@ ORDER BY log_time DESC;
 
 ---
 
-*This administrator guide should be kept confidential and only shared with authorized system administrators.*
+_This administrator guide should be kept confidential and only shared with authorized system administrators._

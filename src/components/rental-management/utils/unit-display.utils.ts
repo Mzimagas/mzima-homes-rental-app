@@ -35,11 +35,7 @@ export function formatUnitAllocation(
     showNotFound?: boolean
   } = {}
 ): string {
-  const {
-    includeRent = false,
-    fallbackText = '-',
-    showNotFound = true
-  } = options
+  const { includeRent = false, fallbackText = '-', showNotFound = true } = options
 
   if (!unit) {
     return fallbackText
@@ -47,14 +43,15 @@ export function formatUnitAllocation(
 
   // Unit part
   const unitPart = unit.unit_label || (showNotFound ? `${unit.id} (not found)` : fallbackText)
-  
+
   // Property part
   const propPart = property?.name ? ` - ${property.name}` : ''
-  
+
   // Rent part (optional)
-  const rentPart = includeRent && unit.monthly_rent_kes 
-    ? ` (KES ${unit.monthly_rent_kes.toLocaleString()}/month)`
-    : ''
+  const rentPart =
+    includeRent && unit.monthly_rent_kes
+      ? ` (KES ${unit.monthly_rent_kes.toLocaleString()}/month)`
+      : ''
 
   return `${unitPart}${propPart}${rentPart}`
 }
@@ -72,14 +69,10 @@ export function formatUnitOption(
     isAvailable?: boolean
   } = {}
 ): string {
-  const {
-    showAvailability = false,
-    isCurrentUnit = false,
-    isAvailable = true
-  } = options
+  const { showAvailability = false, isCurrentUnit = false, isAvailable = true } = options
 
   const baseFormat = formatUnitAllocation(unit, property, { includeRent: true })
-  
+
   let suffix = ''
   if (isCurrentUnit) {
     suffix = ' (Current Unit)'
@@ -109,7 +102,7 @@ export function formatTenantAllocation(
   return {
     tenantInfo,
     unitInfo,
-    hasAllocation
+    hasAllocation,
   }
 }
 
@@ -145,7 +138,7 @@ export function createUnitAllocationSummary(
   if (includeFinancials && unit.monthly_rent_kes) {
     details.push({
       label: 'Monthly Rent',
-      value: `KES ${unit.monthly_rent_kes.toLocaleString()}`
+      value: `KES ${unit.monthly_rent_kes.toLocaleString()}`,
     })
   }
 
@@ -160,7 +153,7 @@ export function createUnitAllocationSummary(
   return {
     title,
     details,
-    hasOccupant: !!tenant
+    hasOccupant: !!tenant,
   }
 }
 
@@ -187,14 +180,14 @@ export function extractUnitPropertyData(
         id: unitData.id,
         unit_label: unitData.unit_label,
         property_id: unitData.property_id,
-        monthly_rent_kes: unitData.monthly_rent_kes
+        monthly_rent_kes: unitData.monthly_rent_kes,
       }
-      
+
       const propertyData = propertiesById[unitData.property_id]
       if (propertyData) {
         property = {
           id: propertyData.id,
-          name: propertyData.name
+          name: propertyData.name,
         }
       }
     }
@@ -208,14 +201,14 @@ export function extractUnitPropertyData(
         id: unitData.id,
         unit_label: unitData.unit_label,
         property_id: unitData.property_id,
-        monthly_rent_kes: unitData.monthly_rent_kes
+        monthly_rent_kes: unitData.monthly_rent_kes,
       }
 
       if (unitData.properties || unitData.property) {
         const propertyData = unitData.properties || unitData.property
         property = {
           id: propertyData.id,
-          name: propertyData.name
+          name: propertyData.name,
         }
       }
     }
@@ -227,11 +220,11 @@ export function extractUnitPropertyData(
       id: data.unit_id || data.id,
       unit_label: data.unit_label,
       property_id: data.property_id,
-      monthly_rent_kes: data.monthly_rent_kes
+      monthly_rent_kes: data.monthly_rent_kes,
     }
     property = {
       id: data.property_id,
-      name: data.property_name
+      name: data.property_name,
     }
   }
 

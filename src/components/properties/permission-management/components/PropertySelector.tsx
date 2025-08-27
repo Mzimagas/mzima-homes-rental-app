@@ -8,7 +8,10 @@ interface PropertySelectorProps {
   className?: string
 }
 
-export default function PropertySelector({ onPropertySelect, className = '' }: PropertySelectorProps) {
+export default function PropertySelector({
+  onPropertySelect,
+  className = '',
+}: PropertySelectorProps) {
   const {
     selectedProperty,
     showDropdown,
@@ -20,7 +23,7 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
     setSearchTerm,
     getSelectedPropertyDisplay,
     searchPropertiesDebounced,
-    isLifecycleStage
+    isLifecycleStage,
   } = usePropertySelection()
 
   // Debounced search effect
@@ -42,10 +45,12 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
   }, [selectedProperty, onPropertySelect])
 
   // Filter properties based on search term
-  const filteredProperties = properties.filter(property => {
+  const filteredProperties = properties.filter((property) => {
     if (!searchTerm.trim()) return true
-    return property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           property.address.toLowerCase().includes(searchTerm.toLowerCase())
+    return (
+      property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.address.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   })
 
   const handleInternalPropertySelect = (propertyId: string) => {
@@ -65,7 +70,9 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
             <span className="text-sm font-medium text-gray-900">
               {getSelectedPropertyDisplay()}
             </span>
-            <span className={`text-gray-400 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}>
+            <span
+              className={`text-gray-400 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}
+            >
               ▼
             </span>
           </div>
@@ -98,17 +105,23 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
                 }`}
               >
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">🌐 Global Permissions (All Properties)</span>
+                  <span className="text-sm font-medium">
+                    🌐 Global Permissions (All Properties)
+                  </span>
                   {selectedProperty === 'global' && (
                     <span className="text-blue-600 text-sm">✓</span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Apply permissions across all properties</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Apply permissions across all properties
+                </p>
               </button>
 
               {/* Lifecycle Filters Section */}
               <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Lifecycle Filters</span>
+                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                  Lifecycle Filters
+                </span>
               </div>
 
               {/* Purchase Pipeline Filter */}
@@ -116,7 +129,9 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
                 type="button"
                 onClick={() => handleInternalPropertySelect('purchase_pipeline')}
                 className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 ${
-                  selectedProperty === 'purchase_pipeline' ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
+                  selectedProperty === 'purchase_pipeline'
+                    ? 'bg-blue-50 text-blue-900'
+                    : 'text-gray-900'
                 }`}
               >
                 <div className="flex items-center space-x-2">
@@ -125,7 +140,9 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
                     <span className="text-blue-600 text-sm">✓</span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Properties in purchase pipeline or recently purchased</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Properties in purchase pipeline or recently purchased
+                </p>
               </button>
 
               {/* Subdivision Filter */}
@@ -142,7 +159,9 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
                     <span className="text-blue-600 text-sm">✓</span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Properties undergoing subdivision process</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Properties undergoing subdivision process
+                </p>
               </button>
 
               {/* Handover Filter */}
@@ -159,16 +178,22 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
                     <span className="text-blue-600 text-sm">✓</span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Properties actively in handover process (in progress or completed)</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Properties actively in handover process (in progress or completed)
+                </p>
               </button>
 
               {/* Filtered Properties Section Header */}
               {properties.length > 0 && isLifecycleStage(selectedProperty) && (
                 <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
                   <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                    {selectedProperty === 'purchase_pipeline' ? `Purchase Pipeline Properties (${properties.length})` :
-                     selectedProperty === 'subdivision' ? `Subdivision Properties (${properties.length})` :
-                     selectedProperty === 'handover' ? `Handover Properties (${properties.length})` : `Filtered Properties (${properties.length})`}
+                    {selectedProperty === 'purchase_pipeline'
+                      ? `Purchase Pipeline Properties (${properties.length})`
+                      : selectedProperty === 'subdivision'
+                        ? `Subdivision Properties (${properties.length})`
+                        : selectedProperty === 'handover'
+                          ? `Handover Properties (${properties.length})`
+                          : `Filtered Properties (${properties.length})`}
                   </span>
                 </div>
               )}
@@ -176,7 +201,9 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
               {/* Individual Properties Section */}
               {properties.length > 0 && !isLifecycleStage(selectedProperty) && (
                 <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Individual Properties</span>
+                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                    Individual Properties
+                  </span>
                 </div>
               )}
 
@@ -192,13 +219,15 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
                 <>
                   {/* Filtered Properties */}
                   {filteredProperties.length > 0 ? (
-                    filteredProperties.map(property => (
+                    filteredProperties.map((property) => (
                       <button
                         key={property.id}
                         type="button"
                         onClick={() => handleInternalPropertySelect(property.id)}
                         className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-                          selectedProperty === property.id ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
+                          selectedProperty === property.id
+                            ? 'bg-blue-50 text-blue-900'
+                            : 'text-gray-900'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -218,11 +247,12 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
                                       {property.lifecycle_status}
                                     </span>
                                   )}
-                                  {property.subdivision_status && selectedProperty === 'subdivision' && (
-                                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
-                                      {property.subdivision_status}
-                                    </span>
-                                  )}
+                                  {property.subdivision_status &&
+                                    selectedProperty === 'subdivision' && (
+                                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                                        {property.subdivision_status}
+                                      </span>
+                                    )}
                                   {property.handover_status && selectedProperty === 'handover' && (
                                     <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
                                       {property.handover_status}
@@ -233,7 +263,9 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
                             </div>
                             <p className="text-xs text-gray-500 mt-1">{property.address}</p>
                             {property.size_acres && (
-                              <p className="text-xs text-gray-400">📏 {property.size_acres} acres</p>
+                              <p className="text-xs text-gray-400">
+                                📏 {property.size_acres} acres
+                              </p>
                             )}
                           </div>
                           {selectedProperty === property.id && (
@@ -251,10 +283,13 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
                     <div className="px-4 py-3 text-sm text-gray-500 text-center">
                       No properties available for {selectedProperty}
                       <p className="text-xs text-gray-400 mt-1">
-                        {selectedProperty === 'purchase_pipeline' ? 'No properties in purchase pipeline' :
-                         selectedProperty === 'subdivision' ? 'No properties in subdivision' :
-                         selectedProperty === 'handover' ? 'No properties in handover' :
-                         'Contact your administrator for access'}
+                        {selectedProperty === 'purchase_pipeline'
+                          ? 'No properties in purchase pipeline'
+                          : selectedProperty === 'subdivision'
+                            ? 'No properties in subdivision'
+                            : selectedProperty === 'handover'
+                              ? 'No properties in handover'
+                              : 'Contact your administrator for access'}
                       </p>
                     </div>
                   ) : null}
@@ -271,19 +306,22 @@ export default function PropertySelector({ onPropertySelect, className = '' }: P
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-medium text-blue-900">
-                {selectedProperty === 'purchase_pipeline' ? '🏗️ Purchase Pipeline Properties' :
-                 selectedProperty === 'subdivision' ? '📐 Subdivision Properties' :
-                 selectedProperty === 'handover' ? '🤝 Handover Properties' :
-                 'Property Access Overview'}
+                {selectedProperty === 'purchase_pipeline'
+                  ? '🏗️ Purchase Pipeline Properties'
+                  : selectedProperty === 'subdivision'
+                    ? '📐 Subdivision Properties'
+                    : selectedProperty === 'handover'
+                      ? '🤝 Handover Properties'
+                      : 'Property Access Overview'}
               </h4>
               <p className="text-sm text-blue-700">
-                {selectedProperty === 'purchase_pipeline' ?
-                  `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in purchase pipeline` :
-                 selectedProperty === 'subdivision' ?
-                  `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in subdivision process` :
-                 selectedProperty === 'handover' ?
-                  `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in handover stages` :
-                  `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} available for permission assignment`}
+                {selectedProperty === 'purchase_pipeline'
+                  ? `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in purchase pipeline`
+                  : selectedProperty === 'subdivision'
+                    ? `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in subdivision process`
+                    : selectedProperty === 'handover'
+                      ? `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in handover stages`
+                      : `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} available for permission assignment`}
               </p>
             </div>
           </div>

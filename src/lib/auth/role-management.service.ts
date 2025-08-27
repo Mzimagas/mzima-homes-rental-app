@@ -27,7 +27,7 @@ export class RoleManagementService {
       display_name: 'Administrator',
       description: 'Full system access with all permissions',
       permissions: ['*'], // Wildcard for all permissions
-      hierarchy_level: 100
+      hierarchy_level: 100,
     },
     {
       role: 'finance_manager',
@@ -38,9 +38,9 @@ export class RoleManagementService {
         'edit_financial_data',
         'approve_financial_changes',
         'view_audit_logs',
-        'manage_payments'
+        'manage_payments',
       ],
-      hierarchy_level: 80
+      hierarchy_level: 80,
     },
     {
       role: 'property_manager',
@@ -52,9 +52,9 @@ export class RoleManagementService {
         'create_properties',
         'manage_tenants',
         'view_basic_financial_data',
-        'edit_property_details'
+        'edit_property_details',
       ],
-      hierarchy_level: 60
+      hierarchy_level: 60,
     },
     {
       role: 'legal',
@@ -65,9 +65,9 @@ export class RoleManagementService {
         'edit_legal_documents',
         'manage_contracts',
         'view_audit_logs',
-        'approve_legal_changes'
+        'approve_legal_changes',
       ],
-      hierarchy_level: 70
+      hierarchy_level: 70,
     },
     {
       role: 'workflow_manager',
@@ -77,9 +77,9 @@ export class RoleManagementService {
         'view_workflows',
         'edit_workflow_stages',
         'approve_status_changes',
-        'manage_pipeline_stages'
+        'manage_pipeline_stages',
       ],
-      hierarchy_level: 65
+      hierarchy_level: 65,
     },
     {
       role: 'risk_manager',
@@ -89,31 +89,23 @@ export class RoleManagementService {
         'view_risk_assessments',
         'edit_risk_assessments',
         'approve_risk_changes',
-        'view_audit_logs'
+        'view_audit_logs',
       ],
-      hierarchy_level: 70
+      hierarchy_level: 70,
     },
     {
       role: 'inspector',
       display_name: 'Property Inspector',
       description: 'Inspect properties and update condition reports',
-      permissions: [
-        'view_properties',
-        'edit_property_conditions',
-        'create_inspection_reports'
-      ],
-      hierarchy_level: 40
+      permissions: ['view_properties', 'edit_property_conditions', 'create_inspection_reports'],
+      hierarchy_level: 40,
     },
     {
       role: 'surveyor',
       display_name: 'Surveyor',
       description: 'Conduct surveys and update survey status',
-      permissions: [
-        'view_properties',
-        'edit_survey_status',
-        'create_survey_reports'
-      ],
-      hierarchy_level: 50
+      permissions: ['view_properties', 'edit_survey_status', 'create_survey_reports'],
+      hierarchy_level: 50,
     },
     {
       role: 'project_manager',
@@ -123,27 +115,26 @@ export class RoleManagementService {
         'view_projects',
         'edit_project_timelines',
         'manage_completion_dates',
-        'view_progress_reports'
+        'view_progress_reports',
       ],
-      hierarchy_level: 65
+      hierarchy_level: 65,
     },
     {
       role: 'viewer',
       display_name: 'Viewer',
       description: 'Read-only access to basic information',
-      permissions: [
-        'view_properties',
-        'view_basic_data'
-      ],
-      hierarchy_level: 10
-    }
+      permissions: ['view_properties', 'view_basic_data'],
+      hierarchy_level: 10,
+    },
   ]
 
   // Get current user's roles
   static async getCurrentUserRoles(): Promise<UserRole[]> {
     try {
       console.log('Getting current user roles...')
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         console.log('User not authenticated')
         return []
@@ -183,8 +174,8 @@ export class RoleManagementService {
 
       // Return the role with highest hierarchy level
       const highestRole = roles.reduce((highest, current) => {
-        const currentDef = this.ROLE_DEFINITIONS.find(r => r.role === current.role)
-        const highestDef = this.ROLE_DEFINITIONS.find(r => r.role === highest.role)
+        const currentDef = this.ROLE_DEFINITIONS.find((r) => r.role === current.role)
+        const highestDef = this.ROLE_DEFINITIONS.find((r) => r.role === highest.role)
 
         if (!currentDef) return highest
         if (!highestDef) return current
@@ -194,7 +185,10 @@ export class RoleManagementService {
 
       return highestRole.role
     } catch (error) {
-      console.log('Error getting user role, defaulting to property_manager:', error?.message || 'Unknown error')
+      console.log(
+        'Error getting user role, defaulting to property_manager:',
+        error?.message || 'Unknown error'
+      )
       return 'property_manager' // Fallback to property_manager role
     }
   }
@@ -203,18 +197,18 @@ export class RoleManagementService {
   static async hasPermission(permission: string): Promise<boolean> {
     try {
       const roles = await this.getCurrentUserRoles()
-      
+
       for (const userRole of roles) {
-        const roleDef = this.ROLE_DEFINITIONS.find(r => r.role === userRole.role)
+        const roleDef = this.ROLE_DEFINITIONS.find((r) => r.role === userRole.role)
         if (!roleDef) continue
-        
+
         // Check for wildcard permission (admin)
         if (roleDef.permissions.includes('*')) return true
-        
+
         // Check for specific permission
         if (roleDef.permissions.includes(permission)) return true
       }
-      
+
       return false
     } catch (error) {
       console.error('Error checking permission:', error)
@@ -233,7 +227,7 @@ export class RoleManagementService {
 
       for (const userRole of roles) {
         console.log('Processing role:', userRole.role)
-        const roleDef = this.ROLE_DEFINITIONS.find(r => r.role === userRole.role)
+        const roleDef = this.ROLE_DEFINITIONS.find((r) => r.role === userRole.role)
         console.log('Role definition found:', roleDef)
 
         if (!roleDef) continue
@@ -244,7 +238,7 @@ export class RoleManagementService {
           return ['*']
         }
 
-        roleDef.permissions.forEach(permission => permissions.add(permission))
+        roleDef.permissions.forEach((permission) => permissions.add(permission))
       }
 
       const finalPermissions = Array.from(permissions)
@@ -257,12 +251,10 @@ export class RoleManagementService {
   }
 
   // Assign role to user (admin only)
-  static async assignRole(
-    userId: string, 
-    role: string, 
-    expiresAt?: string
-  ): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser()
+  static async assignRole(userId: string, role: string, expiresAt?: string): Promise<void> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
     // Check if current user has permission to assign roles
@@ -271,22 +263,22 @@ export class RoleManagementService {
       throw new Error('Insufficient permissions to assign roles')
     }
 
-    const { error } = await supabase
-      .from('security_user_roles')
-      .insert({
-        user_id: userId,
-        role: role,
-        assigned_by: user.id,
-        expires_at: expiresAt,
-        is_active: true
-      })
+    const { error } = await supabase.from('security_user_roles').insert({
+      user_id: userId,
+      role: role,
+      assigned_by: user.id,
+      expires_at: expiresAt,
+      is_active: true,
+    })
 
     if (error) throw error
   }
 
   // Revoke role from user (admin only)
   static async revokeRole(userId: string, role: string): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
     // Check if current user has permission to revoke roles
@@ -306,7 +298,7 @@ export class RoleManagementService {
 
   // Get role definition
   static getRoleDefinition(role: string): RoleDefinition | undefined {
-    return this.ROLE_DEFINITIONS.find(r => r.role === role)
+    return this.ROLE_DEFINITIONS.find((r) => r.role === role)
   }
 
   // Get all available roles
@@ -318,33 +310,33 @@ export class RoleManagementService {
   static async canModifyField(fieldName: string): Promise<boolean> {
     const userRole = await this.getCurrentUserRole()
     const roleDef = this.getRoleDefinition(userRole)
-    
+
     if (!roleDef) return false
-    
+
     // Admin can modify everything
     if (roleDef.permissions.includes('*')) return true
-    
+
     // Map field names to required permissions
     const fieldPermissions: Record<string, string> = {
-      'asking_price_kes': 'edit_financial_data',
-      'negotiated_price_kes': 'edit_financial_data',
-      'deposit_paid_kes': 'edit_financial_data',
-      'property_name': 'edit_property_details',
-      'property_address': 'edit_property_details',
-      'property_type': 'edit_property_details',
-      'contract_reference': 'edit_legal_documents',
-      'title_deed_status': 'edit_legal_documents',
-      'legal_representative': 'edit_legal_documents',
-      'survey_status': 'edit_survey_status',
-      'property_condition_notes': 'edit_property_conditions',
-      'risk_assessment': 'edit_risk_assessments',
-      'purchase_status': 'edit_workflow_stages',
-      'current_stage': 'edit_workflow_stages'
+      asking_price_kes: 'edit_financial_data',
+      negotiated_price_kes: 'edit_financial_data',
+      deposit_paid_kes: 'edit_financial_data',
+      property_name: 'edit_property_details',
+      property_address: 'edit_property_details',
+      property_type: 'edit_property_details',
+      contract_reference: 'edit_legal_documents',
+      title_deed_status: 'edit_legal_documents',
+      legal_representative: 'edit_legal_documents',
+      survey_status: 'edit_survey_status',
+      property_condition_notes: 'edit_property_conditions',
+      risk_assessment: 'edit_risk_assessments',
+      purchase_status: 'edit_workflow_stages',
+      current_stage: 'edit_workflow_stages',
     }
-    
+
     const requiredPermission = fieldPermissions[fieldName]
     if (!requiredPermission) return true // No specific permission required
-    
+
     return roleDef.permissions.includes(requiredPermission)
   }
 }

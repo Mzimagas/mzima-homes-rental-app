@@ -3,7 +3,7 @@ const { createClient } = require('@supabase/supabase-js')
 
 module.exports = async () => {
   console.log('Setting up test environment...')
-  
+
   // Ensure we're using test environment
   if (process.env.NODE_ENV !== 'test') {
     process.env.NODE_ENV = 'test'
@@ -22,12 +22,11 @@ module.exports = async () => {
       console.error('Database connection failed:', error)
       throw error
     }
-    
+
     console.log('Database connection successful')
-    
+
     // Create test data if needed
     await setupTestData(supabase)
-    
   } catch (error) {
     console.error('Test setup failed:', error)
     throw error
@@ -43,18 +42,16 @@ async function setupTestData(supabase) {
     .single()
 
   if (!existingParcel) {
-    await supabase
-      .from('parcels')
-      .insert({
-        lr_number: 'TEST/BLOCK1/001',
-        registry_office: 'Test Registry',
-        county: 'Test County',
-        locality: 'Test Locality',
-        tenure: 'freehold',
-        acreage_ha: 1.0,
-        current_use: 'residential'
-      })
-    
+    await supabase.from('parcels').insert({
+      lr_number: 'TEST/BLOCK1/001',
+      registry_office: 'Test Registry',
+      county: 'Test County',
+      locality: 'Test Locality',
+      tenure: 'freehold',
+      acreage_ha: 1.0,
+      current_use: 'residential',
+    })
+
     console.log('Test parcel created')
   }
 
@@ -73,16 +70,14 @@ async function setupTestData(supabase) {
       .single()
 
     if (parcel) {
-      await supabase
-        .from('subdivisions')
-        .insert({
-          parcel_id: parcel.parcel_id,
-          name: 'Test Subdivision',
-          description: 'Test subdivision for integration testing',
-          total_plots_planned: 10,
-          status: 'planning'
-        })
-      
+      await supabase.from('subdivisions').insert({
+        parcel_id: parcel.parcel_id,
+        name: 'Test Subdivision',
+        description: 'Test subdivision for integration testing',
+        total_plots_planned: 10,
+        status: 'planning',
+      })
+
       console.log('Test subdivision created')
     }
   }
@@ -109,14 +104,12 @@ async function setupTestData(supabase) {
           size_sqm: 1000,
           access_type: 'public_road',
           utility_level: 'water_power',
-          stage: 'ready_for_sale'
+          stage: 'ready_for_sale',
         })
       }
 
-      await supabase
-        .from('plots')
-        .insert(testPlots)
-      
+      await supabase.from('plots').insert(testPlots)
+
       console.log('Test plots created')
     }
   }

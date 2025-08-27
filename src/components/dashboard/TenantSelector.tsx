@@ -17,21 +17,16 @@ interface TenantSelectorProps {
 /**
  * Reusable tenant selector that integrates with dashboard context
  */
-export default function TenantSelector({ 
+export default function TenantSelector({
   className = '',
   placeholder = 'Select a tenant...',
   showClearOption = true,
   propertyFilter = false,
-  onTenantChange
+  onTenantChange,
 }: TenantSelectorProps) {
-  const { 
-    state, 
-    selectTenant, 
-    updateTenantsCache, 
-    getCachedData, 
-    isCacheExpired 
-  } = useDashboardActions()
-  
+  const { state, selectTenant, updateTenantsCache, getCachedData, isCacheExpired } =
+    useDashboardActions()
+
   const [loading, setLoading] = useState(false)
   const [tenants, setTenants] = useState<Tenant[]>([])
 
@@ -62,9 +57,10 @@ export default function TenantSelector({
   }, [getCachedData, isCacheExpired, updateTenantsCache])
 
   // Filter tenants by selected property if enabled
-  const filteredTenants = propertyFilter && state.selectedProperty
-    ? tenants.filter(tenant => tenant.property_id === state.selectedProperty?.id)
-    : tenants
+  const filteredTenants =
+    propertyFilter && state.selectedProperty
+      ? tenants.filter((tenant) => tenant.property_id === state.selectedProperty?.id)
+      : tenants
 
   const handleTenantChange = (tenantId: string) => {
     if (tenantId === '') {
@@ -73,7 +69,7 @@ export default function TenantSelector({
       return
     }
 
-    const tenant = tenants.find(t => t.id === tenantId)
+    const tenant = tenants.find((t) => t.id === tenantId)
     if (tenant) {
       selectTenant(tenant)
       onTenantChange?.(tenant)
@@ -82,17 +78,15 @@ export default function TenantSelector({
 
   const options = [
     ...(showClearOption ? [{ value: '', label: 'All Tenants' }] : []),
-    ...filteredTenants.map(tenant => ({
+    ...filteredTenants.map((tenant) => ({
       value: tenant.id,
-      label: tenant.full_name
-    }))
+      label: tenant.full_name,
+    })),
   ]
 
   // Show property filter message if no tenants for selected property
-  const showPropertyFilterMessage = propertyFilter && 
-    state.selectedProperty && 
-    filteredTenants.length === 0 && 
-    tenants.length > 0
+  const showPropertyFilterMessage =
+    propertyFilter && state.selectedProperty && filteredTenants.length === 0 && tenants.length > 0
 
   return (
     <div className={className}>
@@ -103,16 +97,16 @@ export default function TenantSelector({
         disabled={loading || (propertyFilter && !state.selectedProperty)}
         className="w-full"
         placeholder={
-          loading 
-            ? 'Loading tenants...' 
+          loading
+            ? 'Loading tenants...'
             : propertyFilter && !state.selectedProperty
-            ? 'Select a property first'
-            : showPropertyFilterMessage
-            ? 'No tenants for selected property'
-            : placeholder
+              ? 'Select a property first'
+              : showPropertyFilterMessage
+                ? 'No tenants for selected property'
+                : placeholder
         }
       />
-      
+
       {showPropertyFilterMessage && (
         <p className="text-sm text-gray-500 mt-1">
           No tenants found for {state.selectedProperty?.name}

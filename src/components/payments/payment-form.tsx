@@ -17,15 +17,26 @@ interface PaymentFormProps {
   preselectedTenantId?: string
 }
 
-
-export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTenantId }: PaymentFormProps) {
+export default function PaymentForm({
+  onSuccess,
+  onCancel,
+  isOpen,
+  preselectedTenantId,
+}: PaymentFormProps) {
   const [loading, setLoading] = useState(false)
   const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [properties, setProperties] = useState<Array<{ id: string; name: string }>>([])
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('')
 
-  const { register, handleSubmit, setValue, reset, watch, formState: { errors, isSubmitting } } = useForm<PaymentFormValues>({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema) as unknown as Resolver<PaymentFormValues>,
     defaultValues: {
       tenantId: preselectedTenantId || '',
@@ -35,13 +46,15 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
       method: 'MPESA',
       txRef: '',
       notes: '',
-    }
+    },
   })
 
   const watchedMethod = watch('method')
   const watchedAmount = watch('amount')
   const methodInfo = PaymentService.getPaymentMethodInfo(watchedMethod)
-  const processingFee = methodInfo ? PaymentService.calculateProcessingFee(watchedMethod, watchedAmount || 0) : 0
+  const processingFee = methodInfo
+    ? PaymentService.calculateProcessingFee(watchedMethod, watchedAmount || 0)
+    : 0
   const totalAmount = (watchedAmount || 0) + processingFee
 
   useEffect(() => {
@@ -66,7 +79,7 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
 
       // Normalize IDs and pick up names when available in the RPC result
       for (const it of items) {
-        const id: string | undefined = typeof it === 'string' ? it : (it?.property_id || it?.id)
+        const id: string | undefined = typeof it === 'string' ? it : it?.property_id || it?.id
         if (!id) continue
         ids.push(id)
         const nm = (it?.property_name || it?.name || '').toString().trim()
@@ -93,9 +106,9 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
         }
       }
 
-      const mapped = uniqueIds.map(id => ({
+      const mapped = uniqueIds.map((id) => ({
         id,
-        name: nameMap.get(id) || (id ? `Property ${String(id).slice(0, 8)}` : 'Unnamed Property')
+        name: nameMap.get(id) || (id ? `Property ${String(id).slice(0, 8)}` : 'Unnamed Property'),
       }))
 
       setProperties(mapped)
@@ -107,11 +120,23 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(amount)
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+    }).format(amount)
   }
 
   // Units for dual selection: load all units with occupancy info
-  const [units, setUnits] = useState<Array<{ id: string; label: string; propertyId: string; currentTenantId?: string; currentTenantName?: string }>>([])
+  const [units, setUnits] = useState<
+    Array<{
+      id: string
+      label: string
+      propertyId: string
+      currentTenantId?: string
+      currentTenantName?: string
+    }>
+  >([])
   const loadUnits = async (propertyScope?: string) => {
     try {
       let propIdList: string[] = []
@@ -119,7 +144,9 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
         propIdList = [propertyScope]
       } else {
         // Scope by accessible properties via RPC (to satisfy RLS)
-        const { data: propertyIds, error: propsErr } = await supabase.rpc('get_user_properties_simple')
+        const { data: propertyIds, error: propsErr } = await supabase.rpc(
+          'get_user_properties_simple'
+        )
         if (propsErr) {
           console.error('Error loading properties for units:', propsErr?.message || propsErr)
         }
@@ -167,7 +194,8 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
 
       const occupantMap = new Map<string, { id: string; full_name: string }>()
       ;(occupantRows || []).forEach((t: any) => {
-        if (t.current_unit_id) occupantMap.set(t.current_unit_id, { id: t.id, full_name: t.full_name })
+        if (t.current_unit_id)
+          occupantMap.set(t.current_unit_id, { id: t.id, full_name: t.full_name })
       })
 
       const mapped = (unitRows || []).map((u: any) => {
@@ -219,7 +247,7 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
           paymentDate: new Date().toISOString().split('T')[0],
           method: 'MPESA',
           txRef: '',
-          notes: ''
+          notes: '',
         })
         // Call onSuccess with payment ID for potential confirmation display
         onSuccess?.(result.paymentId)
@@ -228,7 +256,7 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
       console.error('Payment processing error:', err)
       setPaymentResult({
         success: false,
-        error: 'An unexpected error occurred while processing the payment'
+        error: 'An unexpected error occurred while processing the payment',
       })
     } finally {
       setLoading(false)
@@ -240,8 +268,6 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
     setPaymentResult(null)
   }
 
-
-
   if (!isOpen) return null
 
   return (
@@ -250,12 +276,14 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
         <div className="mt-3">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900">Record Payment</h3>
-            <button
-              onClick={onCancel}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -272,12 +300,15 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
                   onChange={(e) => setSelectedPropertyId(e.target.value)}
                   options={[
                     { value: '', label: 'All accessible properties' },
-                    ...properties.map(p => {
-                      const label = (p.name && p.name.trim().length > 0)
-                        ? p.name
-                        : (p.id ? `Property ${String(p.id).slice(0, 8)}` : 'Unnamed Property')
+                    ...properties.map((p) => {
+                      const label =
+                        p.name && p.name.trim().length > 0
+                          ? p.name
+                          : p.id
+                            ? `Property ${String(p.id).slice(0, 8)}`
+                            : 'Unnamed Property'
                       return { value: p.id, label }
-                    })
+                    }),
                   ]}
                 />
               </div>
@@ -291,7 +322,7 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
                   onChange={(e) => {
                     const val = (e.target as HTMLSelectElement).value
                     setValue('unitId', (val || '') as any)
-                    const u = units.find(uu => uu.id === val)
+                    const u = units.find((uu) => uu.id === val)
                     if (u?.currentTenantId) {
                       setValue('tenantId', u.currentTenantId)
                     } else {
@@ -302,14 +333,20 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
                   options={[
                     { value: '', label: 'Select a unit…' },
                     ...units
-                      .filter(u => !!u.currentTenantId)
-                      .map(u => ({ value: u.id, label: u.label + (u.currentTenantName ? ` (Tenant: ${u.currentTenantName})` : '') }))
+                      .filter((u) => !!u.currentTenantId)
+                      .map((u) => ({
+                        value: u.id,
+                        label:
+                          u.label +
+                          (u.currentTenantName ? ` (Tenant: ${u.currentTenantName})` : ''),
+                      })),
                   ]}
                 />
-                {errors.unitId?.message && <p className="mt-1 text-xs text-red-600">{(errors as any).unitId?.message}</p>}
+                {errors.unitId?.message && (
+                  <p className="mt-1 text-xs text-red-600">{(errors as any).unitId?.message}</p>
+                )}
               </div>
             </div>
-
 
             {/* Payment Result Display */}
             {paymentResult && !paymentResult.success && (
@@ -398,9 +435,13 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
               </div>
             </div>
 
-
             <div>
-              <TextField label="Notes" placeholder="Additional notes about this payment..." error={errors.notes?.message} {...register('notes')} />
+              <TextField
+                label="Notes"
+                placeholder="Additional notes about this payment..."
+                error={errors.notes?.message}
+                {...register('notes')}
+              />
             </div>
 
             {/* Payment Summary */}
@@ -433,9 +474,25 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
               <Button type="submit" disabled={loading || isSubmitting}>
                 {loading ? (
                   <div className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Processing...
                   </div>
@@ -454,11 +511,23 @@ export default function PaymentForm({ onSuccess, onCancel, isOpen, preselectedTe
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3 text-center">
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                <svg
+                  className="h-6 w-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
                 </svg>
               </div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">Payment Recorded Successfully!</h3>
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">
+                Payment Recorded Successfully!
+              </h3>
               <div className="mt-2 px-7 py-3">
                 <p className="text-sm text-gray-500">
                   Payment has been processed and allocated to outstanding invoices.

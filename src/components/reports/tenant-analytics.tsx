@@ -4,13 +4,17 @@ import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
-import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
+import DateRangeSelector, {
+  getDefaultDateRange,
+  getPredefinedDateRanges,
+} from '../ui/date-range-selector'
 import {
   createPDFHeader,
   addTableToPDF,
   addSummaryCardsToPDF,
   createExcelWorkbook,
   addTableToExcel,
+  addSummaryDashboardToExcel,
   saveExcelFile,
   savePDFFile,
   generateFilename,
@@ -18,7 +22,7 @@ import {
   formatDate,
   formatPercentage,
   type ExportOptions,
-  type TableData
+  type TableData,
 } from '../../lib/export-utils'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
@@ -77,7 +81,9 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
   const [data, setData] = useState<TenantAnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedPeriod, setSelectedPeriod] = useState<'3months' | '6months' | '1year' | 'custom'>('6months')
+  const [selectedPeriod, setSelectedPeriod] = useState<'3months' | '6months' | '1year' | 'custom'>(
+    '6months'
+  )
   const [customDateRange, setCustomDateRange] = useState(getDefaultDateRange())
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
@@ -138,9 +144,8 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
         paymentBehavior,
         topTenants,
         riskAnalysis,
-        tenantRetention
+        tenantRetention,
       })
-
     } catch (err) {
       setError('Failed to load tenant analytics')
       console.error('Tenant analytics loading error:', err)
@@ -156,9 +161,6 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
     exportExcel: handleExportExcel,
     isExporting: () => isExporting,
   }))
-
-
-
 
   // Export to PDF
   const handleExportPDF = async () => {
@@ -179,10 +181,10 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
         subtitle: 'Tenant Demographics and Behavior Analysis',
         dateRange: customDateRange,
         filters: {
-          'Period': selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod
+          Period: selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod,
         },
         data,
-        filename: generateFilename('tenant-analytics', customDateRange)
+        filename: generateFilename('tenant-analytics', customDateRange),
       }
 
       let yPosition = createPDFHeader(doc, exportOptions)
@@ -193,7 +195,10 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
         { title: 'Active Tenants', value: data.tenantSummary.activeTenants.toString() },
         { title: 'New Tenants', value: data.tenantRetention.newTenants.toString() },
         { title: 'Retention Rate', value: formatPercentage(data.tenantRetention.retentionRate) },
-        { title: 'Avg Tenancy Length', value: `${data.tenantRetention.averageTenancyLength} months` }
+        {
+          title: 'Avg Tenancy Length',
+          value: `${data.tenantRetention.averageTenancyLength} months`,
+        },
       ]
       yPosition = addSummaryCardsToPDF(doc, summaryCards, yPosition, 'Tenant Analytics Summary')
 
@@ -204,10 +209,8 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
           ['On-time Payments', data.paymentBehavior.onTimePayments.toString()],
           ['Late Payments', data.paymentBehavior.latePayments.toString()],
           ['Missed Payments', data.paymentBehavior.missedPayments.toString()],
-          ['Average Payment Delay (days)', data.paymentBehavior.averagePaymentDelay.toString()]
-
-
-        ]
+          ['Average Payment Delay (days)', data.paymentBehavior.averagePaymentDelay.toString()],
+        ],
       }
       yPosition = addTableToPDF(doc, paymentBehaviorTable, yPosition, 'Payment Behavior Summary')
 
@@ -215,14 +218,14 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
       if (data.topTenants.length > 0) {
         const topTenantsTable: TableData = {
           headers: ['Tenant', 'Property', 'Unit', 'Total Paid', 'Payment Count', 'On-time Rate'],
-          rows: data.topTenants.map(tenant => [
+          rows: data.topTenants.map((tenant) => [
             tenant.tenantName,
             tenant.propertyName,
             tenant.unitLabel,
             formatCurrency(tenant.totalPaid),
             tenant.paymentCount.toString(),
-            formatPercentage(tenant.onTimeRate)
-          ])
+            formatPercentage(tenant.onTimeRate),
+          ]),
         }
         addTableToPDF(doc, topTenantsTable, yPosition, 'Top Tenants Analysis')
       }
@@ -233,8 +236,6 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
       alert('Failed to export PDF. Please try again.')
     } finally {
       setIsExporting(false)
-
-
     }
   }
 
@@ -256,10 +257,10 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
         subtitle: 'Tenant Demographics and Behavior Analysis',
         dateRange: customDateRange,
         filters: {
-          'Period': selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod
+          Period: selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod,
         },
         data,
-        filename: generateFilename('tenant-analytics', customDateRange)
+        filename: generateFilename('tenant-analytics', customDateRange),
       }
 
       const workbook = createExcelWorkbook(exportOptions)
@@ -273,7 +274,10 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
         { title: 'Retained Tenants', value: data.tenantRetention.retainedTenants.toString() },
         { title: 'Lost Tenants', value: data.tenantRetention.lostTenants.toString() },
         { title: 'Retention Rate', value: formatPercentage(data.tenantRetention.retentionRate) },
-        { title: 'Average Tenancy Length', value: `${data.tenantRetention.averageTenancyLength} months` }
+        {
+          title: 'Average Tenancy Length',
+          value: `${data.tenantRetention.averageTenancyLength} months`,
+        },
       ]
       addSummaryDashboardToExcel(workbook, summaryCards, exportOptions)
 
@@ -284,24 +288,32 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
           ['On-time Payments', data.paymentBehavior.onTimePayments],
           ['Late Payments', data.paymentBehavior.latePayments],
           ['Missed Payments', data.paymentBehavior.missedPayments],
-          ['Average Payment Delay (days)', data.paymentBehavior.averagePaymentDelay]
-        ]
+          ['Average Payment Delay (days)', data.paymentBehavior.averagePaymentDelay],
+        ],
       }
       addTableToExcel(workbook, paymentBehaviorTable, 'Payment Behavior')
 
       // Top tenants sheet
       if (data.topTenants.length > 0) {
         const topTenantsTable: TableData = {
-          headers: ['Tenant Name', 'Property', 'Unit', 'Total Paid', 'Payment Count', 'Average Payment', 'On-time Rate'],
-          rows: data.topTenants.map(tenant => [
+          headers: [
+            'Tenant Name',
+            'Property',
+            'Unit',
+            'Total Paid',
+            'Payment Count',
+            'Average Payment',
+            'On-time Rate',
+          ],
+          rows: data.topTenants.map((tenant) => [
             tenant.tenantName,
             tenant.propertyName,
             tenant.unitLabel,
             tenant.totalPaid,
             tenant.paymentCount,
             tenant.averagePayment,
-            tenant.onTimeRate
-          ])
+            tenant.onTimeRate,
+          ]),
         }
         addTableToExcel(workbook, topTenantsTable, 'Top Tenants')
       }
@@ -312,8 +324,6 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
       alert('Failed to export Excel file. Please try again.')
     } finally {
       setIsExporting(false)
-
-
     }
   }
 
@@ -350,7 +360,8 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
     // Get all tenants
     const { data: tenants } = await supabase
       .from('tenants')
-      .select(`
+      .select(
+        `
         id,
         status,
         units (
@@ -358,7 +369,8 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
             landlord_id
           )
         )
-      `)
+      `
+      )
       .eq('units.properties.landlord_id', landlordId)
 
     const totalTenants = tenants?.length || 0
@@ -384,12 +396,11 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
       activeTenants,
       inactiveTenants,
       averageBalance,
-      totalOutstanding
+      totalOutstanding,
     }
   }
 
   const calculatePaymentBehavior = async (landlordId: string, startDate: Date, endDate: Date) => {
-
     // First get all properties for the landlord
     const { data: properties } = await supabase
       .from('properties')
@@ -403,10 +414,7 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
     const propertyIds = properties.map((p: { id: string }) => p.id)
 
     // Get units for these properties
-    const { data: units } = await supabase
-      .from('units')
-      .select('id')
-      .in('property_id', propertyIds)
+    const { data: units } = await supabase.from('units').select('id').in('property_id', propertyIds)
 
     if (!units || units.length === 0) {
       return { onTimePayments: 0, latePayments: 0, missedPayments: 0, averagePaymentDelay: 0 }
@@ -417,7 +425,8 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
     // Get invoices and payments for the period
     const { data: invoices } = await supabase
       .from('rent_invoices')
-      .select(`
+      .select(
+        `
         id,
         due_date,
         amount_due_kes,
@@ -432,7 +441,8 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
         payments (
           payment_date
         )
-      `)
+      `
+      )
       .in('unit_id', unitIds)
       .gte('due_date', startDate.toISOString().split('T')[0])
       .lte('due_date', endDate.toISOString().split('T')[0])
@@ -455,7 +465,9 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
             onTimePayments++
           } else {
             latePayments++
-            const delayDays = Math.floor((paymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+            const delayDays = Math.floor(
+              (paymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
+            )
             totalDelayDays += delayDays
             latePaymentCount++
           }
@@ -465,22 +477,23 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
       }
     })
 
-    const averagePaymentDelay = latePaymentCount > 0 ? Math.floor(totalDelayDays / latePaymentCount) : 0
+    const averagePaymentDelay =
+      latePaymentCount > 0 ? Math.floor(totalDelayDays / latePaymentCount) : 0
 
     return {
       onTimePayments,
       latePayments,
       missedPayments,
-      averagePaymentDelay
+      averagePaymentDelay,
     }
   }
 
   const getTopTenants = async (landlordId: string, startDate: Date, endDate: Date) => {
-
     // Get payments for the period
     const { data: payments } = await supabase
       .from('payments')
-      .select(`
+      .select(
+        `
         amount_kes,
         payment_date,
         tenants (
@@ -494,7 +507,8 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
             )
           )
         )
-      `)
+      `
+      )
       .eq('tenants.units.properties.landlord_id', landlordId)
       .gte('payment_date', startDate.toISOString().split('T')[0])
       .lte('payment_date', endDate.toISOString().split('T')[0])
@@ -503,16 +517,22 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
     const tenantData: { [key: string]: any } = {}
 
     payments?.forEach((payment: any) => {
-      const tenant = Array.isArray(payment.tenants) ? payment.tenants[0] : payment.tenants as any
+      const tenant = Array.isArray(payment.tenants) ? payment.tenants[0] : (payment.tenants as any)
       if (tenant && tenant.id) {
         if (!tenantData[tenant.id]) {
           tenantData[tenant.id] = {
             tenantName: tenant.full_name || 'Unknown',
-            propertyName: (tenant.units && tenant.units[0] && tenant.units[0].properties && tenant.units[0].properties[0]) ? tenant.units[0].properties[0].name : 'Unknown',
-            unitLabel: (tenant.units && tenant.units[0]) ? tenant.units[0].unit_label : 'Unknown',
+            propertyName:
+              tenant.units &&
+              tenant.units[0] &&
+              tenant.units[0].properties &&
+              tenant.units[0].properties[0]
+                ? tenant.units[0].properties[0].name
+                : 'Unknown',
+            unitLabel: tenant.units && tenant.units[0] ? tenant.units[0].unit_label : 'Unknown',
             totalPaid: 0,
             paymentCount: 0,
-            onTimePayments: 0
+            onTimePayments: 0,
           }
         }
 
@@ -528,20 +548,19 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
     const topTenants = Object.values(tenantData).map((tenant: any) => ({
       ...tenant,
       averagePayment: tenant.paymentCount > 0 ? tenant.totalPaid / tenant.paymentCount : 0,
-      onTimeRate: tenant.paymentCount > 0 ? (tenant.onTimePayments / tenant.paymentCount) * 100 : 0
+      onTimeRate: tenant.paymentCount > 0 ? (tenant.onTimePayments / tenant.paymentCount) * 100 : 0,
     }))
 
     // Sort by total paid and return top 10
-    return topTenants
-      .sort((a, b) => b.totalPaid - a.totalPaid)
-      .slice(0, 10)
+    return topTenants.sort((a, b) => b.totalPaid - a.totalPaid).slice(0, 10)
   }
 
   const calculateRiskAnalysis = async (landlordId: string) => {
     // Get all active tenants with their balances and last payment dates
     const { data: tenants } = await supabase
       .from('tenants')
-      .select(`
+      .select(
+        `
         id,
         full_name,
         status,
@@ -552,7 +571,8 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
             landlord_id
           )
         )
-      `)
+      `
+      )
       .eq('status', 'ACTIVE')
       .eq('units.properties.landlord_id', landlordId)
 
@@ -571,7 +591,10 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
         .limit(1)
 
       const daysSinceLastPayment = lastPayment?.[0]
-        ? Math.floor((new Date().getTime() - new Date(lastPayment[0].payment_date).getTime()) / (1000 * 60 * 60 * 24))
+        ? Math.floor(
+            (new Date().getTime() - new Date(lastPayment[0].payment_date).getTime()) /
+              (1000 * 60 * 60 * 24)
+          )
         : 999
 
       // Calculate risk score (simplified)
@@ -582,11 +605,17 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
       if (riskScore > 0) {
         riskTenants.push({
           tenantName: tenant.full_name || 'Unknown',
-          propertyName: (tenant.units && tenant.units[0] && tenant.units[0].properties && tenant.units[0].properties[0]) ? tenant.units[0].properties[0].name : 'Unknown',
-          unitLabel: (tenant.units && tenant.units[0]) ? tenant.units[0].unit_label : 'Unknown',
+          propertyName:
+            tenant.units &&
+            tenant.units[0] &&
+            tenant.units[0].properties &&
+            tenant.units[0].properties[0]
+              ? tenant.units[0].properties[0].name
+              : 'Unknown',
+          unitLabel: tenant.units && tenant.units[0] ? tenant.units[0].unit_label : 'Unknown',
           balance: balance || 0,
           daysSinceLastPayment,
-          riskScore
+          riskScore,
         })
       }
     }
@@ -595,17 +624,17 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
     riskTenants.sort((a, b) => b.riskScore - a.riskScore)
 
     return {
-      highRisk: riskTenants.filter(t => t.riskScore >= 70),
-      mediumRisk: riskTenants.filter(t => t.riskScore >= 40 && t.riskScore < 70)
+      highRisk: riskTenants.filter((t) => t.riskScore >= 70),
+      mediumRisk: riskTenants.filter((t) => t.riskScore >= 40 && t.riskScore < 70),
     }
   }
 
   const calculateTenantRetention = async (landlordId: string, startDate: Date, endDate: Date) => {
-
     // Get tenancy agreements
     const { data: tenancies } = await supabase
       .from('tenancy_agreements')
-      .select(`
+      .select(
+        `
         start_date,
         end_date,
         status,
@@ -614,27 +643,29 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
             landlord_id
           )
         )
-      `)
+      `
+      )
       .eq('units.properties.landlord_id', landlordId)
 
-    const newTenants = tenancies?.filter((t: any) =>
-      t.start_date &&
-      new Date(t.start_date) >= startDate &&
-      new Date(t.start_date) <= endDate
-    ).length || 0
+    const newTenants =
+      tenancies?.filter(
+        (t: any) =>
+          t.start_date && new Date(t.start_date) >= startDate && new Date(t.start_date) <= endDate
+      ).length || 0
 
-    const lostTenants = tenancies?.filter((t: any) =>
-      t.end_date &&
-      new Date(t.end_date) >= startDate &&
-      new Date(t.end_date) <= endDate
-    ).length || 0
+    const lostTenants =
+      tenancies?.filter(
+        (t: any) =>
+          t.end_date && new Date(t.end_date) >= startDate && new Date(t.end_date) <= endDate
+      ).length || 0
 
     const activeTenants = tenancies?.filter((t: any) => t.status === 'ACTIVE').length || 0
     const retainedTenants = activeTenants
 
-    const retentionRate = (retainedTenants + lostTenants) > 0
-      ? (retainedTenants / (retainedTenants + lostTenants)) * 100
-      : 0
+    const retentionRate =
+      retainedTenants + lostTenants > 0
+        ? (retainedTenants / (retainedTenants + lostTenants)) * 100
+        : 0
 
     // Calculate average tenancy length
     const completedTenancies = tenancies?.filter((t: any) => t.start_date && t.end_date) || []
@@ -642,19 +673,21 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
 
     completedTenancies.forEach((tenancy: any) => {
       const days = Math.floor(
-        (new Date(tenancy.end_date!).getTime() - new Date(tenancy.start_date!).getTime()) / (1000 * 60 * 60 * 24)
+        (new Date(tenancy.end_date!).getTime() - new Date(tenancy.start_date!).getTime()) /
+          (1000 * 60 * 60 * 24)
       )
       totalDays += days
     })
 
-    const averageTenancyLength = completedTenancies.length > 0 ? Math.floor(totalDays / completedTenancies.length) : 0
+    const averageTenancyLength =
+      completedTenancies.length > 0 ? Math.floor(totalDays / completedTenancies.length) : 0
 
     return {
       newTenants,
       retainedTenants,
       lostTenants,
       retentionRate,
-      averageTenancyLength
+      averageTenancyLength,
     }
   }
 
@@ -671,7 +704,13 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
   }
 
   if (error) {
-    return <ErrorCard title="Failed to load tenant analytics" message={error} onRetry={loadTenantAnalytics} />
+    return (
+      <ErrorCard
+        title="Failed to load tenant analytics"
+        message={error}
+        onRetry={loadTenantAnalytics}
+      />
+    )
   }
 
   if (!data) {
@@ -695,7 +734,11 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
                     className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {isExporting ? 'Exporting...' : 'Export PDF'}
                   </button>
@@ -706,7 +749,11 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
                     className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {isExporting ? 'Exporting...' : 'Export Excel'}
                   </button>
@@ -714,14 +761,30 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
               )}
 
               {isGeneratingReport && (
-              <div className="flex items-center text-sm text-blue-600">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating analytics...
-              </div>
-            )}
+                <div className="flex items-center text-sm text-blue-600">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Generating analytics...
+                </div>
+              )}
             </div>
           </div>
 
@@ -743,7 +806,9 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
 
             {selectedPeriod === 'custom' && (
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Custom Date Range</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Date Range
+                </label>
                 <DateRangeSelector
                   value={customDateRange}
                   onChange={handleCustomDateRangeChange}
@@ -790,7 +855,9 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
 
           {selectedPeriod === 'custom' && (
             <div className="text-sm text-gray-600">
-              <strong>Selected Range:</strong> {new Date(customDateRange.startDate).toLocaleDateString()} - {new Date(customDateRange.endDate).toLocaleDateString()}
+              <strong>Selected Range:</strong>{' '}
+              {new Date(customDateRange.startDate).toLocaleDateString()} -{' '}
+              {new Date(customDateRange.endDate).toLocaleDateString()}
               {(() => {
                 const start = new Date(customDateRange.startDate)
                 const end = new Date(customDateRange.endDate)
@@ -880,12 +947,24 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property/Unit</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Paid</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payments</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Payment</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">On-Time Rate</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tenant
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Property/Unit
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total Paid
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payments
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Avg Payment
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  On-Time Rate
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -907,11 +986,15 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
                     {formatCurrency(tenant.averagePayment)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`font-medium ${
-                      tenant.onTimeRate >= 90 ? 'text-green-600' :
-                      tenant.onTimeRate >= 70 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
+                    <span
+                      className={`font-medium ${
+                        tenant.onTimeRate >= 90
+                          ? 'text-green-600'
+                          : tenant.onTimeRate >= 70
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                      }`}
+                    >
                       {tenant.onTimeRate.toFixed(1)}%
                     </span>
                   </td>
@@ -934,7 +1017,10 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
               <div className="p-6">
                 <div className="space-y-4">
                   {data.riskAnalysis.highRisk.slice(0, 5).map((tenant, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-red-50 rounded-lg"
+                    >
                       <div>
                         <div className="font-medium text-gray-900">{tenant.tenantName}</div>
                         <div className="text-sm text-gray-500">
@@ -942,8 +1028,12 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium text-red-600">{formatCurrency(tenant.balance)}</div>
-                        <div className="text-sm text-gray-500">{tenant.daysSinceLastPayment} days</div>
+                        <div className="font-medium text-red-600">
+                          {formatCurrency(tenant.balance)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {tenant.daysSinceLastPayment} days
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -961,7 +1051,10 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
               <div className="p-6">
                 <div className="space-y-4">
                   {data.riskAnalysis.mediumRisk.slice(0, 5).map((tenant, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg"
+                    >
                       <div>
                         <div className="font-medium text-gray-900">{tenant.tenantName}</div>
                         <div className="text-sm text-gray-500">
@@ -969,8 +1062,12 @@ const TenantAnalytics = forwardRef(function TenantAnalytics(_props: {}, ref) {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium text-yellow-600">{formatCurrency(tenant.balance)}</div>
-                        <div className="text-sm text-gray-500">{tenant.daysSinceLastPayment} days</div>
+                        <div className="font-medium text-yellow-600">
+                          {formatCurrency(tenant.balance)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {tenant.daysSinceLastPayment} days
+                        </div>
                       </div>
                     </div>
                   ))}

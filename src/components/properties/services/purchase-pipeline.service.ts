@@ -1,30 +1,92 @@
 import { supabase } from '../../../lib/supabase-client'
-import { 
-  PurchaseItem, 
-  PipelineStageData, 
-  PurchasePipelineFormValues 
+import {
+  PurchaseItem,
+  PipelineStageData,
+  PurchasePipelineFormValues,
 } from '../types/purchase-pipeline.types'
-import { 
+import {
   initializePipelineStages,
   calculateOverallProgress,
   getCurrentStage,
-  determinePurchaseStatus
+  determinePurchaseStatus,
 } from '../utils/purchase-pipeline.utils'
 
 export class PurchasePipelineService {
-  // Load all purchases from the database
+  // Load all purchases from the database with property coordinates
   static async loadPurchases(): Promise<PurchaseItem[]> {
     try {
-      const { data, error } = await supabase
+      // First, load the purchase pipeline data
+      const { data: purchaseData, error: purchaseError } = await supabase
         .from('purchase_pipeline')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Supabase error loading purchases:', error)
-        throw new Error(`Failed to load purchases: ${error.message || 'Unknown database error'}`)
+      if (purchaseError) {
+        console.error('Supabase error loading purchases:', purchaseError)
+        throw new Error(
+          `Failed to load purchases: ${purchaseError.message || 'Unknown database error'}`
+        )
       }
-      return (data as PurchaseItem[]) || []
+
+      if (!purchaseData || purchaseData.length === 0) {
+        return []
+      }
+
+      // Get unique property IDs from purchase data (if they exist)
+      const propertyIds = purchaseData
+        .map((purchase) => purchase.property_id)
+        .filter((id) => id != null && id !== '')
+
+      console.log(`Found ${propertyIds.length} property IDs in purchase data:`, propertyIds)
+
+      let propertiesMap = new Map()
+
+      // If we have property IDs, try to fetch the corresponding property data
+      if (propertyIds.length > 0) {
+        try {
+          const { data: propertiesData, error: propertiesError } = await supabase
+            .from('properties')
+            .select('id, lat, lng, physical_address')
+            .in('id', propertyIds)
+
+          if (propertiesError) {
+            console.warn('Error loading property coordinates:', propertiesError)
+          } else if (propertiesData) {
+            console.log(`Loaded ${propertiesData.length} properties with coordinates`)
+            propertiesData.forEach((property) => {
+              propertiesMap.set(property.id, property)
+            })
+          }
+        } catch (propertiesError) {
+          console.warn('Could not load property coordinates:', propertiesError)
+          // Continue without coordinates - this is not a fatal error
+        }
+      } else {
+        console.log('No property IDs found in purchase data - will use addresses only')
+      }
+
+      // Enhance purchase data with property coordinates
+      const enhancedData = purchaseData.map((purchase) => {
+        const property = propertiesMap.get(purchase.property_id)
+        const enhanced = {
+          ...purchase,
+          property_lat: property?.lat || null,
+          property_lng: property?.lng || null,
+          property_physical_address: property?.physical_address || purchase.property_address,
+        }
+
+        if (property) {
+          console.log(`Enhanced purchase ${purchase.id} with coordinates:`, {
+            lat: enhanced.property_lat,
+            lng: enhanced.property_lng,
+            address: enhanced.property_physical_address,
+          })
+        }
+
+        return enhanced
+      })
+
+      return enhancedData as PurchaseItem[]
     } catch (error) {
       console.error('Error loading purchases:', error)
       if (error instanceof Error) {
@@ -38,7 +100,9 @@ export class PurchasePipelineService {
   // Create a new purchase opportunity
   static async createPurchase(values: PurchasePipelineFormValues): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         throw new Error('Please log in to create purchases')
       }
@@ -48,6 +112,7 @@ export class PurchasePipelineService {
       const overallProgress = calculateOverallProgress(initialStages)
 
       const purchaseData = {
+        property_id: values.propertyId || null, // Link to existing property if selected
         property_name: values.propertyName,
         property_address: values.propertyAddress,
         property_type: values.propertyType,
@@ -93,9 +158,13 @@ export class PurchasePipelineService {
   }
 
   // Update an existing purchase
-  static async updatePurchase(purchaseId: string, values: PurchasePipelineFormValues): Promise<void> {
+  static async updatePurchase(
+    purchaseId: string,
+    values: PurchasePipelineFormValues
+  ): Promise<void> {
     try {
       const updateData = {
+        property_id: values.propertyId || null, // Link to existing property if selected
         property_name: values.propertyName,
         property_address: values.propertyAddress,
         property_type: values.propertyType,
@@ -139,10 +208,10 @@ export class PurchasePipelineService {
 
   // Update stage status
   static async updateStageStatus(
-    purchaseId: string, 
-    stageId: number, 
-    newStatus: string, 
-    notes?: string, 
+    purchaseId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string,
     stageData?: any
   ): Promise<void> {
     try {
@@ -155,23 +224,36 @@ export class PurchasePipelineService {
 
       if (fetchError) {
         console.error('Error fetching purchase data:', fetchError)
-        throw new Error(`Failed to fetch purchase data: ${fetchError.message || 'Unknown database error'}`)
+        throw new Error(
+          `Failed to fetch purchase data: ${fetchError.message || 'Unknown database error'}`
+        )
       }
 
       const currentStages = purchase.pipeline_stages as PipelineStageData[]
-      
+
       // Update the specific stage
-      const updatedStages = currentStages.map(stage => {
+      const updatedStages = currentStages.map((stage) => {
         if (stage.stage_id === stageId) {
           const updatedStage = {
             ...stage,
             status: newStatus,
             notes: notes || stage.notes,
-            ...stageData
+            ...stageData,
           }
 
           // Set completion date if stage is being completed
-          if (["Completed", "Verified", "Finalized", "Processed", "Approved", "Fully Signed", "Registered", "LCB Approved & Forms Signed"].includes(newStatus)) {
+          if (
+            [
+              'Completed',
+              'Verified',
+              'Finalized',
+              'Processed',
+              'Approved',
+              'Fully Signed',
+              'Registered',
+              'LCB Approved & Forms Signed',
+            ].includes(newStatus)
+          ) {
             updatedStage.completed_date = new Date().toISOString()
           }
 
@@ -200,13 +282,16 @@ export class PurchasePipelineService {
           purchase_status: newPurchaseStatus,
           updated_at: new Date().toISOString(),
           // Set completion date if status is COMPLETED
-          actual_completion_date: newPurchaseStatus === 'COMPLETED' ? new Date().toISOString().split('T')[0] : undefined
+          actual_completion_date:
+            newPurchaseStatus === 'COMPLETED' ? new Date().toISOString().split('T')[0] : undefined,
         })
         .eq('id', purchaseId)
 
       if (error) {
         console.error('Supabase error details:', error)
-        throw new Error(`Failed to update stage status: ${error.message || 'Unknown database error'}`)
+        throw new Error(
+          `Failed to update stage status: ${error.message || 'Unknown database error'}`
+        )
       }
     } catch (error) {
       console.error('Error updating stage status:', error)
@@ -221,18 +306,23 @@ export class PurchasePipelineService {
   // Transfer purchase to properties
   static async transferToProperties(purchase: PurchaseItem): Promise<string> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         throw new Error('Please log in to transfer properties')
       }
 
       // Create property from purchase
-      const { data: propertyId, error: createError } = await supabase.rpc('create_property_with_owner', {
-        property_name: purchase.property_name,
-        property_address: purchase.property_address,
-        property_type: purchase.property_type,
-        owner_user_id: user.id
-      })
+      const { data: propertyId, error: createError } = await supabase.rpc(
+        'create_property_with_owner',
+        {
+          property_name: purchase.property_name,
+          property_address: purchase.property_address,
+          property_type: purchase.property_type,
+          owner_user_id: user.id,
+        }
+      )
 
       if (createError) throw createError
 
@@ -246,7 +336,7 @@ export class PurchasePipelineService {
           purchase_completion_date: new Date().toISOString().split('T')[0],
           sale_price_kes: purchase.negotiated_price_kes || purchase.asking_price_kes,
           expected_rental_income_kes: purchase.expected_rental_income_kes,
-          acquisition_notes: `Transferred from purchase pipeline. Original asking price: ${purchase.asking_price_kes ? `KES ${purchase.asking_price_kes.toLocaleString()}` : 'N/A'}`
+          acquisition_notes: `Transferred from purchase pipeline. Original asking price: ${purchase.asking_price_kes ? `KES ${purchase.asking_price_kes.toLocaleString()}` : 'N/A'}`,
         })
         .eq('id', propertyId)
 
@@ -258,7 +348,7 @@ export class PurchasePipelineService {
         .update({
           purchase_status: 'COMPLETED',
           actual_completion_date: new Date().toISOString().split('T')[0],
-          completed_property_id: propertyId
+          completed_property_id: propertyId,
         })
         .eq('id', purchase.id)
 
@@ -278,7 +368,8 @@ export class PurchasePipelineService {
         .from('purchase_pipeline')
         .update({
           purchase_status: status,
-          actual_completion_date: status === 'COMPLETED' ? new Date().toISOString().split('T')[0] : null
+          actual_completion_date:
+            status === 'COMPLETED' ? new Date().toISOString().split('T')[0] : null,
         })
         .eq('id', purchaseId)
 

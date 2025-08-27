@@ -7,7 +7,7 @@ import { PropertyWithLifecycle } from '../types/property-management.types'
 import {
   getSourceIcon,
   getSourceLabel,
-  getLifecycleStatusColor
+  getLifecycleStatusColor,
 } from '../utils/property-management.utils'
 import supabase from '../../../lib/supabase-client'
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
@@ -18,14 +18,14 @@ import SubdivisionStageModal from './SubdivisionStageModal'
 import { PurchaseItem } from '../types/purchase-pipeline.types'
 import {
   SubdivisionPipelineStageData,
-  SubdivisionProgressTrackerProps
+  SubdivisionProgressTrackerProps,
 } from '../types/property-management.types'
 import { PurchasePipelineService } from '../services/purchase-pipeline.service'
 import {
   initializePipelineStages,
   getPurchaseStatusColor,
   formatCurrency,
-  calculateBalanceDue
+  calculateBalanceDue,
 } from '../utils/purchase-pipeline.utils'
 import {
   initializeSubdivisionPipelineStages,
@@ -33,7 +33,7 @@ import {
   getCurrentSubdivisionStage,
   mapSubdivisionStatusToStages,
   getCurrentSubdivisionStageFromStatus,
-  calculateSubdivisionProgressFromStatus
+  calculateSubdivisionProgressFromStatus,
 } from '../utils/subdivision-pipeline.utils'
 
 interface InlinePropertyViewProps {
@@ -139,7 +139,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           stageDocuments.push({
             stage_id: stage.id,
             stage_name: stage.name,
-            documents: stageDocsData
+            documents: stageDocsData,
           })
         }
       }
@@ -238,7 +238,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
             ...subdivisionData,
             pipeline_stages: stageData,
             current_stage: currentStage,
-            overall_progress: overallProgress
+            overall_progress: overallProgress,
           })
         } else {
           setSubdivisionData(null)
@@ -260,7 +260,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
     try {
       setUploading(true)
-      
+
       for (const file of Array.from(files)) {
         // Upload to storage
         const timestamp = Date.now()
@@ -273,32 +273,28 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           .from('documents')
           .upload(filePath, file, {
             cacheControl: '3600',
-            upsert: false
+            upsert: false,
           })
 
         if (uploadError) throw uploadError
 
         // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('documents')
-          .getPublicUrl(filePath)
+        const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath)
 
         // Create document record
-        const { error: dbError } = await supabase
-          .from('documents')
-          .insert({
-            entity_type: 'property',
-            entity_id: property.id,
-            doc_type: 'other',
-            title: file.name.split('.')[0],
-            description: `Uploaded for ${property.name}`,
-            file_url: urlData.publicUrl,
-            file_name: file.name,
-            file_size_bytes: file.size,
-            mime_type: file.type,
-            access_level: 'internal',
-            uploaded_by: (await supabase.auth.getUser()).data.user?.id || 'unknown'
-          })
+        const { error: dbError } = await supabase.from('documents').insert({
+          entity_type: 'property',
+          entity_id: property.id,
+          doc_type: 'other',
+          title: file.name.split('.')[0],
+          description: `Uploaded for ${property.name}`,
+          file_url: urlData.publicUrl,
+          file_name: file.name,
+          file_size_bytes: file.size,
+          mime_type: file.type,
+          access_level: 'internal',
+          uploaded_by: (await supabase.auth.getUser()).data.user?.id || 'unknown',
+        })
 
         if (dbError) throw dbError
       }
@@ -321,7 +317,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
         .createSignedUrl(doc.file_url.split('/').pop() || '', 3600)
 
       if (error) throw error
-      
+
       if (data?.signedUrl) {
         window.open(data.signedUrl, '_blank')
       }
@@ -345,9 +341,21 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     setShowStageModal(true)
   }
 
-  const handleStageUpdate = async (purchaseId: string, stageId: number, newStatus: string, notes?: string, stageData?: any) => {
+  const handleStageUpdate = async (
+    purchaseId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string,
+    stageData?: any
+  ) => {
     try {
-      await PurchasePipelineService.updateStageStatus(purchaseId, stageId, newStatus, notes, stageData)
+      await PurchasePipelineService.updateStageStatus(
+        purchaseId,
+        stageId,
+        newStatus,
+        notes,
+        stageData
+      )
       // Reload purchase data to get updated stages
       await loadPurchaseData()
     } catch (error) {
@@ -362,40 +370,47 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     setShowSubdivisionStageModal(true)
   }
 
-  const handleSubdivisionStageUpdate = async (subdivisionId: string, stageId: number, newStatus: string, notes?: string) => {
+  const handleSubdivisionStageUpdate = async (
+    subdivisionId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string
+  ) => {
     try {
       console.log('Updating subdivision stage:', { subdivisionId, stageId, newStatus, notes })
 
       // Update local subdivision data first for immediate UI feedback
       if (subdivisionData) {
-        const updatedStages = subdivisionData.pipeline_stages.map((stage: SubdivisionPipelineStageData) => {
-          if (stage.stage_id === stageId) {
-            // Handle date logic based on status
-            let updatedStage = {
-              ...stage,
-              status: newStatus,
-              notes: notes || stage.notes
-            }
+        const updatedStages = subdivisionData.pipeline_stages.map(
+          (stage: SubdivisionPipelineStageData) => {
+            if (stage.stage_id === stageId) {
+              // Handle date logic based on status
+              let updatedStage = {
+                ...stage,
+                status: newStatus,
+                notes: notes || stage.notes,
+              }
 
-            // Set dates based on new status
-            if (newStatus === 'Not Started') {
-              // Reset all dates when reverting to not started
-              updatedStage.started_date = undefined
-              updatedStage.completed_date = undefined
-            } else if (['In Progress', 'Pending Review', 'Under Review'].includes(newStatus)) {
-              // Set started date if not already set, clear completed date
-              updatedStage.started_date = stage.started_date || new Date().toISOString()
-              updatedStage.completed_date = undefined
-            } else if (['Completed', 'Approved', 'Finalized'].includes(newStatus)) {
-              // Set both started and completed dates
-              updatedStage.started_date = stage.started_date || new Date().toISOString()
-              updatedStage.completed_date = new Date().toISOString()
-            }
+              // Set dates based on new status
+              if (newStatus === 'Not Started') {
+                // Reset all dates when reverting to not started
+                updatedStage.started_date = undefined
+                updatedStage.completed_date = undefined
+              } else if (['In Progress', 'Pending Review', 'Under Review'].includes(newStatus)) {
+                // Set started date if not already set, clear completed date
+                updatedStage.started_date = stage.started_date || new Date().toISOString()
+                updatedStage.completed_date = undefined
+              } else if (['Completed', 'Approved', 'Finalized'].includes(newStatus)) {
+                // Set both started and completed dates
+                updatedStage.started_date = stage.started_date || new Date().toISOString()
+                updatedStage.completed_date = new Date().toISOString()
+              }
 
-            return updatedStage
+              return updatedStage
+            }
+            return stage
           }
-          return stage
-        })
+        )
 
         const currentStage = getCurrentSubdivisionStage(updatedStages)
         const overallProgress = calculateSubdivisionOverallProgress(updatedStages)
@@ -404,7 +419,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           ...subdivisionData,
           pipeline_stages: updatedStages,
           current_stage: currentStage,
-          overall_progress: overallProgress
+          overall_progress: overallProgress,
         }
 
         // Update local state immediately for UI responsiveness
@@ -419,8 +434,8 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           body: JSON.stringify({
             pipeline_stages: updatedStages,
             current_stage: currentStage,
-            overall_progress: overallProgress
-          })
+            overall_progress: overallProgress,
+          }),
         })
 
         if (!response.ok) {
@@ -439,13 +454,13 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
   const getCurrentStageData = () => {
     if (!purchaseData?.pipeline_stages || !selectedStageId) return undefined
-    return purchaseData.pipeline_stages.find(stage => stage.stage_id === selectedStageId)
+    return purchaseData.pipeline_stages.find((stage) => stage.stage_id === selectedStageId)
   }
 
   const getCurrentSubdivisionStageData = () => {
     if (!subdivisionData || !selectedSubdivisionStageId) return undefined
-    return subdivisionData.pipeline_stages?.find((stage: SubdivisionPipelineStageData) =>
-      stage.stage_id === selectedSubdivisionStageId
+    return subdivisionData.pipeline_stages?.find(
+      (stage: SubdivisionPipelineStageData) => stage.stage_id === selectedSubdivisionStageId
     )
   }
 
@@ -467,7 +482,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     { id: 'details' as TabType, label: 'Basic Info', icon: '🏠' },
     { id: 'location' as TabType, label: 'Location', icon: '📍' },
     { id: 'financial' as TabType, label: 'Financial', icon: '💰' },
-    { id: 'documents' as TabType, label: 'Documents', icon: '📁' }
+    { id: 'documents' as TabType, label: 'Documents', icon: '📁' },
   ]
 
   return (
@@ -482,16 +497,14 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
               {getSourceLabel(property.property_source)}
             </span>
             {property.lifecycle_status && (
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getLifecycleStatusColor(property.lifecycle_status)}`}>
+              <span
+                className={`text-xs px-2 py-1 rounded-full font-medium ${getLifecycleStatusColor(property.lifecycle_status)}`}
+              >
                 {property.lifecycle_status.replace('_', ' ')}
               </span>
             )}
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onClose}
-          >
+          <Button variant="secondary" size="sm" onClick={onClose}>
             ✕ Close
           </Button>
         </div>
@@ -528,7 +541,9 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
               </div>
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Property Type</h4>
-                <p className="text-gray-700">{property.property_type?.replace('_', ' ') || 'Unknown'}</p>
+                <p className="text-gray-700">
+                  {property.property_type?.replace('_', ' ') || 'Unknown'}
+                </p>
               </div>
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Physical Address</h4>
@@ -543,13 +558,17 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
               {property.purchase_completion_date && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Purchase Date</h4>
-                  <p className="text-gray-700">{new Date(property.purchase_completion_date).toLocaleDateString()}</p>
+                  <p className="text-gray-700">
+                    {new Date(property.purchase_completion_date).toLocaleDateString()}
+                  </p>
                 </div>
               )}
               {property.subdivision_date && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Subdivision Date</h4>
-                  <p className="text-gray-700">{new Date(property.subdivision_date).toLocaleDateString()}</p>
+                  <p className="text-gray-700">
+                    {new Date(property.subdivision_date).toLocaleDateString()}
+                  </p>
                 </div>
               )}
             </div>
@@ -572,10 +591,9 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Coordinates</h4>
                 <p className="text-gray-700">
-                  {(property as any).lat && (property as any).lng 
+                  {(property as any).lat && (property as any).lng
                     ? `${(property as any).lat}, ${(property as any).lng}`
-                    : 'Not available'
-                  }
+                    : 'Not available'}
                 </p>
               </div>
             </div>
@@ -585,16 +603,15 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                 lng={(property as any).lng ?? null}
                 address={property.physical_address ?? property.name}
                 propertyName={property.name}
+                debug={process.env.NODE_ENV === 'development'}
+                debugContext={`Property Details - Location Tab - ${property.name}`}
               />
             </div>
           </div>
         )}
 
         {activeTab === 'financial' && (
-          <PropertyAcquisitionFinancials
-            property={property}
-            onUpdate={handleFinancialUpdate}
-          />
+          <PropertyAcquisitionFinancials property={property} onUpdate={handleFinancialUpdate} />
         )}
 
         {activeTab === 'documents' && (
@@ -624,28 +641,48 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mb-4">
                         <div className="md:col-span-2">
                           <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{purchaseData.property_name}</h3>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {purchaseData.property_name}
+                            </h3>
                             <span className="text-lg">{getSourceIcon('PURCHASE_PIPELINE')}</span>
                             <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
                               {getSourceLabel('PURCHASE_PIPELINE')}
                             </span>
-                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPurchaseStatusColor(purchaseData.purchase_status)}`}>
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full font-medium ${getPurchaseStatusColor(purchaseData.purchase_status)}`}
+                            >
                               {purchaseData.purchase_status.replace('_', ' ')}
                             </span>
                           </div>
                           <p className="text-gray-600 mb-2">{purchaseData.property_address}</p>
                           <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                            {purchaseData.seller_name && <span>Seller: {purchaseData.seller_name}</span>}
-                            {purchaseData.asking_price_kes && <span>Asking: {formatCurrency(purchaseData.asking_price_kes)}</span>}
-                            {purchaseData.negotiated_price_kes && <span>Negotiated: {formatCurrency(purchaseData.negotiated_price_kes)}</span>}
+                            {purchaseData.seller_name && (
+                              <span>Seller: {purchaseData.seller_name}</span>
+                            )}
+                            {purchaseData.asking_price_kes && (
+                              <span>Asking: {formatCurrency(purchaseData.asking_price_kes)}</span>
+                            )}
+                            {purchaseData.negotiated_price_kes && (
+                              <span>
+                                Negotiated: {formatCurrency(purchaseData.negotiated_price_kes)}
+                              </span>
+                            )}
                             <span>Progress: {purchaseData.overall_progress}%</span>
                           </div>
                         </div>
 
                         <div className="flex justify-end">
                           <ViewOnGoogleMapsButton
-                            address={purchaseData.property_address || purchaseData.property_name}
+                            lat={(purchaseData as any).property_lat ?? null}
+                            lng={(purchaseData as any).property_lng ?? null}
+                            address={
+                              (purchaseData as any).property_physical_address ||
+                              purchaseData.property_address ||
+                              purchaseData.property_name
+                            }
                             propertyName={purchaseData.property_name}
+                            debug={process.env.NODE_ENV === 'development'}
+                            debugContext={`Purchase Pipeline - ${purchaseData.property_name}`}
                           />
                         </div>
                       </div>
@@ -654,24 +691,32 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                         <div>
                           <div className="text-xs text-gray-500">Asking Price</div>
-                          <div className="font-medium">{formatCurrency(purchaseData.asking_price_kes)}</div>
+                          <div className="font-medium">
+                            {formatCurrency(purchaseData.asking_price_kes)}
+                          </div>
                         </div>
                         <div>
                           <div className="text-xs text-gray-500">Negotiated Price</div>
-                          <div className="font-medium">{formatCurrency(purchaseData.negotiated_price_kes)}</div>
+                          <div className="font-medium">
+                            {formatCurrency(purchaseData.negotiated_price_kes)}
+                          </div>
                         </div>
                         <div>
                           <div className="text-xs text-gray-500">Deposit Paid</div>
-                          <div className="font-medium">{formatCurrency(purchaseData.deposit_paid_kes)}</div>
+                          <div className="font-medium">
+                            {formatCurrency(purchaseData.deposit_paid_kes)}
+                          </div>
                         </div>
                         <div>
                           <div className="text-xs text-gray-500">Balance Due</div>
                           <div className="font-medium">
-                            {formatCurrency(calculateBalanceDue(
-                              purchaseData.negotiated_price_kes,
-                              purchaseData.asking_price_kes,
-                              purchaseData.deposit_paid_kes
-                            ))}
+                            {formatCurrency(
+                              calculateBalanceDue(
+                                purchaseData.negotiated_price_kes,
+                                purchaseData.asking_price_kes,
+                                purchaseData.deposit_paid_kes
+                              )
+                            )}
                           </div>
                         </div>
                       </div>
@@ -680,8 +725,13 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                 ) : (
                   <div className="text-center py-8 bg-gray-50 rounded-lg">
                     <div className="text-4xl mb-4">🏢</div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Purchase Pipeline Data Not Found</h3>
-                    <p className="text-gray-600">This property was marked as coming from the purchase pipeline, but the pipeline data could not be loaded.</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Purchase Pipeline Data Not Found
+                    </h3>
+                    <p className="text-gray-600">
+                      This property was marked as coming from the purchase pipeline, but the
+                      pipeline data could not be loaded.
+                    </p>
                   </div>
                 )}
               </div>
@@ -700,7 +750,9 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                     {/* Subdivision Progress Tracker */}
                     <SubdivisionProgressTracker
                       currentStage={subdivisionData.current_stage || 1}
-                      stageData={subdivisionData.pipeline_stages || initializeSubdivisionPipelineStages()}
+                      stageData={
+                        subdivisionData.pipeline_stages || initializeSubdivisionPipelineStages()
+                      }
                       onStageClick={handleSubdivisionStageClick}
                       overallProgress={subdivisionData.overall_progress || 0}
                       subdivisionId={subdivisionData.id}
@@ -710,21 +762,24 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                 ) : (
                   <div className="text-center py-8 bg-gray-50 rounded-lg">
                     <div className="text-4xl mb-4">🏗️</div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Subdivision Data Not Found</h3>
-                    <p className="text-gray-600">This property was marked as coming from a subdivision process, but the subdivision data could not be loaded.</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Subdivision Data Not Found
+                    </h3>
+                    <p className="text-gray-600">
+                      This property was marked as coming from a subdivision process, but the
+                      subdivision data could not be loaded.
+                    </p>
                   </div>
                 )}
               </div>
             )}
 
-
-
-
-
             {/* Pipeline Documents - Only show for non-purchase pipeline properties */}
             {property.property_source !== 'PURCHASE_PIPELINE' && pipelineDocuments.length > 0 && (
               <div>
-                <h4 className="text-lg font-medium text-gray-900 mb-4">Purchase Pipeline Documents</h4>
+                <h4 className="text-lg font-medium text-gray-900 mb-4">
+                  Purchase Pipeline Documents
+                </h4>
                 <div className="space-y-4">
                   {pipelineDocuments.map((stageDoc) => (
                     <div key={stageDoc.stage_id} className="border border-gray-200 rounded-lg p-4">
@@ -734,11 +789,16 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                       ) : (
                         <div className="space-y-2">
                           {stageDoc.documents.map((doc) => (
-                            <div key={doc.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div
+                              key={doc.id}
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                            >
                               <div className="flex items-center space-x-2">
                                 <span>{getFileIcon(doc.mime_type)}</span>
                                 <span className="text-sm font-medium">{doc.title}</span>
-                                <span className="text-xs text-gray-500">({formatFileSize(doc.file_size_bytes)})</span>
+                                <span className="text-xs text-gray-500">
+                                  ({formatFileSize(doc.file_size_bytes)})
+                                </span>
                               </div>
                               <Button
                                 variant="secondary"

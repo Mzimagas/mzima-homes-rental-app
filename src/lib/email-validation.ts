@@ -31,7 +31,8 @@ export function validateEmail(email: string): EmailValidationResult {
   }
 
   // RFC 5322 compliant email regex (more comprehensive than basic)
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+  const emailRegex =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
 
   if (!emailRegex.test(email)) {
     return { isValid: false, error: 'Please enter a valid email address format' }
@@ -64,7 +65,7 @@ export function validateEmail(email: string): EmailValidationResult {
     'test.net',
     'localhost',
     'invalid',
-    'local'
+    'local',
   ]
 
   const invalidDomainPatterns = [
@@ -72,30 +73,32 @@ export function validateEmail(email: string): EmailValidationResult {
     /\.test$/i,
     /\.invalid$/i,
     /\.local$/i,
-    /\.localhost$/i
+    /\.localhost$/i,
   ]
 
   // Check exact domain matches
   if (invalidDomains.includes(domainPart)) {
-    return { 
-      isValid: false, 
-      error: 'Please use a valid, deliverable email address. Test and example domains are not allowed.' 
+    return {
+      isValid: false,
+      error:
+        'Please use a valid, deliverable email address. Test and example domains are not allowed.',
     }
   }
 
   // Check domain patterns
   for (const pattern of invalidDomainPatterns) {
     if (pattern.test(domainPart)) {
-      return { 
-        isValid: false, 
-        error: 'Please use a valid, deliverable email address. Test and example domains are not allowed.' 
+      return {
+        isValid: false,
+        error:
+          'Please use a valid, deliverable email address. Test and example domains are not allowed.',
       }
     }
   }
 
   // Check for common test email prefixes
   const testPrefixes = ['test', 'admin', 'noreply', 'no-reply', 'debug', 'dummy']
-  if (testPrefixes.some(prefix => localPart.startsWith(prefix))) {
+  if (testPrefixes.some((prefix) => localPart.startsWith(prefix))) {
     warnings.push('This appears to be a test email address. Please use your actual email.')
   }
 
@@ -107,10 +110,10 @@ export function validateEmail(email: string): EmailValidationResult {
 
   // Check for suspicious patterns that might indicate typos
   const suspiciousPatterns = [
-    /gmail\.co$/i,  // Should be gmail.com
-    /yahoo\.co$/i,  // Should be yahoo.com
+    /gmail\.co$/i, // Should be gmail.com
+    /yahoo\.co$/i, // Should be yahoo.com
     /hotmail\.co$/i, // Should be hotmail.com
-    /outlook\.co$/i  // Should be outlook.com
+    /outlook\.co$/i, // Should be outlook.com
   ]
 
   for (const pattern of suspiciousPatterns) {
@@ -119,9 +122,9 @@ export function validateEmail(email: string): EmailValidationResult {
     }
   }
 
-  return { 
-    isValid: true, 
-    warnings: warnings.length > 0 ? warnings : undefined 
+  return {
+    isValid: true,
+    warnings: warnings.length > 0 ? warnings : undefined,
   }
 }
 
@@ -149,7 +152,7 @@ export function isDomainLikelyDeliverable(domain: string): boolean {
     'aol.com',
     'live.com',
     'msn.com',
-    'ymail.com'
+    'ymail.com',
   ]
 
   return knownGoodDomains.includes(domain.toLowerCase())
@@ -161,7 +164,7 @@ export function isDomainLikelyDeliverable(domain: string): boolean {
  */
 export function validateEmailForProduction(email: string): EmailValidationResult {
   const basicResult = validateEmail(email)
-  
+
   if (!basicResult.isValid) {
     return basicResult
   }
@@ -176,6 +179,6 @@ export function validateEmailForProduction(email: string): EmailValidationResult
 
   return {
     isValid: true,
-    warnings: warnings.length > 0 ? warnings : undefined
+    warnings: warnings.length > 0 ? warnings : undefined,
   }
 }

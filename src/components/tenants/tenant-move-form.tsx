@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -45,7 +45,7 @@ type Unit = {
 export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, onDone }: Props) {
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null)
   const [units, setUnits] = useState<Unit[]>([])
-  const [availableProperties, setAvailableProperties] = useState<{id: string, name: string}[]>([])
+  const [availableProperties, setAvailableProperties] = useState<{ id: string; name: string }[]>([])
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>(propertyId || '')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -62,10 +62,16 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
       notes: '',
       align_billing_to_start: true,
       billing_day: null,
-    }
+    },
   })
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = form as any
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = form as any
   const watchedUnitId = watch('new_unit_id')
   const watchedMoveDate = watch('move_date')
 
@@ -88,7 +94,8 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
         if (tenantData.current_unit_id) {
           const { data: unitData, error: unitError } = await supabase
             .from('units')
-            .select(`
+            .select(
+              `
               id,
               unit_label,
               property_id,
@@ -96,7 +103,8 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
               properties (
                 name
               )
-            `)
+            `
+            )
             .eq('id', tenantData.current_unit_id)
             .single()
 
@@ -106,7 +114,7 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
               unit_label: unitData.unit_label,
               property_id: unitData.property_id,
               monthly_rent_kes: unitData.monthly_rent_kes,
-              property: unitData.properties
+              property: unitData.properties,
             }
           }
         }
@@ -115,7 +123,7 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
           id: tenantData.id,
           full_name: tenantData.full_name,
           current_unit_id: tenantData.current_unit_id,
-          current_unit: currentUnit
+          current_unit: currentUnit,
         }
 
         setTenantInfo(tenantInfo)
@@ -139,7 +147,9 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
         const { data: accessible, error: rpcErr } = await supabase.rpc('get_user_properties_simple')
         if (rpcErr) throw rpcErr
 
-        const ids = (accessible || []).map((p: any) => (typeof p === 'string' ? p : p?.property_id)).filter(Boolean)
+        const ids = (accessible || [])
+          .map((p: any) => (typeof p === 'string' ? p : p?.property_id))
+          .filter(Boolean)
         if (ids.length === 0) return
 
         const { data, error } = await supabase
@@ -177,7 +187,7 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
         if (unitsError) throw unitsError
 
         // Get tenants for these units to check occupancy
-        const unitIds = (unitsData || []).map(unit => unit.id)
+        const unitIds = (unitsData || []).map((unit) => unit.id)
         const { data: tenantsData, error: tenantsError } = await supabase
           .from('tenants')
           .select('id, full_name, current_unit_id')
@@ -188,11 +198,11 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
 
         // Create a map of unit occupancy
         const occupancyMap = new Map()
-        tenantsData?.forEach(tenant => {
+        tenantsData?.forEach((tenant) => {
           if (tenant.current_unit_id) {
             occupancyMap.set(tenant.current_unit_id, {
               id: tenant.id,
-              full_name: tenant.full_name
+              full_name: tenant.full_name,
             })
           }
         })
@@ -204,7 +214,7 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
             unit_label: unit.unit_label,
             monthly_rent_kes: unit.monthly_rent_kes,
             is_occupied: !!currentTenant,
-            current_tenant: currentTenant
+            current_tenant: currentTenant,
           }
         })
 
@@ -221,7 +231,7 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
 
   // Auto-fill monthly rent when unit is selected
   useEffect(() => {
-    const selectedUnit = units.find(u => u.id === watchedUnitId)
+    const selectedUnit = units.find((u) => u.id === watchedUnitId)
     if (selectedUnit?.monthly_rent_kes) {
       setValue('monthly_rent_kes', selectedUnit.monthly_rent_kes)
     }
@@ -238,15 +248,22 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
       }
 
       // Check if moving to an occupied unit
-      const selectedUnit = units.find(u => u.id === data.new_unit_id)
-      if (selectedUnit?.is_occupied && selectedUnit.current_tenant?.full_name !== tenantInfo?.full_name) {
-        throw new Error(`Unit ${selectedUnit.unit_label} is currently occupied by ${selectedUnit.current_tenant?.full_name}`)
+      const selectedUnit = units.find((u) => u.id === data.new_unit_id)
+      if (
+        selectedUnit?.is_occupied &&
+        selectedUnit.current_tenant?.full_name !== tenantInfo?.full_name
+      ) {
+        throw new Error(
+          `Unit ${selectedUnit.unit_label} is currently occupied by ${selectedUnit.current_tenant?.full_name}`
+        )
       }
 
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'x-csrf-token': getCsrf()
+        'x-csrf-token': getCsrf(),
       }
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
 
@@ -280,9 +297,7 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
 
   if (!tenantInfo) {
     return (
-      <div className="text-red-600 p-4">
-        Failed to load tenant information. Please try again.
-      </div>
+      <div className="text-red-600 p-4">Failed to load tenant information. Please try again.</div>
     )
   }
 
@@ -303,7 +318,10 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
                 <>
                   {tenantInfo.current_unit.unit_label}
                   {tenantInfo.current_unit.property?.name && (
-                    <span className="text-gray-600"> - {tenantInfo.current_unit.property.name}</span>
+                    <span className="text-gray-600">
+                      {' '}
+                      - {tenantInfo.current_unit.property.name}
+                    </span>
                   )}
                 </>
               ) : (
@@ -314,7 +332,9 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
           {tenantInfo.current_unit?.monthly_rent_kes && (
             <div>
               <span className="text-gray-500">Current Rent:</span>
-              <div className="font-medium">KES {tenantInfo.current_unit.monthly_rent_kes.toLocaleString()}</div>
+              <div className="font-medium">
+                KES {tenantInfo.current_unit.monthly_rent_kes.toLocaleString()}
+              </div>
             </div>
           )}
         </div>
@@ -331,16 +351,14 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
         {/* Property Selection */}
         {availableProperties.length > 1 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Target Property
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Target Property</label>
             <select
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedPropertyId}
               onChange={(e) => setSelectedPropertyId(e.target.value)}
             >
               <option value="">Select property</option>
-              {availableProperties.map(property => (
+              {availableProperties.map((property) => (
                 <option key={property.id} value={property.id}>
                   {property.name}
                 </option>
@@ -361,11 +379,19 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
             disabled={!selectedPropertyId}
           >
             <option value="">Select unit</option>
-            {units.map(unit => (
-              <option key={unit.id} value={unit.id} disabled={unit.is_occupied && unit.current_tenant?.full_name !== tenantInfo.full_name}>
+            {units.map((unit) => (
+              <option
+                key={unit.id}
+                value={unit.id}
+                disabled={
+                  unit.is_occupied && unit.current_tenant?.full_name !== tenantInfo.full_name
+                }
+              >
                 {unit.unit_label}
                 {unit.monthly_rent_kes && ` - KES ${unit.monthly_rent_kes.toLocaleString()}`}
-                {unit.is_occupied && unit.current_tenant?.full_name !== tenantInfo.full_name && ' (Occupied)'}
+                {unit.is_occupied &&
+                  unit.current_tenant?.full_name !== tenantInfo.full_name &&
+                  ' (Occupied)'}
               </option>
             ))}
           </select>
@@ -416,7 +442,9 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
               disabled={watch('align_billing_to_start')}
               placeholder="e.g., 15"
             />
-            <p className="text-gray-500 text-xs mt-1">If the month has fewer days, the due date is set to the last day of the month.</p>
+            <p className="text-gray-500 text-xs mt-1">
+              If the month has fewer days, the due date is set to the last day of the month.
+            </p>
             {errors.billing_day && (
               <p className="text-red-600 text-sm mt-1">{errors.billing_day.message as any}</p>
             )}
@@ -425,9 +453,7 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
 
         {/* Monthly Rent */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Monthly Rent (KES)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Rent (KES)</label>
           <input
             type="number"
             step="0.01"
@@ -442,9 +468,7 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
 
         {/* Reason */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Reason for Move
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Move</label>
           <select
             {...register('reason')}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -462,18 +486,14 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Additional Notes
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
           <textarea
             {...register('notes')}
             rows={3}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Any additional information about this move..."
           />
-          {errors.notes && (
-            <p className="text-red-600 text-sm mt-1">{errors.notes.message}</p>
-          )}
+          {errors.notes && <p className="text-red-600 text-sm mt-1">{errors.notes.message}</p>}
         </div>
 
         {/* End Current Agreement */}
@@ -511,4 +531,3 @@ export default function TenantMoveForm({ tenantId, propertyId, defaultUnitId, on
     </div>
   )
 }
-

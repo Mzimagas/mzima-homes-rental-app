@@ -24,7 +24,7 @@ interface UnitAdditionCardProps {
 export default function UnitAdditionCard({
   onUnitCreated,
   onClose,
-  className = ""
+  className = '',
 }: UnitAdditionCardProps) {
   const { properties: userProperties } = usePropertyAccess()
   const [searchTerm, setSearchTerm] = useState('')
@@ -33,13 +33,13 @@ export default function UnitAdditionCard({
 
   // Convert user properties to the expected format
   const properties: Property[] = useMemo(() => {
-    return userProperties.map(prop => ({
+    return userProperties.map((prop) => ({
       id: prop.property_id,
       name: prop.property_name,
       physical_address: prop.physical_address,
       property_type: prop.property_type,
       notes: prop.notes,
-      acquisition_notes: prop.acquisition_notes
+      acquisition_notes: prop.acquisition_notes,
     }))
   }, [userProperties])
 
@@ -48,7 +48,7 @@ export default function UnitAdditionCard({
     if (!searchTerm.trim()) return properties
 
     const lower = searchTerm.toLowerCase()
-    return properties.filter(property => {
+    return properties.filter((property) => {
       return (
         property.name.toLowerCase().includes(lower) ||
         (property.physical_address?.toLowerCase().includes(lower) ?? false) ||
@@ -88,7 +88,12 @@ export default function UnitAdditionCard({
                 title="Close"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             )}
@@ -109,10 +114,8 @@ export default function UnitAdditionCard({
         {/* Property Selection */}
         {searchTerm && (
           <div className="space-y-3">
-            <h4 className="text-sm font-medium text-gray-700">
-              Select a property to add units:
-            </h4>
-            
+            <h4 className="text-sm font-medium text-gray-700">Select a property to add units:</h4>
+
             {filteredProperties.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <div className="text-4xl mb-2">🔍</div>

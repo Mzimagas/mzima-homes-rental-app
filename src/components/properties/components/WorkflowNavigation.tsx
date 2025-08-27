@@ -10,7 +10,9 @@ interface WorkflowNavigationProps {
 export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowNavigationProps) {
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
-      <h2 className="text-xl font-bold text-gray-900 mb-3 text-center">Property Management Workflows</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-3 text-center">
+        Property Management Workflows
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
         {/* Direct Addition */}
         <button
@@ -22,10 +24,22 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'properties' ? 'bg-green-200' : 'bg-green-100'}`}>🏠</div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'properties' ? 'bg-green-200' : 'bg-green-100'}`}
+            >
+              🏠
+            </div>
             <div>
-              <h3 className={`font-bold text-base transition-colors ${activeTab === 'properties' ? 'text-green-900' : 'text-green-800'}`}>Direct Addition</h3>
-              <p className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'properties' ? 'text-green-700' : 'text-green-600'}`}>Manually create properties with full details and coordinates</p>
+              <h3
+                className={`font-bold text-base transition-colors ${activeTab === 'properties' ? 'text-green-900' : 'text-green-800'}`}
+              >
+                Direct Addition
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'properties' ? 'text-green-700' : 'text-green-600'}`}
+              >
+                Manually create properties with full details and coordinates
+              </p>
             </div>
           </div>
         </button>
@@ -40,10 +54,22 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'purchase' ? 'bg-blue-200' : 'bg-blue-100'}`}>🏢</div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'purchase' ? 'bg-blue-200' : 'bg-blue-100'}`}
+            >
+              🏢
+            </div>
             <div>
-              <h3 className={`font-bold text-base transition-colors ${activeTab === 'purchase' ? 'text-blue-900' : 'text-blue-800'}`}>Purchase Pipeline</h3>
-              <p className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'purchase' ? 'text-blue-700' : 'text-blue-600'}`}>Track acquisitions and transfer completed purchases to properties</p>
+              <h3
+                className={`font-bold text-base transition-colors ${activeTab === 'purchase' ? 'text-blue-900' : 'text-blue-800'}`}
+              >
+                Purchase Pipeline
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'purchase' ? 'text-blue-700' : 'text-blue-600'}`}
+              >
+                Track acquisitions and transfer completed purchases to properties
+              </p>
             </div>
           </div>
         </button>
@@ -58,10 +84,22 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'subdivision' ? 'bg-orange-200' : 'bg-orange-100'}`}>🏗️</div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'subdivision' ? 'bg-orange-200' : 'bg-orange-100'}`}
+            >
+              🏗️
+            </div>
             <div>
-              <h3 className={`font-bold text-base transition-colors ${activeTab === 'subdivision' ? 'text-orange-900' : 'text-orange-800'}`}>Subdivision Process</h3>
-              <p className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'subdivision' ? 'text-orange-700' : 'text-orange-600'}`}>Subdivide existing properties into individual manageable plots</p>
+              <h3
+                className={`font-bold text-base transition-colors ${activeTab === 'subdivision' ? 'text-orange-900' : 'text-orange-800'}`}
+              >
+                Subdivision Process
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'subdivision' ? 'text-orange-700' : 'text-orange-600'}`}
+              >
+                Subdivide existing properties into individual manageable plots
+              </p>
             </div>
           </div>
         </button>
@@ -76,15 +114,25 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'handover' ? 'bg-purple-200' : 'bg-purple-100'}`}>📋</div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'handover' ? 'bg-purple-200' : 'bg-purple-100'}`}
+            >
+              📋
+            </div>
             <div>
-              <h3 className={`font-bold text-base transition-colors ${activeTab === 'handover' ? 'text-purple-900' : 'text-purple-800'}`}>Property Handover</h3>
-              <p className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'handover' ? 'text-purple-700' : 'text-purple-600'}`}>Manage financial settlements and property handover processes</p>
+              <h3
+                className={`font-bold text-base transition-colors ${activeTab === 'handover' ? 'text-purple-900' : 'text-purple-800'}`}
+              >
+                Property Handover
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'handover' ? 'text-purple-700' : 'text-purple-600'}`}
+              >
+                Manage financial settlements and property handover processes
+              </p>
             </div>
           </div>
         </button>
-
-
       </div>
     </div>
   )

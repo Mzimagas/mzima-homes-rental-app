@@ -10,7 +10,9 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 async function resolveUserId(req: NextRequest) {
   const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (user?.id) return user.id
   const auth = req.headers.get('authorization') || ''
   if (auth.toLowerCase().startsWith('bearer ')) {
@@ -25,11 +27,19 @@ async function resolveUserId(req: NextRequest) {
 async function getRoleForTenant(userId: string, tenantId: string) {
   const admin = createClient(supabaseUrl, serviceKey)
   // Find the tenant's property via current_unit or latest active agreement
-  const { data: tenant } = await admin.from('tenants').select('current_unit_id').eq('id', tenantId).maybeSingle()
+  const { data: tenant } = await admin
+    .from('tenants')
+    .select('current_unit_id')
+    .eq('id', tenantId)
+    .maybeSingle()
 
   let propertyId: string | null = null
   if (tenant?.current_unit_id) {
-    const { data: unit } = await admin.from('units').select('property_id').eq('id', tenant.current_unit_id).maybeSingle()
+    const { data: unit } = await admin
+      .from('units')
+      .select('property_id')
+      .eq('id', tenant.current_unit_id)
+      .maybeSingle()
     propertyId = unit?.property_id || null
   }
   if (!propertyId) {
@@ -41,7 +51,11 @@ async function getRoleForTenant(userId: string, tenantId: string) {
       .limit(1)
       .maybeSingle()
     if (ta?.unit_id) {
-      const { data: unit } = await admin.from('units').select('property_id').eq('id', ta.unit_id).maybeSingle()
+      const { data: unit } = await admin
+        .from('units')
+        .select('property_id')
+        .eq('id', ta.unit_id)
+        .maybeSingle()
       propertyId = unit?.property_id || null
     }
   }
@@ -60,20 +74,20 @@ function rateKey(req: NextRequest) {
   return `tenants-id:${ip}`
 }
 
-
 export async function GET(req: NextRequest) {
-// GET doesn’t need compose because RLS guards reads; rate limit handled globally if needed
+  // GET doesn’t need compose because RLS guards reads; rate limit handled globally if needed
 
   try {
     // Extract tenant id from path /api/tenants/[id]
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const tenantsIdx = segments.findIndex(s => s === 'tenants')
-    const tenantId = tenantsIdx >= 0 && segments[tenantsIdx + 1] ? segments[tenantsIdx + 1] : undefined
+    const tenantsIdx = segments.findIndex((s) => s === 'tenants')
+    const tenantId =
+      tenantsIdx >= 0 && segments[tenantsIdx + 1] ? segments[tenantsIdx + 1] : undefined
     if (!tenantId) return errors.badRequest('Missing tenant id in path')
 
     // TEMPORARY: Use service role to bypass RLS while fixing Next.js 15 cookies issue
     const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
+      auth: { autoRefreshToken: false, persistSession: false },
     })
     console.info('[GET /api/tenants/[id]] TEMPORARY: Using service role to bypass RLS')
 
@@ -108,8 +122,9 @@ export async function PATCH(req: NextRequest) {
 
     // Extract tenant id from path /api/tenants/[id]
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const tenantsIdx = segments.findIndex(s => s === 'tenants')
-    const tenantId = tenantsIdx >= 0 && segments[tenantsIdx + 1] ? segments[tenantsIdx + 1] : undefined
+    const tenantsIdx = segments.findIndex((s) => s === 'tenants')
+    const tenantId =
+      tenantsIdx >= 0 && segments[tenantsIdx + 1] ? segments[tenantsIdx + 1] : undefined
     if (!tenantId) return errors.badRequest('Missing tenant id in path')
 
     const json = await req.json()
@@ -118,12 +133,19 @@ export async function PATCH(req: NextRequest) {
     const payload = parse.data
 
     const membership = await getRoleForTenant(userId, tenantId)
-    if (!membership || membership.status !== 'ACTIVE') return errors.forbidden('No access to tenant')
+    if (!membership || membership.status !== 'ACTIVE')
+      return errors.forbidden('No access to tenant')
     const role = (membership as any).role
-    if (!['OWNER', 'PROPERTY_MANAGER', 'LEASING_AGENT'].includes(role)) return errors.forbidden('Insufficient role')
+    if (!['OWNER', 'PROPERTY_MANAGER', 'LEASING_AGENT'].includes(role))
+      return errors.forbidden('Insufficient role')
 
     const admin = createClient(supabaseUrl, serviceKey)
-    const { data, error } = await admin.from('tenants').update(payload).eq('id', tenantId).select('*').maybeSingle()
+    const { data, error } = await admin
+      .from('tenants')
+      .update(payload)
+      .eq('id', tenantId)
+      .select('*')
+      .maybeSingle()
     if (error) return errors.badRequest('Failed to update tenant', error)
 
     return NextResponse.json({ ok: true, data })
@@ -150,18 +172,24 @@ export async function DELETE(req: NextRequest) {
 
     // Extract tenant id from path /api/tenants/[id]
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const tenantsIdx = segments.findIndex(s => s === 'tenants')
-    const tenantId = tenantsIdx >= 0 && segments[tenantsIdx + 1] ? segments[tenantsIdx + 1] : undefined
+    const tenantsIdx = segments.findIndex((s) => s === 'tenants')
+    const tenantId =
+      tenantsIdx >= 0 && segments[tenantsIdx + 1] ? segments[tenantsIdx + 1] : undefined
     if (!tenantId) return errors.badRequest('Missing tenant id in path')
 
     const membership = await getRoleForTenant(userId, tenantId)
-    if (!membership || membership.status !== 'ACTIVE') return errors.forbidden('No access to tenant')
+    if (!membership || membership.status !== 'ACTIVE')
+      return errors.forbidden('No access to tenant')
     const role = (membership as any).role
-    if (!['OWNER', 'PROPERTY_MANAGER'].includes(role)) return errors.forbidden('Cannot delete tenant')
+    if (!['OWNER', 'PROPERTY_MANAGER'].includes(role))
+      return errors.forbidden('Cannot delete tenant')
 
     // Soft delete
     const admin = createClient(supabaseUrl, serviceKey)
-    const { error } = await admin.from('tenants').update({ status: 'DELETED', current_unit_id: null }).eq('id', tenantId)
+    const { error } = await admin
+      .from('tenants')
+      .update({ status: 'DELETED', current_unit_id: null })
+      .eq('id', tenantId)
     if (error) return errors.badRequest('Failed to delete tenant', error)
 
     return NextResponse.json({ ok: true })
@@ -169,4 +197,3 @@ export async function DELETE(req: NextRequest) {
     return errors.internal()
   }
 }
-

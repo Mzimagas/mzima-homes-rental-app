@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useState, useRef, useEffect } from 'react'
 
 type LandProperty = {
@@ -30,14 +30,14 @@ const LAND_UTILITIES = [
   { code: 'electricity', label: 'Electricity' },
   { code: 'water', label: 'Water' },
   { code: 'sewer', label: 'Sewer' },
-  { code: 'internet', label: 'Internet' }
+  { code: 'internet', label: 'Internet' },
 ]
 
 const PROPERTY_TYPES = [
   { code: 'RESIDENTIAL_LAND', label: 'Residential Land' },
   { code: 'COMMERCIAL_LAND', label: 'Commercial Land' },
   { code: 'AGRICULTURAL_LAND', label: 'Agricultural Land' },
-  { code: 'MIXED_USE_LAND', label: 'Mixed-Use Land' }
+  { code: 'MIXED_USE_LAND', label: 'Mixed-Use Land' },
 ]
 
 export default function LandSearchBar({
@@ -52,7 +52,7 @@ export default function LandSearchBar({
   selectedUtilities,
   onToggleUtility,
   onApplyAreaFilter,
-  onApplyPriceFilter
+  onApplyPriceFilter,
 }: LandSearchBarProps) {
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -60,23 +60,30 @@ export default function LandSearchBar({
 
   // Generate suggestions based on search query
   const query = value.trim().toLowerCase()
-  const suggestions = query.length > 0 ? [
-    ...landProperties
-      .filter(p => 
-        p.property_name.toLowerCase().includes(query) ||
-        p.physical_address?.toLowerCase().includes(query) ||
-        p.zoning_classification?.toLowerCase().includes(query)
-      )
-      .slice(0, 8)
-      .map(p => ({
-        id: `property-${p.property_id}`,
-        type: 'property',
-        label: p.property_name,
-        subLabel: p.physical_address,
-        area: p.total_area_acres ? `${p.total_area_acres} acres` : 
-              p.total_area_sqm ? `${p.total_area_sqm.toLocaleString()} sqm` : null
-      }))
-  ] : []
+  const suggestions =
+    query.length > 0
+      ? [
+          ...landProperties
+            .filter(
+              (p) =>
+                p.property_name.toLowerCase().includes(query) ||
+                p.physical_address?.toLowerCase().includes(query) ||
+                p.zoning_classification?.toLowerCase().includes(query)
+            )
+            .slice(0, 8)
+            .map((p) => ({
+              id: `property-${p.property_id}`,
+              type: 'property',
+              label: p.property_name,
+              subLabel: p.physical_address,
+              area: p.total_area_acres
+                ? `${p.total_area_acres} acres`
+                : p.total_area_sqm
+                  ? `${p.total_area_sqm.toLocaleString()} sqm`
+                  : null,
+            })),
+        ]
+      : []
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -108,11 +115,21 @@ export default function LandSearchBar({
       <form onSubmit={handleSubmit} aria-label="Search land and plots">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-quaternary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="h-5 w-5 text-quaternary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
-          
+
           <input
             ref={inputRef}
             type="text"
@@ -128,10 +145,10 @@ export default function LandSearchBar({
               if (!suggestions.length) return
               if (e.key === 'ArrowDown') {
                 e.preventDefault()
-                setActiveIndex(i => Math.min(i + 1, suggestions.length - 1))
+                setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1))
               } else if (e.key === 'ArrowUp') {
                 e.preventDefault()
-                setActiveIndex(i => Math.max(i - 1, 0))
+                setActiveIndex((i) => Math.max(i - 1, 0))
               } else if (e.key === 'Enter') {
                 if (activeIndex >= 0) {
                   e.preventDefault()
@@ -149,12 +166,20 @@ export default function LandSearchBar({
           {value && (
             <button
               type="button"
-              onClick={() => { onClear(); setOpen(false); }}
+              onClick={() => {
+                onClear()
+                setOpen(false)
+              }}
               className="absolute inset-y-0 right-10 px-2 text-quaternary hover:text-secondary transition-colors"
               aria-label="Clear search"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}
@@ -166,13 +191,33 @@ export default function LandSearchBar({
             aria-label="Search"
           >
             {searching ? (
-              <svg className="animate-spin h-5 w-5 mx-1 text-inverse" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin h-5 w-5 mx-1 text-inverse"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
             ) : (
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             )}
           </button>
@@ -187,14 +232,16 @@ export default function LandSearchBar({
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-tertiary">Quick Filters</span>
             </div>
-            
+
             {/* Property Type Filters */}
             <div className="mb-3">
               <div className="flex flex-wrap gap-2">
                 {PROPERTY_TYPES.map((type) => (
                   <button
                     key={type.code}
-                    onClick={() => onPropertyTypeChange(selectedPropertyType === type.code ? '' : type.code)}
+                    onClick={() =>
+                      onPropertyTypeChange(selectedPropertyType === type.code ? '' : type.code)
+                    }
                     className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
                       selectedPropertyType === type.code
                         ? 'bg-primary-600 text-inverse border border-primary-600 shadow-sm'
@@ -210,13 +257,22 @@ export default function LandSearchBar({
             {/* Area Filters */}
             <div className="mb-3">
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => onApplyAreaFilter('SMALL')} className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors">
+                <button
+                  onClick={() => onApplyAreaFilter('SMALL')}
+                  className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors"
+                >
                   Under 1 Acre
                 </button>
-                <button onClick={() => onApplyAreaFilter('MEDIUM')} className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors">
+                <button
+                  onClick={() => onApplyAreaFilter('MEDIUM')}
+                  className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors"
+                >
                   1-5 Acres
                 </button>
-                <button onClick={() => onApplyAreaFilter('LARGE')} className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors">
+                <button
+                  onClick={() => onApplyAreaFilter('LARGE')}
+                  className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors"
+                >
                   5+ Acres
                 </button>
               </div>
@@ -225,13 +281,22 @@ export default function LandSearchBar({
             {/* Price Filters */}
             <div className="mb-3">
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => onApplyPriceFilter('UNDER_1M')} className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors">
+                <button
+                  onClick={() => onApplyPriceFilter('UNDER_1M')}
+                  className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors"
+                >
                   Under 1M
                 </button>
-                <button onClick={() => onApplyPriceFilter('1M_5M')} className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors">
+                <button
+                  onClick={() => onApplyPriceFilter('1M_5M')}
+                  className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors"
+                >
                   1M - 5M
                 </button>
-                <button onClick={() => onApplyPriceFilter('5M_PLUS')} className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors">
+                <button
+                  onClick={() => onApplyPriceFilter('5M_PLUS')}
+                  className="px-3 py-1.5 text-xs rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors"
+                >
                   5M+
                 </button>
               </div>
@@ -268,7 +333,9 @@ export default function LandSearchBar({
                   onMouseEnter={() => setActiveIndex(idx)}
                   onClick={() => selectSuggestion(s)}
                   className={`px-4 py-3 cursor-pointer transition-colors ${
-                    idx === activeIndex ? 'bg-primary-50 text-brand' : 'hover:bg-secondary text-secondary'
+                    idx === activeIndex
+                      ? 'bg-primary-50 text-brand'
+                      : 'hover:bg-secondary text-secondary'
                   }`}
                 >
                   <div className="flex items-center justify-between">

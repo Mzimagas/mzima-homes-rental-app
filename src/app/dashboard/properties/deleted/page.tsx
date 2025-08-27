@@ -31,9 +31,7 @@ export default function DeletedPropertiesPage() {
   const [restoring, setRestoring] = useState<string | null>(null)
 
   // Check if user has admin permissions (OWNER only for properties)
-  const hasAdminAccess = properties.some(p => 
-    p.user_role === 'OWNER'
-  )
+  const hasAdminAccess = properties.some((p) => p.user_role === 'OWNER')
 
   const fetchDeletedProperties = async () => {
     try {
@@ -42,9 +40,9 @@ export default function DeletedPropertiesPage() {
 
       // Get all property IDs the user has OWNER access to
       const ownedPropertyIds = properties
-        .filter(p => p.user_role === 'OWNER')
-        .map(p => p.property_id)
-      
+        .filter((p) => p.user_role === 'OWNER')
+        .map((p) => p.property_id)
+
       if (ownedPropertyIds.length === 0) {
         setDeletedProperties([])
         return
@@ -53,7 +51,8 @@ export default function DeletedPropertiesPage() {
       // Fetch deleted properties (those with disabled_at set)
       const { data, error } = await supabase
         .from('properties')
-        .select(`
+        .select(
+          `
           id,
           name,
           physical_address,
@@ -67,7 +66,8 @@ export default function DeletedPropertiesPage() {
             unit_label,
             is_active
           )
-        `)
+        `
+        )
         .in('id', ownedPropertyIds)
         .not('disabled_at', 'is', null)
         .order('disabled_at', { ascending: false })
@@ -90,19 +90,21 @@ export default function DeletedPropertiesPage() {
   const handleRestore = async (property: DeletedProperty) => {
     try {
       setRestoring(property.id)
-      
-      const { data: { session } } = await supabase.auth.getSession()
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const csrf = document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || ''
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'x-csrf-token': csrf
+        'x-csrf-token': csrf,
       }
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
 
       const response = await fetch(`/api/properties/${property.id}/restore`, {
         method: 'PATCH',
         headers,
-        credentials: 'same-origin'
+        credentials: 'same-origin',
       })
 
       const result = await response.json()
@@ -114,7 +116,6 @@ export default function DeletedPropertiesPage() {
       // Success
       alert(`Property "${property.name}" has been restored successfully`)
       fetchDeletedProperties() // Refresh the list
-
     } catch (err: any) {
       console.error('Restore error:', err)
       alert(err.message || 'Failed to restore property')
@@ -138,10 +139,11 @@ export default function DeletedPropertiesPage() {
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
           <h2 className="text-lg font-medium text-red-900 mb-2">Access Denied</h2>
-          <p className="text-red-700">
-            You need OWNER permissions to access deleted properties.
-          </p>
-          <Link href="/dashboard/properties" className="text-red-600 hover:text-red-800 underline mt-2 inline-block">
+          <p className="text-red-700">You need OWNER permissions to access deleted properties.</p>
+          <Link
+            href="/dashboard/properties"
+            className="text-red-600 hover:text-red-800 underline mt-2 inline-block"
+          >
             ← Back to Active Properties
           </Link>
         </div>
@@ -154,11 +156,9 @@ export default function DeletedPropertiesPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Deleted Properties</h1>
-          <p className="text-gray-600 mt-1">
-            Manage and restore soft-deleted property records
-          </p>
+          <p className="text-gray-600 mt-1">Manage and restore soft-deleted property records</p>
         </div>
-        <Link 
+        <Link
           href="/dashboard/properties"
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
@@ -171,13 +171,18 @@ export default function DeletedPropertiesPage() {
         <div className="flex">
           <div className="flex-shrink-0">
             <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
             </svg>
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-yellow-800">Owner Feature</h3>
             <p className="text-sm text-yellow-700 mt-1">
-              This page shows soft-deleted properties that can be restored. Restoring a property will reactivate it and make it available for tenant management.
+              This page shows soft-deleted properties that can be restored. Restoring a property
+              will reactivate it and make it available for tenant management.
             </p>
           </div>
         </div>
@@ -193,7 +198,7 @@ export default function DeletedPropertiesPage() {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <p className="text-red-700">{error}</p>
-          <button 
+          <button
             onClick={fetchDeletedProperties}
             className="text-red-600 hover:text-red-800 underline mt-2"
           >
@@ -204,8 +209,18 @@ export default function DeletedPropertiesPage() {
 
       {!loading && !error && deletedProperties.length === 0 && (
         <div className="text-center py-8">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m0 0h2M7 7h10M7 11h10M7 15h10" />
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m0 0h2M7 7h10M7 11h10M7 15h10"
+            />
           </svg>
           <h3 className="mt-2 text-sm font-medium text-gray-900">No deleted properties</h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -222,9 +237,7 @@ export default function DeletedPropertiesPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center">
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {property.name}
-                      </h3>
+                      <h3 className="text-lg font-medium text-gray-900">{property.name}</h3>
                       <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                         Deleted
                       </span>
@@ -233,9 +246,7 @@ export default function DeletedPropertiesPage() {
                       <p>Address: {property.physical_address || 'Not provided'}</p>
                       <p>Units: {property.units?.length || 0} total</p>
                       <p>Deleted: {new Date(property.disabled_at).toLocaleDateString()}</p>
-                      {property.disabled_reason && (
-                        <p>Reason: {property.disabled_reason}</p>
-                      )}
+                      {property.disabled_reason && <p>Reason: {property.disabled_reason}</p>}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">

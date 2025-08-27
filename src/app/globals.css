@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Touch Target Optimization */
+@import '../styles/touch-targets.css';
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

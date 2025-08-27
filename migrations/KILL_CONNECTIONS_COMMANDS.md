@@ -3,6 +3,7 @@
 ## 🔌 **Immediate Solutions**
 
 ### **Option 1: Single SQL Command (Fastest)**
+
 ```sql
 -- Kill all connections except your own
 SELECT pg_terminate_backend(pid)
@@ -12,6 +13,7 @@ WHERE datname = current_database()
 ```
 
 ### **Option 2: Using psql Command Line**
+
 ```bash
 # Replace with your actual database details
 psql -h localhost -U postgres -d land_management -c "
@@ -23,12 +25,14 @@ WHERE datname = current_database()
 ```
 
 ### **Option 3: Using the SQL File**
+
 ```bash
 # Run the kill connections SQL file
 psql -h localhost -U postgres -d land_management -f migrations/kill_db_connections.sql
 ```
 
 ### **Option 4: Using the Shell Script**
+
 ```bash
 # Make executable and run
 chmod +x migrations/kill_connections.sh
@@ -39,7 +43,7 @@ chmod +x migrations/kill_connections.sh
 
 ```sql
 -- See all current connections
-SELECT 
+SELECT
     pid,
     usename,
     application_name,
@@ -56,8 +60,8 @@ ORDER BY query_start DESC;
 ```bash
 # 1. Check connections
 psql -h localhost -U postgres -d land_management -c "
-SELECT count(*) as active_connections 
-FROM pg_stat_activity 
+SELECT count(*) as active_connections
+FROM pg_stat_activity
 WHERE datname = current_database() AND pid <> pg_backend_pid();
 "
 
@@ -70,8 +74,8 @@ WHERE datname = current_database() AND pid <> pg_backend_pid();
 
 # 3. Verify connections are gone
 psql -h localhost -U postgres -d land_management -c "
-SELECT count(*) as remaining_connections 
-FROM pg_stat_activity 
+SELECT count(*) as remaining_connections
+FROM pg_stat_activity
 WHERE datname = current_database() AND pid <> pg_backend_pid();
 "
 
@@ -109,12 +113,14 @@ docker restart your-postgres-container
 ## 🔧 **Troubleshooting**
 
 ### If connections keep coming back:
+
 1. **Stop your application** that's connecting to the database
 2. **Check for connection poolers** (pgbouncer, etc.)
 3. **Look for background jobs** or scheduled tasks
 4. **Check for IDE connections** (pgAdmin, DBeaver, etc.)
 
 ### Common connection sources:
+
 - Your application server
 - Database management tools (pgAdmin, DBeaver, etc.)
 - IDE database connections
@@ -124,11 +130,11 @@ docker restart your-postgres-container
 
 ## 📋 **Quick Reference**
 
-| Command | Purpose |
-|---------|---------|
-| `SELECT count(*) FROM pg_stat_activity WHERE datname = current_database();` | Count total connections |
-| `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid();` | Kill all connections |
-| `SELECT pid, usename, state FROM pg_stat_activity WHERE datname = current_database();` | List all connections |
+| Command                                                                                                                  | Purpose                 |
+| ------------------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| `SELECT count(*) FROM pg_stat_activity WHERE datname = current_database();`                                              | Count total connections |
+| `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid();` | Kill all connections    |
+| `SELECT pid, usename, state FROM pg_stat_activity WHERE datname = current_database();`                                   | List all connections    |
 
 ---
 

@@ -1,9 +1,9 @@
-import { 
-  UserPermissions, 
-  SectionPermission, 
+import {
+  UserPermissions,
+  SectionPermission,
   PermissionLevel,
   Section,
-  DetailPermission 
+  DetailPermission,
 } from '../types'
 import { DEFAULT_SECTIONS, createDefaultSectionPermission } from './permissionUtils'
 
@@ -19,8 +19,8 @@ export const ROLE_TEMPLATES = {
       purchase_pipeline: 'edit' as PermissionLevel,
       subdivision_process: 'edit' as PermissionLevel,
       property_handover: 'edit' as PermissionLevel,
-      audit_trail: 'view' as PermissionLevel
-    }
+      audit_trail: 'view' as PermissionLevel,
+    },
   },
   supervisor: {
     name: 'Supervisor',
@@ -32,8 +32,8 @@ export const ROLE_TEMPLATES = {
       purchase_pipeline: 'view' as PermissionLevel,
       subdivision_process: 'view' as PermissionLevel,
       property_handover: 'view' as PermissionLevel,
-      audit_trail: 'view' as PermissionLevel
-    }
+      audit_trail: 'view' as PermissionLevel,
+    },
   },
   staff: {
     name: 'Staff',
@@ -45,8 +45,8 @@ export const ROLE_TEMPLATES = {
       purchase_pipeline: 'view' as PermissionLevel,
       subdivision_process: 'view' as PermissionLevel,
       property_handover: 'edit' as PermissionLevel,
-      audit_trail: 'none' as PermissionLevel
-    }
+      audit_trail: 'none' as PermissionLevel,
+    },
   },
   member: {
     name: 'Member',
@@ -58,9 +58,9 @@ export const ROLE_TEMPLATES = {
       purchase_pipeline: 'none' as PermissionLevel,
       subdivision_process: 'none' as PermissionLevel,
       property_handover: 'view' as PermissionLevel,
-      audit_trail: 'none' as PermissionLevel
-    }
-  }
+      audit_trail: 'none' as PermissionLevel,
+    },
+  },
 } as const
 
 // Apply role template to user permissions
@@ -69,15 +69,15 @@ export const applyRoleTemplate = (
   templateKey: keyof typeof ROLE_TEMPLATES
 ): UserPermissions => {
   const template = ROLE_TEMPLATES[templateKey]
-  
-  const updatedSections: SectionPermission[] = DEFAULT_SECTIONS.map(section => {
+
+  const updatedSections: SectionPermission[] = DEFAULT_SECTIONS.map((section) => {
     const level = template.sections[section] || template.defaultLevel
     return createDefaultSectionPermission(section, level)
   })
 
   return {
     ...basePermissions,
-    sections: updatedSections
+    sections: updatedSections,
   }
 }
 
@@ -86,18 +86,21 @@ export const setAllSectionsPermission = (
   basePermissions: UserPermissions,
   level: PermissionLevel
 ): UserPermissions => {
-  const updatedSections: SectionPermission[] = basePermissions.sections.map(section => ({
+  const updatedSections: SectionPermission[] = basePermissions.sections.map((section) => ({
     ...section,
     level,
-    details: Object.keys(section.details).reduce((acc, key) => ({
-      ...acc,
-      [key]: level
-    }), {} as Record<DetailPermission, PermissionLevel>)
+    details: Object.keys(section.details).reduce(
+      (acc, key) => ({
+        ...acc,
+        [key]: level,
+      }),
+      {} as Record<DetailPermission, PermissionLevel>
+    ),
   }))
 
   return {
     ...basePermissions,
-    sections: updatedSections
+    sections: updatedSections,
   }
 }
 
@@ -110,7 +113,7 @@ export const getRoleTemplateInfo = (templateKey: keyof typeof ROLE_TEMPLATES) =>
 export const getAllRoleTemplates = () => {
   return Object.entries(ROLE_TEMPLATES).map(([key, template]) => ({
     key: key as keyof typeof ROLE_TEMPLATES,
-    ...template
+    ...template,
   }))
 }
 
@@ -120,22 +123,24 @@ export const matchesRoleTemplate = (
   templateKey: keyof typeof ROLE_TEMPLATES
 ): boolean => {
   const template = ROLE_TEMPLATES[templateKey]
-  
-  return permissions.sections.every(section => {
+
+  return permissions.sections.every((section) => {
     const expectedLevel = template.sections[section.section] || template.defaultLevel
     return section.level === expectedLevel
   })
 }
 
 // Get the closest matching role template
-export const getClosestRoleTemplate = (permissions: UserPermissions): keyof typeof ROLE_TEMPLATES | null => {
+export const getClosestRoleTemplate = (
+  permissions: UserPermissions
+): keyof typeof ROLE_TEMPLATES | null => {
   const templates = Object.keys(ROLE_TEMPLATES) as (keyof typeof ROLE_TEMPLATES)[]
-  
+
   for (const templateKey of templates) {
     if (matchesRoleTemplate(permissions, templateKey)) {
       return templateKey
     }
   }
-  
+
   return null
 }

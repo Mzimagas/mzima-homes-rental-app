@@ -37,7 +37,9 @@ export default function EmailMonitoringDashboard() {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-medium text-gray-900">Email Delivery Monitoring</h2>
         <div className="flex items-center space-x-2">
-          <label htmlFor="timeframe" className="text-sm text-gray-700">Timeframe:</label>
+          <label htmlFor="timeframe" className="text-sm text-gray-700">
+            Timeframe:
+          </label>
           <select
             id="timeframe"
             value={timeframe}
@@ -57,21 +59,25 @@ export default function EmailMonitoringDashboard() {
           <div className="text-sm font-medium text-gray-500">Total Attempts</div>
           <div className="text-2xl font-bold text-gray-900">{stats.totalAttempts}</div>
         </div>
-        
+
         <div className="bg-gray-50 p-4 rounded-lg">
           <div className="text-sm font-medium text-gray-500">Success Rate</div>
-          <div className={`text-2xl font-bold px-2 py-1 rounded ${getSuccessRateColor(stats.successRate)}`}>
+          <div
+            className={`text-2xl font-bold px-2 py-1 rounded ${getSuccessRateColor(stats.successRate)}`}
+          >
             {stats.successRate.toFixed(1)}%
           </div>
         </div>
-        
+
         <div className="bg-gray-50 p-4 rounded-lg">
           <div className="text-sm font-medium text-gray-500">Bounce Rate</div>
-          <div className={`text-2xl font-bold px-2 py-1 rounded ${getBounceRateColor(stats.bounceRate)}`}>
+          <div
+            className={`text-2xl font-bold px-2 py-1 rounded ${getBounceRateColor(stats.bounceRate)}`}
+          >
             {stats.bounceRate.toFixed(1)}%
           </div>
         </div>
-        
+
         <div className="bg-gray-50 p-4 rounded-lg">
           <div className="text-sm font-medium text-gray-500">Failures</div>
           <div className="text-2xl font-bold text-gray-900">{stats.failureCount}</div>
@@ -80,30 +86,43 @@ export default function EmailMonitoringDashboard() {
 
       {/* Bounce Rate Warning */}
       {stats.bounceRate > 10 && (
-        <div className={`p-4 rounded-md mb-6 ${stats.bounceRate > 20 ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+        <div
+          className={`p-4 rounded-md mb-6 ${stats.bounceRate > 20 ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}
+        >
           <div className="flex">
             <div className="flex-shrink-0">
               {stats.bounceRate > 20 ? (
                 <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               ) : (
                 <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
             </div>
             <div className="ml-3">
-              <h3 className={`text-sm font-medium ${stats.bounceRate > 20 ? 'text-red-800' : 'text-yellow-800'}`}>
+              <h3
+                className={`text-sm font-medium ${stats.bounceRate > 20 ? 'text-red-800' : 'text-yellow-800'}`}
+              >
                 {stats.bounceRate > 20 ? 'Critical Bounce Rate!' : 'Elevated Bounce Rate'}
               </h3>
-              <div className={`mt-2 text-sm ${stats.bounceRate > 20 ? 'text-red-700' : 'text-yellow-700'}`}>
+              <div
+                className={`mt-2 text-sm ${stats.bounceRate > 20 ? 'text-red-700' : 'text-yellow-700'}`}
+              >
                 <p>
-                  Your email bounce rate is {stats.bounceRate.toFixed(1)}%. 
-                  {stats.bounceRate > 20 
+                  Your email bounce rate is {stats.bounceRate.toFixed(1)}%.
+                  {stats.bounceRate > 20
                     ? ' This is critically high and may trigger Supabase email restrictions.'
-                    : ' Monitor this closely to prevent email delivery issues.'
-                  }
+                    : ' Monitor this closely to prevent email delivery issues.'}
                 </p>
               </div>
             </div>
@@ -124,9 +143,13 @@ export default function EmailMonitoringDashboard() {
                     <span className="text-gray-500 ml-2">({failure.type})</span>
                   </div>
                   <div className="text-right">
-                    <div className={`px-2 py-1 rounded text-xs ${
-                      failure.status === 'bounced' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <div
+                      className={`px-2 py-1 rounded text-xs ${
+                        failure.status === 'bounced'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
                       {failure.status}
                     </div>
                     <div className="text-gray-500 text-xs mt-1">

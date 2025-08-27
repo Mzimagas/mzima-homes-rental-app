@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React from 'react'
 
@@ -8,34 +8,71 @@ interface ViewOnGoogleMapsButtonProps {
   address?: string | null
   propertyName?: string
   className?: string
+  debug?: boolean
+  debugContext?: string
 }
 
-function buildGoogleMapsUrl(lat?: number | null, lng?: number | null, address?: string | null): string | null {
+function buildGoogleMapsUrl(
+  lat?: number | null,
+  lng?: number | null,
+  address?: string | null,
+  debug?: boolean,
+  context?: string
+): string | null {
+  if (debug) {
+    console.group(`🗺️ Google Maps URL Generation${context ? ` - ${context}` : ''}`)
+    console.log('📍 Input data:', { lat, lng, address })
+    console.log('🔍 Coordinate validation:', {
+      latValid: lat != null && !Number.isNaN(lat),
+      lngValid: lng != null && !Number.isNaN(lng),
+      latType: typeof lat,
+      lngType: typeof lng,
+      latValue: lat,
+      lngValue: lng,
+    })
+  }
+
   if (lat != null && lng != null && !Number.isNaN(lat) && !Number.isNaN(lng)) {
     // Use lat/lng directly for more precise location
-    return `https://www.google.com/maps?q=${lat},${lng}`
+    const url = `https://www.google.com/maps?q=${lat},${lng}`
+    if (debug) {
+      console.log('✅ Using coordinates:', url)
+      console.groupEnd()
+    }
+    return url
   }
+
   const q = (address ?? '').trim()
   if (q.length > 0) {
-    return `https://www.google.com/maps/search/${encodeURIComponent(q)}`
+    const url = `https://www.google.com/maps/search/${encodeURIComponent(q)}`
+    if (debug) {
+      console.log('📍 Using address fallback:', url)
+      console.groupEnd()
+    }
+    return url
+  }
+
+  if (debug) {
+    console.warn('❌ No valid location data available')
+    console.groupEnd()
   }
   return null
 }
 
-export default function ViewOnGoogleMapsButton({ 
-  lat, 
-  lng, 
-  address, 
-  propertyName, 
-  className = '' 
+export default function ViewOnGoogleMapsButton({
+  lat,
+  lng,
+  address,
+  propertyName,
+  className = '',
+  debug = false,
+  debugContext,
 }: ViewOnGoogleMapsButtonProps) {
-  const mapsUrl = buildGoogleMapsUrl(lat, lng, address)
+  const mapsUrl = buildGoogleMapsUrl(lat, lng, address, debug, debugContext)
 
   if (!mapsUrl) {
     return (
-      <div className={`text-xs text-gray-400 px-3 py-2 ${className}`}>
-        No location available
-      </div>
+      <div className={`text-xs text-gray-400 px-3 py-2 ${className}`}>No location available</div>
     )
   }
 
@@ -58,31 +95,26 @@ export default function ViewOnGoogleMapsButton({
       `}
       title={`View ${propertyName || 'property'} location on Google Maps`}
     >
-      <svg 
-        className="w-4 h-4" 
-        fill="currentColor" 
-        viewBox="0 0 20 20"
-        aria-hidden="true"
-      >
-        <path 
-          fillRule="evenodd" 
-          d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" 
-          clipRule="evenodd" 
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+        <path
+          fillRule="evenodd"
+          d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+          clipRule="evenodd"
         />
       </svg>
       <span>View on Google Maps</span>
-      <svg 
-        className="w-3 h-3 opacity-60" 
-        fill="none" 
-        stroke="currentColor" 
+      <svg
+        className="w-3 h-3 opacity-60"
+        fill="none"
+        stroke="currentColor"
         viewBox="0 0 24 24"
         aria-hidden="true"
       >
-        <path 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          strokeWidth={2} 
-          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
         />
       </svg>
     </button>

@@ -7,22 +7,32 @@ import HandoverProgressTracker from './HandoverProgressTracker'
 import HandoverFinancialSection from './HandoverFinancialSection'
 import { HandoverItem } from '../types/property-management.types'
 import { initializeHandoverPipelineStages } from '../utils/property-management.utils'
-import { HandoverFinancialsService, HandoverFinancialSummary } from '../services/handover-financials.service'
+import {
+  HandoverFinancialsService,
+  HandoverFinancialSummary,
+} from '../services/handover-financials.service'
 
 interface InlineHandoverViewProps {
   handover: HandoverItem
   onClose: () => void
   onStageClick: (stageId: number, handoverId: string) => void
-  onStageUpdate: (handoverId: string, stageId: number, newStatus: string, notes?: string) => Promise<void>
+  onStageUpdate: (
+    handoverId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string
+  ) => Promise<void>
 }
 
 export default function InlineHandoverView({
   handover,
   onClose,
   onStageClick,
-  onStageUpdate
+  onStageUpdate,
 }: InlineHandoverViewProps) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'location' | 'financial' | 'documents'>('basic')
+  const [activeTab, setActiveTab] = useState<'basic' | 'location' | 'financial' | 'documents'>(
+    'basic'
+  )
   const [financialSummary, setFinancialSummary] = useState<HandoverFinancialSummary | null>(null)
   const [loadingFinancials, setLoadingFinancials] = useState(false)
   const [financialError, setFinancialError] = useState<string | null>(null)
@@ -39,7 +49,9 @@ export default function InlineHandoverView({
     setFinancialError(null)
 
     try {
-      const summary = await HandoverFinancialsService.getHandoverFinancialSummary(handover.property_id)
+      const summary = await HandoverFinancialsService.getHandoverFinancialSummary(
+        handover.property_id
+      )
       setFinancialSummary(summary)
     } catch (error) {
       console.error('Error loading financial data:', error)
@@ -48,8 +60,6 @@ export default function InlineHandoverView({
       setLoadingFinancials(false)
     }
   }
-
-
 
   const getHandoverStatusColor = (status: string): string => {
     const colors = {
@@ -67,11 +77,7 @@ export default function InlineHandoverView({
     <div className="mt-4 border-t border-gray-200 pt-4">
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-lg font-semibold text-gray-900">Handover Details</h4>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onClose}
-        >
+        <Button variant="secondary" size="sm" onClick={onClose}>
           Close
         </Button>
       </div>
@@ -141,15 +147,15 @@ export default function InlineHandoverView({
                   </p>
                 </div>
               </div>
-              
+
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Handover Status</h4>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        getHandoverStatusColor(handover.handover_status)
-                      }`}
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${getHandoverStatusColor(
+                        handover.handover_status
+                      )}`}
                     >
                       {handover.handover_status.replace('_', ' ')}
                     </span>
@@ -158,7 +164,8 @@ export default function InlineHandoverView({
                     <span className="font-medium">Progress:</span> {handover.overall_progress}%
                   </p>
                   <p className="text-gray-700">
-                    <span className="font-medium">Current Stage:</span> {handover.current_stage} of 8
+                    <span className="font-medium">Current Stage:</span> {handover.current_stage} of
+                    8
                   </p>
                 </div>
               </div>
@@ -169,16 +176,20 @@ export default function InlineHandoverView({
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Buyer Information</h4>
                 <div className="space-y-2">
                   <p className="text-gray-700">
-                    <span className="font-medium">Name:</span> {handover.buyer_name || 'Not specified'}
+                    <span className="font-medium">Name:</span>{' '}
+                    {handover.buyer_name || 'Not specified'}
                   </p>
                   <p className="text-gray-700">
-                    <span className="font-medium">Contact:</span> {handover.buyer_contact || 'Not specified'}
+                    <span className="font-medium">Contact:</span>{' '}
+                    {handover.buyer_contact || 'Not specified'}
                   </p>
                   <p className="text-gray-700">
-                    <span className="font-medium">Email:</span> {handover.buyer_email || 'Not specified'}
+                    <span className="font-medium">Email:</span>{' '}
+                    {handover.buyer_email || 'Not specified'}
                   </p>
                   <p className="text-gray-700">
-                    <span className="font-medium">Address:</span> {handover.buyer_address || 'Not specified'}
+                    <span className="font-medium">Address:</span>{' '}
+                    {handover.buyer_address || 'Not specified'}
                   </p>
                 </div>
               </div>
@@ -187,21 +198,20 @@ export default function InlineHandoverView({
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Additional Details</h4>
                 <div className="space-y-2">
                   <p className="text-gray-700">
-                    <span className="font-medium">Legal Representative:</span> {handover.legal_representative || 'Not specified'}
+                    <span className="font-medium">Legal Representative:</span>{' '}
+                    {handover.legal_representative || 'Not specified'}
                   </p>
                   <p className="text-gray-700">
-                    <span className="font-medium">Target Completion:</span> {
-                      handover.target_completion_date 
-                        ? new Date(handover.target_completion_date).toLocaleDateString()
-                        : 'Not specified'
-                    }
+                    <span className="font-medium">Target Completion:</span>{' '}
+                    {handover.target_completion_date
+                      ? new Date(handover.target_completion_date).toLocaleDateString()
+                      : 'Not specified'}
                   </p>
                   <p className="text-gray-700">
-                    <span className="font-medium">Actual Completion:</span> {
-                      handover.actual_completion_date 
-                        ? new Date(handover.actual_completion_date).toLocaleDateString()
-                        : 'Not completed'
-                    }
+                    <span className="font-medium">Actual Completion:</span>{' '}
+                    {handover.actual_completion_date
+                      ? new Date(handover.actual_completion_date).toLocaleDateString()
+                      : 'Not completed'}
                   </p>
                 </div>
               </div>
@@ -239,8 +249,16 @@ export default function InlineHandoverView({
             </div>
             <div className="flex justify-start">
               <ViewOnGoogleMapsButton
-                address={handover.property_address || handover.property_name}
+                lat={(handover as any).property_lat ?? null}
+                lng={(handover as any).property_lng ?? null}
+                address={
+                  (handover as any).property_physical_address ||
+                  handover.property_address ||
+                  handover.property_name
+                }
                 propertyName={handover.property_name}
+                debug={process.env.NODE_ENV === 'development'}
+                debugContext={`Handover Details - Location Tab - ${handover.property_name}`}
               />
             </div>
           </div>
@@ -274,9 +292,6 @@ export default function InlineHandoverView({
           </div>
         )}
 
-
-
-
         {activeTab === 'documents' && (
           <div className="space-y-6">
             {/* Handover Progress Tracker */}
@@ -295,7 +310,9 @@ export default function InlineHandoverView({
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
               <div className="flex items-center text-sm text-purple-800">
                 <span className="mr-2">📋</span>
-                <span>Click on any accessible stage card above to view details and update status</span>
+                <span>
+                  Click on any accessible stage card above to view details and update status
+                </span>
               </div>
             </div>
           </div>

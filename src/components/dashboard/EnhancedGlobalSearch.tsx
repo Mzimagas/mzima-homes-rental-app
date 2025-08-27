@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useDashboardActions } from '../../hooks/useDashboardActions'
-import { universalSearchService, SearchResult, SearchSuggestion } from '../../services/UniversalSearchService'
+import {
+  universalSearchService,
+  SearchResult,
+  SearchSuggestion,
+} from '../../services/UniversalSearchService'
 import { useRouter } from 'next/navigation'
 
 interface EnhancedGlobalSearchProps {
@@ -12,18 +16,22 @@ interface EnhancedGlobalSearchProps {
   showRecentSearches?: boolean
   maxResults?: number
   fullScreen?: boolean
+  qualityThreshold?: 'strict' | 'moderate' | 'lenient'
+  minRelevanceScore?: number
 }
 
 /**
  * Enhanced Global Search component with universal search capabilities
  */
-export default function EnhancedGlobalSearch({ 
+export default function EnhancedGlobalSearch({
   className = '',
   placeholder = 'Search properties, tenants, payments...',
   onResultSelect,
   showRecentSearches = true,
-  maxResults = 20,
-  fullScreen = false
+  maxResults,
+  fullScreen = false,
+  qualityThreshold = 'moderate',
+  minRelevanceScore,
 }: EnhancedGlobalSearchProps) {
   const { state, setSearchTerm, selectProperty, selectTenant } = useDashboardActions()
   const router = useRouter()
@@ -87,10 +95,12 @@ export default function EnhancedGlobalSearch({
       try {
         setIsLoading(true)
         const searchResults = await universalSearchService.search(searchQuery, {
-          limit: maxResults
+          maxResults,
+          qualityThreshold,
+          minRelevanceScore,
         })
         setResults(searchResults)
-        
+
         // Get suggestions
         const searchSuggestions = await universalSearchService.getSuggestions(searchQuery)
         setSuggestions(searchSuggestions)
@@ -110,7 +120,7 @@ export default function EnhancedGlobalSearch({
     setQuery(value)
     setSearchTerm(value)
     setSelectedIndex(-1)
-    
+
     if (value.trim()) {
       setShowSuggestions(false)
       debouncedSearch(value)
@@ -134,15 +144,18 @@ export default function EnhancedGlobalSearch({
 
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setSelectedIndex(prev => (prev + 1) % totalItems)
+      setSelectedIndex((prev) => (prev + 1) % totalItems)
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setSelectedIndex(prev => (prev - 1 + totalItems) % totalItems)
+      setSelectedIndex((prev) => (prev - 1 + totalItems) % totalItems)
     } else if (e.key === 'Enter') {
       e.preventDefault()
       if (selectedIndex >= 0) {
         if (showSuggestions) {
-          const allSuggestions = [...suggestions, ...recentSearches.map(search => ({ text: search, type: 'query' as const }))]
+          const allSuggestions = [
+            ...suggestions,
+            ...recentSearches.map((search) => ({ text: search, type: 'query' as const })),
+          ]
           const selected = allSuggestions[selectedIndex]
           if (selected) {
             setQuery(selected.text)
@@ -207,26 +220,66 @@ export default function EnhancedGlobalSearch({
     switch (type) {
       case 'property':
         return (
-          <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <svg
+            className="h-5 w-5 text-blue-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+            />
           </svg>
         )
       case 'tenant':
         return (
-          <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          <svg
+            className="h-5 w-5 text-green-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
           </svg>
         )
       case 'payment':
         return (
-          <svg className="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+          <svg
+            className="h-5 w-5 text-yellow-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+            />
           </svg>
         )
       default:
         return (
-          <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg
+            className="h-5 w-5 text-gray-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
         )
     }
@@ -237,8 +290,18 @@ export default function EnhancedGlobalSearch({
       {/* Search Input */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            className="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
         </div>
         <input
@@ -283,7 +346,7 @@ export default function EnhancedGlobalSearch({
                     <button
                       key={index}
                       onClick={() => handleSuggestionSelect(suggestion)}
-                      className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 ${
+                      className={`w-full text-left px-3 py-3 text-sm rounded-md hover:bg-gray-100 touch-target ${
                         selectedIndex === index ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
                       }`}
                     >
@@ -299,7 +362,7 @@ export default function EnhancedGlobalSearch({
                     <p className="text-xs font-medium text-gray-500">Recent Searches</p>
                     <button
                       onClick={handleClearRecentSearches}
-                      className="text-xs text-gray-400 hover:text-gray-600"
+                      className="text-xs text-gray-400 hover:text-gray-600 touch-target px-2 py-2"
                     >
                       Clear
                     </button>
@@ -308,12 +371,24 @@ export default function EnhancedGlobalSearch({
                     <button
                       key={index}
                       onClick={() => handleSuggestionSelect(search)}
-                      className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 ${
-                        selectedIndex === suggestions.length + index ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                      className={`w-full text-left px-3 py-3 text-sm rounded-md hover:bg-gray-100 touch-target ${
+                        selectedIndex === suggestions.length + index
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-700'
                       }`}
                     >
-                      <svg className="inline h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="inline h-4 w-4 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                       {search}
                     </button>
@@ -333,23 +408,17 @@ export default function EnhancedGlobalSearch({
                 <button
                   key={result.id}
                   onClick={() => handleResultSelect(result)}
-                  className={`w-full text-left px-3 py-3 rounded-md hover:bg-gray-100 ${
+                  className={`w-full text-left px-3 py-3 rounded-md hover:bg-gray-100 touch-target search-result-item ${
                     selectedIndex === index ? 'bg-blue-50' : ''
                   }`}
                 >
                   <div className="flex items-start space-x-3">
                     {getResultIcon(result.type)}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {result.title}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {result.subtitle}
-                      </p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{result.title}</p>
+                      <p className="text-sm text-gray-500 truncate">{result.subtitle}</p>
                       {result.description && (
-                        <p className="text-xs text-gray-400 mt-1 truncate">
-                          {result.description}
-                        </p>
+                        <p className="text-xs text-gray-400 mt-1 truncate">{result.description}</p>
                       )}
                     </div>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
@@ -364,8 +433,18 @@ export default function EnhancedGlobalSearch({
           {/* No Results */}
           {!showSuggestions && !isLoading && query.trim() && results.length === 0 && (
             <div className="p-4 text-center">
-              <svg className="h-8 w-8 text-gray-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                className="h-8 w-8 text-gray-400 mx-auto mb-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
               <p className="text-sm text-gray-500">No results found for "{query}"</p>
               <p className="text-xs text-gray-400 mt-1">Try adjusting your search terms</p>
@@ -382,9 +461,9 @@ function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout
+  let timeout: ReturnType<typeof setTimeout>
   return (...args: Parameters<T>) => {
-    clearTimeout(timeout)
+    if (timeout) clearTimeout(timeout as any)
     timeout = setTimeout(() => func(...args), wait)
   }
 }

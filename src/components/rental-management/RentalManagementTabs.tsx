@@ -18,12 +18,7 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
   const [loading, setLoading] = useState(false)
 
   // Real-time occupancy data
-  const {
-    isConnected,
-    lastUpdate,
-    getOccupancyStats,
-    recentEvents
-  } = useRealTimeOccupancy()
+  const { isConnected, lastUpdate, getOccupancyStats, recentEvents } = useRealTimeOccupancy()
 
   const tabs = [
     { id: 'properties', name: 'Properties', icon: '🏠' },
@@ -46,35 +41,35 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
         <div className="border-b border-gray-200">
           <div className="flex justify-between items-center px-6 py-2">
             <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id as RentalManagementTab)}
-                className={`${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span>{tab.name}</span>
-              </button>
-            ))}
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id as RentalManagementTab)}
+                  className={`${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+                >
+                  <span className="text-lg">{tab.icon}</span>
+                  <span>{tab.name}</span>
+                </button>
+              ))}
             </nav>
 
             {/* Real-time Status Indicator */}
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                ></div>
                 <span className={`${isConnected ? 'text-green-700' : 'text-red-700'}`}>
                   {isConnected ? 'Live' : 'Offline'}
                 </span>
               </div>
 
               {lastUpdate && (
-                <div className="text-gray-500">
-                  Last update: {lastUpdate.toLocaleTimeString()}
-                </div>
+                <div className="text-gray-500">Last update: {lastUpdate.toLocaleTimeString()}</div>
               )}
 
               {recentEvents.length > 0 && (
@@ -89,17 +84,11 @@ export default function RentalManagementTabs({ onDataRefresh }: RentalManagement
 
         {/* Tab Content */}
         <div className="p-6">
-          {activeTab === 'properties' && (
-            <RentalPropertyList onDataChange={handleDataChange} />
-          )}
-          
-          {activeTab === 'tenants' && (
-            <TenantManagement onDataChange={handleDataChange} />
-          )}
+          {activeTab === 'properties' && <RentalPropertyList onDataChange={handleDataChange} />}
 
-          {activeTab === 'payments' && (
-            <PaymentTracking onDataChange={handleDataChange} />
-          )}
+          {activeTab === 'tenants' && <TenantManagement onDataChange={handleDataChange} />}
+
+          {activeTab === 'payments' && <PaymentTracking onDataChange={handleDataChange} />}
         </div>
       </div>
     </div>

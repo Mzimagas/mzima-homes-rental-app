@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useState } from 'react'
 
 export default function FeatureShowcase() {
@@ -6,85 +6,85 @@ export default function FeatureShowcase() {
 
   const features = [
     {
-      category: "🎨 Visual Design & User Experience",
+      category: '🎨 Visual Design & User Experience',
       items: [
-        "Professional design system with consistent colors, typography, and spacing",
-        "Enhanced unit cards with hover effects and status badges",
-        "Advanced image gallery with lightbox, zoom, and keyboard navigation",
-        "Mobile-first responsive design with touch-friendly interactions",
-        "Loading states with skeleton screens and smooth animations"
-      ]
+        'Professional design system with consistent colors, typography, and spacing',
+        'Enhanced unit cards with hover effects and status badges',
+        'Advanced image gallery with lightbox, zoom, and keyboard navigation',
+        'Mobile-first responsive design with touch-friendly interactions',
+        'Loading states with skeleton screens and smooth animations',
+      ],
     },
     {
-      category: "🔍 Search & Discovery",
+      category: '🔍 Search & Discovery',
       items: [
-        "Advanced search with real-time filtering by property, price, and amenities",
-        "Smart amenity filters with visual chips and toggle states",
-        "Property comparison tool (up to 3 units)",
-        "Favorites system with local storage persistence",
-        "Breadcrumb navigation for better user orientation"
-      ]
+        'Advanced search with real-time filtering by property, price, and amenities',
+        'Smart amenity filters with visual chips and toggle states',
+        'Property comparison tool (up to 3 units)',
+        'Favorites system with local storage persistence',
+        'Breadcrumb navigation for better user orientation',
+      ],
     },
     {
-      category: "📱 Mobile & Performance",
+      category: '📱 Mobile & Performance',
       items: [
-        "Optimized image loading with lazy loading and responsive sizes",
-        "Touch-friendly 44px minimum touch targets",
-        "Swipe gestures for gallery navigation",
-        "Progressive image enhancement with blur-to-sharp loading",
-        "Efficient state management with minimal re-renders"
-      ]
+        'Optimized image loading with lazy loading and responsive sizes',
+        'Touch-friendly 44px minimum touch targets',
+        'Swipe gestures for gallery navigation',
+        'Progressive image enhancement with blur-to-sharp loading',
+        'Efficient state management with minimal re-renders',
+      ],
     },
     {
-      category: "🏠 Property Information",
+      category: '🏠 Property Information',
       items: [
-        "Comprehensive neighborhood guides with transport, amenities, and schools",
-        "Interactive amenity display with custom icons",
-        "Enhanced unit details with structured pricing and availability",
-        "Property contact information and management details",
-        "Walk and bike scores for location assessment"
-      ]
+        'Comprehensive neighborhood guides with transport, amenities, and schools',
+        'Interactive amenity display with custom icons',
+        'Enhanced unit details with structured pricing and availability',
+        'Property contact information and management details',
+        'Walk and bike scores for location assessment',
+      ],
     },
     {
-      category: "📋 Reservation & Application",
+      category: '📋 Reservation & Application',
       items: [
-        "Multi-step reservation flow with progress tracking",
-        "Real-time form validation with helpful error messages",
-        "Document upload capability for application requirements",
-        "Availability notifications for occupied units",
-        "Application status tracking and confirmation"
-      ]
+        'Multi-step reservation flow with progress tracking',
+        'Real-time form validation with helpful error messages',
+        'Document upload capability for application requirements',
+        'Availability notifications for occupied units',
+        'Application status tracking and confirmation',
+      ],
     },
     {
-      category: "🚀 Interactive Features",
+      category: '🚀 Interactive Features',
       items: [
-        "Social sharing (WhatsApp, Telegram, Email, SMS)",
-        "Unit comparison with side-by-side details",
-        "Favorites management with visual indicators",
-        "Availability notifications for future openings",
-        "Virtual tour scheduling (framework ready)"
-      ]
+        'Social sharing (WhatsApp, Telegram, Email, SMS)',
+        'Unit comparison with side-by-side details',
+        'Favorites management with visual indicators',
+        'Availability notifications for future openings',
+        'Virtual tour scheduling (framework ready)',
+      ],
     },
     {
-      category: "♿ Accessibility & SEO",
+      category: '♿ Accessibility & SEO',
       items: [
-        "ARIA labels and semantic HTML structure",
-        "Keyboard navigation support throughout",
-        "Screen reader compatibility with proper alt text",
-        "Dynamic meta tags and Open Graph data",
-        "Structured data (Schema.org) for property listings"
-      ]
+        'ARIA labels and semantic HTML structure',
+        'Keyboard navigation support throughout',
+        'Screen reader compatibility with proper alt text',
+        'Dynamic meta tags and Open Graph data',
+        'Structured data (Schema.org) for property listings',
+      ],
     },
     {
-      category: "⚡ Technical Excellence",
+      category: '⚡ Technical Excellence',
       items: [
-        "Component-based architecture with reusable elements",
-        "TypeScript for type safety and better development experience",
-        "Error boundaries with graceful fallbacks",
-        "Local storage for user preferences and favorites",
-        "Optimized bundle size with code splitting"
-      ]
-    }
+        'Component-based architecture with reusable elements',
+        'TypeScript for type safety and better development experience',
+        'Error boundaries with graceful fallbacks',
+        'Local storage for user preferences and favorites',
+        'Optimized bundle size with code splitting',
+      ],
+    },
   ]
 
   if (!isOpen) {
@@ -104,18 +104,25 @@ export default function FeatureShowcase() {
         <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">🎉 Rental Portal Enhancements</h2>
-            <p className="text-gray-600">Comprehensive UI/UX improvements for better user experience</p>
+            <p className="text-gray-600">
+              Comprehensive UI/UX improvements for better user experience
+            </p>
           </div>
           <button
             onClick={() => setIsOpen(false)}
             className="text-gray-400 hover:text-gray-600 p-2"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
-        
+
         <div className="p-6 space-y-8">
           {/* Overview Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -187,26 +194,60 @@ export default function FeatureShowcase() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
                   </svg>
                 </div>
                 <h4 className="font-medium">Performance</h4>
-                <p className="text-sm text-gray-600">Optimized loading, lazy images, efficient state management</p>
+                <p className="text-sm text-gray-600">
+                  Optimized loading, lazy images, efficient state management
+                </p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </div>
                 <h4 className="font-medium">Accessibility</h4>
-                <p className="text-sm text-gray-600">WCAG compliant, keyboard navigation, screen reader support</p>
+                <p className="text-sm text-gray-600">
+                  WCAG compliant, keyboard navigation, screen reader support
+                </p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="w-6 h-6 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
                 <h4 className="font-medium">SEO Ready</h4>
@@ -217,19 +258,17 @@ export default function FeatureShowcase() {
 
           {/* Call to Action */}
           <div className="text-center py-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to Experience the New Portal?</h3>
-            <p className="text-gray-600 mb-4">Explore the enhanced features and improved user experience</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Ready to Experience the New Portal?
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Explore the enhanced features and improved user experience
+            </p>
             <div className="flex justify-center space-x-4">
-              <button
-                onClick={() => setIsOpen(false)}
-                className="btn btn-primary"
-              >
+              <button onClick={() => setIsOpen(false)} className="btn btn-primary">
                 Start Exploring
               </button>
-              <a
-                href="/rent"
-                className="btn btn-secondary"
-              >
+              <a href="/rent" className="btn btn-secondary">
                 Browse Units
               </a>
             </div>

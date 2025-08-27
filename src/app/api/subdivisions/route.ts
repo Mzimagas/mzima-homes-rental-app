@@ -18,14 +18,16 @@ const subdivisionSchema = z.object({
   description: z.string().optional(),
   total_plots_planned: z.number().int().positive('Total plots must be positive'),
   total_plots_created: z.number().int().min(0).optional(),
-  status: z.enum(['planning', 'approved', 'in_progress', 'completed', 'on_hold']).default('planning'),
+  status: z
+    .enum(['planning', 'approved', 'in_progress', 'completed', 'on_hold'])
+    .default('planning'),
   project_manager: z.string().optional(),
   budget_estimate: z.number().positive().optional(),
   public_utility_area_ha: z.number().positive().optional(),
   approval_reference: z.string().optional(),
   start_date: z.string().optional(),
   completion_date: z.string().optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -36,7 +38,8 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('subdivisions')
-      .select(`
+      .select(
+        `
         *,
         parcels (
           lr_number,
@@ -45,7 +48,8 @@ export async function GET(request: NextRequest) {
           locality,
           acreage_ha
         )
-      `)
+      `
+      )
       .order('created_at', { ascending: false })
 
     // Apply filters if provided
@@ -68,27 +72,24 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ data: data || [] })
-
   } catch (error) {
     console.error('Subdivisions API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
+
     // Validate the request body
     const validatedData = subdivisionSchema.parse(body)
 
     const { data, error } = await supabase
       .from('subdivisions')
       .insert([validatedData])
-      .select(`
+      .select(
+        `
         *,
         parcels (
           lr_number,
@@ -97,7 +98,8 @@ export async function POST(request: NextRequest) {
           locality,
           acreage_ha
         )
-      `)
+      `
+      )
       .single()
 
     if (error) {
@@ -109,7 +111,6 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ data }, { status: 201 })
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -119,10 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Subdivision creation error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -132,14 +130,11 @@ export async function PUT(request: NextRequest) {
     const subdivisionId = searchParams.get('id')
 
     if (!subdivisionId) {
-      return NextResponse.json(
-        { error: 'Subdivision ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Subdivision ID is required' }, { status: 400 })
     }
 
     const body = await request.json()
-    
+
     // Validate the request body (partial update)
     const validatedData = subdivisionSchema.partial().parse(body)
 
@@ -147,7 +142,8 @@ export async function PUT(request: NextRequest) {
       .from('subdivisions')
       .update(validatedData)
       .eq('subdivision_id', subdivisionId)
-      .select(`
+      .select(
+        `
         *,
         parcels (
           lr_number,
@@ -156,7 +152,8 @@ export async function PUT(request: NextRequest) {
           locality,
           acreage_ha
         )
-      `)
+      `
+      )
       .single()
 
     if (error) {
@@ -168,14 +165,10 @@ export async function PUT(request: NextRequest) {
     }
 
     if (!data) {
-      return NextResponse.json(
-        { error: 'Subdivision not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Subdivision not found' }, { status: 404 })
     }
 
     return NextResponse.json({ data })
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -185,10 +178,7 @@ export async function PUT(request: NextRequest) {
     }
 
     console.error('Subdivision update error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -198,10 +188,7 @@ export async function DELETE(request: NextRequest) {
     const subdivisionId = searchParams.get('id')
 
     if (!subdivisionId) {
-      return NextResponse.json(
-        { error: 'Subdivision ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Subdivision ID is required' }, { status: 400 })
     }
 
     const { error } = await supabase
@@ -218,12 +205,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ message: 'Subdivision deleted successfully' })
-
   } catch (error) {
     console.error('Subdivision deletion error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

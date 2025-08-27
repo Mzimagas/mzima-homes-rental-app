@@ -1,11 +1,8 @@
-import { 
-  PipelineStageData, 
-  PIPELINE_STAGES 
-} from '../types/purchase-pipeline.types'
+import { PipelineStageData, PipelineStage, PIPELINE_STAGES } from '../types/purchase-pipeline.types'
 
 // Initialize pipeline stages with default data
 export const initializePipelineStages = (): PipelineStageData[] => {
-  return PIPELINE_STAGES.map(stage => ({
+  return PIPELINE_STAGES.map((stage) => ({
     stage_id: stage.id,
     status: stage.id === 1 ? 'In Progress' : 'Not Started',
     started_date: stage.id === 1 ? new Date().toISOString() : undefined,
@@ -16,8 +13,17 @@ export const initializePipelineStages = (): PipelineStageData[] => {
 
 // Calculate overall progress based on completed stages
 export const calculateOverallProgress = (stageData: PipelineStageData[]): number => {
-  const completedStages = stageData.filter(stage =>
-    ["Completed", "Verified", "Finalized", "Processed", "Approved", "Fully Signed", "Registered", "LCB Approved & Forms Signed"].includes(stage.status)
+  const completedStages = stageData.filter((stage) =>
+    [
+      'Completed',
+      'Verified',
+      'Finalized',
+      'Processed',
+      'Approved',
+      'Fully Signed',
+      'Registered',
+      'LCB Approved & Forms Signed',
+    ].includes(stage.status)
   ).length
   return Math.round((completedStages / PIPELINE_STAGES.length) * 100)
 }
@@ -27,7 +33,18 @@ export const getCurrentStage = (stageData: PipelineStageData[]): number => {
   // Find the first non-completed stage
   for (let i = 0; i < stageData.length; i++) {
     const stage = stageData[i]
-    if (!["Completed", "Verified", "Finalized", "Processed", "Approved", "Fully Signed", "Registered", "LCB Approved & Forms Signed"].includes(stage.status)) {
+    if (
+      ![
+        'Completed',
+        'Verified',
+        'Finalized',
+        'Processed',
+        'Approved',
+        'Fully Signed',
+        'Registered',
+        'LCB Approved & Forms Signed',
+      ].includes(stage.status)
+    ) {
       return stage.stage_id
     }
   }
@@ -48,12 +65,18 @@ export const getCurrentStage = (stageData: PipelineStageData[]): number => {
  */
 export const determinePurchaseStatus = (stages: PipelineStageData[]): string => {
   const completionStatuses = [
-    "Completed", "Verified", "Finalized", "Processed", "Approved",
-    "Fully Signed", "Registered", "LCB Approved & Forms Signed"
+    'Completed',
+    'Verified',
+    'Finalized',
+    'Processed',
+    'Approved',
+    'Fully Signed',
+    'Registered',
+    'LCB Approved & Forms Signed',
   ]
 
   // Check if all stages are completed
-  const allCompleted = stages.every(stage => completionStatuses.includes(stage.status))
+  const allCompleted = stages.every((stage) => completionStatuses.includes(stage.status))
   if (allCompleted) return 'COMPLETED'
 
   // Find the current active stage (first non-completed stage)
@@ -61,17 +84,17 @@ export const determinePurchaseStatus = (stages: PipelineStageData[]): string => 
 
   // Map current stage to purchase status
   const stageStatusMap: { [key: number]: string } = {
-    1: "IDENTIFIED",      // Initial Search & Evaluation
-    2: "NEGOTIATING",     // Survey & Mapping
-    3: "DUE_DILIGENCE",   // Legal Verification
-    4: "UNDER_CONTRACT",  // Agreement & Documentation
-    5: "FINANCING",       // Down Payment
-    6: "FINANCING",       // Subsequent Payments
-    7: "CLOSING",         // LCB Meeting & Forms
-    8: "CLOSING"          // Title Registration
+    1: 'IDENTIFIED', // Initial Search & Evaluation
+    2: 'NEGOTIATING', // Survey & Mapping
+    3: 'DUE_DILIGENCE', // Legal Verification
+    4: 'UNDER_CONTRACT', // Agreement & Documentation
+    5: 'FINANCING', // Down Payment
+    6: 'FINANCING', // Subsequent Payments
+    7: 'CLOSING', // LCB Meeting & Forms
+    8: 'CLOSING', // Title Registration
   }
 
-  return stageStatusMap[currentStage] || "IDENTIFIED"
+  return stageStatusMap[currentStage] || 'IDENTIFIED'
 }
 
 // Get status color for purchase status badges
@@ -91,7 +114,16 @@ export const getPurchaseStatusColor = (status: string): string => {
 
 // Check if a stage is completed
 export const isStageCompleted = (stageData: PipelineStageData): boolean => {
-  return ["Completed", "Verified", "Finalized", "Processed", "Approved", "Fully Signed", "Registered", "LCB Approved & Forms Signed"].includes(stageData.status)
+  return [
+    'Completed',
+    'Verified',
+    'Finalized',
+    'Processed',
+    'Approved',
+    'Fully Signed',
+    'Registered',
+    'LCB Approved & Forms Signed',
+  ].includes(stageData.status)
 }
 
 // Check if a stage is accessible (current or previous stages)
@@ -100,14 +132,22 @@ export const isStageAccessible = (stageId: number, currentStage: number): boolea
 }
 
 // Get stage status color
-export const getStageStatusColor = (stageData: PipelineStageData, isActive: boolean, isCompleted: boolean): string => {
+export const getStageStatusColor = (
+  stageData: PipelineStageData,
+  isActive: boolean,
+  isCompleted: boolean
+): string => {
   if (isCompleted) return 'bg-green-500 text-white'
   if (isActive) return 'bg-blue-500 text-white'
   return 'bg-gray-300 text-gray-600'
 }
 
 // Get stage card styling
-export const getStageCardStyling = (isActive: boolean, isCompleted: boolean, canAccess: boolean): string => {
+export const getStageCardStyling = (
+  isActive: boolean,
+  isCompleted: boolean,
+  canAccess: boolean
+): string => {
   if (isActive) {
     return 'border-blue-500 bg-blue-50 shadow-md'
   }
@@ -133,7 +173,11 @@ export const formatPercentage = (percentage: number | undefined): string => {
 }
 
 // Calculate balance due
-export const calculateBalanceDue = (negotiatedPrice?: number, askingPrice?: number, depositPaid?: number): number => {
+export const calculateBalanceDue = (
+  negotiatedPrice?: number,
+  askingPrice?: number,
+  depositPaid?: number
+): number => {
   const totalPrice = negotiatedPrice || askingPrice || 0
   const deposit = depositPaid || 0
   return Math.max(0, totalPrice - deposit)
@@ -141,13 +185,17 @@ export const calculateBalanceDue = (negotiatedPrice?: number, askingPrice?: numb
 
 // Get stage by ID
 export const getStageById = (stageId: number): PipelineStage | undefined => {
-  return PIPELINE_STAGES.find(stage => stage.id === stageId)
+  return PIPELINE_STAGES.find((stage) => stage.id === stageId)
 }
 
 // Validate stage transition
-export const canTransitionToStatus = (currentStatus: string, newStatus: string, stageId: number): boolean => {
+export const canTransitionToStatus = (
+  currentStatus: string,
+  newStatus: string,
+  stageId: number
+): boolean => {
   const stage = getStageById(stageId)
   if (!stage) return false
-  
+
   return stage.statusOptions.includes(newStatus)
 }

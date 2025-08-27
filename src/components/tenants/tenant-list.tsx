@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -31,7 +31,7 @@ export default function TenantList({
   onMoveTenant,
   onCreateTenant,
   onViewDeleted,
-  onBack
+  onBack,
 }: Props) {
   const { properties: userProperties } = usePropertyAccess()
   const [tenants, setTenants] = useState<Tenant[]>([])
@@ -47,51 +47,64 @@ export default function TenantList({
   const [propertiesById, setPropertiesById] = useState<Record<string, any>>({})
 
   // Check if user has admin permissions (OWNER or PROPERTY_MANAGER)
-  const hasAdminAccess = userProperties.some(p =>
+  const hasAdminAccess = userProperties.some((p) =>
     ['OWNER', 'PROPERTY_MANAGER'].includes(p.user_role)
   )
   // Note: newTenantHref is no longer used since standalone tenant dashboard is removed
   // The component now relies on onCreateTenant callback for tenant creation
-
-
 
   const loadProperties = async () => {
     setError(null)
     console.info('[TenantList] Loading accessible properties...')
 
     // Check authentication first
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     console.info('[TenantList] Current user:', user?.id)
 
     // Load accessible properties via RPC
     const { data: accessible, error: rpcErr } = await supabase.rpc('get_user_properties_simple')
     if (rpcErr) {
       console.error('[TenantList] RPC error:', rpcErr)
-      setError(rpcErr.message || 'Failed to load accessible properties');
+      setError(rpcErr.message || 'Failed to load accessible properties')
       return
     }
 
     console.info('[TenantList] Accessible properties:', accessible)
-    const ids = (accessible || []).map((p: any) => (typeof p === 'string' ? p : p?.property_id)).filter(Boolean)
+    const ids = (accessible || [])
+      .map((p: any) => (typeof p === 'string' ? p : p?.property_id))
+      .filter(Boolean)
     console.info('[TenantList] Property IDs:', ids)
 
     if (ids.length === 0) {
       console.warn('[TenantList] No accessible properties found')
-      setProperties([]); setPropertiesById({}); setUnitsById({});
+      setProperties([])
+      setPropertiesById({})
+      setUnitsById({})
       return
     }
 
-    const { data, error } = await supabase.from('properties').select('id, name').in('id', ids).order('name')
+    const { data, error } = await supabase
+      .from('properties')
+      .select('id, name')
+      .in('id', ids)
+      .order('name')
     if (error) {
       console.error('[TenantList] Properties query error:', error)
-      setError(error.message || 'Failed to load properties');
+      setError(error.message || 'Failed to load properties')
       return
     }
 
     const props = data || []
     console.info('[TenantList] Loaded properties:', props.length)
     setProperties(props)
-    setPropertiesById(props.reduce((acc: any, p: any) => { acc[p.id] = p; return acc }, {}))
+    setPropertiesById(
+      props.reduce((acc: any, p: any) => {
+        acc[p.id] = p
+        return acc
+      }, {})
+    )
 
     // Preload all units for these properties for display mapping
     const { data: allUnits, error: unitsErr } = await supabase
@@ -100,20 +113,32 @@ export default function TenantList({
       .in('property_id', ids)
     if (unitsErr) {
       console.error('[TenantList] Units query error:', unitsErr)
-      setError(unitsErr.message || 'Failed to load units');
+      setError(unitsErr.message || 'Failed to load units')
       return
     }
 
     console.info('[TenantList] Loaded units:', allUnits?.length || 0)
-    setUnitsById((allUnits || []).reduce((acc: any, u: any) => { acc[u.id] = u; return acc }, {}))
+    setUnitsById(
+      (allUnits || []).reduce((acc: any, u: any) => {
+        acc[u.id] = u
+        return acc
+      }, {})
+    )
   }
 
   const loadUnits = async (propId: string) => {
     setUnits([])
     setUnitId('')
     if (!propId) return
-    const { data, error } = await supabase.from('units').select('id, unit_label, property_id, monthly_rent_kes').eq('property_id', propId).order('unit_label')
-    if (error) { setError(error.message || 'Failed to load units'); return }
+    const { data, error } = await supabase
+      .from('units')
+      .select('id, unit_label, property_id, monthly_rent_kes')
+      .eq('property_id', propId)
+      .order('unit_label')
+    if (error) {
+      setError(error.message || 'Failed to load units')
+      return
+    }
     setUnits(data || [])
   }
 
@@ -144,7 +169,7 @@ export default function TenantList({
         unitId: unitId || 'none',
         showDeleted,
         hidePropertyFilters,
-        appliedPropertyFilter: propertyId || defaultPropertyId
+        appliedPropertyFilter: propertyId || defaultPropertyId,
       })
 
       const res = await fetch(url, { credentials: 'same-origin' })
@@ -160,7 +185,6 @@ export default function TenantList({
 
       console.info('[TenantList] Setting tenants:', j.data?.length || 0, 'records')
       setTenants(j.data || [])
-
     } catch (e: any) {
       console.error('[TenantList] Error loading tenants:', e)
       setError(e.message || 'Failed to fetch tenants')
@@ -169,11 +193,20 @@ export default function TenantList({
     }
   }
 
-  useEffect(() => { loadProperties() }, [])
-  useEffect(() => { if (propertyId) loadUnits(propertyId) }, [propertyId])
-  useEffect(() => { loadTenants() }, [q, propertyId, unitId, showDeleted])
+  useEffect(() => {
+    loadProperties()
+  }, [])
+  useEffect(() => {
+    if (propertyId) loadUnits(propertyId)
+  }, [propertyId])
+  useEffect(() => {
+    loadTenants()
+  }, [q, propertyId, unitId, showDeleted])
 
-  const unitOptions = useMemo(() => units.map(u => ({ value: u.id, label: u.unit_label || 'Unit' })), [units])
+  const unitOptions = useMemo(
+    () => units.map((u) => ({ value: u.id, label: u.unit_label || 'Unit' })),
+    [units]
+  )
 
   const clearAllFilters = () => {
     console.info('[TenantList] Clearing all filters')
@@ -193,16 +226,29 @@ export default function TenantList({
         />
         {!hidePropertyFilters && (
           <>
-            <select className="border rounded px-3 py-2" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
+            <select
+              className="border rounded px-3 py-2"
+              value={propertyId}
+              onChange={(e) => setPropertyId(e.target.value)}
+            >
               <option value="">All properties</option>
-              {properties.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
-            <select className="border rounded px-3 py-2" value={unitId} onChange={(e) => setUnitId(e.target.value)} disabled={!propertyId}>
+            <select
+              className="border rounded px-3 py-2"
+              value={unitId}
+              onChange={(e) => setUnitId(e.target.value)}
+              disabled={!propertyId}
+            >
               <option value="">All units</option>
-              {unitOptions.map(u => (
-                <option key={u.value} value={u.value}>{u.label}</option>
+              {unitOptions.map((u) => (
+                <option key={u.value} value={u.value}>
+                  {u.label}
+                </option>
               ))}
             </select>
             <button
@@ -211,7 +257,6 @@ export default function TenantList({
             >
               Clear Filters
             </button>
-
           </>
         )}
         {hasAdminAccess && onViewDeleted && !showDeleted && (
@@ -232,10 +277,12 @@ export default function TenantList({
         )}
         {onCreateTenant ? (
           <button
-            onClick={() => onCreateTenant(
-              hidePropertyFilters ? undefined : propertyId,
-              hidePropertyFilters ? undefined : unitId
-            )}
+            onClick={() =>
+              onCreateTenant(
+                hidePropertyFilters ? undefined : propertyId,
+                hidePropertyFilters ? undefined : unitId
+              )
+            }
             className="ml-auto inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             New Tenant
@@ -264,20 +311,26 @@ export default function TenantList({
               </tr>
             </thead>
             <tbody>
-              {tenants.map(t => {
+              {tenants.map((t) => {
                 const unit = t.current_unit_id ? unitsById[t.current_unit_id] : null
                 const prop = unit ? propertiesById[unit.property_id] : null
-                const unitPart = unit?.unit_label || (t.current_unit_id ? `${t.current_unit_id} (not found)` : '-')
+                const unitPart =
+                  unit?.unit_label || (t.current_unit_id ? `${t.current_unit_id} (not found)` : '-')
                 const propPart = unit ? (prop?.name ? ` - ${prop.name}` : '') : ''
                 const isDeleted = (t as any).status === 'DELETED'
                 return (
                   <tr key={t.id} className={`border-t ${isDeleted ? 'text-gray-400' : ''}`}>
                     <td className="p-2">{t.full_name}</td>
                     <td className="p-2">{(t as any).status || 'ACTIVE'}</td>
-                    <td className="p-2">{unitPart}{propPart}</td>
+                    <td className="p-2">
+                      {unitPart}
+                      {propPart}
+                    </td>
                     <td className="p-2">
                       {isDeleted ? (
-                        <span className="px-2 py-1 text-xs rounded bg-gray-100 border">DELETED</span>
+                        <span className="px-2 py-1 text-xs rounded bg-gray-100 border">
+                          DELETED
+                        </span>
                       ) : onViewTenant ? (
                         <button
                           onClick={() => onViewTenant(t.id)}
@@ -299,4 +352,3 @@ export default function TenantList({
     </div>
   )
 }
-

@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../../../../lib/auth-context'
 import supabase from '../../../../lib/supabase-client'
@@ -119,18 +119,18 @@ export default function PhotosTab({ propertyId }: { propertyId: string }) {
         if (uploadError) throw new Error('Failed to upload file: ' + uploadError.message)
 
         // Get public URL
-        const { data: { publicUrl } } = supabase.storage.from('public-media').getPublicUrl(filePath)
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('public-media').getPublicUrl(filePath)
 
         // Create database entry
-        const { error: dbError } = await supabase
-          .from('units_media')
-          .insert({
-            unit_id: selectedUnitId,
-            type: 'PHOTO',
-            url: publicUrl,
-            alt_text: file.name.split('.')[0],
-            order_index: nextOrderIndex
-          })
+        const { error: dbError } = await supabase.from('units_media').insert({
+          unit_id: selectedUnitId,
+          type: 'PHOTO',
+          url: publicUrl,
+          alt_text: file.name.split('.')[0],
+          order_index: nextOrderIndex,
+        })
 
         if (dbError) {
           // Clean up uploaded file
@@ -163,7 +163,7 @@ export default function PhotosTab({ propertyId }: { propertyId: string }) {
   const deletePhoto = async (photoId: string) => {
     if (!user?.id || !confirm('Delete this photo?')) return
     try {
-      const photo = photos.find(p => p.id === photoId)
+      const photo = photos.find((p) => p.id === photoId)
       if (!photo) return
 
       // Extract file path from URL for storage deletion
@@ -175,10 +175,7 @@ export default function PhotosTab({ propertyId }: { propertyId: string }) {
       } catch {}
 
       // Delete from database
-      const { error: dbError } = await supabase
-        .from('units_media')
-        .delete()
-        .eq('id', photoId)
+      const { error: dbError } = await supabase.from('units_media').delete().eq('id', photoId)
 
       if (dbError) throw new Error('Failed to delete photo: ' + dbError.message)
 
@@ -235,8 +232,10 @@ export default function PhotosTab({ propertyId }: { propertyId: string }) {
           className="border rounded px-3 py-2"
         >
           <option value="">Choose a unit...</option>
-          {units.map(unit => (
-            <option key={unit.id} value={unit.id}>{unit.unit_label}</option>
+          {units.map((unit) => (
+            <option key={unit.id} value={unit.id}>
+              {unit.unit_label}
+            </option>
           ))}
         </select>
       </div>
@@ -249,7 +248,10 @@ export default function PhotosTab({ propertyId }: { propertyId: string }) {
               dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
             } ${uploading ? 'opacity-50' : ''}`}
             onDrop={handleDrop}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setDragOver(true)
+            }}
             onDragLeave={() => setDragOver(false)}
           >
             <input
@@ -265,15 +267,11 @@ export default function PhotosTab({ propertyId }: { propertyId: string }) {
               <div className="text-gray-600">
                 {uploading ? 'Uploading...' : 'Drag photos here or click to select'}
               </div>
-              <div className="text-sm text-gray-400 mt-1">
-                JPEG, PNG up to 10MB each
-              </div>
+              <div className="text-sm text-gray-400 mt-1">JPEG, PNG up to 10MB each</div>
             </label>
           </div>
 
-          {error && (
-            <div className="text-red-600 text-sm">{error}</div>
-          )}
+          {error && <div className="text-red-600 text-sm">{error}</div>}
 
           {/* Photos Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -286,7 +284,7 @@ export default function PhotosTab({ propertyId }: { propertyId: string }) {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                
+
                 {/* Cover Badge */}
                 {index === 0 && (
                   <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">

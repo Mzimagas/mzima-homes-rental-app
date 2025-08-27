@@ -3,7 +3,11 @@
 import { Fragment } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { ChevronUpDownIcon, CheckIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
-import { usePropertyAccess, getRoleDisplayName, type AccessibleProperty } from '../../hooks/usePropertyAccess'
+import {
+  usePropertyAccess,
+  getRoleDisplayName,
+  type AccessibleProperty,
+} from '../../hooks/usePropertyAccess'
 import { PropertyTypeBadgeCompact } from '../ui/PropertyTypeBadge'
 import { getPropertyTypeLabel } from '../../lib/validation/property'
 
@@ -12,14 +16,11 @@ interface PropertySelectorProps {
   showRole?: boolean
 }
 
-export default function PropertySelector({ className = '', showRole = true }: PropertySelectorProps) {
-  const { 
-    properties, 
-    loading, 
-    error, 
-    currentProperty, 
-    setCurrentProperty 
-  } = usePropertyAccess()
+export default function PropertySelector({
+  className = '',
+  showRole = true,
+}: PropertySelectorProps) {
+  const { properties, loading, error, currentProperty, setCurrentProperty } = usePropertyAccess()
 
   if (loading) {
     return (
@@ -31,17 +32,13 @@ export default function PropertySelector({ className = '', showRole = true }: Pr
 
   if (error) {
     return (
-      <div className={`text-red-600 text-sm ${className}`}>
-        Error loading properties: {error}
-      </div>
+      <div className={`text-red-600 text-sm ${className}`}>Error loading properties: {error}</div>
     )
   }
 
   if (properties.length === 0) {
     return (
-      <div className={`text-gray-500 text-sm ${className}`}>
-        No accessible properties found
-      </div>
+      <div className={`text-gray-500 text-sm ${className}`}>No accessible properties found</div>
     )
   }
 
@@ -68,10 +65,7 @@ export default function PropertySelector({ className = '', showRole = true }: Pr
               </span>
             </span>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-              <ChevronUpDownIcon
-                className="h-5 w-5 text-gray-400"
-                aria-hidden="true"
-              />
+              <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </span>
           </Listbox.Button>
           <Transition
@@ -95,7 +89,9 @@ export default function PropertySelector({ className = '', showRole = true }: Pr
                     <>
                       <div className="flex items-center">
                         <div className="flex items-center mr-2">
-                          <PropertyTypeBadgeCompact type={(property.property_type as any) || 'HOME'} />
+                          <PropertyTypeBadgeCompact
+                            type={(property.property_type as any) || 'HOME'}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
@@ -133,7 +129,7 @@ export default function PropertySelector({ className = '', showRole = true }: Pr
           </Transition>
         </div>
       </Listbox>
-      
+
       {/* Property info display */}
       {currentProperty && (
         <div className="mt-2 text-xs text-gray-600">
@@ -170,12 +166,7 @@ export default function PropertySelector({ className = '', showRole = true }: Pr
 
 // Compact version for navigation
 export function PropertySelectorCompact({ className = '' }: { className?: string }) {
-  const { 
-    properties, 
-    loading, 
-    currentProperty, 
-    setCurrentProperty 
-  } = usePropertyAccess()
+  const { properties, loading, currentProperty, setCurrentProperty } = usePropertyAccess()
 
   if (loading || properties.length === 0) {
     return null
@@ -215,7 +206,9 @@ export function PropertySelectorCompact({ className = '' }: { className?: string
                 >
                   {({ selected }) => (
                     <>
-                      <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                      <span
+                        className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}
+                      >
                         {property.property_name}
                       </span>
                       {selected && (

@@ -10,12 +10,18 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 // Validation schema for subdivision cost entries
 const subdivisionCostSchema = z.object({
   cost_type_id: z.string().min(1, 'Cost type is required'),
-  cost_category: z.enum(['STATUTORY_BOARD_FEES', 'SURVEY_PLANNING_FEES', 'REGISTRATION_TITLE_FEES', 'LEGAL_COMPLIANCE', 'OTHER_CHARGES']),
+  cost_category: z.enum([
+    'STATUTORY_BOARD_FEES',
+    'SURVEY_PLANNING_FEES',
+    'REGISTRATION_TITLE_FEES',
+    'LEGAL_COMPLIANCE',
+    'OTHER_CHARGES',
+  ]),
   amount_kes: z.number().positive('Amount must be positive'),
   payment_status: z.enum(['PENDING', 'PAID', 'PARTIALLY_PAID']),
   payment_reference: z.string().optional(),
   payment_date: z.string().optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 })
 
 // Simple error responses
@@ -24,7 +30,8 @@ const errors = {
   forbidden: () => NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
   badRequest: (message: string) => NextResponse.json({ error: message }, { status: 400 }),
   internal: (message: string) => NextResponse.json({ error: message }, { status: 500 }),
-  validation: (errors: any) => NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 })
+  validation: (errors: any) =>
+    NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 }),
 }
 
 // Helper function to resolve user ID from request
@@ -33,7 +40,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   try {
     const { createServerSupabaseClient } = await import('../../../../../lib/supabase-server')
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -79,8 +88,7 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin
-      .rpc('get_user_accessible_properties', { user_uuid: userId })
+    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       // Fallback: Check if user owns the property directly
@@ -140,10 +148,6 @@ async function checkAccess(userId: string, id: string): Promise<boolean> {
   }
 }
 
-
-
-
-
 // GET /api/properties/[id]/subdivision-costs - Fetch all subdivision cost entries for a property
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -182,9 +186,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({
       success: true,
-      data: costs || []
+      data: costs || [],
     })
-
   } catch (error) {
     console.error('Error in subdivision costs GET API:', error)
     return errors.internal('Internal server error')
@@ -241,7 +244,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       payment_reference: parsed.data.payment_reference,
       payment_date: parsed.data.payment_date,
       notes: parsed.data.notes,
-      created_by: userId
+      created_by: userId,
     }
     console.log('Insert data:', insertData)
 
@@ -261,13 +264,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json({
       success: true,
-      data: cost
+      data: cost,
     })
-
   } catch (error) {
     console.error('Error in subdivision costs POST API:', error)
     return errors.internal('Internal server error')
   }
 }
-
-

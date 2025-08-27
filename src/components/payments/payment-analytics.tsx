@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react'
 import supabase from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
-import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
+import DateRangeSelector, {
+  getDefaultDateRange,
+  getPredefinedDateRanges,
+} from '../ui/date-range-selector'
 import { Payment } from '../../lib/types/database'
 
 interface PaymentAnalyticsData {
@@ -35,7 +38,9 @@ export default function PaymentAnalytics() {
   const [analytics, setAnalytics] = useState<PaymentAnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedPeriod, setSelectedPeriod] = useState<'3months' | '6months' | '1year' | 'custom'>('6months')
+  const [selectedPeriod, setSelectedPeriod] = useState<'3months' | '6months' | '1year' | 'custom'>(
+    '6months'
+  )
   const [customDateRange, setCustomDateRange] = useState(getDefaultDateRange())
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
 
@@ -86,7 +91,7 @@ export default function PaymentAnalytics() {
           monthlyTrends: [],
           methodBreakdown: [],
           dailyAverages: [],
-          topTenants: []
+          topTenants: [],
         })
         return
       }
@@ -104,7 +109,7 @@ export default function PaymentAnalytics() {
           monthlyTrends: [],
           methodBreakdown: [],
           dailyAverages: [],
-          topTenants: []
+          topTenants: [],
         })
         return
       }
@@ -122,7 +127,7 @@ export default function PaymentAnalytics() {
           monthlyTrends: [],
           methodBreakdown: [],
           dailyAverages: [],
-          topTenants: []
+          topTenants: [],
         })
         return
       }
@@ -132,7 +137,8 @@ export default function PaymentAnalytics() {
       // Now get payments for these tenants
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
-        .select(`
+        .select(
+          `
           *,
           tenants (
             full_name,
@@ -143,7 +149,8 @@ export default function PaymentAnalytics() {
               )
             )
           )
-        `)
+        `
+        )
         .in('tenant_id', tenantIds)
         .gte('payment_date', startDate.toISOString().split('T')[0])
         .lte('payment_date', endDate.toISOString().split('T')[0])
@@ -158,13 +165,13 @@ export default function PaymentAnalytics() {
 
       // Calculate monthly trends
       const monthlyTrends = calculateMonthlyTrends(payments, startDate, endDate)
-      
+
       // Calculate method breakdown
       const methodBreakdown = calculateMethodBreakdown(payments)
-      
+
       // Calculate daily averages
       const dailyAverages = calculateDailyAverages(payments)
-      
+
       // Calculate top tenants
       const topTenants = calculateTopTenants(payments)
 
@@ -172,9 +179,8 @@ export default function PaymentAnalytics() {
         monthlyTrends,
         methodBreakdown,
         dailyAverages,
-        topTenants
+        topTenants,
       })
-
     } catch (err) {
       setError('Failed to load payment analytics')
       console.error('Payment analytics loading error:', err)
@@ -215,7 +221,7 @@ export default function PaymentAnalytics() {
 
   const calculateMonthlyTrends = (payments: any[], startDate: Date, endDate: Date) => {
     const monthlyData: { [key: string]: { totalAmount: number; paymentCount: number } } = {}
-    
+
     // Initialize all months in the range
     const current = new Date(startDate)
     while (current <= endDate) {
@@ -225,7 +231,7 @@ export default function PaymentAnalytics() {
     }
 
     // Aggregate payment data by month
-    payments.forEach(payment => {
+    payments.forEach((payment) => {
       const monthKey = payment.payment_date.slice(0, 7)
       if (monthlyData[monthKey]) {
         monthlyData[monthKey].totalAmount += payment.amount_kes
@@ -234,9 +240,12 @@ export default function PaymentAnalytics() {
     })
 
     return Object.entries(monthlyData).map(([month, data]) => ({
-      month: new Date(month + '-01').toLocaleDateString('en-KE', { year: 'numeric', month: 'short' }),
+      month: new Date(month + '-01').toLocaleDateString('en-KE', {
+        year: 'numeric',
+        month: 'short',
+      }),
       totalAmount: data.totalAmount,
-      paymentCount: data.paymentCount
+      paymentCount: data.paymentCount,
     }))
   }
 
@@ -244,7 +253,7 @@ export default function PaymentAnalytics() {
     const methodData: { [key: string]: { amount: number; count: number } } = {}
     const totalAmount = payments.reduce((sum, p) => sum + p.amount_kes, 0)
 
-    payments.forEach(payment => {
+    payments.forEach((payment) => {
       if (!methodData[payment.method]) {
         methodData[payment.method] = { amount: 0, count: 0 }
       }
@@ -252,12 +261,14 @@ export default function PaymentAnalytics() {
       methodData[payment.method].count += 1
     })
 
-    return Object.entries(methodData).map(([method, data]) => ({
-      method,
-      amount: data.amount,
-      count: data.count,
-      percentage: totalAmount > 0 ? (data.amount / totalAmount) * 100 : 0
-    })).sort((a, b) => b.amount - a.amount)
+    return Object.entries(methodData)
+      .map(([method, data]) => ({
+        method,
+        amount: data.amount,
+        count: data.count,
+        percentage: totalAmount > 0 ? (data.amount / totalAmount) * 100 : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount)
   }
 
   const calculateDailyAverages = (payments: any[]) => {
@@ -269,7 +280,7 @@ export default function PaymentAnalytics() {
       dailyData[i] = { totalAmount: 0, paymentCount: 0 }
     }
 
-    payments.forEach(payment => {
+    payments.forEach((payment) => {
       const dayOfWeek = new Date(payment.payment_date).getDay()
       dailyData[dayOfWeek].totalAmount += payment.amount_kes
       dailyData[dayOfWeek].paymentCount += 1
@@ -278,17 +289,18 @@ export default function PaymentAnalytics() {
     return Object.entries(dailyData).map(([day, data]) => ({
       dayOfWeek: dayNames[parseInt(day)],
       averageAmount: data.paymentCount > 0 ? data.totalAmount / data.paymentCount : 0,
-      paymentCount: data.paymentCount
+      paymentCount: data.paymentCount,
     }))
   }
 
   const calculateTopTenants = (payments: any[]) => {
-    const tenantData: { [key: string]: { totalPaid: number; paymentCount: number; name: string } } = {}
+    const tenantData: { [key: string]: { totalPaid: number; paymentCount: number; name: string } } =
+      {}
 
-    payments.forEach(payment => {
+    payments.forEach((payment) => {
       const tenantId = payment.tenant_id
       const tenantName = payment.tenants?.full_name || 'Unknown'
-      
+
       if (!tenantData[tenantId]) {
         tenantData[tenantId] = { totalPaid: 0, paymentCount: 0, name: tenantName }
       }
@@ -297,10 +309,10 @@ export default function PaymentAnalytics() {
     })
 
     return Object.values(tenantData)
-      .map(data => ({
+      .map((data) => ({
         tenantName: data.name,
         totalPaid: data.totalPaid,
-        paymentCount: data.paymentCount
+        paymentCount: data.paymentCount,
       }))
       .sort((a, b) => b.totalPaid - a.totalPaid)
       .slice(0, 10)
@@ -316,11 +328,16 @@ export default function PaymentAnalytics() {
 
   const getMethodColor = (method: string) => {
     switch (method) {
-      case 'MPESA': return 'bg-green-500'
-      case 'CASH': return 'bg-blue-500'
-      case 'BANK_TRANSFER': return 'bg-purple-500'
-      case 'CHEQUE': return 'bg-yellow-500'
-      default: return 'bg-gray-500'
+      case 'MPESA':
+        return 'bg-green-500'
+      case 'CASH':
+        return 'bg-blue-500'
+      case 'BANK_TRANSFER':
+        return 'bg-purple-500'
+      case 'CHEQUE':
+        return 'bg-yellow-500'
+      default:
+        return 'bg-gray-500'
     }
   }
 
@@ -345,9 +362,25 @@ export default function PaymentAnalytics() {
             <h3 className="text-lg font-medium text-gray-900">Payment Analytics</h3>
             {isGeneratingReport && (
               <div className="flex items-center text-sm text-blue-600">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Generating analytics...
               </div>
@@ -372,7 +405,9 @@ export default function PaymentAnalytics() {
 
             {selectedPeriod === 'custom' && (
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Custom Date Range</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Date Range
+                </label>
                 <DateRangeSelector
                   value={customDateRange}
                   onChange={handleCustomDateRangeChange}
@@ -419,7 +454,9 @@ export default function PaymentAnalytics() {
 
           {selectedPeriod === 'custom' && (
             <div className="text-sm text-gray-600">
-              <strong>Selected Range:</strong> {new Date(customDateRange.startDate).toLocaleDateString()} - {new Date(customDateRange.endDate).toLocaleDateString()}
+              <strong>Selected Range:</strong>{' '}
+              {new Date(customDateRange.startDate).toLocaleDateString()} -{' '}
+              {new Date(customDateRange.endDate).toLocaleDateString()}
             </div>
           )}
         </div>
@@ -430,7 +467,10 @@ export default function PaymentAnalytics() {
         <h4 className="text-lg font-medium text-gray-900 mb-4">Monthly Payment Trends</h4>
         <div className="space-y-4">
           {analytics.monthlyTrends.map((month, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div
+              key={index}
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+            >
               <div>
                 <div className="font-medium text-gray-900">{month.month}</div>
                 <div className="text-sm text-gray-500">{month.paymentCount} payments</div>
@@ -438,7 +478,10 @@ export default function PaymentAnalytics() {
               <div className="text-right">
                 <div className="font-medium text-gray-900">{formatCurrency(month.totalAmount)}</div>
                 <div className="text-sm text-gray-500">
-                  Avg: {formatCurrency(month.paymentCount > 0 ? month.totalAmount / month.paymentCount : 0)}
+                  Avg:{' '}
+                  {formatCurrency(
+                    month.paymentCount > 0 ? month.totalAmount / month.paymentCount : 0
+                  )}
                 </div>
               </div>
             </div>
@@ -478,7 +521,10 @@ export default function PaymentAnalytics() {
         <h4 className="text-lg font-medium text-gray-900 mb-4">Top Paying Tenants</h4>
         <div className="space-y-3">
           {analytics.topTenants.map((tenant, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div
+              key={index}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            >
               <div className="flex items-center">
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-sm font-medium text-blue-600">#{index + 1}</span>

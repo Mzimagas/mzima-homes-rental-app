@@ -4,7 +4,8 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Available Rental Units | Mzima Homes',
-  description: 'Browse our collection of available rental units. Find apartments and houses with detailed photos, amenities, and pricing information.',
+  description:
+    'Browse our collection of available rental units. Find apartments and houses with detailed photos, amenities, and pricing information.',
 }
 
 export default function RentLanding() {
@@ -29,4 +30,3 @@ export default function RentLanding() {
     </div>
   )
 }
-

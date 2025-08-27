@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import supabase from '../../lib/supabase-client'
-import { usePropertyAccess, getRoleDisplayName, getRoleDescription, type UserRole } from '../../hooks/usePropertyAccess'
+import {
+  usePropertyAccess,
+  getRoleDisplayName,
+  getRoleDescription,
+  type UserRole,
+} from '../../hooks/usePropertyAccess'
 import { PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { UserManagementDenied } from '../common/PermissionDenied'
 
@@ -56,24 +61,27 @@ export default function UserManagement() {
     try {
       const { data, error } = await supabase
         .from('property_users')
-        .select(`
+        .select(
+          `
           id,
           user_id,
           role,
           status,
           accepted_at
-        `)
+        `
+        )
         .eq('property_id', currentProperty.property_id)
         .eq('status', 'ACTIVE')
 
       if (error) throw error
 
       // TODO: Get user details from auth.users (implement proper user lookup)
-      const usersWithDetails = data?.map((user: any) => ({
-        ...user,
-        user_email: `user-${user.user_id}@example.com`, // TODO: Replace with real user email lookup
-        user_name: `User ${user.user_id.slice(0, 8)}` // TODO: Replace with real user name lookup
-      })) || []
+      const usersWithDetails =
+        data?.map((user: any) => ({
+          ...user,
+          user_email: `user-${user.user_id}@example.com`, // TODO: Replace with real user email lookup
+          user_name: `User ${user.user_id.slice(0, 8)}`, // TODO: Replace with real user name lookup
+        })) || []
 
       setUsers(usersWithDetails)
     } catch (err) {
@@ -88,14 +96,21 @@ export default function UserManagement() {
       return
     }
 
-    console.log('🔍 loadInvitations: Starting invitation load process (attempt', retryCount + 1, ')')
+    console.log(
+      '🔍 loadInvitations: Starting invitation load process (attempt',
+      retryCount + 1,
+      ')'
+    )
     console.log('📍 Property ID:', currentProperty.property_id)
     console.log('🔑 Supabase client type:', supabase.supabaseUrl ? 'Configured' : 'Not configured')
 
     try {
       // Check authentication state first
       console.log('🔐 Checking authentication state...')
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
 
       if (authError) {
         // Extract full error details for debugging
@@ -105,7 +120,7 @@ export default function UserManagement() {
           status: authError.status || 'No status',
           code: authError.code || 'No code',
           isAuthError: authError.__isAuthError || false,
-          errorString: String(authError)
+          errorString: String(authError),
         }
 
         console.error('❌ Authentication error details:', authErrorInfo)
@@ -129,7 +144,9 @@ export default function UserManagement() {
           }
 
           // Provide clear guidance to the user
-          setError('Authentication required: Please sign in to access user management features. Click here to go to login page.')
+          setError(
+            'Authentication required: Please sign in to access user management features. Click here to go to login page.'
+          )
           return
         }
 
@@ -193,7 +210,7 @@ export default function UserManagement() {
           // Convert to string to get full error representation
           errorString: String(error),
           // Check if it's an auth error
-          isAuthError: error.__isAuthError || false
+          isAuthError: error.__isAuthError || false,
         }
 
         console.error('❌ Supabase query error:', errorInfo)
@@ -205,7 +222,9 @@ export default function UserManagement() {
         }
 
         if (error.code === '42501') {
-          setError('Access denied: You do not have permission to view invitations for this property')
+          setError(
+            'Access denied: You do not have permission to view invitations for this property'
+          )
           return
         }
 
@@ -215,10 +234,9 @@ export default function UserManagement() {
 
       console.log('✅ Invitations loaded successfully:', {
         count: data?.length || 0,
-        data: data
+        data: data,
       })
       setInvitations(data || [])
-
     } catch (err) {
       // Comprehensive error extraction that handles non-enumerable properties
       const e1 = err as any
@@ -237,7 +255,7 @@ export default function UserManagement() {
         // Convert to string representation
         errorString: String(e1),
         // Proper JSON serialization
-        errorJSON: e1 ? JSON.stringify(e1, Object.getOwnPropertyNames(e1)) : 'null'
+        errorJSON: e1 ? JSON.stringify(e1, Object.getOwnPropertyNames(e1)) : 'null',
       }
 
       console.error('❌ Error in loadInvitations:', errorInfo)
@@ -271,7 +289,10 @@ export default function UserManagement() {
       setInviting(true)
       setError(null)
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
       if (userError || !user) throw new Error('Not authenticated')
 
       const { data, error } = await supabase
@@ -280,7 +301,7 @@ export default function UserManagement() {
           property_id: currentProperty.property_id,
           email: inviteEmail.trim().toLowerCase(),
           role: inviteRole,
-          invited_by: user.id
+          invited_by: user.id,
         })
         .select()
         .single()
@@ -288,8 +309,8 @@ export default function UserManagement() {
       if (error) throw error
 
       // Add to local state
-      setInvitations(prev => [...prev, data])
-      
+      setInvitations((prev) => [...prev, data])
+
       // Reset form
       setInviteEmail('')
       setInviteRole('VIEWER')
@@ -297,14 +318,13 @@ export default function UserManagement() {
 
       // TODO: Send invitation email
       alert(`Invitation sent to ${inviteEmail}`)
-
     } catch (err) {
       const e3 = err as any
       console.error('Error inviting user:', {
         error: e3,
         message: e3 instanceof Error ? e3.message : 'Unknown error',
         details: e3?.details,
-        code: e3?.code
+        code: e3?.code,
       })
       setError(`Failed to send invitation: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
@@ -323,18 +343,20 @@ export default function UserManagement() {
         console.error('Supabase error revoking invitation:', {
           message: error.message,
           details: error.details,
-          code: error.code
+          code: error.code,
         })
         throw error
       }
 
-      setInvitations(prev => prev.filter(inv => inv.id !== invitationId))
+      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId))
     } catch (err) {
       console.error('Error revoking invitation:', {
         error: err,
-        message: err instanceof Error ? err.message : 'Unknown error'
+        message: err instanceof Error ? err.message : 'Unknown error',
       })
-      setError(`Failed to revoke invitation: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      setError(
+        `Failed to revoke invitation: ${err instanceof Error ? err.message : 'Unknown error'}`
+      )
     }
   }
 
@@ -349,7 +371,7 @@ export default function UserManagement() {
 
       if (error) throw error
 
-      setUsers(prev => prev.filter(user => user.id !== userId))
+      setUsers((prev) => prev.filter((user) => user.id !== userId))
     } catch (err) {
       console.error('Error removing user:', err)
       setError('Failed to remove user')
@@ -367,10 +389,7 @@ export default function UserManagement() {
   // Check if user has permission to manage users
   if (!canManageUsers || !currentProperty.can_manage_users) {
     return (
-      <UserManagementDenied
-        currentRole={userRole || 'Unknown'}
-        className="mx-auto max-w-2xl"
-      />
+      <UserManagementDenied currentRole={userRole || 'Unknown'} className="mx-auto max-w-2xl" />
     )
   }
 
@@ -434,13 +453,16 @@ export default function UserManagement() {
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
             Current Users ({users.length})
           </h3>
-          
+
           {users.length === 0 ? (
             <p className="text-gray-500">No users found</p>
           ) : (
             <div className="space-y-4">
               {users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                >
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
                       <div className="flex-shrink-0">
@@ -457,13 +479,19 @@ export default function UserManagement() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.role === 'OWNER' ? 'bg-green-100 text-green-800' :
-                      user.role === 'PROPERTY_MANAGER' ? 'bg-blue-100 text-blue-800' :
-                      user.role === 'LEASING_AGENT' ? 'bg-purple-100 text-purple-800' :
-                      user.role === 'MAINTENANCE_COORDINATOR' ? 'bg-orange-100 text-orange-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.role === 'OWNER'
+                          ? 'bg-green-100 text-green-800'
+                          : user.role === 'PROPERTY_MANAGER'
+                            ? 'bg-blue-100 text-blue-800'
+                            : user.role === 'LEASING_AGENT'
+                              ? 'bg-purple-100 text-purple-800'
+                              : user.role === 'MAINTENANCE_COORDINATOR'
+                                ? 'bg-orange-100 text-orange-800'
+                                : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
                       {getRoleDisplayName(user.role)}
                     </span>
                     {user.role !== 'OWNER' && (
@@ -490,15 +518,18 @@ export default function UserManagement() {
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
               Pending Invitations ({invitations.length})
             </h3>
-            
+
             <div className="space-y-4">
               {invitations.map((invitation) => (
-                <div key={invitation.id} className="flex items-center justify-between p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between p-4 border border-yellow-200 bg-yellow-50 rounded-lg"
+                >
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">{invitation.email}</p>
                     <p className="text-sm text-gray-500">
-                      Invited as {getRoleDisplayName(invitation.role)} • 
-                      Expires {new Date(invitation.expires_at).toLocaleDateString()}
+                      Invited as {getRoleDisplayName(invitation.role)} • Expires{' '}
+                      {new Date(invitation.expires_at).toLocaleDateString()}
                     </p>
                   </div>
                   <button
@@ -527,7 +558,12 @@ export default function UserManagement() {
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -563,9 +599,7 @@ export default function UserManagement() {
                     <option value="LEASING_AGENT">Leasing Agent</option>
                     <option value="PROPERTY_MANAGER">Property Manager</option>
                   </select>
-                  <p className="mt-1 text-xs text-gray-500">
-                    {getRoleDescription(inviteRole)}
-                  </p>
+                  <p className="mt-1 text-xs text-gray-500">{getRoleDescription(inviteRole)}</p>
                 </div>
 
                 <div className="flex space-x-3 pt-4">

@@ -2,7 +2,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -16,7 +15,7 @@ export enum UserRole {
   SALES_AGENT = 'sales_agent',
   FINANCE = 'finance',
   OPERATIONS = 'operations',
-  VIEWER = 'viewer'
+  VIEWER = 'viewer',
 }
 
 // Define permissions
@@ -68,7 +67,7 @@ export enum Permission {
   // System administration
   SYSTEM_CONFIG = 'system_config',
   AUDIT_LOGS = 'audit_logs',
-  BACKUP_RESTORE = 'backup_restore'
+  BACKUP_RESTORE = 'backup_restore',
 }
 
 // Role-Permission mapping
@@ -100,7 +99,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.EDIT_DOCUMENTS,
     Permission.VIEW_REPORTS,
     Permission.EXPORT_DATA,
-    Permission.AUDIT_LOGS
+    Permission.AUDIT_LOGS,
   ],
 
   [UserRole.MANAGER]: [
@@ -120,7 +119,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.VIEW_DOCUMENTS,
     Permission.UPLOAD_DOCUMENTS,
     Permission.VIEW_REPORTS,
-    Permission.EXPORT_DATA
+    Permission.EXPORT_DATA,
   ],
 
   [UserRole.SALES_AGENT]: [
@@ -132,7 +131,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.VIEW_FINANCIAL,
     Permission.VIEW_DOCUMENTS,
     Permission.UPLOAD_DOCUMENTS,
-    Permission.VIEW_REPORTS
+    Permission.VIEW_REPORTS,
   ],
 
   [UserRole.FINANCE]: [
@@ -148,7 +147,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.VIEW_DOCUMENTS,
     Permission.UPLOAD_DOCUMENTS,
     Permission.VIEW_REPORTS,
-    Permission.EXPORT_DATA
+    Permission.EXPORT_DATA,
   ],
 
   [UserRole.OPERATIONS]: [
@@ -162,7 +161,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.VIEW_DOCUMENTS,
     Permission.UPLOAD_DOCUMENTS,
     Permission.EDIT_DOCUMENTS,
-    Permission.VIEW_REPORTS
+    Permission.VIEW_REPORTS,
   ],
 
   [UserRole.VIEWER]: [
@@ -171,8 +170,8 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.VIEW_SALES,
     Permission.VIEW_FINANCIAL,
     Permission.VIEW_DOCUMENTS,
-    Permission.VIEW_REPORTS
-  ]
+    Permission.VIEW_REPORTS,
+  ],
 }
 
 // User interface
@@ -199,12 +198,12 @@ export class RBACService {
 
   // Check if user has any of the specified permissions
   static hasAnyPermission(userRole: UserRole, permissions: Permission[]): boolean {
-    return permissions.some(permission => this.hasPermission(userRole, permission))
+    return permissions.some((permission) => this.hasPermission(userRole, permission))
   }
 
   // Check if user has all specified permissions
   static hasAllPermissions(userRole: UserRole, permissions: Permission[]): boolean {
-    return permissions.every(permission => this.hasPermission(userRole, permission))
+    return permissions.every((permission) => this.hasPermission(userRole, permission))
   }
 
   // Get all permissions for a role
@@ -267,7 +266,7 @@ export class RBACService {
           ...userData,
           is_active: true,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -281,13 +280,17 @@ export class RBACService {
   }
 
   // Update user role
-  static async updateUserRole(userId: string, newRole: UserRole, updatedBy: string): Promise<boolean> {
+  static async updateUserRole(
+    userId: string,
+    newRole: UserRole,
+    updatedBy: string
+  ): Promise<boolean> {
     try {
       const { error } = await supabase
         .from('user_profiles')
         .update({
           role: newRole,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', userId)
 
@@ -295,7 +298,7 @@ export class RBACService {
 
       // Log role change
       await this.logUserActivity(userId, 'role_change', updatedBy, {
-        new_role: newRole
+        new_role: newRole,
       })
 
       return true
@@ -312,7 +315,7 @@ export class RBACService {
         .from('user_profiles')
         .update({
           is_active: false,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', userId)
 
@@ -372,15 +375,13 @@ export class RBACService {
     metadata?: any
   ): Promise<void> {
     try {
-      await supabase
-        .from('user_activities')
-        .insert({
-          user_id: userId,
-          action,
-          performed_by: performedBy,
-          metadata,
-          created_at: new Date().toISOString()
-        })
+      await supabase.from('user_activities').insert({
+        user_id: userId,
+        action,
+        performed_by: performedBy,
+        metadata,
+        created_at: new Date().toISOString(),
+      })
     } catch (error) {
       console.error('Error logging user activity:', error)
     }
@@ -393,7 +394,7 @@ export class RBACService {
         .from('user_profiles')
         .update({
           last_login: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', userId)
     } catch (error) {
@@ -444,7 +445,9 @@ export function useRBAC() {
   useEffect(() => {
     const getCurrentUser = async () => {
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser()
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser()
         if (authUser) {
           const userProfile = await RBACService.getUser(authUser.id)
           setUser(userProfile)
@@ -486,7 +489,7 @@ export function useRBAC() {
     isAdmin: user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN,
     isSalesAgent: user?.role === UserRole.SALES_AGENT,
     isFinance: user?.role === UserRole.FINANCE,
-    isOperations: user?.role === UserRole.OPERATIONS
+    isOperations: user?.role === UserRole.OPERATIONS,
   }
 }
 

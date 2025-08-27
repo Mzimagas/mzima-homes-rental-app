@@ -59,53 +59,75 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
     }
   }
 
-  const filteredProperties = properties.filter(property => {
+  const filteredProperties = properties.filter((property) => {
     // Always show only rentable properties (no toggle needed)
     const rentableTypes = ['HOME', 'HOSTEL', 'STALL']
     if (!rentableTypes.includes(property.property_type || '')) return false
 
     // Search filter
-    const matchesSearch = property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch =
+      property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.physical_address?.toLowerCase().includes(searchTerm.toLowerCase())
 
     // Occupancy filter
-    const matchesOccupancy = !occupancyFilter || (() => {
-      const occupancyRate = 100 - (property.vacancy_rate || 0)
-      switch (occupancyFilter) {
-        case 'fully_occupied': return occupancyRate >= 95
-        case 'partially_occupied': return occupancyRate > 0 && occupancyRate < 95
-        case 'vacant': return occupancyRate === 0
-        default: return true
-      }
-    })()
+    const matchesOccupancy =
+      !occupancyFilter ||
+      (() => {
+        const occupancyRate = 100 - (property.vacancy_rate || 0)
+        switch (occupancyFilter) {
+          case 'fully_occupied':
+            return occupancyRate >= 95
+          case 'partially_occupied':
+            return occupancyRate > 0 && occupancyRate < 95
+          case 'vacant':
+            return occupancyRate === 0
+          default:
+            return true
+        }
+      })()
 
     // Income filter
-    const matchesIncome = !incomeFilter || (() => {
-      const income = property.monthly_income || 0
-      switch (incomeFilter) {
-        case 'high': return income > 100000
-        case 'medium': return income >= 50000 && income <= 100000
-        case 'low': return income > 0 && income < 50000
-        case 'none': return income === 0
-        default: return true
-      }
-    })()
+    const matchesIncome =
+      !incomeFilter ||
+      (() => {
+        const income = property.monthly_income || 0
+        switch (incomeFilter) {
+          case 'high':
+            return income > 100000
+          case 'medium':
+            return income >= 50000 && income <= 100000
+          case 'low':
+            return income > 0 && income < 50000
+          case 'none':
+            return income === 0
+          default:
+            return true
+        }
+      })()
 
     // Availability filter
-    const matchesAvailability = !availabilityFilter || (() => {
-      const vacancyRate = property.vacancy_rate || 0
-      switch (availabilityFilter) {
-        case 'has_available': return vacancyRate > 0
-        case 'fully_occupied': return vacancyRate === 0
-        default: return true
-      }
-    })()
+    const matchesAvailability =
+      !availabilityFilter ||
+      (() => {
+        const vacancyRate = property.vacancy_rate || 0
+        switch (availabilityFilter) {
+          case 'has_available':
+            return vacancyRate > 0
+          case 'fully_occupied':
+            return vacancyRate === 0
+          default:
+            return true
+        }
+      })()
 
     // Location filter
-    const matchesLocation = !locationFilter ||
+    const matchesLocation =
+      !locationFilter ||
       property.physical_address?.toLowerCase().includes(locationFilter.toLowerCase())
 
-    return matchesSearch && matchesOccupancy && matchesIncome && matchesAvailability && matchesLocation
+    return (
+      matchesSearch && matchesOccupancy && matchesIncome && matchesAvailability && matchesLocation
+    )
   })
 
   const handlePropertyClick = (property: RentalProperty) => {
@@ -227,13 +249,7 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
   }
 
   if (error) {
-    return (
-      <ErrorCard
-        title="Error Loading Properties"
-        message={error}
-        onRetry={loadProperties}
-      />
-    )
+    return <ErrorCard title="Error Loading Properties" message={error} onRetry={loadProperties} />
   }
 
   return (
@@ -385,7 +401,9 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                     <p className="text-sm text-gray-500">{property.physical_address}</p>
                   </div>
                   <div className="text-right">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPropertyTypeColor(property.property_type || '')}`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPropertyTypeColor(property.property_type || '')}`}
+                    >
                       {getPropertyTypeLabel(property.property_type || '')}
                     </span>
                   </div>
@@ -395,11 +413,15 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <p className="text-xs text-gray-500">Total Units</p>
-                    <p className="text-lg font-semibold text-gray-900">{property.total_units || 0}</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {property.total_units || 0}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Occupied</p>
-                    <p className="text-lg font-semibold text-gray-900">{property.occupied_units || 0}</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {property.occupied_units || 0}
+                    </p>
                   </div>
                 </div>
 
@@ -407,7 +429,9 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs text-gray-500">Occupancy Rate</span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${getOccupancyColor(100 - (property.vacancy_rate || 0))}`}>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${getOccupancyColor(100 - (property.vacancy_rate || 0))}`}
+                    >
                       {(100 - (property.vacancy_rate || 0)).toFixed(1)}%
                     </span>
                   </div>
@@ -439,7 +463,7 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                       View Units
                     </button>
                     <button
-                      onClick={() => handleRentRoll(property)}
+                      onClick={() => console.log('Rent Roll for', property.name)}
                       className="text-xs text-green-600 hover:text-green-800"
                     >
                       Rent Roll
@@ -465,17 +489,37 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                       className="p-1 text-gray-400 hover:text-gray-600"
                       title="Edit Property"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
                       </svg>
                     </button>
                     <button
-                      onClick={() => handleDeleteProperty(property)}
+                      onClick={() => console.log('Delete property', property.name)}
                       className="p-1 text-gray-400 hover:text-red-600"
                       title="Delete Property"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -489,7 +533,9 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
           <div className="text-6xl mb-4">🏠</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Properties Found</h3>
           <p className="text-gray-500 mb-4">
-            {searchTerm ? 'No properties match your search criteria.' : 'Get started by adding your first rental property.'}
+            {searchTerm
+              ? 'No properties match your search criteria.'
+              : 'Get started by adding your first rental property.'}
           </p>
           <Button onClick={handleAddProperty} variant="primary">
             Add Property
@@ -534,15 +580,21 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-600">Total Units</p>
-                    <p className="text-2xl font-bold text-gray-900">{selectedProperty.total_units || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {selectedProperty.total_units || 0}
+                    </p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-600">Occupied Units</p>
-                    <p className="text-2xl font-bold text-green-600">{selectedProperty.occupied_units || 0}</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {selectedProperty.occupied_units || 0}
+                    </p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-600">Vacancy Rate</p>
-                    <p className="text-2xl font-bold text-red-600">{(selectedProperty.vacancy_rate || 0).toFixed(1)}%</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {(selectedProperty.vacancy_rate || 0).toFixed(1)}%
+                    </p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-600">Monthly Income</p>
@@ -570,10 +622,7 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                 >
                   {loadingRentRoll ? 'Generating...' : 'Generate Rent Roll'}
                 </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleEditProperty(selectedProperty)}
-                >
+                <Button variant="secondary" onClick={() => handleEditProperty(selectedProperty)}>
                   Edit Property
                 </Button>
               </div>
@@ -659,11 +708,11 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                             </p>
                           )}
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          unit.tenant
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            unit.tenant ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}
+                        >
                           {unit.tenant ? 'Occupied' : 'Vacant'}
                         </span>
                       </div>
@@ -715,11 +764,15 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                 </div>
                 <div className="bg-yellow-50 p-4 rounded-lg text-center">
                   <p className="text-sm text-yellow-600">Vacancy Rate</p>
-                  <p className="text-2xl font-bold text-yellow-800">{rentRollData.vacancy_rate.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold text-yellow-800">
+                    {rentRollData.vacancy_rate.toFixed(1)}%
+                  </p>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg text-center">
                   <p className="text-sm text-purple-600">Collection Rate</p>
-                  <p className="text-2xl font-bold text-purple-800">{rentRollData.collection_rate.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold text-purple-800">
+                    {rentRollData.collection_rate.toFixed(1)}%
+                  </p>
                 </div>
               </div>
 
@@ -785,12 +838,17 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                             KES {unit.monthly_rent.toLocaleString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              unit.rent_status === 'CURRENT' ? 'bg-green-100 text-green-800' :
-                              unit.rent_status === 'OVERDUE' ? 'bg-red-100 text-red-800' :
-                              unit.rent_status === 'PARTIAL' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                unit.rent_status === 'CURRENT'
+                                  ? 'bg-green-100 text-green-800'
+                                  : unit.rent_status === 'OVERDUE'
+                                    ? 'bg-red-100 text-red-800'
+                                    : unit.rent_status === 'PARTIAL'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
                               {unit.rent_status}
                             </span>
                           </td>
@@ -812,8 +870,11 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
       <Modal
         isOpen={showMaintenanceModal}
         onClose={handleMaintenanceClose}
-        title={maintenanceProperty ? `Maintenance - ${maintenanceProperty.name}` : 'Maintenance Management'}
-        size="large"
+        title={
+          maintenanceProperty
+            ? `Maintenance - ${maintenanceProperty.name}`
+            : 'Maintenance Management'
+        }
       >
         <div className="p-6">
           {maintenanceProperty && (
@@ -829,8 +890,9 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
       <Modal
         isOpen={showInspectionModal}
         onClose={handleInspectionClose}
-        title={inspectionProperty ? `Inspections - ${inspectionProperty.name}` : 'Property Inspections'}
-        size="large"
+        title={
+          inspectionProperty ? `Inspections - ${inspectionProperty.name}` : 'Property Inspections'
+        }
       >
         <div className="p-6">
           {inspectionProperty && (

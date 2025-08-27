@@ -43,7 +43,9 @@ export default function RentalManagementPage() {
         <ErrorCard
           title="Authentication Required"
           message="Please log in to access rental management"
-          onRetry={() => { window.location.href = '/auth/login' }}
+          onRetry={() => {
+            window.location.href = '/auth/login'
+          }}
         />
       </div>
     )

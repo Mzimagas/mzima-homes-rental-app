@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { UnitCardSkeleton, ErrorState, EmptyState } from './components/LoadingStates'
 import { AmenityList } from './components/AmenityIcons'
@@ -20,20 +20,30 @@ type UnitRow = {
 
 type Amenity = { code: string; label: string }
 
-
 // Enhanced unit card component
-function UnitCard({ unit, highlight }: { unit: UnitRow, highlight?: (text: string) => React.ReactNode }) {
+function UnitCard({
+  unit,
+  highlight,
+}: {
+  unit: UnitRow
+  highlight?: (text: string) => React.ReactNode
+}) {
   const formatPrice = (price: number | null) => {
     if (!price) return 'Price on request'
     return `KES ${price.toLocaleString()}`
   }
 
   const getAvailabilityStatus = (availableFrom: string | null) => {
-    if (!availableFrom) return { text: 'Available Now', color: 'bg-green-100 text-green-700 border border-green-200' }
+    if (!availableFrom)
+      return { text: 'Available Now', color: 'bg-green-100 text-green-700 border border-green-200' }
     const date = new Date(availableFrom)
     const now = new Date()
-    if (date <= now) return { text: 'Available Now', color: 'bg-green-100 text-green-700 border border-green-200' }
-    return { text: `Available ${date.toLocaleDateString()}`, color: 'bg-amber-100 text-amber-700 border border-amber-200' }
+    if (date <= now)
+      return { text: 'Available Now', color: 'bg-green-100 text-green-700 border border-green-200' }
+    return {
+      text: `Available ${date.toLocaleDateString()}`,
+      color: 'bg-amber-100 text-amber-700 border border-amber-200',
+    }
   }
 
   const status = getAvailabilityStatus(unit.available_from)
@@ -54,14 +64,21 @@ function UnitCard({ unit, highlight }: { unit: UnitRow, highlight?: (text: strin
         ) : (
           <div className="w-full h-full flex items-center justify-center text-quaternary">
             <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
             </svg>
           </div>
         )}
 
         {/* Status Badge */}
         <div className="absolute top-3 left-3">
-          <span className={`px-3 py-1.5 text-xs font-medium rounded-full backdrop-blur-sm ${status.color}`}>
+          <span
+            className={`px-3 py-1.5 text-xs font-medium rounded-full backdrop-blur-sm ${status.color}`}
+          >
             {status.text}
           </span>
         </div>
@@ -79,12 +96,29 @@ function UnitCard({ unit, highlight }: { unit: UnitRow, highlight?: (text: strin
           <h3 className="font-semibold text-primary text-lg group-hover:text-brand transition-colors">
             {highlight ? highlight(unit.unit_label) : unit.unit_label}
           </h3>
-          <p className="text-secondary text-sm font-medium">{highlight ? highlight(unit.property_name) : unit.property_name}</p>
+          <p className="text-secondary text-sm font-medium">
+            {highlight ? highlight(unit.property_name) : unit.property_name}
+          </p>
           {unit.physical_address && (
             <p className="text-tertiary text-xs mt-1 flex items-center">
-              <svg className="w-3 h-3 mr-1 text-quaternary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              <svg
+                className="w-3 h-3 mr-1 text-quaternary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
               {highlight ? highlight(unit.physical_address || '') : unit.physical_address}
             </p>
@@ -98,9 +132,7 @@ function UnitCard({ unit, highlight }: { unit: UnitRow, highlight?: (text: strin
             <span className="text-sm font-normal text-tertiary">/month</span>
           </div>
           {unit.deposit_kes && (
-            <div className="text-sm text-secondary">
-              Deposit: {formatPrice(unit.deposit_kes)}
-            </div>
+            <div className="text-sm text-secondary">Deposit: {formatPrice(unit.deposit_kes)}</div>
           )}
         </div>
 
@@ -108,7 +140,12 @@ function UnitCard({ unit, highlight }: { unit: UnitRow, highlight?: (text: strin
         <div className="mt-auto pt-4 border-t border-light">
           <span className="text-brand text-sm font-medium group-hover:text-primary-800 flex items-center">
             View Details
-            <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </span>
@@ -150,7 +187,10 @@ export default function UnitsList() {
 
   // Debounced searching flag for UX
   useEffect(() => {
-    if (!searchQuery) { setSearching(false); return }
+    if (!searchQuery) {
+      setSearching(false)
+      return
+    }
     setSearching(true)
     const t = setTimeout(() => setSearching(false), 300)
     return () => clearTimeout(t)
@@ -159,14 +199,18 @@ export default function UnitsList() {
   useEffect(() => {
     const controller = new AbortController()
     const load = async () => {
-      setLoading(true); setError(null)
+      setLoading(true)
+      setError(null)
       try {
         const params = new URLSearchParams()
         if (propertyId) params.set('propertyId', propertyId)
         if (minRent) params.set('minRent', minRent)
         if (maxRent) params.set('maxRent', maxRent)
         if (selectedAmenities.length) params.set('amenities', selectedAmenities.join(','))
-        const res = await fetch(`/api/public/units?${params.toString()}`, { cache: 'no-store', signal: controller.signal })
+        const res = await fetch(`/api/public/units?${params.toString()}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        })
         const j = await res.json()
         if (!j.ok) throw new Error(j?.error?.message || 'Failed to load units')
         setRows(j.data || [])
@@ -183,7 +227,7 @@ export default function UnitsList() {
 
   const properties = useMemo(() => {
     const map = new Map<string, string>()
-    rows.forEach(r => map.set(r.property_id, r.property_name))
+    rows.forEach((r) => map.set(r.property_id, r.property_name))
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
   }, [rows])
 
@@ -193,10 +237,11 @@ export default function UnitsList() {
     if (!searchQuery) return rows
     const query = searchQuery.toLowerCase()
     setHighlightedQuery(query)
-    return rows.filter(unit =>
-      unit.property_name.toLowerCase().includes(query) ||
-      unit.unit_label.toLowerCase().includes(query) ||
-      unit.physical_address?.toLowerCase().includes(query)
+    return rows.filter(
+      (unit) =>
+        unit.property_name.toLowerCase().includes(query) ||
+        unit.unit_label.toLowerCase().includes(query) ||
+        unit.physical_address?.toLowerCase().includes(query)
     )
   }, [rows, searchQuery])
 
@@ -208,7 +253,9 @@ export default function UnitsList() {
   const pageCount = Math.ceil(filteredRows.length / pageSize) || 1
 
   const toggleAmenity = (code: string) => {
-    setSelectedAmenities(prev => prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code])
+    setSelectedAmenities((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    )
   }
 
   // Helper: highlight search matches
@@ -221,7 +268,9 @@ export default function UnitsList() {
     const after = text.slice(idx + highlightedQuery.length)
     return (
       <>
-        {before}<mark className="bg-amber-100 text-primary rounded px-1 font-medium">{match}</mark>{after}
+        {before}
+        <mark className="bg-amber-100 text-primary rounded px-1 font-medium">{match}</mark>
+        {after}
       </>
     )
   }
@@ -251,9 +300,18 @@ export default function UnitsList() {
             selectedAmenities={selectedAmenities}
             onToggleAmenity={toggleAmenity}
             onApplyQuickFilter={(key) => {
-              if (key === 'UNDER_50K') { setMinRent(''); setMaxRent('50000') }
-              if (key === '50K_100K') { setMinRent('50000'); setMaxRent('100000') }
-              if (key === '100K_PLUS') { setMinRent('100000'); setMaxRent('') }
+              if (key === 'UNDER_50K') {
+                setMinRent('')
+                setMaxRent('50000')
+              }
+              if (key === '50K_100K') {
+                setMinRent('50000')
+                setMaxRent('100000')
+              }
+              if (key === '100K_PLUS') {
+                setMinRent('100000')
+                setMaxRent('')
+              }
             }}
           />
         </div>
@@ -264,12 +322,14 @@ export default function UnitsList() {
             <label className="block text-sm font-medium text-secondary mb-2">Property</label>
             <select
               value={propertyId}
-              onChange={e => setPropertyId(e.target.value)}
+              onChange={(e) => setPropertyId(e.target.value)}
               className="form-input"
             >
               <option value="">All Properties</option>
-              {properties.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
           </div>
@@ -277,7 +337,7 @@ export default function UnitsList() {
             <label className="block text-sm font-medium text-secondary mb-2">Min Rent (KES)</label>
             <input
               value={minRent}
-              onChange={e => setMinRent(e.target.value)}
+              onChange={(e) => setMinRent(e.target.value)}
               className="form-input"
               placeholder="e.g., 50,000"
               inputMode="numeric"
@@ -287,17 +347,14 @@ export default function UnitsList() {
             <label className="block text-sm font-medium text-secondary mb-2">Max Rent (KES)</label>
             <input
               value={maxRent}
-              onChange={e => setMaxRent(e.target.value)}
+              onChange={(e) => setMaxRent(e.target.value)}
               className="form-input"
               placeholder="e.g., 150,000"
               inputMode="numeric"
             />
           </div>
           <div className="flex items-end">
-            <button
-              onClick={clearFilters}
-              className="btn btn-secondary w-full"
-            >
+            <button onClick={clearFilters} className="btn btn-secondary w-full">
               Clear Filters
             </button>
           </div>
@@ -308,7 +365,7 @@ export default function UnitsList() {
           <div>
             <label className="block text-sm font-medium text-secondary mb-3">Amenities</label>
             <div className="flex flex-wrap gap-2">
-              {amenities.map(a => (
+              {amenities.map((a) => (
                 <button
                   key={a.code}
                   onClick={() => toggleAmenity(a.code)}
@@ -334,7 +391,8 @@ export default function UnitsList() {
           </h2>
           {!loading && filteredRows.length > 0 && (
             <p className="text-secondary mt-1">
-              Showing {((page - 1) * pageSize) + 1}-{Math.min(page * pageSize, filteredRows.length)} of {filteredRows.length} units
+              Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, filteredRows.length)}{' '}
+              of {filteredRows.length} units
             </p>
           )}
         </div>
@@ -362,7 +420,7 @@ export default function UnitsList() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {paged.map(unit => (
+            {paged.map((unit) => (
               <UnitCard key={unit.unit_id} unit={unit} highlight={highlightMatch} />
             ))}
           </div>
@@ -372,7 +430,7 @@ export default function UnitsList() {
             <div className="flex items-center justify-center space-x-4 mt-8">
               <button
                 disabled={page <= 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
@@ -397,7 +455,7 @@ export default function UnitsList() {
               </div>
               <button
                 disabled={page >= pageCount}
-                onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
                 className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
@@ -412,4 +470,3 @@ export default function UnitsList() {
     </div>
   )
 }
-

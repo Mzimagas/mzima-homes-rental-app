@@ -24,7 +24,7 @@ export function useSwipeGesture(options: SwipeGestureOptions) {
     onSwipeUp,
     onSwipeDown,
     threshold = 50,
-    preventScroll = false
+    preventScroll = false,
   } = options
 
   const touchStart = useRef<TouchPosition | null>(null)
@@ -35,7 +35,7 @@ export function useSwipeGesture(options: SwipeGestureOptions) {
     touchEnd.current = null
     touchStart.current = {
       x: e.targetTouches[0].clientX,
-      y: e.targetTouches[0].clientY
+      y: e.targetTouches[0].clientY,
     }
     setIsSwiping(true)
   }
@@ -45,14 +45,14 @@ export function useSwipeGesture(options: SwipeGestureOptions) {
 
     touchEnd.current = {
       x: e.targetTouches[0].clientX,
-      y: e.targetTouches[0].clientY
+      y: e.targetTouches[0].clientY,
     }
 
     // Prevent scroll if needed
     if (preventScroll) {
       const deltaX = Math.abs(touchEnd.current.x - touchStart.current.x)
       const deltaY = Math.abs(touchEnd.current.y - touchStart.current.y)
-      
+
       // If horizontal swipe is more significant than vertical, prevent scroll
       if (deltaX > deltaY && deltaX > 10) {
         e.preventDefault()
@@ -97,26 +97,25 @@ export function useSwipeGesture(options: SwipeGestureOptions) {
     touchEnd.current = null
   }
 
-  const swipeHandlers = {
-    onTouchStart: handleTouchStart,
-    onTouchMove: handleTouchMove,
-    onTouchEnd: handleTouchEnd
+  const swipeHandlers: React.DetailedHTMLProps<
+    React.HTMLAttributes<HTMLDivElement>,
+    HTMLDivElement
+  > = {
+    onTouchStart: handleTouchStart as any,
+    onTouchMove: handleTouchMove as any,
+    onTouchEnd: handleTouchEnd as any,
   }
 
   return {
     swipeHandlers,
-    isSwiping
+    isSwiping,
   }
 }
 
 /**
  * Hook for sidebar swipe gestures
  */
-export function useSidebarSwipe(
-  isOpen: boolean,
-  onOpen: () => void,
-  onClose: () => void
-) {
+export function useSidebarSwipe(isOpen: boolean, onOpen: () => void, onClose: () => void) {
   const { swipeHandlers } = useSwipeGesture({
     onSwipeRight: () => {
       if (!isOpen) {
@@ -129,44 +128,44 @@ export function useSidebarSwipe(
       }
     },
     threshold: 50,
-    preventScroll: true
+    preventScroll: true,
   })
 
   useEffect(() => {
     // Add edge swipe detection for opening sidebar
     const handleEdgeSwipe = (e: TouchEvent) => {
       if (isOpen) return
-      
+
       const touch = e.touches[0]
       const edgeThreshold = 20 // pixels from edge
-      
+
       if (touch.clientX <= edgeThreshold) {
         // Start tracking for potential swipe from left edge
         const startX = touch.clientX
-        
+
         const handleMove = (moveEvent: TouchEvent) => {
           const currentTouch = moveEvent.touches[0]
           const deltaX = currentTouch.clientX - startX
-          
+
           if (deltaX > 50) {
             onOpen()
             document.removeEventListener('touchmove', handleMove)
             document.removeEventListener('touchend', handleEnd)
           }
         }
-        
+
         const handleEnd = () => {
           document.removeEventListener('touchmove', handleMove)
           document.removeEventListener('touchend', handleEnd)
         }
-        
+
         document.addEventListener('touchmove', handleMove)
         document.addEventListener('touchend', handleEnd)
       }
     }
 
     document.addEventListener('touchstart', handleEdgeSwipe)
-    
+
     return () => {
       document.removeEventListener('touchstart', handleEdgeSwipe)
     }

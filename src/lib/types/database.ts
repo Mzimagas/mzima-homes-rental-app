@@ -73,8 +73,6 @@ export interface TenancyAgreement {
   created_at?: string
 }
 
-
 // Placeholder Database type to satisfy supabase client generics
 // Replace with generated types when available
 export type Database = Record<string, unknown>
-

@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Running quality gates before push..."
+
+# Run full validation
+npm run validate
+
+# Run quality gate analysis
+node scripts/quality-gate.js
+
+echo "✅ Quality gates passed! Proceeding with push..."

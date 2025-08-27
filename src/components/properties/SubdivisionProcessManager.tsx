@@ -88,7 +88,7 @@ interface SubdivisionProcessManagerProps {
 export default function SubdivisionProcessManager({
   onPropertyCreated,
   searchTerm = '',
-  onSearchChange
+  onSearchChange,
 }: SubdivisionProcessManagerProps) {
   const [properties, setProperties] = useState<Property[]>([])
   const [subdivisions, setSubdivisions] = useState<SubdivisionItem[]>([])
@@ -121,7 +121,7 @@ export default function SubdivisionProcessManager({
     if (!searchTerm.trim()) return subdivisions
 
     const lower = searchTerm.toLowerCase()
-    return subdivisions.filter(subdivision => {
+    return subdivisions.filter((subdivision) => {
       return (
         subdivision.subdivision_name.toLowerCase().includes(lower) ||
         (subdivision.properties?.name.toLowerCase().includes(lower) ?? false) ||
@@ -136,7 +136,7 @@ export default function SubdivisionProcessManager({
     if (!searchTerm.trim()) return properties
 
     const lower = searchTerm.toLowerCase()
-    return properties.filter(property => {
+    return properties.filter((property) => {
       return (
         property.name.toLowerCase().includes(lower) ||
         property.physical_address.toLowerCase().includes(lower) ||
@@ -146,28 +146,43 @@ export default function SubdivisionProcessManager({
   }, [properties, searchTerm])
 
   const subdivisionForm = useForm<SubdivisionFormValues>({
-    resolver: zodResolver(subdivisionSchema)
+    resolver: zodResolver(subdivisionSchema),
   })
 
   const plotForm = useForm<PlotFormValues>({
-    resolver: zodResolver(plotSchema)
+    resolver: zodResolver(plotSchema),
   })
 
   // Function to compare current subdivision data with new form values
   const getChanges = (currentSubdivision: SubdivisionItem, newValues: SubdivisionFormValues) => {
-    const changes: Array<{ field: string, oldValue: any, newValue: any }> = []
+    const changes: Array<{ field: string; oldValue: any; newValue: any }> = []
 
     const fieldMappings = {
       subdivisionName: { current: currentSubdivision.subdivision_name, label: 'Subdivision Name' },
-      totalPlotsPlanned: { current: currentSubdivision.total_plots_planned, label: 'Total Plots Planned' },
+      totalPlotsPlanned: {
+        current: currentSubdivision.total_plots_planned,
+        label: 'Total Plots Planned',
+      },
       surveyorName: { current: currentSubdivision.surveyor_name, label: 'Surveyor Name' },
       surveyorContact: { current: currentSubdivision.surveyor_contact, label: 'Surveyor Contact' },
-      approvalAuthority: { current: currentSubdivision.approval_authority, label: 'Approval Authority' },
+      approvalAuthority: {
+        current: currentSubdivision.approval_authority,
+        label: 'Approval Authority',
+      },
       surveyCost: { current: currentSubdivision.survey_cost_kes, label: 'Survey Cost (KES)' },
       approvalFees: { current: currentSubdivision.approval_fees_kes, label: 'Approval Fees (KES)' },
-      expectedPlotValue: { current: currentSubdivision.expected_plot_value_kes, label: 'Expected Plot Value (KES)' },
-      targetCompletionDate: { current: currentSubdivision.target_completion_date, label: 'Target Completion Date' },
-      subdivisionNotes: { current: currentSubdivision.subdivision_notes, label: 'Subdivision Notes' },
+      expectedPlotValue: {
+        current: currentSubdivision.expected_plot_value_kes,
+        label: 'Expected Plot Value (KES)',
+      },
+      targetCompletionDate: {
+        current: currentSubdivision.target_completion_date,
+        label: 'Target Completion Date',
+      },
+      subdivisionNotes: {
+        current: currentSubdivision.subdivision_notes,
+        label: 'Subdivision Notes',
+      },
     }
 
     Object.entries(fieldMappings).forEach(([key, mapping]) => {
@@ -175,14 +190,15 @@ export default function SubdivisionProcessManager({
       const currentValue = mapping.current
 
       // Normalize values for comparison
-      const normalizedCurrent = currentValue === null || currentValue === undefined ? '' : String(currentValue)
+      const normalizedCurrent =
+        currentValue === null || currentValue === undefined ? '' : String(currentValue)
       const normalizedNew = newValue === null || newValue === undefined ? '' : String(newValue)
 
       if (normalizedCurrent !== normalizedNew) {
         changes.push({
           field: mapping.label,
           oldValue: currentValue,
-          newValue: newValue
+          newValue: newValue,
         })
       }
     })
@@ -250,7 +266,7 @@ export default function SubdivisionProcessManager({
               target_completion_date: values.targetCompletionDate,
               subdivision_notes: values.subdivisionNotes,
             },
-            updated_fields: Object.keys(updateData)
+            updated_fields: Object.keys(updateData),
           }
         )
       } catch (historyError) {
@@ -319,7 +335,8 @@ export default function SubdivisionProcessManager({
     try {
       const { data, error } = await supabase
         .from('property_subdivisions')
-        .select(`
+        .select(
+          `
           *,
           properties:original_property_id (
             id,
@@ -330,7 +347,8 @@ export default function SubdivisionProcessManager({
             total_area_acres,
             lifecycle_status
           )
-        `)
+        `
+        )
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -338,7 +356,7 @@ export default function SubdivisionProcessManager({
           message: error.message,
           details: error.details,
           hint: error.hint,
-          code: error.code
+          code: error.code,
         })
 
         // Check if the error is due to missing table
@@ -373,7 +391,7 @@ export default function SubdivisionProcessManager({
           message: error.message,
           details: error.details,
           hint: error.hint,
-          code: error.code
+          code: error.code,
         })
         throw error
       }
@@ -389,7 +407,7 @@ export default function SubdivisionProcessManager({
   }
 
   const checkPlotLimit = (subdivisionId: string, currentPlots?: SubdivisionPlot[]) => {
-    const subdivision = subdivisions.find(s => s.id === subdivisionId)
+    const subdivision = subdivisions.find((s) => s.id === subdivisionId)
     if (!subdivision) {
       setPlotLimitReached(false)
       return
@@ -402,8 +420,10 @@ export default function SubdivisionProcessManager({
     setPlotLimitReached(currentPlotCount >= maxPlotsAllowed)
   }
 
-  const validatePlotCreation = (subdivisionId: string): { canCreate: boolean; message?: string } => {
-    const subdivision = subdivisions.find(s => s.id === subdivisionId)
+  const validatePlotCreation = (
+    subdivisionId: string
+  ): { canCreate: boolean; message?: string } => {
+    const subdivision = subdivisions.find((s) => s.id === subdivisionId)
     if (!subdivision) {
       return { canCreate: false, message: 'Subdivision not found' }
     }
@@ -414,7 +434,7 @@ export default function SubdivisionProcessManager({
     if (currentPlotCount >= maxPlotsAllowed) {
       return {
         canCreate: false,
-        message: `Cannot create plot: Maximum of ${maxPlotsAllowed} plots allowed for this subdivision. Currently ${currentPlotCount} plots exist.`
+        message: `Cannot create plot: Maximum of ${maxPlotsAllowed} plots allowed for this subdivision. Currently ${currentPlotCount} plots exist.`,
       }
     }
 
@@ -429,7 +449,7 @@ export default function SubdivisionProcessManager({
     }
 
     // Check if subdivision already exists
-    const existingSubdivision = subdivisions.find(s => s.original_property_id === property.id)
+    const existingSubdivision = subdivisions.find((s) => s.original_property_id === property.id)
     if (existingSubdivision) {
       alert('A subdivision plan already exists for this property. Use "View Plots" to manage it.')
       return
@@ -449,7 +469,7 @@ export default function SubdivisionProcessManager({
         .from('properties')
         .update({
           lifecycle_status: 'SUBDIVIDED',
-          subdivision_date: new Date().toISOString().split('T')[0]
+          subdivision_date: new Date().toISOString().split('T')[0],
         })
         .eq('id', propertyToSubdivide.id)
 
@@ -477,11 +497,11 @@ export default function SubdivisionProcessManager({
   }
 
   const checkSubdivisionExists = (propertyId: string): boolean => {
-    return subdivisions.some(s => s.original_property_id === propertyId)
+    return subdivisions.some((s) => s.original_property_id === propertyId)
   }
 
   const getSubdivisionForProperty = (propertyId: string): SubdivisionItem | null => {
-    return subdivisions.find(s => s.original_property_id === propertyId) || null
+    return subdivisions.find((s) => s.original_property_id === propertyId) || null
   }
 
   const handleEditSubdivisionPlan = (property: Property) => {
@@ -518,7 +538,9 @@ export default function SubdivisionProcessManager({
     try {
       if (!selectedProperty) return
 
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         alert('Please log in to create subdivisions')
         return
@@ -539,8 +561,6 @@ export default function SubdivisionProcessManager({
         setPendingUpdateData({ values, existingSubdivision, user })
         setShowUpdateConfirmation(true)
         return
-        loadData()
-        alert('Subdivision plan updated successfully!')
       } else {
         // Create new subdivision (existing logic)
         const subdivisionData = {
@@ -581,8 +601,8 @@ export default function SubdivisionProcessManager({
               target_completion_date: values.targetCompletionDate,
               initial_budget_estimate: {
                 survey_cost: values.surveyCost,
-                approval_fees: values.approvalFees
-              }
+                approval_fees: values.approvalFees,
+              },
             }
           )
         } catch (historyError) {
@@ -597,7 +617,9 @@ export default function SubdivisionProcessManager({
         setShowSubdivisionForm(false)
         setSelectedProperty(null)
         loadData()
-        alert(`Subdivision process started successfully with ${values.totalPlotsPlanned} plots ready for editing!`)
+        alert(
+          `Subdivision process started successfully with ${values.totalPlotsPlanned} plots ready for editing!`
+        )
       }
     } catch (error) {
       console.error('Error saving subdivision:', error)
@@ -605,7 +627,11 @@ export default function SubdivisionProcessManager({
     }
   }
 
-  const autoCreatePlots = async (subdivisionId: string, totalPlots: number, subdivisionName: string) => {
+  const autoCreatePlots = async (
+    subdivisionId: string,
+    totalPlots: number,
+    subdivisionName: string
+  ) => {
     try {
       const plotsToCreate = []
 
@@ -617,13 +643,11 @@ export default function SubdivisionProcessManager({
           plot_size_acres: null, // To be calculated when sqm is entered
           plot_status: 'PLANNED',
           estimated_value_kes: null, // To be filled by user
-          plot_notes: `Auto-generated plot for ${subdivisionName}. Please update size and value.`
+          plot_notes: `Auto-generated plot for ${subdivisionName}. Please update size and value.`,
         })
       }
 
-      const { error } = await supabase
-        .from('subdivision_plots')
-        .insert(plotsToCreate)
+      const { error } = await supabase.from('subdivision_plots').insert(plotsToCreate)
 
       if (error) throw error
 
@@ -675,9 +699,7 @@ export default function SubdivisionProcessManager({
           plot_notes: values.plotNotes || null,
         }
 
-        const { error } = await supabase
-          .from('subdivision_plots')
-          .insert([plotData])
+        const { error } = await supabase.from('subdivision_plots').insert([plotData])
 
         if (error) throw error
 
@@ -685,7 +707,7 @@ export default function SubdivisionProcessManager({
         const { error: updateError } = await supabase
           .from('property_subdivisions')
           .update({
-            total_plots_created: selectedSubdivision.total_plots_created + 1
+            total_plots_created: selectedSubdivision.total_plots_created + 1,
           })
           .eq('id', selectedSubdivision.id)
 
@@ -710,43 +732,48 @@ export default function SubdivisionProcessManager({
       plotNumber: plot.plot_number,
       plotSizeSqm: plot.plot_size_sqm || 0,
       estimatedValue: plot.estimated_value_kes || undefined,
-      plotNotes: plot.plot_notes?.includes('Auto-generated') ? '' : (plot.plot_notes || undefined), // Clear auto-generated notes
+      plotNotes: plot.plot_notes?.includes('Auto-generated') ? '' : plot.plot_notes || undefined, // Clear auto-generated notes
     })
     setShowPlotForm(true)
   }
 
   const createPropertyFromPlot = async (plot: SubdivisionPlot) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         alert('Please log in to create properties')
         return
       }
 
-      const subdivision = subdivisions.find(s => s.id === plot.subdivision_id)
+      const subdivision = subdivisions.find((s) => s.id === plot.subdivision_id)
       if (!subdivision) return
 
       // Confirmation dialog before creating property
       const confirmCreate = window.confirm(
         `🏠 CREATE PROPERTY FROM PLOT\n\n` +
-        `This will:\n` +
-        `• Create a new property: "${subdivision.subdivision_name} - Plot ${plot.plot_number}"\n` +
-        `• Change plot status to "Property Created"\n` +
-        `• Make the plot no longer editable\n` +
-        `• Add the property to your properties list\n\n` +
-        `You can revert this action later if needed.\n\n` +
-        `Continue with property creation?`
+          `This will:\n` +
+          `• Create a new property: "${subdivision.subdivision_name} - Plot ${plot.plot_number}"\n` +
+          `• Change plot status to "Property Created"\n` +
+          `• Make the plot no longer editable\n` +
+          `• Add the property to your properties list\n\n` +
+          `You can revert this action later if needed.\n\n` +
+          `Continue with property creation?`
       )
 
       if (!confirmCreate) return
 
       // Create property from plot
-      const { data: propertyId, error: createError } = await supabase.rpc('create_property_with_owner', {
-        property_name: `${subdivision.subdivision_name} - Plot ${plot.plot_number}`,
-        property_address: `Plot ${plot.plot_number}, ${subdivision.properties?.physical_address || 'Subdivision Address'}`,
-        property_type: subdivision.properties?.property_type || 'RESIDENTIAL_LAND',
-        owner_user_id: user.id
-      })
+      const { data: propertyId, error: createError } = await supabase.rpc(
+        'create_property_with_owner',
+        {
+          property_name: `${subdivision.subdivision_name} - Plot ${plot.plot_number}`,
+          property_address: `Plot ${plot.plot_number}, ${subdivision.properties?.physical_address || 'Subdivision Address'}`,
+          property_type: subdivision.properties?.property_type || 'RESIDENTIAL_LAND',
+          owner_user_id: user.id,
+        }
+      )
 
       if (createError) throw createError
 
@@ -762,7 +789,7 @@ export default function SubdivisionProcessManager({
           total_area_sqm: plot.plot_size_sqm,
           total_area_acres: plot.plot_size_acres,
           sale_price_kes: plot.estimated_value_kes,
-          acquisition_notes: `Created from subdivision of ${subdivision.properties?.name}. Plot ${plot.plot_number} of ${subdivision.subdivision_name}.`
+          acquisition_notes: `Created from subdivision of ${subdivision.properties?.name}. Plot ${plot.plot_number} of ${subdivision.subdivision_name}.`,
         })
         .eq('id', propertyId)
 
@@ -773,7 +800,7 @@ export default function SubdivisionProcessManager({
         .from('subdivision_plots')
         .update({
           plot_status: 'PROPERTY_CREATED',
-          property_id: propertyId
+          property_id: propertyId,
         })
         .eq('id', plot.id)
 
@@ -795,23 +822,25 @@ export default function SubdivisionProcessManager({
         return
       }
 
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         alert('Please log in to revert properties')
         return
       }
 
-      const subdivision = subdivisions.find(s => s.id === plot.subdivision_id)
+      const subdivision = subdivisions.find((s) => s.id === plot.subdivision_id)
       if (!subdivision) return
 
       // Confirmation dialog with warning
       const confirmRevert = window.confirm(
         `⚠️ REVERT PROPERTY TO PLOT\n\n` +
-        `This will:\n` +
-        `• Delete the property "${subdivision.subdivision_name} - Plot ${plot.plot_number}"\n` +
-        `• Revert plot back to editable status\n` +
-        `• Remove all property data permanently\n\n` +
-        `Are you sure you want to continue?`
+          `This will:\n` +
+          `• Delete the property "${subdivision.subdivision_name} - Plot ${plot.plot_number}"\n` +
+          `• Revert plot back to editable status\n` +
+          `• Remove all property data permanently\n\n` +
+          `Are you sure you want to continue?`
       )
 
       if (!confirmRevert) return
@@ -841,7 +870,7 @@ export default function SubdivisionProcessManager({
         .from('subdivision_plots')
         .update({
           plot_status: 'PLANNED',
-          property_id: null
+          property_id: null,
         })
         .eq('id', plot.id)
 
@@ -859,29 +888,31 @@ export default function SubdivisionProcessManager({
       const { error: subdivisionError } = await supabase
         .from('property_subdivisions')
         .update({
-          total_plots_created: Math.max(0, subdivision.total_plots_created - 1)
+          total_plots_created: Math.max(0, subdivision.total_plots_created - 1),
         })
         .eq('id', subdivision.id)
 
       if (subdivisionError) throw subdivisionError
 
       // 4. Log the reversion action for audit trail
-      const { error: auditError } = await supabase
-        .from('property_audit_log')
-        .insert([{
+      const { error: auditError } = await supabase.from('property_audit_log').insert([
+        {
           property_id: plot.property_id,
           action: 'REVERTED_TO_PLOT',
           performed_by: user.id,
           details: `Property reverted back to subdivision plot. Plot ${plot.plot_number} in ${subdivision.subdivision_name}`,
-          timestamp: new Date().toISOString()
-        }])
+          timestamp: new Date().toISOString(),
+        },
+      ])
 
       // Don't fail the operation if audit logging fails
       if (auditError) {
         console.warn('Audit logging failed:', auditError)
       }
 
-      alert('✅ Property successfully reverted to subdivision plot!\n\nThe plot is now editable and can be modified or re-converted.')
+      alert(
+        '✅ Property successfully reverted to subdivision plot!\n\nThe plot is now editable and can be modified or re-converted.'
+      )
 
       // Reload data to reflect changes
       loadSubdivisions()
@@ -894,30 +925,34 @@ export default function SubdivisionProcessManager({
 
   const permanentlyDeletePlot = async (plot: SubdivisionPlot) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         alert('Please log in to delete plots')
         return
       }
 
-      const subdivision = subdivisions.find(s => s.id === plot.subdivision_id)
+      const subdivision = subdivisions.find((s) => s.id === plot.subdivision_id)
       if (!subdivision) return
 
       // Check if plot has a linked property
       if (plot.property_id) {
-        alert('❌ Cannot delete plot with linked property!\n\nPlease use "Revert to Subdivision" first to remove the property, then delete the plot.')
+        alert(
+          '❌ Cannot delete plot with linked property!\n\nPlease use "Revert to Subdivision" first to remove the property, then delete the plot.'
+        )
         return
       }
 
       // Confirmation dialog with strong warning
       const confirmDelete = window.confirm(
         `🗑️ PERMANENTLY DELETE PLOT\n\n` +
-        `This will PERMANENTLY DELETE:\n` +
-        `• Plot "${plot.plot_number}" from ${subdivision.subdivision_name}\n` +
-        `• All plot data (size, value, notes)\n` +
-        `• This action is IRREVERSIBLE\n\n` +
-        `⚠️ WARNING: This cannot be undone!\n\n` +
-        `Are you absolutely sure you want to permanently delete this plot?`
+          `This will PERMANENTLY DELETE:\n` +
+          `• Plot "${plot.plot_number}" from ${subdivision.subdivision_name}\n` +
+          `• All plot data (size, value, notes)\n` +
+          `• This action is IRREVERSIBLE\n\n` +
+          `⚠️ WARNING: This cannot be undone!\n\n` +
+          `Are you absolutely sure you want to permanently delete this plot?`
       )
 
       if (!confirmDelete) return
@@ -925,9 +960,9 @@ export default function SubdivisionProcessManager({
       // Double confirmation for safety
       const doubleConfirm = window.confirm(
         `⚠️ FINAL CONFIRMATION\n\n` +
-        `You are about to PERMANENTLY DELETE Plot "${plot.plot_number}".\n\n` +
-        `This action is IRREVERSIBLE and cannot be undone.\n\n` +
-        `Type "DELETE" in your mind and click OK to proceed, or Cancel to abort.`
+          `You are about to PERMANENTLY DELETE Plot "${plot.plot_number}".\n\n` +
+          `This action is IRREVERSIBLE and cannot be undone.\n\n` +
+          `Type "DELETE" in your mind and click OK to proceed, or Cancel to abort.`
       )
 
       if (!doubleConfirm) return
@@ -944,29 +979,31 @@ export default function SubdivisionProcessManager({
       const { error: subdivisionError } = await supabase
         .from('property_subdivisions')
         .update({
-          total_plots_created: Math.max(0, subdivision.total_plots_created - 1)
+          total_plots_created: Math.max(0, subdivision.total_plots_created - 1),
         })
         .eq('id', subdivision.id)
 
       if (subdivisionError) throw subdivisionError
 
       // Log the deletion action for audit trail
-      const { error: auditError } = await supabase
-        .from('property_audit_log')
-        .insert([{
+      const { error: auditError } = await supabase.from('property_audit_log').insert([
+        {
           property_id: null,
           action: 'PLOT_PERMANENTLY_DELETED',
           performed_by: user.id,
           details: `Plot "${plot.plot_number}" permanently deleted from ${subdivision.subdivision_name}. Plot data: ${plot.plot_size_sqm} sqm, ${plot.estimated_value_kes ? 'KES ' + plot.estimated_value_kes : 'No value'}`,
-          timestamp: new Date().toISOString()
-        }])
+          timestamp: new Date().toISOString(),
+        },
+      ])
 
       // Don't fail the operation if audit logging fails
       if (auditError) {
         console.warn('Audit logging failed:', auditError)
       }
 
-      alert('✅ Plot permanently deleted!\n\nThe plot has been removed from the subdivision system.')
+      alert(
+        '✅ Plot permanently deleted!\n\nThe plot has been removed from the subdivision system.'
+      )
 
       // Reload data to reflect changes
       loadSubdivisions()
@@ -979,18 +1016,18 @@ export default function SubdivisionProcessManager({
 
   const getStatusColor = (status: string) => {
     const colors = {
-      'PLANNING': 'bg-gray-100 text-gray-800',
-      'SURVEY_ORDERED': 'bg-yellow-100 text-yellow-800',
-      'SURVEY_COMPLETED': 'bg-blue-100 text-blue-800',
-      'APPROVAL_PENDING': 'bg-purple-100 text-purple-800',
-      'APPROVED': 'bg-green-100 text-green-800',
-      'PLOTS_CREATED': 'bg-indigo-100 text-indigo-800',
-      'COMPLETED': 'bg-green-100 text-green-800',
-      'PLANNED': 'bg-gray-100 text-gray-800',
-      'SURVEYED': 'bg-blue-100 text-blue-800',
-      'TITLED': 'bg-purple-100 text-purple-800',
-      'PROPERTY_CREATED': 'bg-green-100 text-green-800',
-      'SOLD': 'bg-green-100 text-green-800'
+      PLANNING: 'bg-gray-100 text-gray-800',
+      SURVEY_ORDERED: 'bg-yellow-100 text-yellow-800',
+      SURVEY_COMPLETED: 'bg-blue-100 text-blue-800',
+      APPROVAL_PENDING: 'bg-purple-100 text-purple-800',
+      APPROVED: 'bg-green-100 text-green-800',
+      PLOTS_CREATED: 'bg-indigo-100 text-indigo-800',
+      COMPLETED: 'bg-green-100 text-green-800',
+      PLANNED: 'bg-gray-100 text-gray-800',
+      SURVEYED: 'bg-blue-100 text-blue-800',
+      TITLED: 'bg-purple-100 text-purple-800',
+      PROPERTY_CREATED: 'bg-green-100 text-green-800',
+      SOLD: 'bg-green-100 text-green-800',
     }
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
   }
@@ -1001,7 +1038,9 @@ export default function SubdivisionProcessManager({
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Subdivision Process</h2>
-          <p className="text-gray-600">Manage property subdivisions and create individual plot properties</p>
+          <p className="text-gray-600">
+            Manage property subdivisions and create individual plot properties
+          </p>
         </div>
       </div>
 
@@ -1009,7 +1048,7 @@ export default function SubdivisionProcessManager({
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
         {[
           { id: 'properties', label: 'Subdivision in Progress', icon: '🏗️' },
-          { id: 'plots', label: 'Subdivision Plots', icon: '📐' }
+          { id: 'plots', label: 'Subdivision Plots', icon: '📐' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -1040,7 +1079,10 @@ export default function SubdivisionProcessManager({
             <div className="ml-3">
               <h3 className="text-lg font-medium text-yellow-800">Subdivision Tables Not Found</h3>
               <div className="mt-2 text-sm text-yellow-700">
-                <p>The subdivision management tables haven't been created yet. To use subdivision features:</p>
+                <p>
+                  The subdivision management tables haven't been created yet. To use subdivision
+                  features:
+                </p>
                 <ol className="mt-2 list-decimal list-inside space-y-1">
                   <li>Go to your Supabase dashboard</li>
                   <li>Navigate to the SQL Editor</li>
@@ -1048,7 +1090,8 @@ export default function SubdivisionProcessManager({
                   <li>Refresh this page</li>
                 </ol>
                 <p className="mt-3 text-xs">
-                  Contact your system administrator if you need help setting up the subdivision tables.
+                  Contact your system administrator if you need help setting up the subdivision
+                  tables.
                 </p>
               </div>
             </div>
@@ -1060,7 +1103,9 @@ export default function SubdivisionProcessManager({
           {activeTab === 'properties' && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Properties with Subdivision in Progress</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Properties with Subdivision in Progress
+                </h3>
                 <p className="text-sm text-gray-600 mt-1">
                   Showing properties where subdivision status is "Sub-Division Started"
                 </p>
@@ -1078,18 +1123,25 @@ export default function SubdivisionProcessManager({
               {filteredProperties.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-lg">
                   <div className="text-4xl mb-4">🏗️</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Properties with Subdivision in Progress</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Properties with Subdivision in Progress
+                  </h3>
                   <p className="text-gray-600 mb-4">
-                    Properties will appear here when their subdivision status is set to "Sub-Division Started" in the Properties tab.
+                    Properties will appear here when their subdivision status is set to
+                    "Sub-Division Started" in the Properties tab.
                   </p>
                   <p className="text-sm text-gray-500">
-                    To start subdivision on a property, go to Properties → change subdivision status to "Sub-Division Started" → Save Changes
+                    To start subdivision on a property, go to Properties → change subdivision status
+                    to "Sub-Division Started" → Save Changes
                   </p>
                 </div>
               ) : (
                 <div className="grid gap-6">
                   {filteredProperties.map((property) => (
-                    <div key={property.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                    <div
+                      key={property.id}
+                      className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                    >
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mb-4">
                         <div className="md:col-span-2">
                           <div className="flex items-center space-x-3 mb-2">
@@ -1104,15 +1156,30 @@ export default function SubdivisionProcessManager({
                           </div>
                           <p className="text-gray-600 mb-2">{property.physical_address}</p>
                           <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                            <span>Type: {property.property_type?.replace('_', ' ') || 'Unknown'}</span>
-                            {property.total_area_acres && <span>Area: {property.total_area_acres} acres</span>}
+                            <span>
+                              Type: {property.property_type?.replace('_', ' ') || 'Unknown'}
+                            </span>
+                            {property.total_area_acres && (
+                              <span>Area: {property.total_area_acres} acres</span>
+                            )}
                             {property.expected_rental_income_kes && (
-                              <span>Expected Rent: KES {property.expected_rental_income_kes.toLocaleString()}/month</span>
+                              <span>
+                                Expected Rent: KES{' '}
+                                {property.expected_rental_income_kes.toLocaleString()}/month
+                              </span>
                             )}
                             {property.purchase_completion_date && (
-                              <span>Purchased: {new Date(property.purchase_completion_date).toLocaleDateString()}</span>
+                              <span>
+                                Purchased:{' '}
+                                {new Date(property.purchase_completion_date).toLocaleDateString()}
+                              </span>
                             )}
-                            {property.subdivision_date && <span>Subdivided: {new Date(property.subdivision_date).toLocaleDateString()}</span>}
+                            {property.subdivision_date && (
+                              <span>
+                                Subdivided:{' '}
+                                {new Date(property.subdivision_date).toLocaleDateString()}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -1122,6 +1189,8 @@ export default function SubdivisionProcessManager({
                             lng={property.lng ?? null}
                             address={property.physical_address ?? property.name}
                             propertyName={property.name}
+                            debug={process.env.NODE_ENV === 'development'}
+                            debugContext={`Subdivision Manager - ${property.name}`}
                           />
                         </div>
                       </div>
@@ -1132,9 +1201,11 @@ export default function SubdivisionProcessManager({
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => setViewingPropertyId(
-                              viewingPropertyId === property.id ? null : property.id
-                            )}
+                            onClick={() =>
+                              setViewingPropertyId(
+                                viewingPropertyId === property.id ? null : property.id
+                              )
+                            }
                           >
                             {viewingPropertyId === property.id ? 'Hide Details' : 'View Details'}
                           </Button>
@@ -1174,13 +1245,17 @@ export default function SubdivisionProcessManager({
                             size="sm"
                             onClick={() => {
                               // Find subdivision for this property
-                              const subdivision = subdivisions.find(s => s.original_property_id === property.id)
+                              const subdivision = subdivisions.find(
+                                (s) => s.original_property_id === property.id
+                              )
                               if (subdivision) {
                                 setSelectedSubdivision(subdivision)
                                 loadSubdivisionPlots(subdivision.id)
                                 setActiveTab('plots')
                               } else {
-                                alert('No subdivision found for this property. Create a subdivision plan first.')
+                                alert(
+                                  'No subdivision found for this property. Create a subdivision plan first.'
+                                )
                               }
                             }}
                           >
@@ -1214,15 +1289,15 @@ export default function SubdivisionProcessManager({
             </div>
           )}
 
-
-
           {/* Plots Tab */}
           {activeTab === 'plots' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {selectedSubdivision ? `${selectedSubdivision.subdivision_name} - Plots` : 'Subdivision Plots'}
+                    {selectedSubdivision
+                      ? `${selectedSubdivision.subdivision_name} - Plots`
+                      : 'Subdivision Plots'}
                   </h3>
                   {selectedSubdivision && (
                     <div className="flex items-center space-x-4 mt-1">
@@ -1257,7 +1332,8 @@ export default function SubdivisionProcessManager({
                     </Button>
                     {plotLimitReached && selectedSubdivision && (
                       <div className="text-xs text-amber-600 text-right max-w-xs">
-                        ⚠️ Plot limit reached: {subdivisionPlots.length}/{selectedSubdivision.total_plots_planned} plots created
+                        ⚠️ Plot limit reached: {subdivisionPlots.length}/
+                        {selectedSubdivision.total_plots_planned} plots created
                       </div>
                     )}
                   </div>
@@ -1268,14 +1344,20 @@ export default function SubdivisionProcessManager({
                 <div className="text-center py-8 bg-gray-50 rounded-lg">
                   <div className="text-4xl mb-4">📐</div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Subdivision</h3>
-                  <p className="text-gray-600">Choose a subdivision from the Subdivision in Progress tab to view its plots.</p>
+                  <p className="text-gray-600">
+                    Choose a subdivision from the Subdivision in Progress tab to view its plots.
+                  </p>
                 </div>
               ) : subdivisionPlots.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-lg">
                   <div className="text-4xl mb-4">📐</div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Plots Found</h3>
-                  <p className="text-gray-600 mb-2">Plots should have been auto-created when the subdivision was started.</p>
-                  <p className="text-sm text-gray-500 mb-4">If this is an older subdivision, you can create plots manually.</p>
+                  <p className="text-gray-600 mb-2">
+                    Plots should have been auto-created when the subdivision was started.
+                  </p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    If this is an older subdivision, you can create plots manually.
+                  </p>
                   <div className="flex flex-col items-center space-y-2">
                     <Button
                       variant="primary"
@@ -1296,7 +1378,8 @@ export default function SubdivisionProcessManager({
                     </Button>
                     {plotLimitReached && selectedSubdivision && (
                       <div className="text-xs text-amber-600 text-center max-w-xs">
-                        ⚠️ Plot limit reached: {subdivisionPlots.length}/{selectedSubdivision.total_plots_planned} plots created
+                        ⚠️ Plot limit reached: {subdivisionPlots.length}/
+                        {selectedSubdivision.total_plots_planned} plots created
                       </div>
                     )}
                   </div>
@@ -1304,99 +1387,111 @@ export default function SubdivisionProcessManager({
               ) : (
                 <>
                   {/* Info message for auto-created plots */}
-                  {selectedSubdivision && subdivisionPlots.length > 0 && subdivisionPlots.every(plot => plot.plot_notes?.includes('Auto-generated')) && (
-                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-start space-x-3">
-                        <div className="text-blue-500 text-xl">ℹ️</div>
-                        <div>
-                          <h4 className="text-sm font-medium text-blue-900 mb-1">
-                            Plots Auto-Created Successfully
-                          </h4>
-                          <p className="text-sm text-blue-700 mb-2">
-                            {subdivisionPlots.length} plots have been automatically created for this subdivision.
-                            Click "✏️ Edit Plot" on any plot to add size, value, and other details.
-                          </p>
-                          <p className="text-xs text-blue-600">
-                            💡 Tip: You can edit multiple plots quickly by updating one, then copying similar values to others.
-                          </p>
+                  {selectedSubdivision &&
+                    subdivisionPlots.length > 0 &&
+                    subdivisionPlots.every((plot) =>
+                      plot.plot_notes?.includes('Auto-generated')
+                    ) && (
+                      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-start space-x-3">
+                          <div className="text-blue-500 text-xl">ℹ️</div>
+                          <div>
+                            <h4 className="text-sm font-medium text-blue-900 mb-1">
+                              Plots Auto-Created Successfully
+                            </h4>
+                            <p className="text-sm text-blue-700 mb-2">
+                              {subdivisionPlots.length} plots have been automatically created for
+                              this subdivision. Click "✏️ Edit Plot" on any plot to add size, value,
+                              and other details.
+                            </p>
+                            <p className="text-xs text-blue-600">
+                              💡 Tip: You can edit multiple plots quickly by updating one, then
+                              copying similar values to others.
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   <div className="grid gap-4">
                     {subdivisionPlots.map((plot) => (
-                    <div key={plot.id} className="bg-white rounded-lg border border-gray-200 p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h4 className="font-semibold text-gray-900">Plot {plot.plot_number}</h4>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(plot.plot_status)}`}>
-                              {plot.plot_status.replace('_', ' ')}
-                            </span>
-                            {plot.plot_status === 'PLANNED' && (
-                              <span className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-full">
-                                ✏️ Editable
+                      <div key={plot.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h4 className="font-semibold text-gray-900">
+                                Plot {plot.plot_number}
+                              </h4>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(plot.plot_status)}`}
+                              >
+                                {plot.plot_status.replace('_', ' ')}
                               </span>
+                              {plot.plot_status === 'PLANNED' && (
+                                <span className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-full">
+                                  ✏️ Editable
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-gray-600 mb-1">
+                              {plot.plot_size_sqm ? plot.plot_size_sqm.toLocaleString() : '0'} sqm (
+                              {plot.plot_size_acres ? plot.plot_size_acres.toFixed(4) : '0.0000'}{' '}
+                              acres)
+                            </p>
+                            {plot.estimated_value_kes && (
+                              <p className="text-sm text-gray-500 mb-1">
+                                Estimated Value: KES {plot.estimated_value_kes.toLocaleString()}
+                              </p>
+                            )}
+                            {plot.plot_notes && (
+                              <p className="text-xs text-gray-400 italic">
+                                Notes: {plot.plot_notes}
+                              </p>
                             )}
                           </div>
-                          <p className="text-gray-600 mb-1">
-                            {plot.plot_size_sqm ? plot.plot_size_sqm.toLocaleString() : '0'} sqm ({plot.plot_size_acres ? plot.plot_size_acres.toFixed(4) : '0.0000'} acres)
-                          </p>
-                          {plot.estimated_value_kes && (
-                            <p className="text-sm text-gray-500 mb-1">
-                              Estimated Value: KES {plot.estimated_value_kes.toLocaleString()}
-                            </p>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-2 justify-end">
+                          {plot.plot_status === 'PLANNED' && (
+                            <>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => startEditPlot(plot)}
+                              >
+                                ✏️ Edit Plot
+                              </Button>
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => createPropertyFromPlot(plot)}
+                              >
+                                🏠 Create Property
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => permanentlyDeletePlot(plot)}
+                                className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 hover:bg-red-50"
+                              >
+                                🗑️ Delete Plot
+                              </Button>
+                            </>
                           )}
-                          {plot.plot_notes && (
-                            <p className="text-xs text-gray-400 italic">
-                              Notes: {plot.plot_notes}
-                            </p>
+                          {plot.plot_status === 'PROPERTY_CREATED' && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => revertPropertyToPlot(plot)}
+                              className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
+                            >
+                              ↩️ Revert to Subdivision
+                            </Button>
                           )}
                         </div>
                       </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-2 justify-end">
-                        {plot.plot_status === 'PLANNED' && (
-                          <>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => startEditPlot(plot)}
-                            >
-                              ✏️ Edit Plot
-                            </Button>
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => createPropertyFromPlot(plot)}
-                            >
-                              🏠 Create Property
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => permanentlyDeletePlot(plot)}
-                              className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 hover:bg-red-50"
-                            >
-                              🗑️ Delete Plot
-                            </Button>
-                          </>
-                        )}
-                        {plot.plot_status === 'PROPERTY_CREATED' && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => revertPropertyToPlot(plot)}
-                            className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
-                          >
-                            ↩️ Revert to Subdivision
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                   </div>
                 </>
               )}
@@ -1413,10 +1508,18 @@ export default function SubdivisionProcessManager({
           setSelectedProperty(null)
           subdivisionForm.reset()
         }}
-        title={selectedProperty && checkSubdivisionExists(selectedProperty.id) ? "Edit Subdivision Plan" : "Start Subdivision Process"}
+        title={
+          selectedProperty && checkSubdivisionExists(selectedProperty.id)
+            ? 'Edit Subdivision Plan'
+            : 'Start Subdivision Process'
+        }
       >
         <form onSubmit={subdivisionForm.handleSubmit(onSubdivisionSubmit)} className="space-y-4">
-          <FormField name="subdivisionName" label="Subdivision Name *" error={subdivisionForm.formState.errors.subdivisionName?.message}>
+          <FormField
+            name="subdivisionName"
+            label="Subdivision Name *"
+            error={subdivisionForm.formState.errors.subdivisionName?.message}
+          >
             {({ id }) => (
               <TextField
                 id={id}
@@ -1426,7 +1529,11 @@ export default function SubdivisionProcessManager({
             )}
           </FormField>
 
-          <FormField name="totalPlotsPlanned" label="Total Plots Planned *" error={subdivisionForm.formState.errors.totalPlotsPlanned?.message}>
+          <FormField
+            name="totalPlotsPlanned"
+            label="Total Plots Planned *"
+            error={subdivisionForm.formState.errors.totalPlotsPlanned?.message}
+          >
             {({ id }) => (
               <TextField
                 id={id}
@@ -1438,10 +1545,12 @@ export default function SubdivisionProcessManager({
             )}
           </FormField>
 
-
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField name="surveyorName" label="Surveyor Name *" error={subdivisionForm.formState.errors.surveyorName?.message}>
+            <FormField
+              name="surveyorName"
+              label="Surveyor Name *"
+              error={subdivisionForm.formState.errors.surveyorName?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -1451,7 +1560,11 @@ export default function SubdivisionProcessManager({
               )}
             </FormField>
 
-            <FormField name="surveyorContact" label="Surveyor Contact *" error={subdivisionForm.formState.errors.surveyorContact?.message}>
+            <FormField
+              name="surveyorContact"
+              label="Surveyor Contact *"
+              error={subdivisionForm.formState.errors.surveyorContact?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -1473,7 +1586,11 @@ export default function SubdivisionProcessManager({
           </FormField>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField name="surveyCost" label="Survey Cost (KES) *" error={subdivisionForm.formState.errors.surveyCost?.message}>
+            <FormField
+              name="surveyCost"
+              label="Survey Cost (KES) *"
+              error={subdivisionForm.formState.errors.surveyCost?.message}
+            >
               {({ id }) => (
                 <TextField
                   id={id}
@@ -1500,7 +1617,11 @@ export default function SubdivisionProcessManager({
             </FormField>
           </div>
 
-          <FormField name="expectedPlotValue" label="Expected Plot Value (KES) *" error={subdivisionForm.formState.errors.expectedPlotValue?.message}>
+          <FormField
+            name="expectedPlotValue"
+            label="Expected Plot Value (KES) *"
+            error={subdivisionForm.formState.errors.expectedPlotValue?.message}
+          >
             {({ id }) => (
               <TextField
                 id={id}
@@ -1513,7 +1634,11 @@ export default function SubdivisionProcessManager({
             )}
           </FormField>
 
-          <FormField name="targetCompletionDate" label="Target Completion Date *" error={subdivisionForm.formState.errors.targetCompletionDate?.message}>
+          <FormField
+            name="targetCompletionDate"
+            label="Target Completion Date *"
+            error={subdivisionForm.formState.errors.targetCompletionDate?.message}
+          >
             {({ id }) => (
               <TextField
                 id={id}
@@ -1553,9 +1678,12 @@ export default function SubdivisionProcessManager({
               disabled={subdivisionForm.formState.isSubmitting}
             >
               {subdivisionForm.formState.isSubmitting
-                ? (selectedProperty && checkSubdivisionExists(selectedProperty.id) ? 'Updating...' : 'Creating...')
-                : (selectedProperty && checkSubdivisionExists(selectedProperty.id) ? 'Update Subdivision Plan' : 'Start Subdivision')
-              }
+                ? selectedProperty && checkSubdivisionExists(selectedProperty.id)
+                  ? 'Updating...'
+                  : 'Creating...'
+                : selectedProperty && checkSubdivisionExists(selectedProperty.id)
+                  ? 'Update Subdivision Plan'
+                  : 'Start Subdivision'}
             </Button>
           </div>
         </form>
@@ -1569,10 +1697,14 @@ export default function SubdivisionProcessManager({
           setEditingPlot(null)
           plotForm.reset()
         }}
-        title={editingPlot ? `Edit Plot ${editingPlot.plot_number}` : "Add Plot"}
+        title={editingPlot ? `Edit Plot ${editingPlot.plot_number}` : 'Add Plot'}
       >
         <form onSubmit={plotForm.handleSubmit(onPlotSubmit)} className="space-y-4">
-          <FormField name="plotNumber" label="Plot Number" error={plotForm.formState.errors.plotNumber?.message}>
+          <FormField
+            name="plotNumber"
+            label="Plot Number"
+            error={plotForm.formState.errors.plotNumber?.message}
+          >
             {({ id }) => (
               <TextField
                 id={id}
@@ -1582,7 +1714,11 @@ export default function SubdivisionProcessManager({
             )}
           </FormField>
 
-          <FormField name="plotSizeSqm" label="Plot Size (Square Meters)" error={plotForm.formState.errors.plotSizeSqm?.message}>
+          <FormField
+            name="plotSizeSqm"
+            label="Plot Size (Square Meters)"
+            error={plotForm.formState.errors.plotSizeSqm?.message}
+          >
             {({ id }) => (
               <TextField
                 id={id}
@@ -1594,7 +1730,11 @@ export default function SubdivisionProcessManager({
             )}
           </FormField>
 
-          <FormField name="estimatedValue" label="Estimated Value (KES)" error={plotForm.formState.errors.estimatedValue?.message}>
+          <FormField
+            name="estimatedValue"
+            label="Estimated Value (KES)"
+            error={plotForm.formState.errors.estimatedValue?.message}
+          >
             {({ id }) => (
               <TextField
                 id={id}
@@ -1630,15 +1770,14 @@ export default function SubdivisionProcessManager({
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={plotForm.formState.isSubmitting}
-            >
+            <Button type="submit" variant="primary" disabled={plotForm.formState.isSubmitting}>
               {plotForm.formState.isSubmitting
-                ? (editingPlot ? 'Updating...' : 'Adding...')
-                : (editingPlot ? 'Update Plot' : 'Add Plot')
-              }
+                ? editingPlot
+                  ? 'Updating...'
+                  : 'Adding...'
+                : editingPlot
+                  ? 'Update Plot'
+                  : 'Add Plot'}
             </Button>
           </div>
         </form>
@@ -1685,7 +1824,11 @@ export default function SubdivisionProcessManager({
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
@@ -1702,35 +1845,43 @@ export default function SubdivisionProcessManager({
           {/* Changes List */}
           {pendingUpdateData && selectedProperty && (
             <div className="space-y-2">
-              {getChanges(pendingUpdateData.existingSubdivision, pendingUpdateData.values).map((change, index) => (
-                <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <div className="text-sm font-medium text-blue-900">{change.field}:</div>
-                  <div className="flex items-center space-x-2 mt-1 text-sm">
-                    {change.oldValue !== null && change.oldValue !== undefined && change.oldValue !== '' ? (
-                      <>
-                        <span className="text-red-600 line-through bg-red-50 px-2 py-1 rounded">
-                          {String(change.oldValue)}
+              {getChanges(pendingUpdateData.existingSubdivision, pendingUpdateData.values).map(
+                (change, index) => (
+                  <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="text-sm font-medium text-blue-900">{change.field}:</div>
+                    <div className="flex items-center space-x-2 mt-1 text-sm">
+                      {change.oldValue !== null &&
+                      change.oldValue !== undefined &&
+                      change.oldValue !== '' ? (
+                        <>
+                          <span className="text-red-600 line-through bg-red-50 px-2 py-1 rounded">
+                            {String(change.oldValue)}
+                          </span>
+                          <span className="text-gray-400">→</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-500 text-xs bg-gray-100 px-2 py-1 rounded">
+                          (new)
                         </span>
-                        <span className="text-gray-400">→</span>
-                      </>
-                    ) : (
-                      <span className="text-gray-500 text-xs bg-gray-100 px-2 py-1 rounded">(new)</span>
-                    )}
-                    <span className="text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
-                      {change.newValue !== null && change.newValue !== undefined && change.newValue !== ''
-                        ? String(change.newValue)
-                        : '(removed)'
-                      }
-                    </span>
+                      )}
+                      <span className="text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
+                        {change.newValue !== null &&
+                        change.newValue !== undefined &&
+                        change.newValue !== ''
+                          ? String(change.newValue)
+                          : '(removed)'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           )}
 
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
             <p className="text-sm text-gray-600">
-              <strong>Note:</strong> This action will update the subdivision plan and create a history record of all changes made.
+              <strong>Note:</strong> This action will update the subdivision plan and create a
+              history record of all changes made.
             </p>
           </div>
 

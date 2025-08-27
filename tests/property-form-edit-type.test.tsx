@@ -6,7 +6,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 // Mock AddressAutocomplete to a simple input to avoid external deps
 vi.mock('../src/components/location/AddressAutocomplete', () => ({
   default: (props: any) => (
-    <input aria-label="address" value={props.value || ''} onChange={(e) => props.onChange?.(e.target.value)} />
+    <input
+      aria-label="address"
+      value={props.value || ''}
+      onChange={(e) => props.onChange?.(e.target.value)}
+    />
   ),
 }))
 
@@ -20,7 +24,12 @@ vi.mock('../src/lib/supabase-client', () => {
   const eqMock = vi.fn().mockReturnThis()
   const selectMock = vi.fn().mockReturnThis()
   const singleMock = vi.fn().mockResolvedValue({ data: { id: 'prop-1' }, error: null })
-  const fromMock = vi.fn(() => ({ update: updateMock, eq: eqMock, select: selectMock, single: singleMock }))
+  const fromMock = vi.fn(() => ({
+    update: updateMock,
+    eq: eqMock,
+    select: selectMock,
+    single: singleMock,
+  }))
   const getUser = vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
 
   return {
@@ -37,7 +46,6 @@ import PropertyForm from '../src/components/properties/property-form'
 import * as supabaseModule from '../src/lib/supabase-client'
 
 const doubles = (supabaseModule as any).__test_doubles
-
 
 describe('PropertyForm editing property_type', () => {
   it('allows changing property_type and includes it in update payload', async () => {
@@ -68,13 +76,16 @@ describe('PropertyForm editing property_type', () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/properties/prop-1', expect.objectContaining({
-      method: 'PATCH',
-      headers: expect.objectContaining({
-        'Content-Type': 'application/json',
-      }),
-      body: expect.stringContaining('"property_type":"RESIDENTIAL_LAND"'),
-    }))
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/properties/prop-1',
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+        }),
+        body: expect.stringContaining('"property_type":"RESIDENTIAL_LAND"'),
+      })
+    )
   })
 
   it('shows a warning when switching between rental and land categories', async () => {
@@ -93,8 +104,9 @@ describe('PropertyForm editing property_type', () => {
     fireEvent.change(select, { target: { value: 'RESIDENTIAL_LAND' } })
 
     expect(
-      await screen.findByText(/Changing between rental and land types can affect existing units and tenants/i)
+      await screen.findByText(
+        /Changing between rental and land types can affect existing units and tenants/i
+      )
     ).toBeInTheDocument()
   })
 })
-

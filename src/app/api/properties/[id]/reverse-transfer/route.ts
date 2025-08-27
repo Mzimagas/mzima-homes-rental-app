@@ -11,7 +11,9 @@ async function getUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch {}
 
@@ -22,7 +24,10 @@ async function getUserId(req: NextRequest): Promise<string | null> {
 
     const token = authHeader.substring(7)
     const anonClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    const { data: { user }, error } = await anonClient.auth.getUser(token)
+    const {
+      data: { user },
+      error,
+    } = await anonClient.auth.getUser(token)
 
     return error ? null : user?.id || null
   } catch {
@@ -33,8 +38,7 @@ async function getUserId(req: NextRequest): Promise<string | null> {
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    const { data } = await admin
-      .rpc('get_user_accessible_properties', { user_uuid: userId })
+    const { data } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     return data?.some((p: any) => p.property_id === propertyId && p.can_edit_property) || false
   } catch {
@@ -42,20 +46,25 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
   }
 }
 
-export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const POST = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await getUserId(req)
     if (!userId) return errors.unauthorized()
 
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
     if (!hasAccess) return errors.forbidden('Insufficient permissions to perform reverse transfer')
 
-    const body = await req.json().catch(() => ({})) as { reason?: string; notes?: string }
+    const body = (await req.json().catch(() => ({}))) as { reason?: string; notes?: string }
     const reason = (body.reason || 'Unspecified issue').toString()
     const notes = (body.notes || '').toString()
 
@@ -70,7 +79,9 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
 
     if (propErr || !property) return errors.notFound('Property not found')
     if (property.property_source !== 'PURCHASE_PIPELINE') {
-      return errors.badRequest('Only properties originating from the purchase pipeline can be moved back')
+      return errors.badRequest(
+        'Only properties originating from the purchase pipeline can be moved back'
+      )
     }
 
     // Locate corresponding purchase record by source_reference_id or completed_property_id
@@ -112,7 +123,7 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
       .from('properties')
       .update({
         lifecycle_status: 'PENDING_PURCHASE',
-        acquisition_notes: (reverseNote),
+        acquisition_notes: reverseNote,
       })
       .eq('id', propertyId)
 
@@ -134,16 +145,22 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
     // Fire-and-forget audit
     try {
       fetch(`${new URL(req.url).origin}/api/security/audit`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-          event: 'reverse_transfer', identifier: propertyId, details: { purchaseId, reason, notes }
-        })
-      }).catch(()=>{})
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'reverse_transfer',
+          identifier: propertyId,
+          details: { purchaseId, reason, notes },
+        }),
+      }).catch(() => {})
     } catch {}
 
-    return NextResponse.json({ ok: true, data: { property_id: propertyId, purchase_id: purchaseId } })
+    return NextResponse.json({
+      ok: true,
+      data: { property_id: propertyId, purchase_id: purchaseId },
+    })
   } catch (e) {
     console.error('[POST /api/properties/[id]/reverse-transfer] error:', e)
     return errors.internal()
   }
 })
-

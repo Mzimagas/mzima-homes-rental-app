@@ -26,7 +26,8 @@ export default function AuditTrail() {
       <div className="border-b border-gray-200 pb-4">
         <h2 className="text-xl font-semibold text-gray-900">Audit Trail</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Monitor system changes, manage approvals, and ensure data integrity across all property management activities
+          Monitor system changes, manage approvals, and ensure data integrity across all property
+          management activities
         </p>
       </div>
 

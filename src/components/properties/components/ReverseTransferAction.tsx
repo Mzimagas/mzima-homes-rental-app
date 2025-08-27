@@ -15,7 +15,12 @@ interface ReverseTransferActionProps {
   onPipelineStatusChange?: (hasIssues: boolean) => void // Callback to notify parent of pipeline status
 }
 
-export default function ReverseTransferAction({ propertyId, onSuccess, refreshTrigger, onPipelineStatusChange }: ReverseTransferActionProps) {
+export default function ReverseTransferAction({
+  propertyId,
+  onSuccess,
+  refreshTrigger,
+  onPipelineStatusChange,
+}: ReverseTransferActionProps) {
   const { show } = useToast()
   const { properties } = usePropertyAccess()
   const [open, setOpen] = useState(false)
@@ -28,7 +33,7 @@ export default function ReverseTransferAction({ propertyId, onSuccess, refreshTr
 
   const reasons = ['Title Recalled', 'Legal Issues', 'Documentation Problems', 'Other']
 
-  const access = properties.find(p => p.property_id === propertyId)
+  const access = properties.find((p) => p.property_id === propertyId)
   const allowed = access && ['OWNER', 'PROPERTY_MANAGER'].includes(access.user_role)
 
   // Fetch pipeline progress for this property
@@ -146,7 +151,9 @@ export default function ReverseTransferAction({ propertyId, onSuccess, refreshTr
       setSubmitting(true)
 
       // Get auth token and CSRF token
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const token = session?.access_token
       const csrf = document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1]
 
@@ -169,8 +176,9 @@ export default function ReverseTransferAction({ propertyId, onSuccess, refreshTr
         body: JSON.stringify({ reason, notes }),
         credentials: 'same-origin',
       })
-      const result = await res.json().catch(()=>({}))
-      if (!res.ok || !result?.ok) throw new Error(result?.error || 'Failed to move property back to pipeline')
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || !result?.ok)
+        throw new Error(result?.error || 'Failed to move property back to pipeline')
 
       show('Property moved back to Purchase Pipeline', { variant: 'success' })
       setOpen(false)
@@ -215,15 +223,23 @@ export default function ReverseTransferAction({ propertyId, onSuccess, refreshTr
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Confirm Reverse Transfer">
         <div className="space-y-4">
           <div className="bg-amber-50 text-amber-800 p-3 rounded border border-amber-200 text-sm">
-            <p className="font-medium">This property will be moved back to the Purchase Pipeline due to incomplete status.</p>
-            <p>It will no longer appear in the Properties list until the pipeline is completed again.</p>
+            <p className="font-medium">
+              This property will be moved back to the Purchase Pipeline due to incomplete status.
+            </p>
+            <p>
+              It will no longer appear in the Properties list until the pipeline is completed again.
+            </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
             <Select value={reason} onChange={(e: any) => setReason(e.target.value)}>
               <option value="">Select a reason...</option>
-              {reasons.map(r => <option key={r} value={r}>{r}</option>)}
+              {reasons.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
             </Select>
           </div>
 
@@ -239,12 +255,19 @@ export default function ReverseTransferAction({ propertyId, onSuccess, refreshTr
           </div>
 
           <label className="inline-flex items-center text-sm">
-            <input type="checkbox" className="mr-2" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+            <input
+              type="checkbox"
+              className="mr-2"
+              checked={confirmed}
+              onChange={(e) => setConfirmed(e.target.checked)}
+            />
             I understand this action will move the property back to the Purchase Pipeline
           </label>
 
           <div className="flex justify-end space-x-2 pt-2">
-            <Button variant="secondary" onClick={() => setOpen(false)} disabled={submitting}>Cancel</Button>
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={submitting}>
+              Cancel
+            </Button>
             <Button variant="danger" onClick={handleSubmit} disabled={!confirmed || submitting}>
               {submitting ? 'Moving...' : 'Move to Pipeline'}
             </Button>
@@ -254,4 +277,3 @@ export default function ReverseTransferAction({ propertyId, onSuccess, refreshTr
     </>
   )
 }
-

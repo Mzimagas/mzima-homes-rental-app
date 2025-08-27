@@ -27,8 +27,9 @@ permission-management/
 ## 🧩 Components
 
 ### PropertySelector
+
 - **Purpose**: Handles property selection with lifecycle-based filtering
-- **Features**: 
+- **Features**:
   - Global permissions
   - Purchase Pipeline filtering (2 properties)
   - Subdivision filtering (1 property)
@@ -37,6 +38,7 @@ permission-management/
   - Search functionality
 
 ### UserSelector
+
 - **Purpose**: Manages user selection and search
 - **Features**:
   - User search with email validation
@@ -45,6 +47,7 @@ permission-management/
   - New user addition via email
 
 ### PermissionAssignmentModal
+
 - **Purpose**: Detailed permission assignment interface
 - **Features**:
   - Role template application (Admin, Supervisor, Staff, Member)
@@ -53,6 +56,7 @@ permission-management/
   - Bulk permission operations
 
 ### PermissionTable
+
 - **Purpose**: Displays and manages existing permissions
 - **Features**:
   - Tabular permission display
@@ -63,18 +67,21 @@ permission-management/
 ## 🎣 Custom Hooks
 
 ### usePropertySelection
+
 - Manages property selection state
 - Handles lifecycle filtering
 - Provides search functionality
 - Integrates with property service
 
 ### useUserSelection
+
 - Manages user selection state
 - Handles user search and filtering
 - Provides bulk selection operations
 - Validates email addresses
 
 ### usePermissionManagement
+
 - Manages permission CRUD operations
 - Handles filtering and pagination
 - Provides bulk operations
@@ -83,6 +90,7 @@ permission-management/
 ## 🛠️ Utilities
 
 ### permissionUtils.ts
+
 - Default permission structures
 - Permission validation functions
 - Role template classification
@@ -90,6 +98,7 @@ permission-management/
 - Permission summary generation
 
 ### roleTemplates.ts
+
 - Role template definitions
 - Template application functions
 - Permission level management
@@ -98,6 +107,7 @@ permission-management/
 ## 📝 Types
 
 All TypeScript interfaces and types are centralized in `types.ts`:
+
 - `UserPermissions`
 - `SectionPermission`
 - `PermissionLevel`

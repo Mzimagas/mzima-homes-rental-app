@@ -42,10 +42,12 @@ export default function PropertyDetailPage() {
   const [error, setError] = useState<string | null>(null)
   // Unit and property forms removed - using workflow-based management
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'units' | 'photos' | 'reservations' | 'users'>('overview')
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'units' | 'photos' | 'reservations' | 'users'
+  >('overview')
 
   // Check if current user can manage users for this property
-  const currentPropertyAccess = properties.find(p => p.property_id === propertyId)
+  const currentPropertyAccess = properties.find((p) => p.property_id === propertyId)
   const canManageUsers = currentPropertyAccess?.can_manage_users || false
 
   // Reset tab to overview if user doesn't have permission for users tab
@@ -57,7 +59,11 @@ export default function PropertyDetailPage() {
 
   // Ensure 'units' tab is not active for land properties
   useEffect(() => {
-    if (property && isLandProperty((property.property_type as any) || 'HOME') && activeTab === 'units') {
+    if (
+      property &&
+      isLandProperty((property.property_type as any) || 'HOME') &&
+      activeTab === 'units'
+    ) {
       setActiveTab('overview')
     }
   }, [property?.property_type, activeTab])
@@ -68,7 +74,7 @@ export default function PropertyDetailPage() {
       setError(null)
 
       // First check if user has access to this property
-      const hasAccess = properties.some(p => p.property_id === propertyId)
+      const hasAccess = properties.some((p) => p.property_id === propertyId)
       if (!hasAccess) {
         setError('You do not have access to this property')
         return
@@ -77,12 +83,14 @@ export default function PropertyDetailPage() {
       // Load property with units
       const { data: propertyData, error: propertyError } = await supabase
         .from('properties')
-        .select(`
+        .select(
+          `
           *,
           units (
             *
           )
-        `)
+        `
+        )
         .eq('id', propertyId)
         .single()
 
@@ -110,17 +118,21 @@ export default function PropertyDetailPage() {
 
         // Associate tenants with their units
         const unitsWithTenants = propertyData.units.map((unit: any) => {
-          const unitTenants = tenantsData?.filter((tenant: any) => tenant.current_unit_id === unit.id) || []
-          console.info(`[PropertyDetails] Unit ${unit.unit_label} has ${unitTenants.length} tenants:`, unitTenants)
+          const unitTenants =
+            tenantsData?.filter((tenant: any) => tenant.current_unit_id === unit.id) || []
+          console.info(
+            `[PropertyDetails] Unit ${unit.unit_label} has ${unitTenants.length} tenants:`,
+            unitTenants
+          )
           return {
             ...unit,
-            tenants: unitTenants
+            tenants: unitTenants,
           }
         })
 
         setProperty({
           ...propertyData,
-          units: unitsWithTenants
+          units: unitsWithTenants,
         })
       } else {
         setProperty(propertyData)
@@ -131,7 +143,6 @@ export default function PropertyDetailPage() {
       if (statsData && statsData.length > 0) {
         setStats(statsData[0])
       }
-
     } catch (err) {
       setError('Failed to load property details')
       console.error('Property details loading error:', err)
@@ -179,12 +190,14 @@ export default function PropertyDetailPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.back()}
-            className="text-gray-600 hover:text-gray-900"
-          >
+          <button onClick={() => router.back()} className="text-gray-600 hover:text-gray-900">
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <h1 className="text-2xl font-semibold text-gray-900">Property Details</h1>
@@ -199,12 +212,14 @@ export default function PropertyDetailPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.back()}
-            className="text-gray-600 hover:text-gray-900"
-          >
+          <button onClick={() => router.back()} className="text-gray-600 hover:text-gray-900">
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <h1 className="text-2xl font-semibold text-gray-900">Property Details</h1>
@@ -223,12 +238,14 @@ export default function PropertyDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.back()}
-            className="text-gray-600 hover:text-gray-900"
-          >
+          <button onClick={() => router.back()} className="text-gray-600 hover:text-gray-900">
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <div>
@@ -270,11 +287,15 @@ export default function PropertyDetailPage() {
               <div className="text-sm text-gray-600">Occupied Units</div>
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">{Math.round(stats.occupancy_rate)}%</div>
+              <div className="text-2xl font-bold text-yellow-600">
+                {Math.round(stats.occupancy_rate)}%
+              </div>
               <div className="text-sm text-gray-600">Occupancy Rate</div>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">{formatCurrency(stats.monthly_rent_actual)}</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {formatCurrency(stats.monthly_rent_actual)}
+              </div>
               <div className="text-sm text-gray-600">Monthly Revenue</div>
             </div>
           </div>
@@ -306,13 +327,17 @@ export default function PropertyDetailPage() {
             <div className="p-4 rounded-lg border">
               <div className="text-xs text-gray-500">Size (Acres)</div>
               <div className="text-sm font-medium text-gray-900">
-                {typeof (property as any).total_area_acres === 'number' ? `${(property as any).total_area_acres}` : 'Not specified'}
+                {typeof (property as any).total_area_acres === 'number'
+                  ? `${(property as any).total_area_acres}`
+                  : 'Not specified'}
               </div>
             </div>
             <div className="p-4 rounded-lg border">
               <div className="text-xs text-gray-500">Size (sqm)</div>
               <div className="text-sm font-medium text-gray-900">
-                {typeof (property as any).total_area_sqm === 'number' ? `${(property as any).total_area_sqm.toLocaleString()}` : 'Not specified'}
+                {typeof (property as any).total_area_sqm === 'number'
+                  ? `${(property as any).total_area_sqm.toLocaleString()}`
+                  : 'Not specified'}
               </div>
             </div>
 
@@ -326,13 +351,21 @@ export default function PropertyDetailPage() {
             <div className="p-4 rounded-lg border">
               <div className="text-xs text-gray-500">Electricity</div>
               <div className="text-sm font-medium text-gray-900">
-                {(property as any).electricity_available === true ? 'Available' : (property as any).electricity_available === false ? 'Not available' : 'Unknown'}
+                {(property as any).electricity_available === true
+                  ? 'Available'
+                  : (property as any).electricity_available === false
+                    ? 'Not available'
+                    : 'Unknown'}
               </div>
             </div>
             <div className="p-4 rounded-lg border">
               <div className="text-xs text-gray-500">Water</div>
               <div className="text-sm font-medium text-gray-900">
-                {(property as any).water_available === true ? 'Available' : (property as any).water_available === false ? 'Not available' : 'Unknown'}
+                {(property as any).water_available === true
+                  ? 'Available'
+                  : (property as any).water_available === false
+                    ? 'Not available'
+                    : 'Unknown'}
               </div>
             </div>
 
@@ -346,25 +379,34 @@ export default function PropertyDetailPage() {
                   </div>
                 </div>
                 {(property as any).development_permit_status && (
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${((status?: string) => {
-                    switch (status) {
-                      case 'APPROVED': return 'bg-green-100 text-green-700 border border-green-200'
-                      case 'PENDING': return 'bg-amber-100 text-amber-700 border border-amber-200'
-                      case 'DENIED': return 'bg-red-100 text-red-700 border border-red-200'
-                      case 'NOT_REQUIRED': return 'bg-gray-100 text-gray-700 border border-gray-200'
-                      default: return 'bg-gray-100 text-gray-700 border border-gray-200'
-                    }
-
-
-
-                  })((property as any).development_permit_status)}`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${((status?: string) => {
+                      switch (status) {
+                        case 'APPROVED':
+                          return 'bg-green-100 text-green-700 border border-green-200'
+                        case 'PENDING':
+                          return 'bg-amber-100 text-amber-700 border border-amber-200'
+                        case 'DENIED':
+                          return 'bg-red-100 text-red-700 border border-red-200'
+                        case 'NOT_REQUIRED':
+                          return 'bg-gray-100 text-gray-700 border border-gray-200'
+                        default:
+                          return 'bg-gray-100 text-gray-700 border border-gray-200'
+                      }
+                    })((property as any).development_permit_status)}`}
+                  >
                     {((status?: string) => {
                       switch (status) {
-                        case 'APPROVED': return 'Development Approved'
-                        case 'PENDING': return 'Permit Pending'
-                        case 'DENIED': return 'Permit Denied'
-                        case 'NOT_REQUIRED': return 'No Permit Required'
-                        default: return 'Permit Status Unknown'
+                        case 'APPROVED':
+                          return 'Development Approved'
+                        case 'PENDING':
+                          return 'Permit Pending'
+                        case 'DENIED':
+                          return 'Permit Denied'
+                        case 'NOT_REQUIRED':
+                          return 'No Permit Required'
+                        default:
+                          return 'Permit Status Unknown'
                       }
                     })((property as any).development_permit_status)}
                   </span>
@@ -375,29 +417,36 @@ export default function PropertyDetailPage() {
         </div>
       )}
 
-
       {/* Revenue Comparison */}
       {stats && !isLandProperty((property.property_type as any) || 'HOME') && (
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-medium text-gray-900 mb-1">Revenue Analysis</h3>
-          <p className="text-xs text-gray-500 mb-3">Revenue metrics apply only to rental properties</p>
+          <p className="text-xs text-gray-500 mb-3">
+            Revenue metrics apply only to rental properties
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Actual Revenue</span>
-                <span className="text-sm font-medium">{formatCurrency(stats.monthly_rent_actual)}</span>
+                <span className="text-sm font-medium">
+                  {formatCurrency(stats.monthly_rent_actual)}
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className="bg-green-600 h-2 rounded-full"
-                  style={{ width: `${stats.monthly_rent_potential > 0 ? (stats.monthly_rent_actual / stats.monthly_rent_potential) * 100 : 0}%` }}
+                  style={{
+                    width: `${stats.monthly_rent_potential > 0 ? (stats.monthly_rent_actual / stats.monthly_rent_potential) * 100 : 0}%`,
+                  }}
                 ></div>
               </div>
             </div>
             <div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Potential Revenue</span>
-                <span className="text-sm font-medium">{formatCurrency(stats.monthly_rent_potential)}</span>
+                <span className="text-sm font-medium">
+                  {formatCurrency(stats.monthly_rent_potential)}
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div className="bg-blue-600 h-2 rounded-full" style={{ width: '100%' }}></div>
@@ -432,7 +481,11 @@ export default function PropertyDetailPage() {
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${isLandProperty((property.property_type as any) || 'HOME') ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={isLandProperty((property.property_type as any) || 'HOME') ? 'Units are not applicable for land properties' : undefined}
+              title={
+                isLandProperty((property.property_type as any) || 'HOME')
+                  ? 'Units are not applicable for land properties'
+                  : undefined
+              }
             >
               Units & Tenants
             </button>
@@ -501,7 +554,9 @@ export default function PropertyDetailPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Property Type</label>
-                    <p className="mt-1 text-sm text-gray-900">{property.property_type || 'Not specified'}</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {property.property_type || 'Not specified'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -548,12 +603,16 @@ export default function PropertyDetailPage() {
                     <div key={unit.id} className="bg-white p-4 rounded-lg border">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                         <div className="md:col-span-2">
-                          <h4 className="text-sm font-medium text-gray-900">{unit.unit_label || ''}</h4>
+                          <h4 className="text-sm font-medium text-gray-900">
+                            {unit.unit_label || ''}
+                          </h4>
                           <p className="text-sm text-gray-500">
                             {formatCurrency(unit.monthly_rent_kes || 0)} / month
                           </p>
                           <div className="mt-2">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUnitStatusColor(unit)}`}>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUnitStatusColor(unit)}`}
+                            >
                               {getUnitStatusText(unit)}
                             </span>
                           </div>
@@ -613,7 +672,6 @@ export default function PropertyDetailPage() {
       {/* Unit and property forms removed - using workflow-based management */}
 
       {/* Land details form removed - using workflow-based management */}
-
     </div>
   )
 }

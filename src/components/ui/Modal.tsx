@@ -14,7 +14,12 @@ export interface ModalProps {
 export function Modal({ isOpen, onClose, title, children, initialFocusRef }: ModalProps) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose} initialFocus={initialFocusRef as any}>
+      <Dialog
+        as="div"
+        className="relative z-50"
+        onClose={onClose}
+        initialFocus={initialFocusRef as any}
+      >
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-200"
@@ -49,13 +54,25 @@ export function Modal({ isOpen, onClose, title, children, initialFocusRef }: Mod
                       className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                       aria-label="Close modal"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
                 )}
-                <div className={`overflow-y-auto ${title ? 'max-h-[calc(90vh-5rem)]' : 'max-h-[90vh] p-6'}`}>
+                <div
+                  className={`overflow-y-auto ${title ? 'max-h-[calc(90vh-5rem)]' : 'max-h-[90vh] p-6'}`}
+                >
                   {children}
                 </div>
               </Dialog.Panel>
@@ -68,4 +85,3 @@ export function Modal({ isOpen, onClose, title, children, initialFocusRef }: Mod
 }
 
 export default Modal
-

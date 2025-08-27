@@ -40,7 +40,10 @@ interface EnhancedPaymentHistoryProps {
   onViewPayment?: (paymentId: string) => void
 }
 
-export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment }: EnhancedPaymentHistoryProps) {
+export default function EnhancedPaymentHistory({
+  onRecordPayment,
+  onViewPayment,
+}: EnhancedPaymentHistoryProps) {
   const [payments, setPayments] = useState<PaymentWithDetails[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -49,7 +52,7 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
     searchTerm: '',
     methodFilter: '',
     amountRange: { min: 0, max: 0 },
-    tenantFilter: ''
+    tenantFilter: '',
   })
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [selectedPayments, setSelectedPayments] = useState<string[]>([])
@@ -70,7 +73,8 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
 
       let query = supabase
         .from('payments')
-        .select(`
+        .select(
+          `
           *,
           tenants (
             full_name,
@@ -90,15 +94,20 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
               period_end
             )
           )
-        `)
+        `
+        )
         .eq('tenants.units.properties.landlord_id', mockLandlordId)
 
       if (startDate) {
-        const startDateStr = typeof startDate === 'string' ? startDate : (startDate as Date).toISOString().split('T')[0]
+        const startDateStr =
+          typeof startDate === 'string'
+            ? startDate
+            : (startDate as Date).toISOString().split('T')[0]
         query = query.gte('payment_date', startDateStr)
       }
       if (endDate) {
-        const endDateStr = typeof endDate === 'string' ? endDate : (endDate as Date).toISOString().split('T')[0]
+        const endDateStr =
+          typeof endDate === 'string' ? endDate : (endDate as Date).toISOString().split('T')[0]
         query = query.lte('payment_date', endDateStr)
       }
 
@@ -120,17 +129,19 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
 
   // Filter and sort payments
   const filteredAndSortedPayments = useMemo(() => {
-    let filtered = payments.filter(payment => {
+    let filtered = payments.filter((payment) => {
       // Search term filter
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase()
         const tenantName = payment.tenants?.full_name?.toLowerCase() || ''
         const txRef = payment.tx_ref?.toLowerCase() || ''
         const paymentId = payment.id.toLowerCase()
-        
-        if (!tenantName.includes(searchLower) && 
-            !txRef.includes(searchLower) && 
-            !paymentId.includes(searchLower)) {
+
+        if (
+          !tenantName.includes(searchLower) &&
+          !txRef.includes(searchLower) &&
+          !paymentId.includes(searchLower)
+        ) {
           return false
         }
       }
@@ -162,7 +173,7 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
     // Sort payments
     filtered.sort((a, b) => {
       let comparison = 0
-      
+
       switch (sortBy) {
         case 'date':
           comparison = new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime()
@@ -196,23 +207,23 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
     return new Date(dateString).toLocaleDateString('en-KE', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
   const exportToCSV = () => {
     const headers = ['Date', 'Tenant', 'Amount', 'Method', 'Transaction Ref', 'Status']
-    const csvData = filteredAndSortedPayments.map(payment => [
+    const csvData = filteredAndSortedPayments.map((payment) => [
       payment.payment_date,
       payment.tenants?.full_name || 'Unknown',
       payment.amount_kes,
       payment.method,
       payment.tx_ref || '',
-      'Completed'
+      'Completed',
     ])
 
     const csvContent = [headers, ...csvData]
-      .map(row => row.map(field => `"${field}"`).join(','))
+      .map((row) => row.map((field) => `"${field}"`).join(','))
       .join('\n')
 
     const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -225,10 +236,8 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
   }
 
   const handleSelectPayment = (paymentId: string) => {
-    setSelectedPayments(prev => 
-      prev.includes(paymentId) 
-        ? prev.filter(id => id !== paymentId)
-        : [...prev, paymentId]
+    setSelectedPayments((prev) =>
+      prev.includes(paymentId) ? prev.filter((id) => id !== paymentId) : [...prev, paymentId]
     )
   }
 
@@ -236,7 +245,7 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
     if (selectedPayments.length === filteredAndSortedPayments.length) {
       setSelectedPayments([])
     } else {
-      setSelectedPayments(filteredAndSortedPayments.map(p => p.id))
+      setSelectedPayments(filteredAndSortedPayments.map((p) => p.id))
     }
   }
 
@@ -245,15 +254,20 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
       searchTerm: '',
       methodFilter: '',
       amountRange: { min: 0, max: 0 },
-      tenantFilter: ''
+      tenantFilter: '',
     })
   }
 
-  const totalAmount = filteredAndSortedPayments.reduce((sum, payment) => sum + payment.amount_kes, 0)
-  const averageAmount = filteredAndSortedPayments.length > 0 ? totalAmount / filteredAndSortedPayments.length : 0
+  const totalAmount = filteredAndSortedPayments.reduce(
+    (sum, payment) => sum + payment.amount_kes,
+    0
+  )
+  const averageAmount =
+    filteredAndSortedPayments.length > 0 ? totalAmount / filteredAndSortedPayments.length : 0
 
   if (loading) return <LoadingCard />
-  if (error) return <ErrorCard title="Error Loading Payments" message={error} onRetry={loadPayments} />
+  if (error)
+    return <ErrorCard title="Error Loading Payments" message={error} onRetry={loadPayments} />
 
   return (
     <div className="space-y-6">
@@ -266,7 +280,12 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
           >
             <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
             </svg>
             Record Payment
           </button>
@@ -293,11 +312,7 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
         </div>
 
         {/* Date Range Selector */}
-        <DateRangeSelector
-          value={dateRange}
-          onChange={setDateRange}
-          className="mb-4"
-        />
+        <DateRangeSelector value={dateRange} onChange={setDateRange} className="mb-4" />
       </div>
 
       {/* Filters and Search */}
@@ -310,11 +325,21 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
                 type="text"
                 placeholder="Search by tenant, transaction ref, or payment ID..."
                 value={filters.searchTerm}
-                onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                onChange={(e) => setFilters((prev) => ({ ...prev, searchTerm: e.target.value }))}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
-              <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             </div>
           </div>
@@ -323,7 +348,7 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
           <div className="flex items-center gap-2">
             <select
               value={filters.methodFilter}
-              onChange={(e) => setFilters(prev => ({ ...prev, methodFilter: e.target.value }))}
+              onChange={(e) => setFilters((prev) => ({ ...prev, methodFilter: e.target.value }))}
               className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Methods</option>
@@ -366,33 +391,41 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
                 type="text"
                 placeholder="Filter by tenant name..."
                 value={filters.tenantFilter}
-                onChange={(e) => setFilters(prev => ({ ...prev, tenantFilter: e.target.value }))}
+                onChange={(e) => setFilters((prev) => ({ ...prev, tenantFilter: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Min Amount (KES)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Min Amount (KES)
+              </label>
               <input
                 type="number"
                 placeholder="0"
                 value={filters.amountRange.min || ''}
-                onChange={(e) => setFilters(prev => ({
-                  ...prev,
-                  amountRange: { ...prev.amountRange, min: Number(e.target.value) || 0 }
-                }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    amountRange: { ...prev.amountRange, min: Number(e.target.value) || 0 },
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Max Amount (KES)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Max Amount (KES)
+              </label>
               <input
                 type="number"
                 placeholder="No limit"
                 value={filters.amountRange.max || ''}
-                onChange={(e) => setFilters(prev => ({
-                  ...prev,
-                  amountRange: { ...prev.amountRange, max: Number(e.target.value) || 0 }
-                }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    amountRange: { ...prev.amountRange, max: Number(e.target.value) || 0 },
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -497,7 +530,8 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
                         </div>
                         {payment.tenants?.units?.[0] && (
                           <div className="text-sm text-gray-500">
-                            {payment.tenants.units[0].unit_label} - {payment.tenants.units[0].properties?.name}
+                            {payment.tenants.units[0].unit_label} -{' '}
+                            {payment.tenants.units[0].properties?.name}
                           </div>
                         )}
                       </td>
@@ -513,7 +547,11 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
                         {(payment as any).paid_by_name ? (
                           <div>
                             <div className="font-medium">{(payment as any).paid_by_name}</div>
-                            {(payment as any).paid_by_contact && <div className="text-xs text-gray-500">{(payment as any).paid_by_contact}</div>}
+                            {(payment as any).paid_by_contact && (
+                              <div className="text-xs text-gray-500">
+                                {(payment as any).paid_by_contact}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <span className="text-gray-400">—</span>
@@ -532,8 +570,18 @@ export default function EnhancedPaymentHistory({ onRecordPayment, onViewPayment 
                           </button>
                         )}
                         <button className="text-gray-400 hover:text-gray-600">
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                            />
                           </svg>
                         </button>
                       </td>

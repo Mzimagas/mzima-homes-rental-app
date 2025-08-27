@@ -23,13 +23,17 @@ export async function GET(req: NextRequest) {
       maxRent: url.searchParams.get('maxRent') || undefined,
       amenities: url.searchParams.get('amenities') || undefined,
     })
-    if (!parsed.success) return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 })
+    if (!parsed.success)
+      return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 })
     const { propertyId, propertyType, minRent, maxRent, amenities } = parsed.data
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
     // Base: published + vacant; include a thumbnail (first media url) server-side
-    const { data: base, error: baseErr } = await supabase.from('view_public_vacant_units').select('*').order('monthly_rent_kes', { ascending: true })
+    const { data: base, error: baseErr } = await supabase
+      .from('view_public_vacant_units')
+      .select('*')
+      .order('monthly_rent_kes', { ascending: true })
     if (baseErr) return NextResponse.json({ ok: false, error: baseErr }, { status: 500 })
 
     // Filter property/rent in-memory (can be pushed to SQL view later)
@@ -41,14 +45,20 @@ export async function GET(req: NextRequest) {
 
     // Amenity filter
     let codes: string[] = []
-    if (amenities) codes = amenities.split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
+    if (amenities)
+      codes = amenities
+        .split(',')
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean)
     if (codes.length) {
-      const { data: ua } = await supabase
-        .from('unit_amenities')
-        .select('unit_id, amenities(code)')
+      const { data: ua } = await supabase.from('unit_amenities').select('unit_id, amenities(code)')
       const allowedUnitIds = new Set(
         (ua || [])
-          .filter((r: any) => (r as any).amenities && codes.every(c => ((r as any).amenities as any[]).some((a: any) => a.code === c)))
+          .filter(
+            (r: any) =>
+              (r as any).amenities &&
+              codes.every((c) => ((r as any).amenities as any[]).some((a: any) => a.code === c))
+          )
           .map((r: any) => r.unit_id)
       )
       rows = rows.filter((u: any) => allowedUnitIds.has(u.unit_id))
@@ -78,4 +88,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: e?.message || 'Failed' }, { status: 500 })
   }
 }
-

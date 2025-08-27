@@ -7,11 +7,13 @@ All hardcoded login credentials, API keys, and sensitive authentication data hav
 ## 🚨 **Removed Hardcoded Credentials**
 
 ### **1. Documentation Files**
+
 - ✅ `EMAIL_CONFIRMATION_ISSUE_RESOLVED.md`
   - **Removed**: Test user credentials (email, password, user ID)
   - **Action**: Replaced with `[REMOVED FOR SECURITY]` placeholders
 
 ### **2. Environment Configuration Files**
+
 - ✅ `.env.example`
   - **Removed**: Real Supabase project URL and API keys
   - **Removed**: Personal email address (`mzimagas@gmail.com`)
@@ -24,6 +26,7 @@ All hardcoded login credentials, API keys, and sensitive authentication data hav
   - **Action**: Replaced with placeholder values and security warnings
 
 ### **3. Test Configuration Files**
+
 - ✅ `jest.setup.js`
   - **Removed**: Hardcoded M-Pesa business short code (`174379`)
   - **Action**: Replaced with generic test values
@@ -34,6 +37,7 @@ All hardcoded login credentials, API keys, and sensitive authentication data hav
   - **Action**: Replaced with placeholder values
 
 ### **4. Source Code Security Issues**
+
 - ✅ `src/lib/auth/rbac.ts`
   - **Fixed**: Service role key usage in client-side code
   - **Action**: Changed to use anon key for client-side operations
@@ -45,6 +49,7 @@ All hardcoded login credentials, API keys, and sensitive authentication data hav
 ## 🔍 **Security Vulnerabilities Fixed**
 
 ### **High Severity**
+
 1. **Exposed Supabase Service Role Key**
    - **Risk**: Full database access from client-side
    - **Fix**: Moved to server-side only usage with runtime protection
@@ -58,6 +63,7 @@ All hardcoded login credentials, API keys, and sensitive authentication data hav
    - **Fix**: Replaced with placeholders in example files
 
 ### **Medium Severity**
+
 1. **Personal Email Exposure**
    - **Risk**: Privacy and potential phishing targets
    - **Fix**: Replaced with generic placeholders
@@ -67,27 +73,29 @@ All hardcoded login credentials, API keys, and sensitive authentication data hav
    - **Fix**: Sanitized all documentation
 
 ### **Low Severity**
+
 1. **Hardcoded Test Values**
    - **Risk**: Predictable test behavior
    - **Fix**: Replaced with generic test values
 
 ## 📁 **Files Modified**
 
-| File | Type | Changes |
-|------|------|---------|
-| `EMAIL_CONFIRMATION_ISSUE_RESOLVED.md` | Documentation | Removed test credentials |
-| `.env.example` | Configuration | Replaced real keys with placeholders |
-| `.env.local` | Configuration | Replaced real credentials with placeholders |
-| `jest.setup.js` | Test Config | Replaced hardcoded test values |
-| `supabase/config.toml` | Configuration | Replaced example credentials |
-| `src/lib/auth/rbac.ts` | Source Code | Fixed service key usage |
-| `src/lib/security/encryption.ts` | Source Code | Added server-side protection |
+| File                                   | Type          | Changes                                     |
+| -------------------------------------- | ------------- | ------------------------------------------- |
+| `EMAIL_CONFIRMATION_ISSUE_RESOLVED.md` | Documentation | Removed test credentials                    |
+| `.env.example`                         | Configuration | Replaced real keys with placeholders        |
+| `.env.local`                           | Configuration | Replaced real credentials with placeholders |
+| `jest.setup.js`                        | Test Config   | Replaced hardcoded test values              |
+| `supabase/config.toml`                 | Configuration | Replaced example credentials                |
+| `src/lib/auth/rbac.ts`                 | Source Code   | Fixed service key usage                     |
+| `src/lib/security/encryption.ts`       | Source Code   | Added server-side protection                |
 
 ## 🛡️ **Security Recommendations**
 
 ### **Immediate Actions Required**
 
 1. **Regenerate Compromised Credentials**
+
    ```bash
    # Rotate these credentials immediately:
    # - Supabase service role key
@@ -96,6 +104,7 @@ All hardcoded login credentials, API keys, and sensitive authentication data hav
    ```
 
 2. **Update Production Environment**
+
    ```bash
    # Ensure production uses different credentials
    # Never use development credentials in production
@@ -133,6 +142,7 @@ All hardcoded login credentials, API keys, and sensitive authentication data hav
 ## 🔧 **Setup Instructions for New Developers**
 
 ### **1. Environment Setup**
+
 ```bash
 # Copy the example file
 cp .env.example .env.local
@@ -143,11 +153,13 @@ cp .env.example .env.local
 ```
 
 ### **2. Required Credentials**
+
 - Supabase project URL and keys (from Supabase dashboard)
 - Gmail app password (if using email features)
 - M-Pesa credentials (if using payment features)
 
 ### **3. Security Checklist**
+
 - [ ] Verify `.env.local` is in `.gitignore`
 - [ ] Use different credentials for development/production
 - [ ] Enable 2FA on all service accounts
@@ -189,6 +201,7 @@ grep -r "eyJ" --exclude-dir=node_modules . # JWT tokens
 ## 📊 **Final Security Scan Results**
 
 ✅ **SECURITY SCAN PASSED**: 0 high-severity issues found
+
 - **Total findings**: 193 (down from 261)
 - **High severity**: 0 (down from 4) ✅
 - **Medium severity**: 86 (down from 146)
@@ -215,12 +228,14 @@ grep -r "eyJ" --exclude-dir=node_modules . # JWT tokens
 ## 🎯 **Tools Created**
 
 ### **Security Scanner** (`scripts/security-scan.js`)
+
 - Automated detection of hardcoded credentials
 - Pattern-based scanning for JWT tokens, passwords, API keys
 - Severity classification and reporting
 - False positive filtering
 
 ### **Documentation Sanitizer** (`scripts/sanitize-docs.js`)
+
 - Automated sanitization of documentation files
 - Email address and credential replacement
 - Batch processing with detailed reporting

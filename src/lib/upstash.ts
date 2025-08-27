@@ -22,7 +22,10 @@ export function getRedis() {
     async ttl(key: string) {
       const rec = store.get(key)
       if (!rec) return 0
-      if (rec.exp && Date.now() > rec.exp) { store.delete(key); return 0 }
+      if (rec.exp && Date.now() > rec.exp) {
+        store.delete(key)
+        return 0
+      }
       return rec.exp ? Math.max(0, Math.floor((rec.exp - Date.now()) / 1000)) : -1
     },
     async set(key: string, value: string, opts?: { ex?: number }) {
@@ -51,7 +54,11 @@ export function getRedis() {
     async smembers<T = string>(key: string): Promise<T[]> {
       const rec = store.get(key)
       if (!rec) return []
-      try { return JSON.parse(rec.value) } catch { return [] }
+      try {
+        return JSON.parse(rec.value)
+      } catch {
+        return []
+      }
     },
   }
   return redisClient
@@ -75,8 +82,7 @@ export function getRatelimit() {
   ratelimit = {
     async limit(_key: string) {
       return { success: true, limit: 10, remaining: 10, reset: Date.now() + 60_000 }
-    }
+    },
   }
   return ratelimit
 }
-

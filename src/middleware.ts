@@ -12,7 +12,9 @@ export async function middleware(req: NextRequest) {
     // Use Web Crypto API (Edge runtime compatible)
     const bytes = new Uint8Array(16)
     crypto.getRandomValues(bytes)
-    csrfToken = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+    csrfToken = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
 
     res.cookies.set(csrfCookieName, csrfToken, {
       httpOnly: false, // must be readable by client for double-submit
@@ -64,7 +66,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public/).*)'],
 }

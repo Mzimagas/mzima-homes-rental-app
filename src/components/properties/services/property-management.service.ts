@@ -22,7 +22,10 @@ export class PropertyManagementService {
   // Load all properties with lifecycle information
   static async loadProperties(): Promise<PropertyWithLifecycle[]> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
       if (authError) {
         const handled = await this.handleAuthError(authError, 'loadProperties')
         if (handled) return []
@@ -35,7 +38,8 @@ export class PropertyManagementService {
 
       const { data, error } = await supabase
         .from('properties')
-        .select(`
+        .select(
+          `
           *,
           property_source,
           lifecycle_status,
@@ -52,8 +56,12 @@ export class PropertyManagementService {
           estimated_value_kes,
           total_area_sqm,
           total_area_acres,
-          purchase_price_agreement_kes
-        `)
+          purchase_price_agreement_kes,
+          lat,
+          lng,
+          physical_address
+        `
+        )
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -84,7 +92,7 @@ export class PropertyManagementService {
 
     try {
       const updateData: any = {}
-      const property = properties.find(p => p.id === propertyId)
+      const property = properties.find((p) => p.id === propertyId)
       if (!property) {
         console.error('Property not found:', propertyId)
         alert('Property not found. Please refresh and try again.')
@@ -99,8 +107,8 @@ export class PropertyManagementService {
           property.subdivision_status === 'SUBDIVIDED'
             ? 'Subdivided'
             : property.subdivision_status === 'SUB_DIVISION_STARTED'
-            ? 'Sub-Division Started'
-            : 'Not Started'
+              ? 'Sub-Division Started'
+              : 'Not Started'
 
         if (currentSubdivisionValue !== changes.subdivision) {
           if (changes.subdivision === 'Subdivided') {
@@ -129,8 +137,8 @@ export class PropertyManagementService {
           property.handover_status === 'COMPLETED'
             ? 'Handed Over'
             : property.handover_status === 'IN_PROGRESS'
-            ? 'In Progress'
-            : 'Not Started'
+              ? 'In Progress'
+              : 'Not Started'
 
         if (currentHandoverValue !== changes.handover) {
           let newStatus: string
@@ -155,7 +163,10 @@ export class PropertyManagementService {
       // Get CSRF token
       const getCsrfToken = () => {
         try {
-          const match = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('csrf-token='))
+          const match = document.cookie
+            .split(';')
+            .map((p) => p.trim())
+            .find((p) => p.startsWith('csrf-token='))
           if (!match) return null
           return decodeURIComponent(match.split('=')[1])
         } catch {
@@ -165,11 +176,18 @@ export class PropertyManagementService {
 
       const csrfToken = getCsrfToken()
       console.log('CSRF token:', csrfToken ? 'Found' : 'Not found')
-      if (!csrfToken) throw new Error('CSRF token not found. Please refresh the page and try again.')
+      if (!csrfToken)
+        throw new Error('CSRF token not found. Please refresh the page and try again.')
 
       console.log('Getting session...')
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      console.log('Session result:', { session: session ? 'Found' : 'Not found', error: sessionError })
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+      console.log('Session result:', {
+        session: session ? 'Found' : 'Not found',
+        error: sessionError,
+      })
 
       if (sessionError) {
         console.error('Session error:', sessionError)
@@ -235,7 +253,9 @@ export class PropertyManagementService {
 
       // Handle specific fetch errors
       if (err instanceof TypeError && err.message === 'Failed to fetch') {
-        alert('Network error: Unable to connect to the server. Please check your internet connection and try again.')
+        alert(
+          'Network error: Unable to connect to the server. Please check your internet connection and try again.'
+        )
         return false
       }
 

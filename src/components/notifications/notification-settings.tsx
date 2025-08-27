@@ -39,14 +39,14 @@ export default function NotificationSettings() {
       smtp_username: '',
       smtp_password: '',
       from_email: 'noreply@example.com',
-      from_name: 'Rental Management'
+      from_name: 'Rental Management',
     },
     sms: {
       enabled: false,
       provider: 'africastalking',
       api_key: '',
       api_secret: '',
-      sender_id: 'RENTAL'
+      sender_id: 'RENTAL',
     },
     general: {
       timezone: 'Africa/Nairobi',
@@ -54,8 +54,8 @@ export default function NotificationSettings() {
       business_hours_end: '18:00',
       send_during_business_hours_only: false,
       max_retries: 3,
-      retry_interval_minutes: 30
-    }
+      retry_interval_minutes: 30,
+    },
   })
 
   const [loading, setLoading] = useState(false)
@@ -96,14 +96,14 @@ export default function NotificationSettings() {
             smtp_username: data.email_smtp_username || '',
             smtp_password: data.email_smtp_password || '',
             from_email: data.email_from_email || 'noreply@example.com',
-            from_name: data.email_from_name || 'Rental Management'
+            from_name: data.email_from_name || 'Rental Management',
           },
           sms: {
             enabled: data.sms_enabled || false,
             provider: data.sms_provider || 'africastalking',
             api_key: data.sms_api_key || '',
             api_secret: data.sms_api_secret || '',
-            sender_id: data.sms_sender_id || 'RENTAL'
+            sender_id: data.sms_sender_id || 'RENTAL',
           },
           general: {
             timezone: data.timezone || 'Africa/Nairobi',
@@ -111,8 +111,8 @@ export default function NotificationSettings() {
             business_hours_end: data.business_hours_end || '18:00',
             send_during_business_hours_only: data.send_during_business_hours_only || false,
             max_retries: data.max_retries || 3,
-            retry_interval_minutes: data.retry_interval_minutes || 30
-          }
+            retry_interval_minutes: data.retry_interval_minutes || 30,
+          },
         })
       }
     } catch (err) {
@@ -124,32 +124,35 @@ export default function NotificationSettings() {
   }
 
   const handleEmailSettingChange = (field: keyof NotificationSettingsData['email'], value: any) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
       email: {
         ...prev.email,
-        [field]: value
-      }
+        [field]: value,
+      },
     }))
   }
 
   const handleSmsSettingChange = (field: keyof NotificationSettingsData['sms'], value: any) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
       sms: {
         ...prev.sms,
-        [field]: value
-      }
+        [field]: value,
+      },
     }))
   }
 
-  const handleGeneralSettingChange = (field: keyof NotificationSettingsData['general'], value: any) => {
-    setSettings(prev => ({
+  const handleGeneralSettingChange = (
+    field: keyof NotificationSettingsData['general'],
+    value: any
+  ) => {
+    setSettings((prev) => ({
       ...prev,
       general: {
         ...prev.general,
-        [field]: value
-      }
+        [field]: value,
+      },
     }))
   }
 
@@ -157,7 +160,8 @@ export default function NotificationSettings() {
     setLoading(true)
     setError(null)
     try {
-      const { error: saveError } = await clientBusinessFunctions.updateNotificationSettings(settings)
+      const { error: saveError } =
+        await clientBusinessFunctions.updateNotificationSettings(settings)
 
       if (saveError) {
         throw new Error(saveError)
@@ -165,7 +169,8 @@ export default function NotificationSettings() {
 
       alert('Settings saved successfully!')
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to save settings. Please try again.'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to save settings. Please try again.'
       setError(errorMessage)
       alert(errorMessage)
     } finally {
@@ -181,7 +186,10 @@ export default function NotificationSettings() {
 
     setTestingEmail(true)
     try {
-      const { error: testError } = await clientBusinessFunctions.testEmailSettings(testEmail, settings)
+      const { error: testError } = await clientBusinessFunctions.testEmailSettings(
+        testEmail,
+        settings
+      )
 
       if (testError) {
         throw new Error(testError)
@@ -189,7 +197,10 @@ export default function NotificationSettings() {
 
       alert('Test email sent successfully!')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send test email. Please check your settings.'
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to send test email. Please check your settings.'
       alert(errorMessage)
     } finally {
       setTestingEmail(false)
@@ -204,7 +215,10 @@ export default function NotificationSettings() {
 
     setTestingSms(true)
     try {
-      const { error: testError } = await clientBusinessFunctions.testSmsSettings(testPhone, settings)
+      const { error: testError } = await clientBusinessFunctions.testSmsSettings(
+        testPhone,
+        settings
+      )
 
       if (testError) {
         throw new Error(testError)
@@ -212,7 +226,10 @@ export default function NotificationSettings() {
 
       alert('Test SMS sent successfully!')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send test SMS. Please check your settings.'
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to send test SMS. Please check your settings.'
       alert(errorMessage)
     } finally {
       setTestingSms(false)
@@ -275,7 +292,7 @@ export default function NotificationSettings() {
             </div>
           </div>
         </div>
-        
+
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -289,7 +306,7 @@ export default function NotificationSettings() {
                 placeholder="smtp.gmail.com"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">SMTP Port</label>
               <input
@@ -301,7 +318,7 @@ export default function NotificationSettings() {
                 placeholder="587"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Username</label>
               <input
@@ -313,7 +330,7 @@ export default function NotificationSettings() {
                 placeholder="your-email@gmail.com"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Password</label>
               <input
@@ -325,7 +342,7 @@ export default function NotificationSettings() {
                 placeholder="••••••••"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">From Email</label>
               <input
@@ -337,7 +354,7 @@ export default function NotificationSettings() {
                 placeholder="noreply@example.com"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">From Name</label>
               <input
@@ -397,7 +414,7 @@ export default function NotificationSettings() {
             </div>
           </div>
         </div>
-        
+
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -413,7 +430,7 @@ export default function NotificationSettings() {
                 <option value="custom">Custom Provider</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Sender ID</label>
               <input
@@ -426,7 +443,7 @@ export default function NotificationSettings() {
                 maxLength={11}
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">API Key</label>
               <input
@@ -438,7 +455,7 @@ export default function NotificationSettings() {
                 placeholder="Your API Key"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">API Secret</label>
               <input
@@ -481,7 +498,7 @@ export default function NotificationSettings() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h4 className="text-lg font-medium text-gray-900">General Settings</h4>
         </div>
-        
+
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -497,21 +514,25 @@ export default function NotificationSettings() {
                 <option value="UTC">UTC</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Max Retries</label>
               <input
                 type="number"
                 value={settings.general.max_retries}
-                onChange={(e) => handleGeneralSettingChange('max_retries', parseInt(e.target.value))}
+                onChange={(e) =>
+                  handleGeneralSettingChange('max_retries', parseInt(e.target.value))
+                }
                 min="0"
                 max="10"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700">Business Hours Start</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Business Hours Start
+              </label>
               <input
                 type="time"
                 value={settings.general.business_hours_start}
@@ -519,7 +540,7 @@ export default function NotificationSettings() {
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Business Hours End</label>
               <input
@@ -529,13 +550,17 @@ export default function NotificationSettings() {
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700">Retry Interval (minutes)</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Retry Interval (minutes)
+              </label>
               <input
                 type="number"
                 value={settings.general.retry_interval_minutes}
-                onChange={(e) => handleGeneralSettingChange('retry_interval_minutes', parseInt(e.target.value))}
+                onChange={(e) =>
+                  handleGeneralSettingChange('retry_interval_minutes', parseInt(e.target.value))
+                }
                 min="1"
                 max="1440"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -548,7 +573,9 @@ export default function NotificationSettings() {
               type="checkbox"
               id="business_hours_only"
               checked={settings.general.send_during_business_hours_only}
-              onChange={(e) => handleGeneralSettingChange('send_during_business_hours_only', e.target.checked)}
+              onChange={(e) =>
+                handleGeneralSettingChange('send_during_business_hours_only', e.target.checked)
+              }
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="business_hours_only" className="ml-2 block text-sm text-gray-900">

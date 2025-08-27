@@ -13,7 +13,11 @@ export default function UtilitiesDashboardPage() {
   useEffect(() => {
     // TODO: wire to selected unit from context; fallback to first active unit for demo
     const load = async () => {
-      const { data: units } = await supabase.from('units').select('id').eq('is_active', true).limit(1)
+      const { data: units } = await supabase
+        .from('units')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1)
       if (units && units.length > 0) setUnitId(units[0].id)
       const { data: tenants } = await supabase.from('tenants').select('id').limit(1)
       if (tenants && tenants.length > 0) setTenantId(tenants[0].id)
@@ -46,4 +50,3 @@ export default function UtilitiesDashboardPage() {
     </div>
   )
 }
-

@@ -17,39 +17,37 @@ export default function AdministrationPage() {
   const [activeTab, setActiveTab] = useState<AdministrationTab>('users')
 
   // Check if user has user management permissions for any property
-  const canManageAnyUsers = properties.some(property => property.can_manage_users)
+  const canManageAnyUsers = properties.some((property) => property.can_manage_users)
 
   const tabs = [
-    { 
-      id: 'users' as const, 
-      name: 'User Management', 
+    {
+      id: 'users' as const,
+      name: 'User Management',
       icon: '👥',
       description: 'Manage users, roles, and permissions',
-      requiresPermission: true
+      requiresPermission: true,
     },
-    { 
-      id: 'audit' as const, 
-      name: 'Audit Trail', 
+    {
+      id: 'audit' as const,
+      name: 'Audit Trail',
       icon: '📋',
       description: 'View system activity and changes',
-      requiresPermission: false
+      requiresPermission: false,
     },
-    { 
-      id: 'documents' as const, 
-      name: 'Document Management', 
+    {
+      id: 'documents' as const,
+      name: 'Document Management',
       icon: '📁',
       description: 'Manage documents for properties and rentals',
-      requiresPermission: false
+      requiresPermission: false,
     },
   ]
 
   // Filter tabs based on permissions
-  const availableTabs = tabs.filter(tab => 
-    !tab.requiresPermission || canManageAnyUsers
-  )
+  const availableTabs = tabs.filter((tab) => !tab.requiresPermission || canManageAnyUsers)
 
   // Ensure active tab is available to user
-  if (!availableTabs.find(tab => tab.id === activeTab)) {
+  if (!availableTabs.find((tab) => tab.id === activeTab)) {
     setActiveTab(availableTabs[0]?.id || 'audit')
   }
 
@@ -101,9 +99,7 @@ export default function AdministrationPage() {
                 <span className="text-lg">{tab.icon}</span>
                 <div className="text-left">
                   <div>{tab.name}</div>
-                  <div className="text-xs text-gray-400 font-normal">
-                    {tab.description}
-                  </div>
+                  <div className="text-xs text-gray-400 font-normal">{tab.description}</div>
                 </div>
               </button>
             ))}
@@ -114,17 +110,11 @@ export default function AdministrationPage() {
       {/* Tab Content */}
       <div className="bg-white shadow rounded-lg">
         <div className="p-6">
-          {activeTab === 'users' && canManageAnyUsers && (
-            <UserManagement />
-          )}
-          
-          {activeTab === 'audit' && (
-            <AuditTrail />
-          )}
-          
-          {activeTab === 'documents' && (
-            <DocumentManagement />
-          )}
+          {activeTab === 'users' && canManageAnyUsers && <UserManagement />}
+
+          {activeTab === 'audit' && <AuditTrail />}
+
+          {activeTab === 'documents' && <DocumentManagement />}
 
           {/* Access Denied Message */}
           {activeTab === 'users' && !canManageAnyUsers && (
@@ -132,7 +122,8 @@ export default function AdministrationPage() {
               <div className="text-6xl mb-4">🔒</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">Access Restricted</h3>
               <p className="text-gray-500 max-w-md mx-auto">
-                You don't have permission to manage users. Contact your administrator for access to user management features.
+                You don't have permission to manage users. Contact your administrator for access to
+                user management features.
               </p>
             </div>
           )}
@@ -147,10 +138,9 @@ export default function AdministrationPage() {
             <div>
               <h3 className="text-lg font-medium text-gray-900">User Management</h3>
               <p className="text-sm text-gray-500">
-                {canManageAnyUsers 
+                {canManageAnyUsers
                   ? 'Manage user accounts, roles, and permissions'
-                  : 'View user information (read-only access)'
-                }
+                  : 'View user information (read-only access)'}
               </p>
             </div>
           </div>

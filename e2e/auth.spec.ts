@@ -12,4 +12,3 @@ test('forgot password page loads', async ({ page }) => {
   await page.goto('/auth/forgot-password')
   await expect(page.getByText(/reset/i)).toBeVisible()
 })
-

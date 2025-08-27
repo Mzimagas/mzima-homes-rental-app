@@ -20,7 +20,10 @@ async function handler(request: NextRequest) {
   formData.append('response', token)
   if (ip) formData.append('remoteip', ip)
 
-  const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: formData as any })
+  const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    body: formData as any,
+  })
   const data = await result.json()
 
   if (!data.success) return NextResponse.json({ ok: false }, { status: 403 })
@@ -28,10 +31,14 @@ async function handler(request: NextRequest) {
 }
 
 export const POST = compose(
-  (h) => withRateLimit(h, (req) => {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    return `turnstile:${ip}`
-  }, 'turnstile'),
-  withCsrf,
+  (h) =>
+    withRateLimit(
+      h,
+      (req) => {
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+        return `turnstile:${ip}`
+      },
+      'turnstile'
+    ),
+  withCsrf
 )(handler)
-

@@ -5,21 +5,25 @@ import { createServerSupabaseClient } from '../../../../../lib/supabase-server'
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient()
-    
+
     // Check if user is authenticated (but allow for testing)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     const url = new URL(request.url)
     const page = parseInt(url.searchParams.get('page') || '1')
     const limit = parseInt(url.searchParams.get('limit') || '10')
     const search = url.searchParams.get('search') || ''
-    
+
     const offset = (page - 1) * limit
 
     // Get soft deleted users
     let query = supabase
       .from('enhanced_users')
-      .select(`
+      .select(
+        `
         id,
         member_number,
         email,
@@ -30,23 +34,23 @@ export async function GET(request: NextRequest) {
         created_at,
         last_login,
         deleted_at
-      `)
+      `
+      )
       .not('deleted_at', 'is', null) // Only get deleted users
       .order('deleted_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (search) {
-      query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%,member_number.ilike.%${search}%`)
+      query = query.or(
+        `email.ilike.%${search}%,full_name.ilike.%${search}%,member_number.ilike.%${search}%`
+      )
     }
 
     const { data: users, error: usersError } = await query
 
     if (usersError) {
       console.error('Error fetching deleted users:', usersError)
-      return NextResponse.json(
-        { error: 'Failed to fetch deleted users' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to fetch deleted users' }, { status: 500 })
     }
 
     // Get total count for pagination
@@ -56,17 +60,16 @@ export async function GET(request: NextRequest) {
       .not('deleted_at', 'is', null) // Only count deleted users
 
     if (search) {
-      countQuery = countQuery.or(`email.ilike.%${search}%,full_name.ilike.%${search}%,member_number.ilike.%${search}%`)
+      countQuery = countQuery.or(
+        `email.ilike.%${search}%,full_name.ilike.%${search}%,member_number.ilike.%${search}%`
+      )
     }
 
     const { count, error: countError } = await countQuery
 
     if (countError) {
       console.error('Error counting deleted users:', countError)
-      return NextResponse.json(
-        { error: 'Failed to count deleted users' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to count deleted users' }, { status: 500 })
     }
 
     const totalPages = Math.ceil((count || 0) / limit)
@@ -77,16 +80,12 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total: count || 0,
-        totalPages
-      }
+        totalPages,
+      },
     })
-
   } catch (error) {
     console.error('Error in deleted users GET API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -94,10 +93,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient()
-    
+
     // Check if user is authenticated (but allow for testing)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     const body = await request.json()
     const { action, userIds } = body
 
@@ -123,10 +125,10 @@ export async function POST(request: NextRequest) {
           // Restore user by setting deleted_at to null and status to active
           const { error: restoreError } = await supabase
             .from('enhanced_users')
-            .update({ 
+            .update({
               deleted_at: null,
               status: 'active',
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             })
             .eq('id', userId)
             .not('deleted_at', 'is', null) // Only restore if currently deleted
@@ -135,21 +137,19 @@ export async function POST(request: NextRequest) {
             results.push({ userId, success: false, error: restoreError.message })
           } else {
             results.push({ userId, success: true, action: 'restored' })
-            
+
             // Log the restoration
-            await supabase
-              .from('activities_audit')
-              .insert({
-                actor_id: user?.id || userId,
-                entity_type: 'enhanced_users',
-                entity_id: userId,
-                action: 'user_restored',
-                description: `Restored soft deleted user: ${userId}`,
-                after_snapshot: {
-                  deleted_at: null,
-                  status: 'active'
-                }
-              })
+            await supabase.from('activities_audit').insert({
+              actor_id: user?.id || userId,
+              entity_type: 'enhanced_users',
+              entity_id: userId,
+              action: 'user_restored',
+              description: `Restored soft deleted user: ${userId}`,
+              after_snapshot: {
+                deleted_at: null,
+                status: 'active',
+              },
+            })
           }
         } else if (action === 'permanent_delete') {
           // Get user data before permanent deletion
@@ -160,10 +160,7 @@ export async function POST(request: NextRequest) {
             .single()
 
           // Permanently delete user and related data
-          await supabase
-            .from('user_profiles')
-            .delete()
-            .eq('user_id', userId)
+          await supabase.from('user_profiles').delete().eq('user_id', userId)
 
           const { error: deleteError } = await supabase
             .from('enhanced_users')
@@ -174,22 +171,24 @@ export async function POST(request: NextRequest) {
             results.push({ userId, success: false, error: deleteError.message })
           } else {
             results.push({ userId, success: true, action: 'permanently_deleted' })
-            
+
             // Log the permanent deletion
-            await supabase
-              .from('activities_audit')
-              .insert({
-                actor_id: user?.id || userId,
-                entity_type: 'enhanced_users',
-                entity_id: userId,
-                action: 'user_permanently_deleted',
-                description: `Permanently deleted user: ${userData?.full_name} (${userData?.email}) - Data cannot be recovered`,
-                before_snapshot: userData
-              })
+            await supabase.from('activities_audit').insert({
+              actor_id: user?.id || userId,
+              entity_type: 'enhanced_users',
+              entity_id: userId,
+              action: 'user_permanently_deleted',
+              description: `Permanently deleted user: ${userData?.full_name} (${userData?.email}) - Data cannot be recovered`,
+              before_snapshot: userData,
+            })
           }
         }
       } catch (err) {
-        results.push({ userId, success: false, error: err instanceof Error ? err.message : 'Unknown error' })
+        results.push({
+          userId,
+          success: false,
+          error: err instanceof Error ? err.message : 'Unknown error',
+        })
       }
     }
 
@@ -199,16 +198,12 @@ export async function POST(request: NextRequest) {
       results,
       summary: {
         total: userIds.length,
-        successful: results.filter(r => r.success).length,
-        failed: results.filter(r => !r.success).length
-      }
+        successful: results.filter((r) => r.success).length,
+        failed: results.filter((r) => !r.success).length,
+      },
     })
-
   } catch (error) {
     console.error('Error in deleted users POST API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

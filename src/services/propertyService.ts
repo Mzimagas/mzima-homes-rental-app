@@ -34,16 +34,20 @@ export interface PropertyWithAccess extends Property {
  */
 export async function getUserAccessibleProperties(): Promise<PropertyWithAccess[]> {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
     if (userError || !user) {
       console.error('Authentication error:', userError)
       return []
     }
 
     // Use the existing function to get accessible properties
-    const { data, error } = await supabase
-      .rpc('get_user_accessible_properties', { user_uuid: user.id })
+    const { data, error } = await supabase.rpc('get_user_accessible_properties', {
+      user_uuid: user.id,
+    })
 
     if (error) {
       console.error('Error fetching accessible properties:', error)
@@ -59,7 +63,7 @@ export async function getUserAccessibleProperties(): Promise<PropertyWithAccess[
       can_manage_users: item.can_manage_users,
       can_edit_property: item.can_edit_property,
       can_manage_tenants: item.can_manage_tenants,
-      can_manage_maintenance: item.can_manage_maintenance
+      can_manage_maintenance: item.can_manage_maintenance,
     }))
   } catch (error) {
     console.error('Error in getUserAccessibleProperties:', error)
@@ -74,7 +78,8 @@ export async function getAllProperties(): Promise<Property[]> {
   try {
     const { data, error } = await supabase
       .from('properties')
-      .select(`
+      .select(
+        `
         id,
         name,
         physical_address,
@@ -85,8 +90,11 @@ export async function getAllProperties(): Promise<Property[]> {
         lifecycle_status,
         property_source,
         created_at,
-        landlord_id
-      `)
+        landlord_id,
+        lat,
+        lng
+      `
+      )
       .order('name')
 
     if (error) {
@@ -94,7 +102,7 @@ export async function getAllProperties(): Promise<Property[]> {
       return []
     }
 
-    return (data || []).map(property => ({
+    return (data || []).map((property) => ({
       id: property.id,
       name: property.name || 'Unnamed Property',
       address: property.physical_address || 'No address provided',
@@ -105,7 +113,7 @@ export async function getAllProperties(): Promise<Property[]> {
       lifecycle_status: property.lifecycle_status,
       property_source: property.property_source,
       created_at: property.created_at,
-      landlord_id: property.landlord_id
+      landlord_id: property.landlord_id,
     }))
   } catch (error) {
     console.error('Error in getAllProperties:', error)
@@ -118,7 +126,10 @@ export async function getAllProperties(): Promise<Property[]> {
  */
 export async function getPropertiesForPermissionManagement(): Promise<Property[]> {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
     if (userError || !user) {
       console.error('Authentication error:', userError)
@@ -141,7 +152,8 @@ export async function getPropertyById(propertyId: string): Promise<Property | nu
   try {
     const { data, error } = await supabase
       .from('properties')
-      .select(`
+      .select(
+        `
         id,
         name,
         physical_address,
@@ -152,8 +164,11 @@ export async function getPropertyById(propertyId: string): Promise<Property | nu
         lifecycle_status,
         property_source,
         created_at,
-        landlord_id
-      `)
+        landlord_id,
+        lat,
+        lng
+      `
+      )
       .eq('id', propertyId)
       .single()
 
@@ -173,7 +188,7 @@ export async function getPropertyById(propertyId: string): Promise<Property | nu
       lifecycle_status: data.lifecycle_status,
       property_source: data.property_source,
       created_at: data.created_at,
-      landlord_id: data.landlord_id
+      landlord_id: data.landlord_id,
     }
   } catch (error) {
     console.error('Error in getPropertyById:', error)
@@ -192,7 +207,8 @@ export async function searchProperties(searchTerm: string): Promise<Property[]> 
 
     const { data, error } = await supabase
       .from('properties')
-      .select(`
+      .select(
+        `
         id,
         name,
         physical_address,
@@ -203,8 +219,11 @@ export async function searchProperties(searchTerm: string): Promise<Property[]> 
         lifecycle_status,
         property_source,
         created_at,
-        landlord_id
-      `)
+        landlord_id,
+        lat,
+        lng
+      `
+      )
       .or(`name.ilike.%${searchTerm}%,physical_address.ilike.%${searchTerm}%`)
       .order('name')
 
@@ -213,7 +232,7 @@ export async function searchProperties(searchTerm: string): Promise<Property[]> 
       return []
     }
 
-    return (data || []).map(property => ({
+    return (data || []).map((property) => ({
       id: property.id,
       name: property.name || 'Unnamed Property',
       address: property.physical_address || 'No address provided',
@@ -224,7 +243,7 @@ export async function searchProperties(searchTerm: string): Promise<Property[]> 
       lifecycle_status: property.lifecycle_status,
       property_source: property.property_source,
       created_at: property.created_at,
-      landlord_id: property.landlord_id
+      landlord_id: property.landlord_id,
     }))
   } catch (error) {
     console.error('Error in searchProperties:', error)
@@ -235,11 +254,11 @@ export async function searchProperties(searchTerm: string): Promise<Property[]> 
 /**
  * Get properties filtered by lifecycle stage
  */
-export async function getPropertiesByLifecycleStage(stage: 'purchase_pipeline' | 'subdivision' | 'handover'): Promise<Property[]> {
+export async function getPropertiesByLifecycleStage(
+  stage: 'purchase_pipeline' | 'subdivision' | 'handover'
+): Promise<Property[]> {
   try {
-    let query = supabase
-      .from('properties')
-      .select(`
+    let query = supabase.from('properties').select(`
         id,
         name,
         physical_address,
@@ -284,7 +303,7 @@ export async function getPropertiesByLifecycleStage(stage: 'purchase_pipeline' |
       return []
     }
 
-    return data.map(property => ({
+    return data.map((property) => ({
       id: property.id,
       name: property.name || 'Unnamed Property',
       address: property.physical_address || 'No address provided',
@@ -295,7 +314,7 @@ export async function getPropertiesByLifecycleStage(stage: 'purchase_pipeline' |
       lifecycle_status: property.lifecycle_status,
       property_source: property.property_source,
       created_at: property.created_at,
-      landlord_id: property.landlord_id
+      landlord_id: property.landlord_id,
     }))
   } catch (error) {
     console.error(`Error in getPropertiesByLifecycleStage(${stage}):`, error)
@@ -340,7 +359,7 @@ export async function getPropertyStats() {
         byType: {},
         bySubdivisionStatus: {},
         byHandoverStatus: {},
-        byLifecycleStatus: {}
+        byLifecycleStatus: {},
       }
     }
 
@@ -349,17 +368,18 @@ export async function getPropertyStats() {
       byType: {} as Record<string, number>,
       bySubdivisionStatus: {} as Record<string, number>,
       byHandoverStatus: {} as Record<string, number>,
-      byLifecycleStatus: {} as Record<string, number>
+      byLifecycleStatus: {} as Record<string, number>,
     }
 
-    data?.forEach(property => {
+    data?.forEach((property) => {
       // Count by type
       const type = property.property_type || 'Unknown'
       stats.byType[type] = (stats.byType[type] || 0) + 1
 
       // Count by subdivision status
       const subdivisionStatus = property.subdivision_status || 'Unknown'
-      stats.bySubdivisionStatus[subdivisionStatus] = (stats.bySubdivisionStatus[subdivisionStatus] || 0) + 1
+      stats.bySubdivisionStatus[subdivisionStatus] =
+        (stats.bySubdivisionStatus[subdivisionStatus] || 0) + 1
 
       // Count by handover status
       const handoverStatus = property.handover_status || 'Unknown'
@@ -378,7 +398,7 @@ export async function getPropertyStats() {
       byType: {},
       bySubdivisionStatus: {},
       byHandoverStatus: {},
-      byLifecycleStatus: {}
+      byLifecycleStatus: {},
     }
   }
 }

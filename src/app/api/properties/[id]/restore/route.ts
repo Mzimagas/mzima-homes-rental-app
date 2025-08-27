@@ -11,7 +11,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -31,7 +33,7 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 
 async function getRoleForProperty(userId: string, propertyId: string) {
   const admin = createClient(supabaseUrl, serviceKey)
-  
+
   const { data: membership } = await admin
     .from('property_users')
     .select('role, status')
@@ -42,7 +44,10 @@ async function getRoleForProperty(userId: string, propertyId: string) {
   return membership
 }
 
-export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) => {
+export const PATCH = compose(
+  withRateLimit,
+  withCsrf
+)(async (req: NextRequest) => {
   try {
     console.info('[PATCH /api/properties/[id]/restore] start')
 
@@ -60,8 +65,9 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
 
     // Extract property id from path /api/properties/[id]/restore
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     // Get property details
@@ -82,17 +88,18 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
 
     // Check permissions - only OWNER can restore properties
     const membership = await getRoleForProperty(userId, propertyId)
-    if (!membership || membership.status !== 'ACTIVE') return errors.forbidden('No access to property')
+    if (!membership || membership.status !== 'ACTIVE')
+      return errors.forbidden('No access to property')
     const role = (membership as any).role
     if (role !== 'OWNER') return errors.forbidden('Only property owners can restore properties')
 
     // Perform the restore by clearing disabled fields
     const { error: updateError } = await admin
       .from('properties')
-      .update({ 
+      .update({
         disabled_at: null,
         disabled_by: null,
-        disabled_reason: null
+        disabled_reason: null,
       })
       .eq('id', propertyId)
 
@@ -102,7 +109,7 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
     console.info('[PATCH /api/properties/[id]/restore] success', {
       propertyId,
       propertyName: property.name,
-      restoredBy: userId
+      restoredBy: userId,
     })
 
     return NextResponse.json({
@@ -112,10 +119,9 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
         name: property.name,
         status: 'ACTIVE',
         restored_by: userId,
-        restored_at: new Date().toISOString()
-      }
+        restored_at: new Date().toISOString(),
+      },
     })
-
   } catch (e) {
     console.error('[PATCH /api/properties/[id]/restore] error:', e)
     return errors.internal()

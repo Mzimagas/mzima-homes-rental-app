@@ -6,13 +6,13 @@ import { HandoverFinancialsService } from '../services/handover-financials.servi
 import {
   HANDOVER_COST_TYPES,
   HANDOVER_COST_CATEGORY_LABELS,
-  HandoverCostCategory
+  HandoverCostCategory,
 } from '../types/property-management.types'
 import {
   validateHandoverCostEntry,
   validatePaymentReceiptEntry,
   getNextReceiptNumber,
-  getHandoverCostTypeLabel
+  getHandoverCostTypeLabel,
 } from '../utils/handover-financials.utils'
 
 interface HandoverFinancialSectionProps {
@@ -24,13 +24,13 @@ interface HandoverFinancialSectionProps {
 export default function HandoverFinancialSection({
   propertyId,
   financialSummary,
-  onDataUpdate
+  onDataUpdate,
 }: HandoverFinancialSectionProps) {
   const [collapsedSections, setCollapsedSections] = useState({
     summary: false,
     deposits: false,
     costs: false,
-    breakdown: true
+    breakdown: true,
   })
 
   const [loading, setLoading] = useState(false)
@@ -49,7 +49,7 @@ export default function HandoverFinancialSection({
     amount_kes: '',
     payment_reference: '',
     payment_date: '',
-    notes: ''
+    notes: '',
   })
 
   const [newReceipt, setNewReceipt] = useState({
@@ -58,13 +58,13 @@ export default function HandoverFinancialSection({
     payment_date: '',
     payment_reference: '',
     payment_method: '' as 'CASH' | 'BANK_TRANSFER' | 'CHEQUE' | 'MOBILE_MONEY' | 'OTHER' | '',
-    notes: ''
+    notes: '',
   })
 
   const toggleSection = (section: keyof typeof collapsedSections) => {
-    setCollapsedSections(prev => ({
+    setCollapsedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }))
   }
 
@@ -77,14 +77,14 @@ export default function HandoverFinancialSection({
   useEffect(() => {
     if (financialSummary?.payment_receipts) {
       const nextNumber = getNextReceiptNumber(financialSummary.payment_receipts)
-      setNewReceipt(prev => ({ ...prev, receipt_number: nextNumber }))
+      setNewReceipt((prev) => ({ ...prev, receipt_number: nextNumber }))
     }
   }, [financialSummary?.payment_receipts])
 
   const handleAddCost = async () => {
     const errors = validateHandoverCostEntry({
       ...newCost,
-      amount_kes: parseFloat(newCost.amount_kes)
+      amount_kes: parseFloat(newCost.amount_kes),
     })
 
     if (errors.length > 0) {
@@ -100,7 +100,7 @@ export default function HandoverFinancialSection({
         amount_kes: parseFloat(newCost.amount_kes),
         payment_reference: newCost.payment_reference || undefined,
         payment_date: newCost.payment_date || undefined,
-        notes: newCost.notes || undefined
+        notes: newCost.notes || undefined,
       })
 
       // Reset form
@@ -110,7 +110,7 @@ export default function HandoverFinancialSection({
         amount_kes: '',
         payment_reference: '',
         payment_date: '',
-        notes: ''
+        notes: '',
       })
       setShowAddCost(false)
       onDataUpdate()
@@ -125,7 +125,7 @@ export default function HandoverFinancialSection({
   const handleAddReceipt = async () => {
     const errors = validatePaymentReceiptEntry({
       ...newReceipt,
-      amount_kes: parseFloat(newReceipt.amount_kes)
+      amount_kes: parseFloat(newReceipt.amount_kes),
     })
 
     if (errors.length > 0) {
@@ -141,7 +141,7 @@ export default function HandoverFinancialSection({
         payment_date: newReceipt.payment_date || undefined,
         payment_reference: newReceipt.payment_reference || undefined,
         payment_method: newReceipt.payment_method || undefined,
-        notes: newReceipt.notes || undefined
+        notes: newReceipt.notes || undefined,
       })
 
       // Reset form and increment receipt number
@@ -152,7 +152,7 @@ export default function HandoverFinancialSection({
         payment_date: '',
         payment_reference: '',
         payment_method: '',
-        notes: ''
+        notes: '',
       })
       setShowAddReceipt(false)
       onDataUpdate()
@@ -188,15 +188,19 @@ export default function HandoverFinancialSection({
       onDataUpdate()
     } catch (error) {
       console.error('Error deleting receipt:', error)
-      alert('Failed to delete receipt: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      alert(
+        'Failed to delete receipt: ' + (error instanceof Error ? error.message : 'Unknown error')
+      )
     } finally {
       setLoading(false)
     }
   }
 
   const handleEditPrice = () => {
-    const currentPrice = financialSummary?.property?.handover_price_agreement_kes ||
-                        financialSummary?.financial_summary?.handover_price_agreement_kes || 0
+    const currentPrice =
+      financialSummary?.property?.handover_price_agreement_kes ||
+      financialSummary?.financial_summary?.handover_price_agreement_kes ||
+      0
     setEditPrice(currentPrice.toString())
     setChangeReason('')
     setShowEditPrice(true)
@@ -238,7 +242,10 @@ export default function HandoverFinancialSection({
       setShowPriceHistory(true)
     } catch (error) {
       console.error('Error fetching price history:', error)
-      alert('Failed to fetch price history: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      alert(
+        'Failed to fetch price history: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
+      )
     } finally {
       setLoading(false)
     }
@@ -248,10 +255,10 @@ export default function HandoverFinancialSection({
     return (
       <div className="space-y-6">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h4 className="text-lg font-semibold text-yellow-900 mb-3">Handover Financial Management</h4>
-          <p className="text-yellow-800">
-            Loading financial data for property: {propertyId}
-          </p>
+          <h4 className="text-lg font-semibold text-yellow-900 mb-3">
+            Handover Financial Management
+          </h4>
+          <p className="text-yellow-800">Loading financial data for property: {propertyId}</p>
           <button
             onClick={onDataUpdate}
             className="mt-2 px-3 py-1 text-sm bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200"
@@ -263,19 +270,25 @@ export default function HandoverFinancialSection({
     )
   }
 
-  const { property, financial_summary, cost_breakdown, cost_entries, payment_receipts } = financialSummary
+  const { property, financial_summary, cost_breakdown, cost_entries, payment_receipts } =
+    financialSummary
 
   return (
     <div className="space-y-6">
       {/* Enhanced Handover Price Management */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-lg font-semibold text-blue-900 mb-3">Purchase Price in Sales Agreement</h4>
+        <h4 className="text-lg font-semibold text-blue-900 mb-3">
+          Purchase Price in Sales Agreement
+        </h4>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-sm text-gray-600">Current Purchase Price</div>
               <div className="text-2xl font-bold text-gray-900">
-                {formatCurrency(property?.handover_price_agreement_kes || financial_summary?.handover_price_agreement_kes)}
+                {formatCurrency(
+                  property?.handover_price_agreement_kes ||
+                    financial_summary?.handover_price_agreement_kes
+                )}
               </div>
             </div>
             <div className="flex space-x-2">
@@ -296,7 +309,8 @@ export default function HandoverFinancialSection({
             </div>
           </div>
           <div className="text-xs text-gray-500">
-            Property: {property?.name || 'Unknown Property'} • Last updated: {new Date().toLocaleDateString()}
+            Property: {property?.name || 'Unknown Property'} • Last updated:{' '}
+            {new Date().toLocaleDateString()}
           </div>
         </div>
       </div>
@@ -307,7 +321,9 @@ export default function HandoverFinancialSection({
           <h5 className="font-medium text-yellow-900 mb-3">Edit Handover Price</h5>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Handover Price (KES) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                New Handover Price (KES) *
+              </label>
               <TextField
                 type="number"
                 value={editPrice}
@@ -316,7 +332,9 @@ export default function HandoverFinancialSection({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Change *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reason for Change *
+              </label>
               <TextField
                 value={changeReason}
                 onChange={(e) => setChangeReason(e.target.value)}
@@ -350,30 +368,32 @@ export default function HandoverFinancialSection({
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <div className="flex justify-between items-center mb-3">
             <h5 className="font-medium text-gray-900">Handover Price History</h5>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowPriceHistory(false)}
-            >
+            <Button variant="secondary" size="sm" onClick={() => setShowPriceHistory(false)}>
               Close
             </Button>
           </div>
           <div className="space-y-2">
             {priceHistory.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                No price history available
-              </div>
+              <div className="text-center py-4 text-gray-500">No price history available</div>
             ) : (
               priceHistory.map((entry, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-white rounded-lg border"
+                >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">{formatCurrency(entry.price_kes)}</div>
+                    <div className="font-medium text-gray-900">
+                      {formatCurrency(entry.price_kes)}
+                    </div>
                     <div className="text-sm text-gray-600">
-                      {entry.change_date && `Date: ${new Date(entry.change_date).toLocaleDateString()}`}
+                      {entry.change_date &&
+                        `Date: ${new Date(entry.change_date).toLocaleDateString()}`}
                       {entry.changed_by && ` • By: ${entry.changed_by}`}
                     </div>
                     {entry.change_reason && (
-                      <div className="text-sm text-gray-500 mt-1">Reason: {entry.change_reason}</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        Reason: {entry.change_reason}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -437,9 +457,7 @@ export default function HandoverFinancialSection({
                   {formatCurrency(financial_summary?.total_income_kes)}
                 </span>
               </div>
-              <div className="text-sm text-green-700 mt-1">
-                Purchase Price - Handover Costs
-              </div>
+              <div className="text-sm text-green-700 mt-1">Purchase Price - Handover Costs</div>
             </div>
           </>
         )}
@@ -454,7 +472,9 @@ export default function HandoverFinancialSection({
             className="flex items-center space-x-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
           >
             <span aria-hidden="true">{collapsedSections.deposits ? '▶' : '▼'}</span>
-            <h4 className="text-lg font-semibold text-gray-900">Purchase Price Deposit and Installments</h4>
+            <h4 className="text-lg font-semibold text-gray-900">
+              Purchase Price Deposit and Installments
+            </h4>
           </button>
           {!collapsedSections.deposits && (
             <Button
@@ -476,43 +496,69 @@ export default function HandoverFinancialSection({
                 <h5 className="font-medium text-gray-900 mb-3">Add Deposit/Installment Payment</h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Receipt Number</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Receipt Number
+                    </label>
                     <TextField
                       type="number"
                       value={newReceipt.receipt_number.toString()}
-                      onChange={(e) => setNewReceipt(prev => ({ ...prev, receipt_number: parseInt(e.target.value) || 1 }))}
+                      onChange={(e) =>
+                        setNewReceipt((prev) => ({
+                          ...prev,
+                          receipt_number: parseInt(e.target.value) || 1,
+                        }))
+                      }
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount (KES) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount (KES) *
+                    </label>
                     <TextField
                       type="number"
                       value={newReceipt.amount_kes}
-                      onChange={(e) => setNewReceipt(prev => ({ ...prev, amount_kes: e.target.value }))}
+                      onChange={(e) =>
+                        setNewReceipt((prev) => ({ ...prev, amount_kes: e.target.value }))
+                      }
                       placeholder="0"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Date (Optional)
+                    </label>
                     <TextField
                       type="date"
                       value={newReceipt.payment_date}
-                      onChange={(e) => setNewReceipt(prev => ({ ...prev, payment_date: e.target.value }))}
+                      onChange={(e) =>
+                        setNewReceipt((prev) => ({ ...prev, payment_date: e.target.value }))
+                      }
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Reference (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Reference (Optional)
+                    </label>
                     <TextField
                       value={newReceipt.payment_reference}
-                      onChange={(e) => setNewReceipt(prev => ({ ...prev, payment_reference: e.target.value }))}
+                      onChange={(e) =>
+                        setNewReceipt((prev) => ({ ...prev, payment_reference: e.target.value }))
+                      }
                       placeholder="Transaction/receipt number"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Method (Optional)
+                    </label>
                     <Select
                       value={newReceipt.payment_method}
-                      onChange={(e) => setNewReceipt(prev => ({ ...prev, payment_method: e.target.value as any }))}
+                      onChange={(e) =>
+                        setNewReceipt((prev) => ({
+                          ...prev,
+                          payment_method: e.target.value as any,
+                        }))
+                      }
                     >
                       <option value="">Select method...</option>
                       <option value="CASH">Cash</option>
@@ -523,10 +569,14 @@ export default function HandoverFinancialSection({
                     </Select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notes (Optional)
+                    </label>
                     <TextField
                       value={newReceipt.notes}
-                      onChange={(e) => setNewReceipt(prev => ({ ...prev, notes: e.target.value }))}
+                      onChange={(e) =>
+                        setNewReceipt((prev) => ({ ...prev, notes: e.target.value }))
+                      }
                       placeholder="Additional notes about this payment"
                     />
                   </div>
@@ -562,18 +612,28 @@ export default function HandoverFinancialSection({
             ) : (
               <div className="space-y-2 mt-4">
                 {payment_receipts.map((receipt: any, index: number) => (
-                  <div key={receipt.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div
+                    key={receipt.id || index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">Receipt #{receipt.receipt_number}</div>
+                      <div className="font-medium text-gray-900">
+                        Receipt #{receipt.receipt_number}
+                      </div>
                       <div className="text-sm text-gray-600">
-                        {receipt.payment_date && `Date: ${new Date(receipt.payment_date).toLocaleDateString()}`}
+                        {receipt.payment_date &&
+                          `Date: ${new Date(receipt.payment_date).toLocaleDateString()}`}
                         {receipt.payment_reference && ` • Ref: ${receipt.payment_reference}`}
                         {receipt.payment_method && ` • Method: ${receipt.payment_method}`}
                       </div>
-                      {receipt.notes && <div className="text-sm text-gray-500 mt-1">{receipt.notes}</div>}
+                      {receipt.notes && (
+                        <div className="text-sm text-gray-500 mt-1">{receipt.notes}</div>
+                      )}
                     </div>
                     <div className="flex items-center space-x-3">
-                      <div className="font-bold text-gray-900">{formatCurrency(receipt.amount_kes)}</div>
+                      <div className="font-bold text-gray-900">
+                        {formatCurrency(receipt.amount_kes)}
+                      </div>
                       <Button
                         variant="secondary"
                         size="sm"
@@ -622,62 +682,80 @@ export default function HandoverFinancialSection({
                 <h5 className="font-medium text-gray-900 mb-3">Add New Cost</h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cost Type *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Cost Type *
+                    </label>
                     <Select
                       value={newCost.cost_type_id}
                       onChange={(e) => {
-                        const costType = HANDOVER_COST_TYPES.find(type => type.id === e.target.value)
-                        setNewCost(prev => ({
+                        const costType = HANDOVER_COST_TYPES.find(
+                          (type) => type.id === e.target.value
+                        )
+                        setNewCost((prev) => ({
                           ...prev,
                           cost_type_id: e.target.value,
-                          cost_category: costType?.category || '' as HandoverCostCategory
+                          cost_category: costType?.category || ('' as HandoverCostCategory),
                         }))
                       }}
                     >
                       <option value="">Select cost type...</option>
                       {Object.entries(HANDOVER_COST_CATEGORY_LABELS).map(([category, label]) => (
                         <optgroup key={category} label={label}>
-                          {HANDOVER_COST_TYPES
-                            .filter(type => type.category === category)
-                            .map(type => (
+                          {HANDOVER_COST_TYPES.filter((type) => type.category === category).map(
+                            (type) => (
                               <option key={type.id} value={type.id}>
                                 {type.label}
                               </option>
-                            ))}
+                            )
+                          )}
                         </optgroup>
                       ))}
                     </Select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount (KES) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount (KES) *
+                    </label>
                     <TextField
                       type="number"
                       value={newCost.amount_kes}
-                      onChange={(e) => setNewCost(prev => ({ ...prev, amount_kes: e.target.value }))}
+                      onChange={(e) =>
+                        setNewCost((prev) => ({ ...prev, amount_kes: e.target.value }))
+                      }
                       placeholder="0"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Reference (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Reference (Optional)
+                    </label>
                     <TextField
                       value={newCost.payment_reference}
-                      onChange={(e) => setNewCost(prev => ({ ...prev, payment_reference: e.target.value }))}
+                      onChange={(e) =>
+                        setNewCost((prev) => ({ ...prev, payment_reference: e.target.value }))
+                      }
                       placeholder="Receipt/reference number"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Date (Optional)
+                    </label>
                     <TextField
                       type="date"
                       value={newCost.payment_date}
-                      onChange={(e) => setNewCost(prev => ({ ...prev, payment_date: e.target.value }))}
+                      onChange={(e) =>
+                        setNewCost((prev) => ({ ...prev, payment_date: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notes (Optional)
+                    </label>
                     <TextField
                       value={newCost.notes}
-                      onChange={(e) => setNewCost(prev => ({ ...prev, notes: e.target.value }))}
+                      onChange={(e) => setNewCost((prev) => ({ ...prev, notes: e.target.value }))}
                       placeholder="Additional notes about this cost"
                     />
                   </div>
@@ -713,18 +791,31 @@ export default function HandoverFinancialSection({
             ) : (
               <div className="space-y-2 mt-4">
                 {cost_entries.map((entry: any, index: number) => (
-                  <div key={entry.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div
+                    key={entry.id || index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">{getHandoverCostTypeLabel(entry.cost_type_id)}</div>
+                      <div className="font-medium text-gray-900">
+                        {getHandoverCostTypeLabel(entry.cost_type_id)}
+                      </div>
                       <div className="text-sm text-gray-600">
-                        Category: {HANDOVER_COST_CATEGORY_LABELS[entry.cost_category as HandoverCostCategory] || entry.cost_category}
-                        {entry.payment_date && ` • Date: ${new Date(entry.payment_date).toLocaleDateString()}`}
+                        Category:{' '}
+                        {HANDOVER_COST_CATEGORY_LABELS[
+                          entry.cost_category as HandoverCostCategory
+                        ] || entry.cost_category}
+                        {entry.payment_date &&
+                          ` • Date: ${new Date(entry.payment_date).toLocaleDateString()}`}
                         {entry.payment_reference && ` • Ref: ${entry.payment_reference}`}
                       </div>
-                      {entry.notes && <div className="text-sm text-gray-500 mt-1">{entry.notes}</div>}
+                      {entry.notes && (
+                        <div className="text-sm text-gray-500 mt-1">{entry.notes}</div>
+                      )}
                     </div>
                     <div className="flex items-center space-x-3">
-                      <div className="font-bold text-gray-900">{formatCurrency(entry.amount_kes)}</div>
+                      <div className="font-bold text-gray-900">
+                        {formatCurrency(entry.amount_kes)}
+                      </div>
                       <Button
                         variant="secondary"
                         size="sm"
@@ -745,13 +836,25 @@ export default function HandoverFinancialSection({
       {/* Debug Information */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
         <details>
-          <summary className="text-sm font-medium text-gray-700 cursor-pointer">Debug Information</summary>
+          <summary className="text-sm font-medium text-gray-700 cursor-pointer">
+            Debug Information
+          </summary>
           <div className="mt-2 text-xs text-gray-600">
-            <div><strong>Property ID:</strong> {propertyId}</div>
-            <div><strong>Data Loaded:</strong> {financialSummary ? 'Yes' : 'No'}</div>
-            <div><strong>Cost Entries:</strong> {cost_entries?.length || 0}</div>
-            <div><strong>Payment Receipts:</strong> {payment_receipts?.length || 0}</div>
-            <div><strong>Last Updated:</strong> {new Date().toLocaleString()}</div>
+            <div>
+              <strong>Property ID:</strong> {propertyId}
+            </div>
+            <div>
+              <strong>Data Loaded:</strong> {financialSummary ? 'Yes' : 'No'}
+            </div>
+            <div>
+              <strong>Cost Entries:</strong> {cost_entries?.length || 0}
+            </div>
+            <div>
+              <strong>Payment Receipts:</strong> {payment_receipts?.length || 0}
+            </div>
+            <div>
+              <strong>Last Updated:</strong> {new Date().toLocaleString()}
+            </div>
           </div>
         </details>
       </div>

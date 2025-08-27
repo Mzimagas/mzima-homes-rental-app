@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -45,10 +45,12 @@ export default function TenantEditForm({ id, onSuccess }: Props) {
   const onSubmit = async (values: TenantUpdateInput) => {
     setError(null)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'x-csrf-token': getCsrf()
+        'x-csrf-token': getCsrf(),
       }
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
 
@@ -74,11 +76,19 @@ export default function TenantEditForm({ id, onSuccess }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium">Full Name <span className="text-red-600">*</span></label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('full_name')} required />
+          <label className="block text-sm font-medium">
+            Full Name <span className="text-red-600">*</span>
+          </label>
+          <input
+            className="border rounded px-3 py-2 w-full"
+            {...form.register('full_name')}
+            required
+          />
         </div>
         <div>
-          <label className="block text-sm font-medium">Phone <span className="text-red-600">*</span></label>
+          <label className="block text-sm font-medium">
+            Phone <span className="text-red-600">*</span>
+          </label>
           <input className="border rounded px-3 py-2 w-full" {...form.register('phone')} required />
         </div>
         <div>
@@ -86,38 +96,61 @@ export default function TenantEditForm({ id, onSuccess }: Props) {
           <input className="border rounded px-3 py-2 w-full" {...form.register('email')} />
         </div>
         <div>
-          <label className="block text-sm font-medium">National ID <span className="text-red-600">*</span></label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('national_id')} required />
+          <label className="block text-sm font-medium">
+            National ID <span className="text-red-600">*</span>
+          </label>
+          <input
+            className="border rounded px-3 py-2 w-full"
+            {...form.register('national_id')}
+            required
+          />
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium">Notes</label>
-          <textarea className="border rounded px-3 py-2 w-full" rows={3} {...form.register('notes')} />
+          <textarea
+            className="border rounded px-3 py-2 w-full"
+            rows={3}
+            {...form.register('notes')}
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Emergency Contact Name</label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_name')} />
+          <input
+            className="border rounded px-3 py-2 w-full"
+            {...form.register('emergency_contact_name')}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium">Emergency Contact Phone</label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_phone')} />
+          <input
+            className="border rounded px-3 py-2 w-full"
+            {...form.register('emergency_contact_phone')}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium">Emergency Contact Relationship</label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_relationship')} />
+          <input
+            className="border rounded px-3 py-2 w-full"
+            {...form.register('emergency_contact_relationship')}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium">Emergency Contact Email</label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_email')} />
+          <input
+            className="border rounded px-3 py-2 w-full"
+            {...form.register('emergency_contact_email')}
+          />
         </div>
       </div>
 
       <div className="flex gap-2">
-        <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Save Changes</button>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">
+          Save Changes
+        </button>
       </div>
     </form>
   )
 }
-

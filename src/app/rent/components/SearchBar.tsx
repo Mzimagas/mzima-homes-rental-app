@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 type UnitRow = {
@@ -48,7 +48,9 @@ function useSearchHistory() {
     if (!term.trim()) return
     setHistory((prev) => {
       const next = [term, ...prev.filter((h) => h.toLowerCase() !== term.toLowerCase())].slice(0, 8)
-      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch {}
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+      } catch {}
       return next
     })
   }
@@ -56,14 +58,18 @@ function useSearchHistory() {
   const remove = (term: string) => {
     setHistory((prev) => {
       const next = prev.filter((h) => h.toLowerCase() !== term.toLowerCase())
-      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch {}
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+      } catch {}
       return next
     })
   }
 
   const clearAll = () => {
     setHistory([])
-    try { localStorage.removeItem(HISTORY_KEY) } catch {}
+    try {
+      localStorage.removeItem(HISTORY_KEY)
+    } catch {}
   }
 
   return { history, add, remove, clearAll }
@@ -100,18 +106,30 @@ export default function SearchBar({
     return Array.from(set)
   }, [units])
 
-  const unitSuggestions = useMemo(() => units.map((u) => `${u.property_name} – ${u.unit_label}`), [units])
+  const unitSuggestions = useMemo(
+    () => units.map((u) => `${u.property_name} – ${u.unit_label}`),
+    [units]
+  )
 
   const query = value.trim().toLowerCase()
 
   const filteredSuggestions: Suggestion[] = useMemo(() => {
     if (!open) return []
 
-    const matches = (arr: string[], type: Suggestion['type'], subLabel?: (s: string) => string): Suggestion[] => {
+    const matches = (
+      arr: string[],
+      type: Suggestion['type'],
+      subLabel?: (s: string) => string
+    ): Suggestion[] => {
       return arr
         .filter((s) => (query ? s.toLowerCase().includes(query) : true))
         .slice(0, 5)
-        .map((s, i) => ({ id: `${type}-${i}-${s}`, type, label: s, subLabel: subLabel ? subLabel(s) : undefined }))
+        .map((s, i) => ({
+          id: `${type}-${i}-${s}`,
+          type,
+          label: s,
+          subLabel: subLabel ? subLabel(s) : undefined,
+        }))
     }
 
     const out: Suggestion[] = []
@@ -121,7 +139,11 @@ export default function SearchBar({
         ...matches(propertySuggestions, 'property'),
         ...matches(unitSuggestions, 'unit'),
         ...matches(locationSuggestions, 'location'),
-        ...matches(amenities.map((a) => a.label), 'amenity', (s) => 'Amenity')
+        ...matches(
+          amenities.map((a) => a.label),
+          'amenity',
+          (s) => 'Amenity'
+        )
       )
     } else {
       // Show history when no query
@@ -171,14 +193,25 @@ export default function SearchBar({
       <form onSubmit={handleSubmit} aria-label="Search rentals">
         <div
           role="combobox"
+          aria-controls="search-suggestions"
           aria-expanded={open}
           aria-owns={listboxId}
           aria-haspopup="listbox"
           className="relative"
         >
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
           <input
@@ -213,7 +246,9 @@ export default function SearchBar({
             }}
             aria-autocomplete="list"
             aria-controls={listboxId}
-            aria-activedescendant={activeIndex >= 0 ? filteredSuggestions[activeIndex]?.id : undefined}
+            aria-activedescendant={
+              activeIndex >= 0 ? filteredSuggestions[activeIndex]?.id : undefined
+            }
             placeholder="Search by property, unit, location or amenity..."
             className="form-input pl-10 pr-24 text-lg"
           />
@@ -222,12 +257,20 @@ export default function SearchBar({
           {value && (
             <button
               type="button"
-              onClick={() => { onClear(); setOpen(false); }}
+              onClick={() => {
+                onClear()
+                setOpen(false)
+              }}
               className="absolute inset-y-0 right-10 px-2 text-quaternary hover:text-secondary transition-colors"
               aria-label="Clear search"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}
@@ -239,13 +282,33 @@ export default function SearchBar({
             aria-label="Search"
           >
             {searching ? (
-              <svg className="animate-spin h-5 w-5 mx-1 text-inverse" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin h-5 w-5 mx-1 text-inverse"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
             ) : (
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             )}
           </button>
@@ -260,13 +323,33 @@ export default function SearchBar({
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-tertiary">Quick Filters</span>
               {!query && history.length > 0 && (
-                <button onClick={clearAll} className="text-xs text-tertiary hover:text-secondary transition-colors">Clear history</button>
+                <button
+                  onClick={clearAll}
+                  className="text-xs text-tertiary hover:text-secondary transition-colors"
+                >
+                  Clear history
+                </button>
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => onApplyQuickFilter('UNDER_50K')} className="px-3 py-1.5 text-sm rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors">Under 50k</button>
-              <button onClick={() => onApplyQuickFilter('50K_100K')} className="px-3 py-1.5 text-sm rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors">50k - 100k</button>
-              <button onClick={() => onApplyQuickFilter('100K_PLUS')} className="px-3 py-1.5 text-sm rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors">100k+</button>
+              <button
+                onClick={() => onApplyQuickFilter('UNDER_50K')}
+                className="px-3 py-1.5 text-sm rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors"
+              >
+                Under 50k
+              </button>
+              <button
+                onClick={() => onApplyQuickFilter('50K_100K')}
+                className="px-3 py-1.5 text-sm rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors"
+              >
+                50k - 100k
+              </button>
+              <button
+                onClick={() => onApplyQuickFilter('100K_PLUS')}
+                className="px-3 py-1.5 text-sm rounded-full bg-tertiary hover:bg-primary-50 hover:text-brand transition-colors"
+              >
+                100k+
+              </button>
             </div>
             {/* Amenity chips */}
             {amenities.length > 0 && (
@@ -276,7 +359,9 @@ export default function SearchBar({
                     key={a.code}
                     onClick={() => onToggleAmenity(a.code)}
                     className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${
-                      selectedAmenities.includes(a.code) ? 'bg-primary-600 text-inverse border-primary-600 shadow-sm' : 'bg-elevated text-secondary border-medium hover:border-brand hover:bg-primary-25 hover:text-brand'
+                      selectedAmenities.includes(a.code)
+                        ? 'bg-primary-600 text-inverse border-primary-600 shadow-sm'
+                        : 'bg-elevated text-secondary border-medium hover:border-brand hover:bg-primary-25 hover:text-brand'
                     }`}
                   >
                     {a.label}
@@ -289,7 +374,9 @@ export default function SearchBar({
           {/* Suggestions */}
           <ul role="listbox" id={listboxId} className="max-h-72 overflow-auto">
             {filteredSuggestions.length === 0 ? (
-              <li className="px-4 py-3 text-sm text-tertiary">{query ? 'No suggestions' : 'Start typing to search...'}</li>
+              <li className="px-4 py-3 text-sm text-tertiary">
+                {query ? 'No suggestions' : 'Start typing to search...'}
+              </li>
             ) : (
               filteredSuggestions.map((s, idx) => (
                 <li
@@ -301,7 +388,9 @@ export default function SearchBar({
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => selectSuggestion(s)}
                   className={`px-4 py-3 cursor-pointer flex items-center justify-between transition-colors ${
-                    idx === activeIndex ? 'bg-primary-50 text-brand' : 'hover:bg-secondary text-secondary'
+                    idx === activeIndex
+                      ? 'bg-primary-50 text-brand'
+                      : 'hover:bg-secondary text-secondary'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -313,7 +402,10 @@ export default function SearchBar({
                   </div>
                   {s.type === 'history' && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); removeHistory(s.label) }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeHistory(s.label)
+                      }}
                       aria-label={`Remove ${s.label} from history`}
                       className="text-xs text-quaternary hover:text-tertiary transition-colors"
                     >

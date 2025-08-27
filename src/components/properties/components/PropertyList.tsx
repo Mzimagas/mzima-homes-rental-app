@@ -1,22 +1,18 @@
 'use client'
 import ReverseTransferAction from './ReverseTransferAction'
 
-
 import { useState } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
 import InlinePropertyView from './InlinePropertyView'
-import {
-  PropertyWithLifecycle,
-  PendingChanges
-} from '../types/property-management.types'
+import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 import {
   getSourceIcon,
   getSourceLabel,
   getLifecycleStatusColor,
   hasPendingChanges,
   getPendingSubdivisionValue,
-  getPendingHandoverValue
+  getPendingHandoverValue,
 } from '../utils/property-management.utils'
 
 interface PropertyListProps {
@@ -48,14 +44,16 @@ export default function PropertyList({
   onSaveChanges,
   onCancelChanges,
   onNavigateToTabs,
-  onDeleteProperty
+  onDeleteProperty,
 }: PropertyListProps) {
   const [viewingPropertyId, setViewingPropertyId] = useState<string | null>(null)
-  const [propertiesWithPipelineIssues, setPropertiesWithPipelineIssues] = useState<Set<string>>(new Set())
+  const [propertiesWithPipelineIssues, setPropertiesWithPipelineIssues] = useState<Set<string>>(
+    new Set()
+  )
 
   // Handle pipeline status changes for properties
   const handlePipelineStatusChange = (propertyId: string, hasIssues: boolean) => {
-    setPropertiesWithPipelineIssues(prev => {
+    setPropertiesWithPipelineIssues((prev) => {
       const newSet = new Set(prev)
       if (hasIssues) {
         newSet.add(propertyId)
@@ -79,7 +77,9 @@ export default function PropertyList({
       <div className="text-center py-12 bg-gray-50 rounded-lg">
         <div className="text-4xl mb-4">🏠</div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">No Properties Yet</h3>
-        <p className="text-gray-600 mb-6">Start by adding properties through any of the three pathways above.</p>
+        <p className="text-gray-600 mb-6">
+          Start by adding properties through any of the three pathways above.
+        </p>
         <div className="flex justify-center space-x-3">
           <Button onClick={onAddProperty} variant="primary">
             Add Property Directly
@@ -98,7 +98,10 @@ export default function PropertyList({
   return (
     <div className="grid gap-6">
       {properties.map((property) => (
-        <div key={property.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div
+          key={property.id}
+          className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+        >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mb-4">
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-2">
@@ -108,7 +111,9 @@ export default function PropertyList({
                   {getSourceLabel(property.property_source)}
                 </span>
                 {property.lifecycle_status && (
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${getLifecycleStatusColor(property.lifecycle_status)}`}>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full font-medium ${getLifecycleStatusColor(property.lifecycle_status)}`}
+                  >
                     {property.lifecycle_status.replace('_', ' ')}
                   </span>
                 )}
@@ -118,12 +123,20 @@ export default function PropertyList({
                 <span>Type: {property.property_type?.replace('_', ' ') || 'Unknown'}</span>
                 {property.total_area_acres && <span>Area: {property.total_area_acres} acres</span>}
                 {property.expected_rental_income_kes && (
-                  <span>Expected Rent: KES {property.expected_rental_income_kes.toLocaleString()}/month</span>
+                  <span>
+                    Expected Rent: KES {property.expected_rental_income_kes.toLocaleString()}/month
+                  </span>
                 )}
                 {property.purchase_completion_date && (
-                  <span>Purchased: {new Date(property.purchase_completion_date).toLocaleDateString()}</span>
+                  <span>
+                    Purchased: {new Date(property.purchase_completion_date).toLocaleDateString()}
+                  </span>
                 )}
-                {property.subdivision_date && <span>Subdivided: {new Date(property.subdivision_date).toLocaleDateString()}</span>}
+                {property.subdivision_date && (
+                  <span>
+                    Subdivided: {new Date(property.subdivision_date).toLocaleDateString()}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -133,6 +146,8 @@ export default function PropertyList({
                 lng={(property as any).lng ?? null}
                 address={property.physical_address ?? property.name}
                 propertyName={property.name}
+                debug={process.env.NODE_ENV === 'development'}
+                debugContext={`Property List - ${property.name}`}
               />
             </div>
           </div>
@@ -156,14 +171,18 @@ export default function PropertyList({
                   }`}
                   value={getPendingSubdivisionValue(property, pendingChanges)}
                   onChange={(e) => onSubdivisionChange(property.id, e.target.value)}
-                  disabled={savingChanges[property.id] || propertiesWithPipelineIssues.has(property.id)}
+                  disabled={
+                    savingChanges[property.id] || propertiesWithPipelineIssues.has(property.id)
+                  }
                 >
                   <option>Not Started</option>
                   <option>Sub-Division Started</option>
                   <option>Subdivided</option>
                 </select>
                 {property.subdivision_date && (
-                  <div className="text-xs text-gray-500 mt-1">on {new Date(property.subdivision_date).toLocaleDateString()}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    on {new Date(property.subdivision_date).toLocaleDateString()}
+                  </div>
                 )}
               </div>
 
@@ -183,14 +202,18 @@ export default function PropertyList({
                   }`}
                   value={getPendingHandoverValue(property, pendingChanges)}
                   onChange={(e) => onHandoverChange(property.id, e.target.value)}
-                  disabled={savingChanges[property.id] || propertiesWithPipelineIssues.has(property.id)}
+                  disabled={
+                    savingChanges[property.id] || propertiesWithPipelineIssues.has(property.id)
+                  }
                 >
                   <option>Not Started</option>
                   <option>In Progress</option>
                   <option>Handed Over</option>
                 </select>
                 {property.handover_date && (
-                  <div className="text-xs text-gray-500 mt-1">on {new Date(property.handover_date).toLocaleDateString()}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    on {new Date(property.handover_date).toLocaleDateString()}
+                  </div>
                 )}
               </div>
             </div>
@@ -232,19 +255,15 @@ export default function PropertyList({
 
           <div className="flex flex-wrap gap-2 mt-4 items-center justify-between">
             <div className="flex space-x-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => onEditProperty(property)}
-              >
+              <Button variant="secondary" size="sm" onClick={() => onEditProperty(property)}>
                 Edit
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setViewingPropertyId(
-                  viewingPropertyId === property.id ? null : property.id
-                )}
+                onClick={() =>
+                  setViewingPropertyId(viewingPropertyId === property.id ? null : property.id)
+                }
               >
                 {viewingPropertyId === property.id ? 'Hide Details' : 'View Details'}
               </Button>
@@ -256,17 +275,16 @@ export default function PropertyList({
                 propertyId={property.id}
                 sourceReferenceId={property.source_reference_id as any}
                 onSuccess={onRefresh}
-                onPipelineStatusChange={(hasIssues) => handlePipelineStatusChange(property.id, hasIssues)}
+                onPipelineStatusChange={(hasIssues) =>
+                  handlePipelineStatusChange(property.id, hasIssues)
+                }
               />
             )}
           </div>
 
           {/* Inline Property View */}
           {viewingPropertyId === property.id && (
-            <InlinePropertyView
-              property={property}
-              onClose={() => setViewingPropertyId(null)}
-            />
+            <InlinePropertyView property={property} onClose={() => setViewingPropertyId(null)} />
           )}
         </div>
       ))}

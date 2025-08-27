@@ -14,11 +14,11 @@ interface PropertySearchProps {
 
 export default function PropertySearch({
   onSearchChange,
-  placeholder = "Search properties by name, address, type, or notes...",
+  placeholder = 'Search properties by name, address, type, or notes...',
   resultsCount,
   totalCount,
-  className = "",
-  compact = false
+  className = '',
+  compact = false,
 }: PropertySearchProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
@@ -36,13 +36,25 @@ export default function PropertySearch({
   const showResultsCount = resultsCount !== undefined && totalCount !== undefined
 
   return (
-    <div className={`${compact ? 'bg-gray-50 p-3 rounded-md border' : 'bg-white p-4 rounded-lg shadow'} ${className}`}>
+    <div
+      className={`${compact ? 'bg-gray-50 p-3 rounded-md border' : 'bg-white p-4 rounded-lg shadow'} ${className}`}
+    >
       <div className="flex flex-col gap-3">
         {/* Search Input */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="h-5 w-5 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
           <input
@@ -59,7 +71,12 @@ export default function PropertySearch({
               title="Clear search"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}

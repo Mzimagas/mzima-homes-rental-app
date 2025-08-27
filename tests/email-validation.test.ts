@@ -15,4 +15,3 @@ describe('validateEmailSimple', () => {
     expect(validateEmailSimple('user@gmail.com')).toBeNull()
   })
 })
-

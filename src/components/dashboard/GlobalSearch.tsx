@@ -2,7 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useDashboardActions } from '../../hooks/useDashboardActions'
-import { universalSearchService, SearchResult, SearchSuggestion } from '../../services/UniversalSearchService'
+import {
+  universalSearchService,
+  SearchResult,
+  SearchSuggestion,
+} from '../../services/UniversalSearchService'
+import { RentalManagementService } from '../rental-management/services/rental-management.service'
 import { useRouter } from 'next/navigation'
 
 interface GlobalSearchProps {
@@ -16,12 +21,13 @@ interface GlobalSearchProps {
 /**
  * Global search component that searches across all dashboard data
  */
-export default function GlobalSearch({ 
+export default function GlobalSearch({
   className = '',
   placeholder = 'Search properties, tenants, payments...',
-  onResultSelect
+  onResultSelect,
 }: GlobalSearchProps) {
   const { state, setSearchTerm, selectProperty, selectTenant } = useDashboardActions()
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -62,58 +68,15 @@ export default function GlobalSearch({
 
     setLoading(true)
     try {
-      const searchResults: SearchResult[] = []
-
-      // Search properties
-      const properties = await RentalManagementService.getRentalProperties()
-      const propertyResults = properties
-        .filter(property => 
-          property.name.toLowerCase().includes(query.toLowerCase()) ||
-          property.address?.toLowerCase().includes(query.toLowerCase())
-        )
-        .map(property => ({
-          id: `property-${property.id}`,
-          type: 'property' as const,
-          title: property.name,
-          subtitle: property.address || 'Property',
-          data: property
-        }))
-
-      // Search tenants
-      const tenants = await RentalManagementService.getTenants()
-      const tenantResults = tenants
-        .filter(tenant => 
-          tenant.full_name.toLowerCase().includes(query.toLowerCase()) ||
-          tenant.email?.toLowerCase().includes(query.toLowerCase()) ||
-          tenant.phone?.toLowerCase().includes(query.toLowerCase())
-        )
-        .map(tenant => ({
-          id: `tenant-${tenant.id}`,
-          type: 'tenant' as const,
-          title: tenant.full_name,
-          subtitle: tenant.email || tenant.phone || 'Tenant',
-          data: tenant
-        }))
-
-      // Search payments
-      const payments = await RentalManagementService.getPayments()
-      const paymentResults = payments
-        .filter(payment => 
-          payment.reference_number?.toLowerCase().includes(query.toLowerCase()) ||
-          payment.payment_method?.toLowerCase().includes(query.toLowerCase())
-        )
-        .map(payment => ({
-          id: `payment-${payment.id}`,
-          type: 'payment' as const,
-          title: `Payment - KES ${payment.amount?.toLocaleString()}`,
-          subtitle: `${payment.payment_method} - ${new Date(payment.payment_date).toLocaleDateString()}`,
-          data: payment
-        }))
-
-      searchResults.push(...propertyResults, ...tenantResults, ...paymentResults)
-      setResults(searchResults.slice(0, 10)) // Limit to 10 results
+      // Use UniversalSearchService for consistent search experience
+      const searchResults = await universalSearchService.search(query, {
+        maxResults: 10,
+        qualityThreshold: 'moderate',
+      })
+      setResults(searchResults)
     } catch (error) {
       console.error('Search error:', error)
+      setResults([])
     } finally {
       setLoading(false)
     }
@@ -123,7 +86,7 @@ export default function GlobalSearch({
     const query = e.target.value
     setSearchTerm(query)
     setIsOpen(true)
-    
+
     // Debounce search
     const timeoutId = setTimeout(() => {
       performSearch(query)
@@ -135,14 +98,19 @@ export default function GlobalSearch({
   const handleResultClick = (result: SearchResult) => {
     // Update context based on result type
     if (result.type === 'property') {
-      selectProperty(result.data)
+      selectProperty(result.metadata)
     } else if (result.type === 'tenant') {
-      selectTenant(result.data)
+      selectTenant(result.metadata)
+    }
+
+    // Navigate to result URL if available
+    if (result.url) {
+      router.push(result.url)
     }
 
     // Call custom handler
     onResultSelect?.(result)
-    
+
     setIsOpen(false)
     inputRef.current?.blur()
   }
@@ -151,26 +119,66 @@ export default function GlobalSearch({
     switch (type) {
       case 'property':
         return (
-          <svg className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <svg
+            className="h-4 w-4 text-blue-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+            />
           </svg>
         )
       case 'tenant':
         return (
-          <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          <svg
+            className="h-4 w-4 text-green-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
           </svg>
         )
       case 'payment':
         return (
-          <svg className="h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          <svg
+            className="h-4 w-4 text-purple-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+            />
           </svg>
         )
       default:
         return (
-          <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg
+            className="h-4 w-4 text-gray-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
         )
     }
@@ -180,8 +188,18 @@ export default function GlobalSearch({
     <div ref={searchRef} className={`relative ${className}`}>
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            className="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
         </div>
         <input
@@ -215,16 +233,10 @@ export default function GlobalSearch({
                 <div className="flex items-center space-x-3">
                   {getResultIcon(result.type)}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {result.title}
-                    </p>
-                    <p className="text-sm text-gray-500 truncate">
-                      {result.subtitle}
-                    </p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{result.title}</p>
+                    <p className="text-sm text-gray-500 truncate">{result.subtitle}</p>
                   </div>
-                  <span className="text-xs text-gray-400 capitalize">
-                    {result.type}
-                  </span>
+                  <span className="text-xs text-gray-400 capitalize">{result.type}</span>
                 </div>
               </button>
             ))

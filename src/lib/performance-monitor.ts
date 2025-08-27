@@ -23,7 +23,7 @@ class PerformanceMonitor {
     this.metrics.set(name, {
       name,
       startTime: performance.now(),
-      metadata
+      metadata,
     })
   }
 
@@ -72,7 +72,10 @@ class PerformanceMonitor {
       this.end(name, { success: true })
       return result
     } catch (error) {
-      this.end(name, { success: false, error: error.message })
+      this.end(name, {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      })
       throw error
     }
   }
@@ -83,7 +86,9 @@ class PerformanceMonitor {
   createTimeout(ms: number, name?: string): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
-        const message = name ? `${name} timed out after ${ms}ms` : `Operation timed out after ${ms}ms`
+        const message = name
+          ? `${name} timed out after ${ms}ms`
+          : `Operation timed out after ${ms}ms`
         reject(new Error(message))
       }, ms)
     })
@@ -92,15 +97,8 @@ class PerformanceMonitor {
   /**
    * Race a promise against a timeout
    */
-  async withTimeout<T>(
-    promise: Promise<T>, 
-    timeoutMs: number, 
-    name?: string
-  ): Promise<T> {
-    return Promise.race([
-      promise,
-      this.createTimeout(timeoutMs, name)
-    ])
+  async withTimeout<T>(promise: Promise<T>, timeoutMs: number, name?: string): Promise<T> {
+    return Promise.race([promise, this.createTimeout(timeoutMs, name)])
   }
 
   /**
@@ -137,8 +135,8 @@ export function usePerformanceMonitor() {
 export const perf = {
   start: (name: string, metadata?: Record<string, any>) => performanceMonitor.start(name, metadata),
   end: (name: string, metadata?: Record<string, any>) => performanceMonitor.end(name, metadata),
-  measure: <T>(name: string, fn: () => Promise<T>, metadata?: Record<string, any>) => 
+  measure: <T>(name: string, fn: () => Promise<T>, metadata?: Record<string, any>) =>
     performanceMonitor.measure(name, fn, metadata),
-  withTimeout: <T>(promise: Promise<T>, timeoutMs: number, name?: string) => 
-    performanceMonitor.withTimeout(promise, timeoutMs, name)
+  withTimeout: <T>(promise: Promise<T>, timeoutMs: number, name?: string) =>
+    performanceMonitor.withTimeout(promise, timeoutMs, name),
 }

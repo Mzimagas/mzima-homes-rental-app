@@ -14,10 +14,9 @@ const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org'
 function headers(): Record<string, string> {
   // Provide an identifier via Referer/User-Agent implicitly; browsers set Referer.
   return {
-    'Accept': 'application/json',
+    Accept: 'application/json',
   }
 }
-
 
 export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
   try {
@@ -30,7 +29,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
 
     const res = await fetch(url.toString(), {
       headers: headers(),
-      signal: AbortSignal.timeout(10000) // 10 second timeout
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
     if (!res.ok) {
@@ -38,7 +37,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
       return null
     }
 
-    const data = (await res.json()) as { display_name?: string, error?: string }
+    const data = (await res.json()) as { display_name?: string; error?: string }
 
     if (data.error) {
       console.warn(`Reverse geocoding API error: ${data.error}`)
@@ -67,7 +66,9 @@ export function parseCoordinates(input: string): { lat: number; lng: number } | 
     const lng = parseFloat(simple[2])
     if (isValidLatLng(lat, lng)) return { lat, lng }
   }
-  const labeled = input.toLowerCase().match(/lat\s*[:=]\s*(-?\d{1,3}\.\d+)[,\s]+(lon|lng)\s*[:=]\s*(-?\d{1,3}\.\d+)/)
+  const labeled = input
+    .toLowerCase()
+    .match(/lat\s*[:=]\s*(-?\d{1,3}\.\d+)[,\s]+(lon|lng)\s*[:=]\s*(-?\d{1,3}\.\d+)/)
   if (labeled) {
     const lat = parseFloat(labeled[1])
     const lng = parseFloat(labeled[3])
@@ -82,7 +83,7 @@ export function isValidLatLng(lat?: number, lng?: number): boolean {
 }
 
 export function shortenAddress(address: string, parts: number = 4): string {
-  const segs = address.split(',').map(s => s.trim())
+  const segs = address.split(',').map((s) => s.trim())
   return segs.slice(0, parts).join(', ')
 }
 
@@ -91,11 +92,17 @@ export function shortenAddress(address: string, parts: number = 4): string {
 // the most relevant nearby locality.
 export function makeFriendlyAddress(address: string): string {
   try {
-    const segs = address.split(',').map(s => s.trim()).filter(Boolean)
+    const segs = address
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
     if (segs.length === 0) return address
 
     const isGeneric = (s: string) => /^(kenya|africa|east africa|[a-z ]+ county)$/i.test(s)
-    const isRoady = (s: string) => /(\b|\s)(road|rd\.?|street|st\.?|avenue|ave\.?|highway|hwy\.?|way|close|lane|ln\.?|drive|dr\.?|place|pl\.?|bypass|ring road|expressway)(\b|\s)/i.test(s)
+    const isRoady = (s: string) =>
+      /(\b|\s)(road|rd\.?|street|st\.?|avenue|ave\.?|highway|hwy\.?|way|close|lane|ln\.?|drive|dr\.?|place|pl\.?|bypass|ring road|expressway)(\b|\s)/i.test(
+        s
+      )
 
     // Prefer a road-like segment plus the next non-generic locality
     const roadIdx = segs.findIndex(isRoady)
@@ -109,7 +116,7 @@ export function makeFriendlyAddress(address: string): string {
     }
 
     // Otherwise take first two non-generic segments
-    const filtered = segs.filter(s => !isGeneric(s))
+    const filtered = segs.filter((s) => !isGeneric(s))
     const short = filtered.slice(0, 2).join(', ')
     return short || segs.slice(0, 2).join(', ') || address
   } catch {

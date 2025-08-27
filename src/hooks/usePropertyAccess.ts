@@ -2,7 +2,12 @@
 import { useState, useEffect } from 'react'
 import supabase from '../lib/supabase-client'
 
-export type UserRole = 'OWNER' | 'PROPERTY_MANAGER' | 'LEASING_AGENT' | 'MAINTENANCE_COORDINATOR' | 'VIEWER'
+export type UserRole =
+  | 'OWNER'
+  | 'PROPERTY_MANAGER'
+  | 'LEASING_AGENT'
+  | 'MAINTENANCE_COORDINATOR'
+  | 'VIEWER'
 
 export interface AccessibleProperty {
   property_id: string
@@ -45,8 +50,11 @@ export function usePropertyAccess(): PropertyAccess {
       setError(null)
 
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
+
       if (userError) {
         throw new Error(`Authentication error: ${userError.message}`)
       }
@@ -56,8 +64,10 @@ export function usePropertyAccess(): PropertyAccess {
       }
 
       // Call the database function to get accessible properties
-      const { data, error: propertiesError } = await supabase
-        .rpc('get_user_accessible_properties', { user_uuid: user.id })
+      const { data, error: propertiesError } = await supabase.rpc(
+        'get_user_accessible_properties',
+        { user_uuid: user.id }
+      )
 
       if (propertiesError) {
         throw new Error(`Failed to fetch accessible properties: ${propertiesError.message}`)
@@ -72,7 +82,7 @@ export function usePropertyAccess(): PropertyAccess {
         can_manage_users: item.can_manage_users,
         can_edit_property: item.can_edit_property,
         can_manage_tenants: item.can_manage_tenants,
-        can_manage_maintenance: item.can_manage_maintenance
+        can_manage_maintenance: item.can_manage_maintenance,
       }))
       setProperties(accessibleProperties)
 
@@ -82,10 +92,12 @@ export function usePropertyAccess(): PropertyAccess {
       }
 
       // If current property is set but not in the new list, clear it
-      if (currentProperty && !accessibleProperties.find(p => p.property_id === currentProperty.property_id)) {
+      if (
+        currentProperty &&
+        !accessibleProperties.find((p) => p.property_id === currentProperty.property_id)
+      ) {
         setCurrentProperty(null)
       }
-
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
       setError(errorMessage)
@@ -100,7 +112,7 @@ export function usePropertyAccess(): PropertyAccess {
   }
 
   const hasPermission = (propertyId: string, permission: string): boolean => {
-    const property = properties.find(p => p.property_id === propertyId)
+    const property = properties.find((p) => p.property_id === propertyId)
     if (!property) return false
 
     // Check role-based permissions
@@ -153,7 +165,7 @@ export function usePropertyAccess(): PropertyAccess {
     canManageUsers,
     canEditProperty,
     canManageTenants,
-    canManageMaintenance
+    canManageMaintenance,
   }
 }
 
@@ -177,7 +189,7 @@ export function useCurrentPropertyPermissions() {
     isPropertyManager: currentProperty?.user_role === 'PROPERTY_MANAGER',
     isLeasingAgent: currentProperty?.user_role === 'LEASING_AGENT',
     isMaintenanceCoordinator: currentProperty?.user_role === 'MAINTENANCE_COORDINATOR',
-    isViewer: currentProperty?.user_role === 'VIEWER'
+    isViewer: currentProperty?.user_role === 'VIEWER',
   }
 }
 

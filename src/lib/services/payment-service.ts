@@ -1,11 +1,16 @@
 import supabase, { clientBusinessFunctions } from '../supabase-client'
-import { PaymentFormValues, PaymentStatus, PaymentStatusType, validatePaymentByMethod } from '../validation/payment'
+import {
+  PaymentFormValues,
+  PaymentStatus,
+  PaymentStatusType,
+  validatePaymentByMethod,
+} from '../validation/payment'
 import {
   getPaymentMethod,
   validatePaymentAmount,
   validateTransactionReference,
   calculateProcessingFee,
-  getEnabledPaymentMethods
+  getEnabledPaymentMethods,
 } from '../config/payment-methods'
 import { PaymentNotificationService } from './payment-notification-service'
 import { PaymentSecurityService } from './payment-security-service'
@@ -63,15 +68,12 @@ export class PaymentService {
           error: securityCheck.blockers.join('; '),
           status: PaymentStatus.FAILED,
           securityWarnings: securityCheck.warnings,
-          riskLevel: securityCheck.riskLevel
+          riskLevel: securityCheck.riskLevel,
         }
       }
 
       // Step 2: Perform fraud detection
-      const fraudCheck = await PaymentSecurityService.detectFraud(
-        paymentData,
-        userContext || {}
-      )
+      const fraudCheck = await PaymentSecurityService.detectFraud(paymentData, userContext || {})
 
       if (fraudCheck.isFraudulent) {
         return {
@@ -79,7 +81,7 @@ export class PaymentService {
           error: 'Payment blocked due to fraud detection',
           status: PaymentStatus.FAILED,
           securityWarnings: fraudCheck.reasons,
-          riskLevel: 'high'
+          riskLevel: 'high',
         }
       }
 
@@ -89,7 +91,7 @@ export class PaymentService {
         return {
           success: false,
           error: 'Selected payment method is not available',
-          status: PaymentStatus.FAILED
+          status: PaymentStatus.FAILED,
         }
       }
 
@@ -99,17 +101,20 @@ export class PaymentService {
         return {
           success: false,
           error: amountValidation.error,
-          status: PaymentStatus.FAILED
+          status: PaymentStatus.FAILED,
         }
       }
 
       // Step 5: Validate transaction reference for the method
-      const txRefValidation = validateTransactionReference(paymentData.method, paymentData.txRef || '')
+      const txRefValidation = validateTransactionReference(
+        paymentData.method,
+        paymentData.txRef || ''
+      )
       if (!txRefValidation.isValid) {
         return {
           success: false,
           error: txRefValidation.error,
-          status: PaymentStatus.FAILED
+          status: PaymentStatus.FAILED,
         }
       }
 
@@ -119,7 +124,7 @@ export class PaymentService {
         return {
           success: false,
           validationErrors: validationResult.errors,
-          status: PaymentStatus.FAILED
+          status: PaymentStatus.FAILED,
         }
       }
 
@@ -129,18 +134,21 @@ export class PaymentService {
         return {
           success: false,
           error: tenantValidation.error,
-          status: PaymentStatus.FAILED
+          status: PaymentStatus.FAILED,
         }
       }
 
       // Step 8: Check for duplicate transaction reference
       if (paymentData.txRef) {
-        const duplicateCheck = await this.checkDuplicateTransaction(paymentData.txRef, paymentData.method)
+        const duplicateCheck = await this.checkDuplicateTransaction(
+          paymentData.txRef,
+          paymentData.method
+        )
         if (duplicateCheck.isDuplicate) {
           return {
             success: false,
             error: `A payment with transaction reference "${paymentData.txRef}" already exists`,
-            status: PaymentStatus.FAILED
+            status: PaymentStatus.FAILED,
           }
         }
       }
@@ -170,7 +178,7 @@ export class PaymentService {
         return {
           success: false,
           error: this.mapDatabaseError(error),
-          status: PaymentStatus.FAILED
+          status: PaymentStatus.FAILED,
         }
       }
 
@@ -181,7 +189,7 @@ export class PaymentService {
       await this.logPaymentActivity(paymentId, 'PAYMENT_CREATED', {
         ...paymentData,
         processingFee,
-        totalAmount
+        totalAmount,
       })
 
       // Step 11: Send payment confirmation notification
@@ -208,15 +216,14 @@ export class PaymentService {
         status: PaymentStatus.COMPLETED,
         securityWarnings: securityCheck.warnings,
         requiresManualReview: fraudCheck.requiresManualReview,
-        riskLevel: securityCheck.riskLevel
+        riskLevel: securityCheck.riskLevel,
       }
-
     } catch (error) {
       console.error('Payment processing error:', error)
       return {
         success: false,
         error: 'An unexpected error occurred while processing the payment',
-        status: PaymentStatus.FAILED
+        status: PaymentStatus.FAILED,
       }
     }
   }
@@ -228,7 +235,8 @@ export class PaymentService {
     try {
       const { data, error } = await supabase
         .from('payments')
-        .select(`
+        .select(
+          `
           *,
           tenants (
             full_name
@@ -241,7 +249,8 @@ export class PaymentService {
               period_end
             )
           )
-        `)
+        `
+        )
         .eq('id', paymentId)
         .single()
 
@@ -259,12 +268,13 @@ export class PaymentService {
         txRef: data.tx_ref,
         paidByName: data.paid_by_name,
         paidByContact: data.paid_by_contact,
-        allocations: data.payment_allocations?.map((allocation: any) => ({
-          invoiceId: allocation.rent_invoices.id,
-          amount: allocation.amount_kes,
-          periodStart: allocation.rent_invoices.period_start,
-          periodEnd: allocation.rent_invoices.period_end
-        })) || []
+        allocations:
+          data.payment_allocations?.map((allocation: any) => ({
+            invoiceId: allocation.rent_invoices.id,
+            amount: allocation.amount_kes,
+            periodStart: allocation.rent_invoices.period_start,
+            periodEnd: allocation.rent_invoices.period_end,
+          })) || [],
       }
     } catch (error) {
       console.error('Error getting payment confirmation:', error)
@@ -275,7 +285,9 @@ export class PaymentService {
   /**
    * Validate tenant exists and is active
    */
-  private static async validateTenant(tenantId: string): Promise<{ isValid: boolean; error?: string }> {
+  private static async validateTenant(
+    tenantId: string
+  ): Promise<{ isValid: boolean; error?: string }> {
     try {
       const { data, error } = await supabase
         .from('tenants')
@@ -310,7 +322,8 @@ export class PaymentService {
     try {
       const { data, error } = await supabase
         .from('tenants')
-        .select(`
+        .select(
+          `
           full_name,
           email,
           phone,
@@ -320,7 +333,8 @@ export class PaymentService {
               name
             )
           )
-        `)
+        `
+        )
         .eq('id', tenantId)
         .single()
 
@@ -333,7 +347,7 @@ export class PaymentService {
         email: data.email,
         phone: data.phone,
         propertyName: data.units?.[0]?.properties?.name,
-        unitLabel: data.units?.[0]?.unit_label
+        unitLabel: data.units?.[0]?.unit_label,
       }
     } catch (error) {
       console.error('Error getting tenant info:', error)
@@ -344,7 +358,10 @@ export class PaymentService {
   /**
    * Check for duplicate transaction reference
    */
-  private static async checkDuplicateTransaction(txRef: string, method: string): Promise<{ isDuplicate: boolean }> {
+  private static async checkDuplicateTransaction(
+    txRef: string,
+    method: string
+  ): Promise<{ isDuplicate: boolean }> {
     try {
       const { data, error } = await supabase
         .from('payments')
@@ -365,23 +382,23 @@ export class PaymentService {
    */
   private static mapDatabaseError(error: string): string {
     const errorLower = error.toLowerCase()
-    
+
     if (errorLower.includes('payment amount must be positive')) {
       return 'Payment amount must be greater than zero'
     }
-    
+
     if (errorLower.includes('tenant not found')) {
       return 'The selected tenant could not be found'
     }
-    
+
     if (errorLower.includes('constraint') || errorLower.includes('foreign key')) {
       return 'Invalid payment data. Please check your inputs and try again'
     }
-    
+
     if (errorLower.includes('timeout') || errorLower.includes('connection')) {
       return 'Connection timeout. Please check your internet connection and try again'
     }
-    
+
     // Default generic error message
     return 'Unable to process payment. Please try again or contact support if the problem persists'
   }
@@ -390,8 +407,8 @@ export class PaymentService {
    * Log payment activity for audit trail
    */
   private static async logPaymentActivity(
-    paymentId: string, 
-    action: string, 
+    paymentId: string,
+    action: string,
     paymentData: PaymentFormValues
   ): Promise<void> {
     try {
@@ -401,9 +418,9 @@ export class PaymentService {
         action,
         amount: paymentData.amount,
         method: paymentData.method,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       })
-      
+
       // TODO: Implement actual audit logging to database or external service
     } catch (error) {
       // Don't fail the payment if logging fails

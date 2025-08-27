@@ -16,8 +16,11 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 
     const token = authHeader.substring(7)
     const supabase = createClient(supabaseUrl, serviceKey)
-    
-    const { data: { user }, error } = await supabase.auth.getUser(token)
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token)
     if (error || !user) {
       return null
     }
@@ -35,8 +38,7 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin
-      .rpc('get_user_accessible_properties', { user_uuid: userId })
+    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       console.error('checkPropertyAccess - RPC error:', error)
@@ -83,8 +85,7 @@ async function checkPropertyEditAccess(userId: string, propertyId: string): Prom
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin
-      .rpc('get_user_accessible_properties', { user_uuid: userId })
+    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       console.error('checkPropertyEditAccess - RPC error:', error)
@@ -125,7 +126,11 @@ async function checkPropertyEditAccess(userId: string, propertyId: string): Prom
 }
 
 // GET /api/properties/[id]/subdivision-history - Get subdivision history
-export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const GET = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
@@ -148,8 +153,9 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
     }
 
     // Get subdivision history using the database function
-    const { data: history, error: historyError } = await admin
-      .rpc('get_subdivision_history', { property_uuid: propertyId })
+    const { data: history, error: historyError } = await admin.rpc('get_subdivision_history', {
+      property_uuid: propertyId,
+    })
 
     if (historyError) {
       console.error('Error fetching subdivision history:', historyError)
@@ -158,9 +164,8 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
 
     return NextResponse.json({
       success: true,
-      data: history || []
+      data: history || [],
     })
-
   } catch (error) {
     console.error('Error in subdivision history API:', error)
     return errors.internal('Internal server error')
@@ -168,7 +173,11 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
 })
 
 // POST /api/properties/[id]/subdivision-history - Record subdivision history
-export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const POST = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
@@ -191,7 +200,7 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
       subdivision_name,
       total_plots_planned,
       change_reason,
-      details = {}
+      details = {},
     } = body
 
     // Validate required fields
@@ -212,18 +221,17 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
     }
 
     // Record subdivision history using the database function
-    const { data: historyId, error: recordError } = await admin
-      .rpc('record_subdivision_history', {
-        property_uuid: propertyId,
-        subdivision_uuid: subdivision_id || null,
-        action_type_param: action_type,
-        previous_status_param: previous_status || null,
-        new_status_param: new_status || null,
-        subdivision_name_param: subdivision_name || null,
-        total_plots_param: total_plots_planned || null,
-        reason: change_reason,
-        details_param: details
-      })
+    const { data: historyId, error: recordError } = await admin.rpc('record_subdivision_history', {
+      property_uuid: propertyId,
+      subdivision_uuid: subdivision_id || null,
+      action_type_param: action_type,
+      previous_status_param: previous_status || null,
+      new_status_param: new_status || null,
+      subdivision_name_param: subdivision_name || null,
+      total_plots_param: total_plots_planned || null,
+      reason: change_reason,
+      details_param: details,
+    })
 
     if (recordError) {
       console.error('Error recording subdivision history via function:', recordError)
@@ -233,10 +241,11 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
         // Get user info from auth instead of profiles table
         const { data: authUser } = await admin.auth.admin.getUserById(userId)
 
-        const userName = authUser?.user?.user_metadata?.full_name ||
-                        authUser?.user?.user_metadata?.name ||
-                        authUser?.user?.email ||
-                        'Abel Gichimu' // Fallback to your name since you're the main user
+        const userName =
+          authUser?.user?.user_metadata?.full_name ||
+          authUser?.user?.user_metadata?.name ||
+          authUser?.user?.email ||
+          'Abel Gichimu' // Fallback to your name since you're the main user
 
         const { data: directInsert, error: insertError } = await admin
           .from('property_subdivision_history')
@@ -251,7 +260,7 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
             change_reason: change_reason,
             changed_by: userId,
             changed_by_name: userName,
-            details: details
+            details: details,
           })
           .select('id')
           .single()
@@ -263,7 +272,7 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
 
         return NextResponse.json({
           success: true,
-          data: { id: directInsert.id }
+          data: { id: directInsert.id },
         })
       } catch (fallbackError) {
         console.error('Fallback insertion failed:', fallbackError)
@@ -273,9 +282,8 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
 
     return NextResponse.json({
       success: true,
-      data: { id: historyId }
+      data: { id: historyId },
     })
-
   } catch (error) {
     console.error('Error in subdivision history API:', error)
     return errors.internal('Internal server error')

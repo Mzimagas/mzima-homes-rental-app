@@ -5,7 +5,12 @@ import { Button } from '../../ui'
 import { LoadingCard } from '../../ui/loading'
 import { ErrorCard } from '../../ui/error'
 import Modal from '../../ui/Modal'
-import { RentalTenant, TenantFormData, LeaseAgreement, LeaseFormData } from '../types/rental-management.types'
+import {
+  RentalTenant,
+  TenantFormData,
+  LeaseAgreement,
+  LeaseFormData,
+} from '../types/rental-management.types'
 import { RentalManagementService } from '../services/rental-management.service'
 import { UnitAllocationService } from '../services/unit-allocation.service'
 import { ConflictPreventionService } from '../services/conflict-prevention.service'
@@ -21,24 +26,40 @@ interface TenantManagementProps {
 
 const phoneRegex = /^\+?[0-9\s\-()]+$/
 
-const tenantSchema = z.object({
-  full_name: z.string().min(1, 'Full name is required').max(120),
-  phone: z.string().min(1, 'Phone is required').regex(phoneRegex, 'Enter a valid phone number'),
-  alternate_phone: z.string().regex(phoneRegex, 'Enter a valid phone number').optional().or(z.literal('')),
-  email: z.string().email('Enter a valid email').optional().or(z.literal('')),
-  national_id: z.string().min(1, 'National ID is required').max(40),
-  employer: z.string().max(120).optional().or(z.literal('')),
-  emergency_contact_name: z.string().max(120).optional().or(z.literal('')),
-  emergency_contact_phone: z.string().regex(phoneRegex, 'Enter a valid phone number').optional().or(z.literal('')),
-  emergency_contact_relationship: z.string().max(60).optional().or(z.literal('')),
-  emergency_contact_email: z.string().email('Enter a valid email').optional().or(z.literal('')),
-  notes: z.string().optional().or(z.literal('')),
-}).refine((val) => {
-  // Emergency contact name and phone should be provided together
-  const hasName = !!val.emergency_contact_name
-  const hasPhone = !!val.emergency_contact_phone
-  return (hasName && hasPhone) || (!hasName && !hasPhone)
-}, { message: 'Emergency contact name and phone must be provided together', path: ['emergency_contact_name'] })
+const tenantSchema = z
+  .object({
+    full_name: z.string().min(1, 'Full name is required').max(120),
+    phone: z.string().min(1, 'Phone is required').regex(phoneRegex, 'Enter a valid phone number'),
+    alternate_phone: z
+      .string()
+      .regex(phoneRegex, 'Enter a valid phone number')
+      .optional()
+      .or(z.literal('')),
+    email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+    national_id: z.string().min(1, 'National ID is required').max(40),
+    employer: z.string().max(120).optional().or(z.literal('')),
+    emergency_contact_name: z.string().max(120).optional().or(z.literal('')),
+    emergency_contact_phone: z
+      .string()
+      .regex(phoneRegex, 'Enter a valid phone number')
+      .optional()
+      .or(z.literal('')),
+    emergency_contact_relationship: z.string().max(60).optional().or(z.literal('')),
+    emergency_contact_email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+    notes: z.string().optional().or(z.literal('')),
+  })
+  .refine(
+    (val) => {
+      // Emergency contact name and phone should be provided together
+      const hasName = !!val.emergency_contact_name
+      const hasPhone = !!val.emergency_contact_phone
+      return (hasName && hasPhone) || (!hasName && !hasPhone)
+    },
+    {
+      message: 'Emergency contact name and phone must be provided together',
+      path: ['emergency_contact_name'],
+    }
+  )
 
 const leaseSchema = z.object({
   tenant_id: z.string().min(1, 'Tenant is required'),
@@ -58,7 +79,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
   // Search and filter state (to mirror /dashboard/tenants)
   const [q, setQ] = useState('')
   const [properties, setProperties] = useState<Array<{ id: string; name: string }>>([])
-  const [units, setUnits] = useState<Array<{ id: string; unit_label: string; property_id: string }>>([])
+  const [units, setUnits] = useState<
+    Array<{ id: string; unit_label: string; property_id: string }>
+  >([])
   const [propertyId, setPropertyId] = useState('')
   const [unitId, setUnitId] = useState('')
 
@@ -83,7 +106,8 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
   // Lease management state
   const [showLeaseManagementModal, setShowLeaseManagementModal] = useState(false)
   const [showCreateLeaseModal, setShowCreateLeaseModal] = useState(false)
-  const [selectedLeaseForManagement, setSelectedLeaseForManagement] = useState<LeaseAgreement | null>(null)
+  const [selectedLeaseForManagement, setSelectedLeaseForManagement] =
+    useState<LeaseAgreement | null>(null)
   const [tenantForNewLease, setTenantForNewLease] = useState<RentalTenant | null>(null)
   const [leaseSubmitting, setLeaseSubmitting] = useState(false)
 
@@ -91,9 +115,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     register,
     handleSubmit,
     reset,
-    formState: { errors }
+    formState: { errors },
   } = useForm<TenantFormData>({
-    resolver: zodResolver(tenantSchema)
+    resolver: zodResolver(tenantSchema),
   })
 
   const {
@@ -102,9 +126,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     reset: resetLease,
     watch: watchLease,
     setValue: setValueLease,
-    formState: { errors: leaseErrors }
+    formState: { errors: leaseErrors },
   } = useForm<LeaseFormData>({
-    resolver: zodResolver(leaseSchema)
+    resolver: zodResolver(leaseSchema),
   })
 
   useEffect(() => {
@@ -117,9 +141,18 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       try {
         const { data: accessible, error: rpcErr } = await supabase.rpc('get_user_properties_simple')
         if (rpcErr) throw rpcErr
-        const ids = (accessible || []).map((p: any) => (typeof p === 'string' ? p : p?.property_id)).filter(Boolean)
-        if (ids.length === 0) { setProperties([]); return }
-        const { data, error } = await supabase.from('properties').select('id, name').in('id', ids).order('name')
+        const ids = (accessible || [])
+          .map((p: any) => (typeof p === 'string' ? p : p?.property_id))
+          .filter(Boolean)
+        if (ids.length === 0) {
+          setProperties([])
+          return
+        }
+        const { data, error } = await supabase
+          .from('properties')
+          .select('id, name')
+          .in('id', ids)
+          .order('name')
         if (error) throw error
         setProperties(data || [])
       } catch (e) {
@@ -159,15 +192,17 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     }
   }
 
-  const filteredTenants = tenants.filter(tenant => {
-    const matchesQ = !q || (
+  const filteredTenants = tenants.filter((tenant) => {
+    const matchesQ =
+      !q ||
       tenant.full_name.toLowerCase().includes(q.toLowerCase()) ||
       (tenant.phone || '').toLowerCase().includes(q.toLowerCase()) ||
       (tenant.email || '').toLowerCase().includes(q.toLowerCase())
-    )
-    const matchesProperty = !propertyId || ((tenant as any).current_unit?.property_id === propertyId)
-    const activeAgreementUnitId = (tenant as any)?.tenancy_agreements?.find((a: any) => a.status === 'ACTIVE')?.unit_id
-    const matchesUnit = !unitId || (activeAgreementUnitId === unitId)
+    const matchesProperty = !propertyId || (tenant as any).current_unit?.property_id === propertyId
+    const activeAgreementUnitId = (tenant as any)?.tenancy_agreements?.find(
+      (a: any) => a.status === 'ACTIVE'
+    )?.unit_id
+    const matchesUnit = !unitId || activeAgreementUnitId === unitId
     return matchesQ && matchesProperty && matchesUnit
   })
 
@@ -208,25 +243,28 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     try {
       const { data: allUnits, error } = await supabase
         .from('units')
-        .select(`
+        .select(
+          `
           id,
           unit_label,
           monthly_rent_kes,
           property_id,
           properties!inner(id, name),
           tenancy_agreements!left(id, status, tenant_id)
-        `)
+        `
+        )
         .order('unit_label')
 
       if (error) throw error
 
       // Filter to show only vacant units + current unit
-      const availableUnitsData = allUnits?.filter((unit: any) => {
-        const hasActiveTenant = unit.tenancy_agreements?.some((agreement: any) =>
-          agreement.status === 'ACTIVE' && agreement.tenant_id !== tenant.id
-        )
-        return !hasActiveTenant
-      }) || []
+      const availableUnitsData =
+        allUnits?.filter((unit: any) => {
+          const hasActiveTenant = unit.tenancy_agreements?.some(
+            (agreement: any) => agreement.status === 'ACTIVE' && agreement.tenant_id !== tenant.id
+          )
+          return !hasActiveTenant
+        }) || []
 
       setAvailableUnits(availableUnitsData)
       setShowReallocationModal(true)
@@ -249,7 +287,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
         {
           effectiveDate: new Date().toISOString().split('T')[0],
           terminateCurrentLease: true,
-          notes: reallocationNotes || 'Unit reallocation requested by user'
+          notes: reallocationNotes || 'Unit reallocation requested by user',
         }
       )
 
@@ -272,10 +310,11 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       setSelectedNewUnit('')
       setReallocationNotes('')
       onDataChange?.()
-
     } catch (error) {
       console.error('Error reallocating tenant:', error)
-      setError(error instanceof Error ? error.message : 'Failed to reallocate tenant. Please try again.')
+      setError(
+        error instanceof Error ? error.message : 'Failed to reallocate tenant. Please try again.'
+      )
     } finally {
       setReallocating(false)
     }
@@ -294,7 +333,8 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       // Load lease history for the tenant
       const { data, error } = await supabase
         .from('tenancy_agreements')
-        .select(`
+        .select(
+          `
           *,
           units!inner(
             id,
@@ -302,7 +342,8 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
             monthly_rent_kes,
             properties!inner(id, name)
           )
-        `)
+        `
+        )
         .eq('tenant_id', tenant.id)
         .order('start_date', { ascending: false })
 
@@ -355,7 +396,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
           emergency_contact_phone: data.emergency_contact_phone,
           emergency_contact_relationship: data.emergency_contact_relationship,
           emergency_contact_email: data.emergency_contact_email,
-          notes: data.notes
+          notes: data.notes,
         })
         .eq('id', editingTenant.id)
 
@@ -385,25 +426,28 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
     try {
       const { data: allUnits, error } = await supabase
         .from('units')
-        .select(`
+        .select(
+          `
           id,
           unit_label,
           monthly_rent_kes,
           property_id,
           properties!inner(id, name),
           tenancy_agreements!left(id, status, tenant_id)
-        `)
+        `
+        )
         .order('unit_label')
 
       if (error) throw error
 
       // Filter to show only vacant units
-      const availableUnitsData = allUnits?.filter((unit: any) => {
-        const hasActiveTenant = unit.tenancy_agreements?.some((agreement: any) =>
-          agreement.status === 'ACTIVE'
-        )
-        return !hasActiveTenant
-      }) || []
+      const availableUnitsData =
+        allUnits?.filter((unit: any) => {
+          const hasActiveTenant = unit.tenancy_agreements?.some(
+            (agreement: any) => agreement.status === 'ACTIVE'
+          )
+          return !hasActiveTenant
+        }) || []
 
       setAvailableUnits(availableUnitsData)
     } catch (error) {
@@ -428,7 +472,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
         tenant_id: data.tenant_id,
         unit_id: data.unit_id,
         start_date: data.start_date,
-        end_date: data.end_date || undefined
+        end_date: data.end_date || undefined,
       })
 
       if (!conflictResult.canProceed) {
@@ -437,19 +481,17 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       }
 
       // Create the lease
-      const { error } = await supabase
-        .from('tenancy_agreements')
-        .insert({
-          tenant_id: data.tenant_id,
-          unit_id: data.unit_id,
-          start_date: data.start_date,
-          end_date: data.end_date || null,
-          monthly_rent_kes: data.monthly_rent_kes,
-          security_deposit: data.security_deposit || 0,
-          pet_deposit: data.pet_deposit || 0,
-          status: 'ACTIVE',
-          notes: data.notes || null
-        })
+      const { error } = await supabase.from('tenancy_agreements').insert({
+        tenant_id: data.tenant_id,
+        unit_id: data.unit_id,
+        start_date: data.start_date,
+        end_date: data.end_date || null,
+        monthly_rent_kes: data.monthly_rent_kes,
+        security_deposit: data.security_deposit || 0,
+        pet_deposit: data.pet_deposit || 0,
+        status: 'ACTIVE',
+        notes: data.notes || null,
+      })
 
       if (error) throw error
 
@@ -476,7 +518,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
         .from('tenancy_agreements')
         .update({
           status: 'TERMINATED',
-          end_date: new Date().toISOString().split('T')[0]
+          end_date: new Date().toISOString().split('T')[0],
         })
         .eq('id', lease.id)
 
@@ -499,13 +541,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
   }
 
   if (error && tenants.length === 0) {
-    return (
-      <ErrorCard
-        title="Error Loading Tenants"
-        message={error}
-        onRetry={loadTenants}
-      />
-    )
+    return <ErrorCard title="Error Loading Tenants" message={error} onRetry={loadTenants} />
   }
 
   return (
@@ -529,20 +565,37 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        <select className="border rounded px-3 py-2" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
+        <select
+          className="border rounded px-3 py-2"
+          value={propertyId}
+          onChange={(e) => setPropertyId(e.target.value)}
+        >
           <option value="">All properties</option>
-          {properties.map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
+          {properties.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
           ))}
         </select>
-        <select className="border rounded px-3 py-2" value={unitId} onChange={(e) => setUnitId(e.target.value)} disabled={!propertyId}>
+        <select
+          className="border rounded px-3 py-2"
+          value={unitId}
+          onChange={(e) => setUnitId(e.target.value)}
+          disabled={!propertyId}
+        >
           <option value="">All units</option>
-          {units.map(u => (
-            <option key={u.id} value={u.id}>{u.unit_label || 'Unit'}</option>
+          {units.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.unit_label || 'Unit'}
+            </option>
           ))}
         </select>
         <button
-          onClick={() => { setQ(''); setPropertyId(''); setUnitId('') }}
+          onClick={() => {
+            setQ('')
+            setPropertyId('')
+            setUnitId('')
+          }}
           className="px-3 py-2 text-sm bg-gray-100 border rounded hover:bg-gray-200"
         >
           Clear Filters
@@ -584,7 +637,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                             <h3 className="text-lg font-medium text-gray-900 truncate">
                               {tenant.full_name}
                             </h3>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}
+                            >
                               {status.label}
                             </span>
                             {hasActiveLease && (
@@ -610,8 +665,18 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                           }}
                           title="View Details"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
                           </svg>
                         </button>
                       </div>
@@ -632,17 +697,14 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div>
                             <p className="text-sm text-gray-600">Property & Unit</p>
-                            {tenant.current_unit && (() => {
-                              const { unit, property } = extractUnitPropertyData(tenant)
-                              const unitDisplay = formatUnitAllocation(unit, property, {
-                                fallbackText: 'Unit assignment pending'
-                              })
-                              return (
-                                <p className="font-medium text-blue-600">
-                                  📍 {unitDisplay}
-                                </p>
-                              )
-                            })()}
+                            {tenant.current_unit &&
+                              (() => {
+                                const { unit, property } = extractUnitPropertyData(tenant)
+                                const unitDisplay = formatUnitAllocation(unit, property, {
+                                  fallbackText: 'Unit assignment pending',
+                                })
+                                return <p className="font-medium text-blue-600">📍 {unitDisplay}</p>
+                              })()}
                           </div>
                           <div>
                             <p className="text-sm text-gray-600">Monthly Rent</p>
@@ -665,7 +727,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                     ) : (
                       <div className="text-center py-4">
                         <p className="text-gray-500 mb-2">No active lease</p>
-                        <p className="text-sm text-gray-400">This tenant doesn't have an active lease agreement</p>
+                        <p className="text-sm text-gray-400">
+                          This tenant doesn't have an active lease agreement
+                        </p>
                       </div>
                     )}
                   </div>
@@ -738,7 +802,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
           <div className="text-6xl mb-4">👥</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Tenants Found</h3>
           <p className="text-gray-500 mb-4">
-            {q ? 'No tenants match your search criteria.' : 'Get started by adding your first tenant.'}
+            {q
+              ? 'No tenants match your search criteria.'
+              : 'Get started by adding your first tenant.'}
           </p>
           <Button onClick={() => setShowAddTenantModal(true)} variant="primary">
             Add Tenant
@@ -850,9 +916,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder="e.g., employer information, special requirements, etc."
               />
-              {errors.notes && (
-                <p className="text-xs text-red-600 mt-1">{errors.notes.message}</p>
-              )}
+              {errors.notes && <p className="text-xs text-red-600 mt-1">{errors.notes.message}</p>}
             </div>
           </div>
 
@@ -870,7 +934,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   placeholder="Enter contact name"
                 />
                 {errors.emergency_contact_name && (
-                  <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_name.message}</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {errors.emergency_contact_name.message}
+                  </p>
                 )}
               </div>
 
@@ -884,7 +950,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   placeholder="Enter contact phone"
                 />
                 {errors.emergency_contact_phone && (
-                  <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_phone.message}</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {errors.emergency_contact_phone.message}
+                  </p>
                 )}
               </div>
 
@@ -898,7 +966,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   placeholder="e.g., Spouse, Parent, Sibling"
                 />
                 {errors.emergency_contact_relationship && (
-                  <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_relationship.message}</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {errors.emergency_contact_relationship.message}
+                  </p>
                 )}
               </div>
 
@@ -913,7 +983,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   placeholder="Enter contact email"
                 />
                 {errors.emergency_contact_email && (
-                  <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_email.message}</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {errors.emergency_contact_email.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -973,42 +1045,48 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
             </div>
 
             {/* Current Lease */}
-            {selectedTenant.current_unit && (() => {
-              const { unit, property } = extractUnitPropertyData(selectedTenant)
-              const unitDisplay = formatUnitAllocation(unit, property)
+            {selectedTenant.current_unit &&
+              (() => {
+                const { unit, property } = extractUnitPropertyData(selectedTenant)
+                const unitDisplay = formatUnitAllocation(unit, property)
 
-              return (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Current Assignment</h3>
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-blue-600">📍</span>
-                      <p className="text-sm font-medium text-blue-900">
-                        {unitDisplay}
-                      </p>
+                return (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Current Assignment</h3>
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-blue-600">📍</span>
+                        <p className="text-sm font-medium text-blue-900">{unitDisplay}</p>
+                      </div>
+                      {unit?.monthly_rent_kes && (
+                        <p className="text-sm text-blue-700">
+                          Monthly Rent: KES {unit.monthly_rent_kes.toLocaleString()}
+                        </p>
+                      )}
                     </div>
-                    {unit?.monthly_rent_kes && (
-                      <p className="text-sm text-blue-700">
-                        Monthly Rent: KES {unit.monthly_rent_kes.toLocaleString()}
-                      </p>
-                    )}
                   </div>
-                </div>
-              )
-            })()}
+                )
+              })()}
 
             {/* Reallocation History */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">Unit History</h3>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600 mb-2">Recent unit assignments:</p>
-                {selectedTenant.tenancy_agreements && selectedTenant.tenancy_agreements.length > 0 ? (
+                {selectedTenant.tenancy_agreements &&
+                selectedTenant.tenancy_agreements.length > 0 ? (
                   <div className="space-y-2">
                     {selectedTenant.tenancy_agreements
-                      .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
+                      .sort(
+                        (a, b) =>
+                          new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+                      )
                       .slice(0, 3)
                       .map((agreement, index) => (
-                        <div key={agreement.id} className="flex justify-between items-center text-sm">
+                        <div
+                          key={agreement.id}
+                          className="flex justify-between items-center text-sm"
+                        >
                           <span className="text-gray-700">
                             {(agreement as any).units?.unit_label || 'Unit'}
                             {index === 0 && agreement.status === 'ACTIVE' && (
@@ -1017,7 +1095,8 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                           </span>
                           <span className="text-gray-500">
                             {new Date(agreement.start_date).toLocaleDateString()}
-                            {agreement.end_date && ` - ${new Date(agreement.end_date).toLocaleDateString()}`}
+                            {agreement.end_date &&
+                              ` - ${new Date(agreement.end_date).toLocaleDateString()}`}
                           </span>
                         </div>
                       ))}
@@ -1092,25 +1171,26 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
               <p className="text-sm text-gray-700">
                 <strong>Phone:</strong> {reallocationTenant.phone}
               </p>
-              {reallocationTenant.current_unit && (() => {
-                const { unit, property } = extractUnitPropertyData(reallocationTenant)
-                const unitDisplay = formatUnitAllocation(unit, property)
+              {reallocationTenant.current_unit &&
+                (() => {
+                  const { unit, property } = extractUnitPropertyData(reallocationTenant)
+                  const unitDisplay = formatUnitAllocation(unit, property)
 
-                return (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
-                    <p className="text-sm font-medium text-blue-900 mb-2">Current Assignment:</p>
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-blue-600">📍</span>
-                      <p className="text-sm font-medium text-blue-700">{unitDisplay}</p>
+                  return (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                      <p className="text-sm font-medium text-blue-900 mb-2">Current Assignment:</p>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="text-blue-600">📍</span>
+                        <p className="text-sm font-medium text-blue-700">{unitDisplay}</p>
+                      </div>
+                      {unit?.monthly_rent_kes && (
+                        <p className="text-sm text-blue-700">
+                          Current Rent: KES {unit.monthly_rent_kes.toLocaleString()}/month
+                        </p>
+                      )}
                     </div>
-                    {unit?.monthly_rent_kes && (
-                      <p className="text-sm text-blue-700">
-                        Current Rent: KES {unit.monthly_rent_kes.toLocaleString()}/month
-                      </p>
-                    )}
-                  </div>
-                )
-              })()}
+                  )
+                })()}
             </div>
 
             {/* New Unit Selection */}
@@ -1130,15 +1210,16 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                     id: unit.id,
                     unit_label: unit.unit_label,
                     property_id: unit.property_id,
-                    monthly_rent_kes: unit.monthly_rent_kes
+                    monthly_rent_kes: unit.monthly_rent_kes,
                   }
                   const propertyData = {
                     id: unit.properties.id,
-                    name: unit.properties.name
+                    name: unit.properties.name,
                   }
-                  const optionText = formatUnitAllocation(unitData, propertyData, {
-                    includeRent: true
-                  }) + (isCurrentUnit ? ' (Current Unit)' : '')
+                  const optionText =
+                    formatUnitAllocation(unitData, propertyData, {
+                      includeRent: true,
+                    }) + (isCurrentUnit ? ' (Current Unit)' : '')
 
                   return (
                     <option key={unit.id} value={unit.id}>
@@ -1157,18 +1238,18 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
               <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
                 <h4 className="font-medium text-green-900 mb-3">New Assignment Details</h4>
                 {(() => {
-                  const newUnit = availableUnits.find(u => u.id === selectedNewUnit)
+                  const newUnit = availableUnits.find((u) => u.id === selectedNewUnit)
                   if (!newUnit) return null
 
                   const unitData = {
                     id: newUnit.id,
                     unit_label: newUnit.unit_label,
                     property_id: newUnit.property_id,
-                    monthly_rent_kes: newUnit.monthly_rent_kes
+                    monthly_rent_kes: newUnit.monthly_rent_kes,
                   }
                   const propertyData = {
                     id: newUnit.properties.id,
-                    name: newUnit.properties.name
+                    name: newUnit.properties.name,
                   }
                   const unitDisplay = formatUnitAllocation(unitData, propertyData)
                   const isCurrentUnit = newUnit.id === (reallocationTenant.current_unit as any)?.id
@@ -1214,17 +1295,17 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">
-                    Important Notice
-                  </h3>
+                  <h3 className="text-sm font-medium text-yellow-800">Important Notice</h3>
                   <div className="mt-2 text-sm text-yellow-700">
-                    <p>
-                      This action will:
-                    </p>
+                    <p>This action will:</p>
                     <ul className="list-disc list-inside mt-1">
                       <li>Terminate the current tenancy agreement</li>
                       <li>Create a new tenancy agreement for the selected unit</li>
@@ -1255,7 +1336,11 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                 type="button"
                 variant="primary"
                 onClick={confirmReallocation}
-                disabled={!selectedNewUnit || reallocating || selectedNewUnit === (reallocationTenant.current_unit as any)?.id}
+                disabled={
+                  !selectedNewUnit ||
+                  reallocating ||
+                  selectedNewUnit === (reallocationTenant.current_unit as any)?.id
+                }
                 className="flex-1"
               >
                 {reallocating ? 'Reallocating...' : 'Confirm Reallocation'}
@@ -1399,7 +1484,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                     placeholder="Enter contact name"
                   />
                   {errors.emergency_contact_name && (
-                    <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_name.message}</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.emergency_contact_name.message}
+                    </p>
                   )}
                 </div>
 
@@ -1414,7 +1501,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                     placeholder="Enter contact phone"
                   />
                   {errors.emergency_contact_phone && (
-                    <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_phone.message}</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.emergency_contact_phone.message}
+                    </p>
                   )}
                 </div>
 
@@ -1429,7 +1518,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                     placeholder="e.g., Spouse, Parent, Sibling"
                   />
                   {errors.emergency_contact_relationship && (
-                    <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_relationship.message}</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.emergency_contact_relationship.message}
+                    </p>
                   )}
                 </div>
 
@@ -1445,7 +1536,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                     placeholder="Enter contact email"
                   />
                   {errors.emergency_contact_email && (
-                    <p className="text-xs text-red-600 mt-1">{errors.emergency_contact_email.message}</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.emergency_contact_email.message}
+                    </p>
                   )}
                 </div>
               </div>
@@ -1495,12 +1588,17 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                         Monthly Rent: KES {lease.monthly_rent_kes.toLocaleString()}
                       </p>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      lease.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                      lease.status === 'TERMINATED' ? 'bg-red-100 text-red-800' :
-                      lease.status === 'EXPIRED' ? 'bg-gray-100 text-gray-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        lease.status === 'ACTIVE'
+                          ? 'bg-green-100 text-green-800'
+                          : lease.status === 'TERMINATED'
+                            ? 'bg-red-100 text-red-800'
+                            : lease.status === 'EXPIRED'
+                              ? 'bg-gray-100 text-gray-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
                       {lease.status}
                     </span>
                   </div>
@@ -1508,7 +1606,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-gray-600">Start Date:</p>
-                      <p className="font-medium">{new Date(lease.start_date).toLocaleDateString()}</p>
+                      <p className="font-medium">
+                        {new Date(lease.start_date).toLocaleDateString()}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-600">End Date:</p>
@@ -1578,11 +1678,15 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                         {payment.payment_method}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          payment.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                          payment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            payment.status === 'COMPLETED'
+                              ? 'bg-green-100 text-green-800'
+                              : payment.status === 'PENDING'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                          }`}
+                        >
                           {payment.status}
                         </span>
                       </td>
@@ -1596,11 +1700,13 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
               <div className="text-4xl mb-4">💳</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Payment History</h3>
               <p className="text-gray-500 mb-4">
-                This tenant has no payment records yet. Payment tracking will be available once the payments system is fully implemented.
+                This tenant has no payment records yet. Payment tracking will be available once the
+                payments system is fully implemented.
               </p>
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  <strong>Coming Soon:</strong> Complete payment tracking with rent collection, payment methods, and financial reporting.
+                  <strong>Coming Soon:</strong> Complete payment tracking with rent collection,
+                  payment methods, and financial reporting.
                 </p>
               </div>
             </div>
@@ -1634,7 +1740,8 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   <option value="">Select a unit</option>
                   {availableUnits.map((unit) => (
                     <option key={unit.id} value={unit.id}>
-                      {unit.properties?.name} - {unit.unit_label} (KES {unit.monthly_rent_kes?.toLocaleString()}/month)
+                      {unit.properties?.name} - {unit.unit_label} (KES{' '}
+                      {unit.monthly_rent_kes?.toLocaleString()}/month)
                     </option>
                   ))}
                 </select>
@@ -1654,7 +1761,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   placeholder="Enter monthly rent"
                 />
                 {leaseErrors.monthly_rent_kes && (
-                  <p className="text-xs text-red-600 mt-1">{leaseErrors.monthly_rent_kes.message}</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {leaseErrors.monthly_rent_kes.message}
+                  </p>
                 )}
               </div>
 
@@ -1709,9 +1818,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notes
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
               <textarea
                 {...registerLease('notes')}
                 rows={3}
@@ -1734,12 +1841,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={leaseSubmitting}
-              className="flex-1"
-            >
+            <Button type="submit" variant="primary" disabled={leaseSubmitting} className="flex-1">
               {leaseSubmitting ? 'Creating...' : 'Create Lease'}
             </Button>
           </div>
@@ -1768,12 +1870,15 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   <div>
                     <p className="text-gray-600">Property & Unit:</p>
                     <p className="font-medium">
-                      {selectedLeaseForManagement.unit?.properties?.name} - {selectedLeaseForManagement.unit?.unit_label}
+                      {selectedLeaseForManagement.unit?.properties?.name} -{' '}
+                      {selectedLeaseForManagement.unit?.unit_label}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-600">Monthly Rent:</p>
-                    <p className="font-medium">KES {selectedLeaseForManagement.monthly_rent_kes?.toLocaleString()}</p>
+                    <p className="font-medium">
+                      KES {selectedLeaseForManagement.monthly_rent_kes?.toLocaleString()}
+                    </p>
                   </div>
                   <div>
                     <p className="text-gray-600">Status:</p>
@@ -1781,7 +1886,9 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                   </div>
                   <div>
                     <p className="text-gray-600">Start Date:</p>
-                    <p className="font-medium">{new Date(selectedLeaseForManagement.start_date).toLocaleDateString()}</p>
+                    <p className="font-medium">
+                      {new Date(selectedLeaseForManagement.start_date).toLocaleDateString()}
+                    </p>
                   </div>
                   <div>
                     <p className="text-gray-600">End Date:</p>

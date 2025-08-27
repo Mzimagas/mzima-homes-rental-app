@@ -13,7 +13,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -37,8 +39,7 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin
-      .rpc('get_user_accessible_properties', { user_uuid: userId })
+    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       // Fallback: Check if user owns the property directly
@@ -84,7 +85,7 @@ const paymentInstallmentSchema = z.object({
   payment_date: z.string().optional(),
   payment_reference: z.string().optional(),
   payment_method: z.enum(['CASH', 'BANK_TRANSFER', 'CHEQUE', 'MOBILE_MONEY', 'OTHER']).optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 })
 
 // GET /api/properties/[id]/payment-installments - Fetch all payment installments for a property
@@ -95,8 +96,9 @@ export async function GET(req: NextRequest) {
 
     // Extract property id from path /api/properties/[id]/payment-installments
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
@@ -122,15 +124,20 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/properties/[id]/payment-installments - Add new payment installment
-export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const POST = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id from path /api/properties/[id]/payment-installments
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
@@ -167,7 +174,7 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
         payment_reference: parsed.data.payment_reference,
         payment_method: parsed.data.payment_method,
         notes: parsed.data.notes,
-        created_by: userId
+        created_by: userId,
       })
       .select('*')
       .single()

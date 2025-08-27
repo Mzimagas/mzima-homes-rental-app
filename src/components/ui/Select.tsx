@@ -8,7 +8,8 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { label, hint, error, options, id, className = '', children, ...props }, ref
+  { label, hint, error, options, id, className = '', children, ...props },
+  ref
 ) {
   const inputId = React.useId()
   const fieldId = id || inputId
@@ -23,7 +24,12 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function 
     <div className="space-y-1">
       {label && (
         <label htmlFor={fieldId} className="text-sm font-medium text-gray-700">
-          {label} {showAsterisk && <span className="text-red-600" aria-hidden>*</span>}
+          {label}{' '}
+          {showAsterisk && (
+            <span className="text-red-600" aria-hidden>
+              *
+            </span>
+          )}
         </label>
       )}
       <select
@@ -34,14 +40,25 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function 
         aria-describedby={describedBy.length ? describedBy.join(' ') : undefined}
         {...props}
       >
-        {options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        {options?.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
         {children}
       </select>
-      {hint && <p id={`${fieldId}-hint`} className="text-xs text-gray-500">{hint}</p>}
-      {error && <p id={`${fieldId}-error`} className="text-xs text-red-600">{error}</p>}
+      {hint && (
+        <p id={`${fieldId}-hint`} className="text-xs text-gray-500">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={`${fieldId}-error`} className="text-xs text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   )
 })
 
 export default Select
-

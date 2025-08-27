@@ -16,24 +16,30 @@ export interface AuthSetupResult {
 export async function ensureUserLandlordAccess(): Promise<AuthSetupResult> {
   try {
     // Check if user is authenticated
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
     if (userError || !user) {
       return {
         success: false,
-        message: 'User not authenticated. Please sign in first.'
+        message: 'User not authenticated. Please sign in first.',
       }
     }
 
     // Check if user already has landlord access
-    const { data: landlordIds, error: landlordError } = await supabase.rpc('get_user_landlord_ids', {
-      user_uuid: user.id
-    })
+    const { data: landlordIds, error: landlordError } = await supabase.rpc(
+      'get_user_landlord_ids',
+      {
+        user_uuid: user.id,
+      }
+    )
 
     if (landlordError) {
       return {
         success: false,
-        message: `Error checking landlord access: ${landlordError.message}`
+        message: `Error checking landlord access: ${landlordError.message}`,
       }
     }
 
@@ -42,17 +48,16 @@ export async function ensureUserLandlordAccess(): Promise<AuthSetupResult> {
       return {
         success: true,
         message: 'User already has landlord access',
-        landlordId: landlordIds[0]
+        landlordId: landlordIds[0],
       }
     }
 
     // User doesn't have landlord access, try to create it
     return await createLandlordAccessForUser(user)
-    
   } catch (err: any) {
     return {
       success: false,
-      message: `Unexpected error: ${err.message}`
+      message: `Unexpected error: ${err.message}`,
     }
   }
 }
@@ -72,7 +77,7 @@ async function createLandlordAccessForUser(user: any): Promise<AuthSetupResult> 
     if (checkError) {
       return {
         success: false,
-        message: `Error checking existing landlords: ${checkError.message}`
+        message: `Error checking existing landlords: ${checkError.message}`,
       }
     }
 
@@ -85,18 +90,20 @@ async function createLandlordAccessForUser(user: any): Promise<AuthSetupResult> 
       // Create new landlord record
       const { data: newLandlord, error: createError } = await supabase
         .from('landlords')
-        .insert([{
-          full_name: user.user_metadata?.full_name || user.email.split('@')[0],
-          email: user.email,
-          phone: user.user_metadata?.phone || '+254700000000' // Default phone
-        }])
+        .insert([
+          {
+            full_name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: user.email,
+            phone: user.user_metadata?.phone || '+254700000000', // Default phone
+          },
+        ])
         .select()
         .single()
 
       if (createError) {
         return {
           success: false,
-          message: `Error creating landlord record: ${createError.message}`
+          message: `Error creating landlord record: ${createError.message}`,
         }
       }
 
@@ -104,13 +111,13 @@ async function createLandlordAccessForUser(user: any): Promise<AuthSetupResult> 
     }
 
     // Create user role assignment
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .insert([{
+    const { error: roleError } = await supabase.from('user_roles').insert([
+      {
         user_id: user.id,
         landlord_id: landlordId,
-        role: 'LANDLORD'
-      }])
+        role: 'LANDLORD',
+      },
+    ])
 
     if (roleError) {
       // Check if it's a duplicate key error (role already exists)
@@ -118,13 +125,13 @@ async function createLandlordAccessForUser(user: any): Promise<AuthSetupResult> 
         return {
           success: true,
           message: 'User role assignment already exists',
-          landlordId: landlordId
+          landlordId: landlordId,
         }
       }
-      
+
       return {
         success: false,
-        message: `Error creating user role: ${roleError.message}`
+        message: `Error creating user role: ${roleError.message}`,
       }
     }
 
@@ -134,13 +141,12 @@ async function createLandlordAccessForUser(user: any): Promise<AuthSetupResult> 
     return {
       success: true,
       message: 'Successfully created landlord access for user',
-      landlordId: landlordId
+      landlordId: landlordId,
     }
-
   } catch (err: any) {
     return {
       success: false,
-      message: `Error setting up landlord access: ${err.message}`
+      message: `Error setting up landlord access: ${err.message}`,
     }
   }
 }
@@ -150,17 +156,17 @@ async function createLandlordAccessForUser(user: any): Promise<AuthSetupResult> 
  */
 async function createDefaultNotificationRule(landlordId: string): Promise<void> {
   try {
-    await supabase
-      .from('notification_rules')
-      .insert([{
+    await supabase.from('notification_rules').insert([
+      {
         landlord_id: landlordId,
         type: 'rent_due',
         name: 'Rent Due Reminder',
         description: 'Notify tenants when rent is due',
         enabled: true,
         trigger_days: 3,
-        channels: ['email']
-      }])
+        channels: ['email'],
+      },
+    ])
   } catch (err) {
     // Ignore errors when creating default notification rule
     console.warn('Could not create default notification rule:', err)
@@ -175,7 +181,10 @@ export async function getUserLandlordIdsWithAutoSetup(autoSetup: boolean = false
   error: string | null
 }> {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
     if (userError || !user) {
       return { data: null, error: 'User not authenticated' }
@@ -193,7 +202,7 @@ export async function getUserLandlordIdsWithAutoSetup(autoSetup: boolean = false
     // If no landlord access and auto-setup is enabled, try to create it
     if (landlordIds.length === 0 && autoSetup) {
       const setupResult = await ensureUserLandlordAccess()
-      
+
       if (setupResult.success && setupResult.landlordId) {
         return { data: [setupResult.landlordId], error: null }
       } else {
@@ -217,40 +226,46 @@ export async function checkUserAccess(): Promise<{
   error?: string
 }> {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
     if (userError || !user) {
       return {
         isAuthenticated: false,
         hasLandlordAccess: false,
-        landlordIds: []
+        landlordIds: [],
       }
     }
 
-    const { data: landlordIds, error: landlordError } = await supabase.rpc('get_user_landlord_ids', {
-      user_uuid: user.id
-    })
+    const { data: landlordIds, error: landlordError } = await supabase.rpc(
+      'get_user_landlord_ids',
+      {
+        user_uuid: user.id,
+      }
+    )
 
     if (landlordError) {
       return {
         isAuthenticated: true,
         hasLandlordAccess: false,
         landlordIds: [],
-        error: landlordError.message
+        error: landlordError.message,
       }
     }
 
     return {
       isAuthenticated: true,
-      hasLandlordAccess: (landlordIds && landlordIds.length > 0),
-      landlordIds: landlordIds || []
+      hasLandlordAccess: landlordIds && landlordIds.length > 0,
+      landlordIds: landlordIds || [],
     }
   } catch (err: any) {
     return {
       isAuthenticated: false,
       hasLandlordAccess: false,
       landlordIds: [],
-      error: err.message
+      error: err.message,
     }
   }
 }

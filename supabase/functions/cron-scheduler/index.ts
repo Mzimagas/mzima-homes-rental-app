@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { cronJobs, shouldRunNow, getNextRunTime, formatCronDescription } from '../_shared/cron.ts'
 
@@ -35,14 +35,14 @@ serve(async (req) => {
         // Check if this job should run now
         if (shouldRunNow(job.schedule, currentTime)) {
           console.log(`Running job: ${job.name}`)
-          
+
           // Record job execution start
           const { data: jobRecord, error: jobError } = await supabaseClient
             .from('cron_job_history')
             .insert({
               job_name: job.name,
               started_at: currentTime.toISOString(),
-              status: 'running'
+              status: 'running',
             })
             .select()
             .single()
@@ -84,7 +84,7 @@ serve(async (req) => {
                 completed_at: new Date().toISOString(),
                 status: jobStatus,
                 result: jobResult,
-                error_message: errorMessage
+                error_message: errorMessage,
               })
               .eq('id', jobRecord.id)
           }
@@ -93,18 +93,20 @@ serve(async (req) => {
             job: job.name,
             status: jobStatus,
             result: jobResult,
-            error: errorMessage
+            error: errorMessage,
           })
         } else {
           const nextRun = getNextRunTime(job.schedule, currentTime)
-          console.log(`Job ${job.name} not scheduled to run now. Next run: ${nextRun.toISOString()}`)
+          console.log(
+            `Job ${job.name} not scheduled to run now. Next run: ${nextRun.toISOString()}`
+          )
         }
       } catch (error) {
         console.error(`Error processing job ${job.name}:`, error)
         results.push({
           job: job.name,
           status: 'error',
-          error: error.message
+          error: error.message,
         })
       }
     }
@@ -113,35 +115,34 @@ serve(async (req) => {
       JSON.stringify({
         message: 'Cron scheduler completed',
         timestamp: currentTime.toISOString(),
-        results: results
+        results: results,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-
   } catch (error) {
     console.error('Error in cron scheduler:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 })
 
 async function executeProcessNotifications() {
   console.log('Executing process-notifications job')
-  
+
   try {
-    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/process-notifications`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({})
-    })
+    const response = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/functions/v1/process-notifications`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }
+    )
 
     if (!response.ok) {
       throw new Error(`Process notifications failed: ${response.status} ${response.statusText}`)
@@ -156,10 +157,10 @@ async function executeProcessNotifications() {
 
 async function executeMarkOverdueInvoices(supabaseClient: any) {
   console.log('Executing mark-overdue-invoices job')
-  
+
   try {
     const { data, error } = await supabaseClient.rpc('mark_overdue_invoices')
-    
+
     if (error) {
       throw new Error(`Mark overdue invoices failed: ${error.message}`)
     }
@@ -172,7 +173,7 @@ async function executeMarkOverdueInvoices(supabaseClient: any) {
 
 async function executeCleanupNotifications(supabaseClient: any) {
   console.log('Executing cleanup-notifications job')
-  
+
   try {
     // Delete notification history older than 6 months
     const sixMonthsAgo = new Date()
@@ -197,16 +198,13 @@ async function executeCleanupNotifications(supabaseClient: any) {
     if (jobsError) {
       console.error('Failed to fetch old job records:', jobsError)
     } else if (oldJobs && oldJobs.length > 0) {
-      const oldJobIds = oldJobs.map(job => job.id)
-      await supabaseClient
-        .from('cron_job_history')
-        .delete()
-        .in('id', oldJobIds)
+      const oldJobIds = oldJobs.map((job) => job.id)
+      await supabaseClient.from('cron_job_history').delete().in('id', oldJobIds)
     }
 
-    return { 
+    return {
       notificationsDeleted: data?.length || 0,
-      oldJobsDeleted: oldJobs?.length || 0
+      oldJobsDeleted: oldJobs?.length || 0,
     }
   } catch (error) {
     throw new Error(`Failed to cleanup notifications: ${error.message}`)

@@ -1,8 +1,8 @@
 'use client'
 
-import { 
+import {
   HANDOVER_PIPELINE_STAGES,
-  HandoverPipelineStageData 
+  HandoverPipelineStageData,
 } from '../types/property-management.types'
 
 interface HandoverProgressTrackerProps {
@@ -11,25 +11,46 @@ interface HandoverProgressTrackerProps {
   onStageClick: (stageId: number) => void
   overallProgress: number
   handoverId: string
-  onStageUpdate: (handoverId: string, stageId: number, newStatus: string, notes?: string) => Promise<void>
+  onStageUpdate: (
+    handoverId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string
+  ) => Promise<void>
 }
 
 // Helper functions for handover stages
 const isHandoverStageCompleted = (stageData: HandoverPipelineStageData): boolean => {
-  return ['Completed', 'Verified', 'Finalized', 'Processed', 'Approved', 'Signed', 'Registered'].includes(stageData.status)
+  return [
+    'Completed',
+    'Verified',
+    'Finalized',
+    'Processed',
+    'Approved',
+    'Signed',
+    'Registered',
+  ].includes(stageData.status)
 }
 
 const isHandoverStageAccessible = (stageId: number, currentStage: number): boolean => {
   return stageId <= currentStage
 }
 
-const getHandoverStageStatusColor = (stageData: HandoverPipelineStageData, isActive: boolean, isCompleted: boolean): string => {
+const getHandoverStageStatusColor = (
+  stageData: HandoverPipelineStageData,
+  isActive: boolean,
+  isCompleted: boolean
+): string => {
   if (isCompleted) return 'bg-green-500 text-white'
   if (isActive) return 'bg-blue-500 text-white'
   return 'bg-gray-300 text-gray-600'
 }
 
-const getHandoverStageCardStyling = (isActive: boolean, isCompleted: boolean, canAccess: boolean): string => {
+const getHandoverStageCardStyling = (
+  isActive: boolean,
+  isCompleted: boolean,
+  canAccess: boolean
+): string => {
   if (isActive) {
     return 'border-blue-500 bg-blue-50 shadow-md'
   }
@@ -48,7 +69,7 @@ export default function HandoverProgressTracker({
   onStageClick,
   overallProgress,
   handoverId,
-  onStageUpdate
+  onStageUpdate,
 }: HandoverProgressTrackerProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -62,16 +83,16 @@ export default function HandoverProgressTracker({
 
       {/* Progress Bar */}
       <div className="w-full bg-gray-200 rounded-full h-1.5 mb-4">
-        <div 
-          className="bg-purple-600 h-1.5 rounded-full transition-all duration-300" 
-          style={{ width: `${overallProgress}%` }} 
+        <div
+          className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
+          style={{ width: `${overallProgress}%` }}
         />
       </div>
 
       {/* Stage Cards Grid - Smaller and more compact */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
         {HANDOVER_PIPELINE_STAGES.map((stage) => {
-          const stageInfo = stageData.find(s => s.stage_id === stage.id)
+          const stageInfo = stageData.find((s) => s.stage_id === stage.id)
           const isActive = currentStage === stage.id
           const isCompleted = stageInfo ? isHandoverStageCompleted(stageInfo) : false
           const canAccess = isHandoverStageAccessible(stage.id, currentStage)
@@ -79,39 +100,47 @@ export default function HandoverProgressTracker({
           return (
             <div
               key={stage.id}
-              className={`relative p-2 rounded-md border cursor-pointer transition-all duration-200 transform hover:scale-105 ${
-                getHandoverStageCardStyling(isActive, isCompleted, canAccess)
-              }`}
+              className={`relative p-2 rounded-md border cursor-pointer transition-all duration-200 transform hover:scale-105 ${getHandoverStageCardStyling(
+                isActive,
+                isCompleted,
+                canAccess
+              )}`}
               onClick={() => canAccess && onStageClick(stage.id)}
               title={`${stage.name} - ${stage.description}`}
             >
               {/* Stage Number - Smaller */}
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mb-1 ${
-                getHandoverStageStatusColor(stageInfo!, isActive, isCompleted)
-              }`}>
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mb-1 ${getHandoverStageStatusColor(
+                  stageInfo!,
+                  isActive,
+                  isCompleted
+                )}`}
+              >
                 {isCompleted ? '✓' : stage.id}
               </div>
 
               {/* Stage Info - Compact */}
               <div>
-                <h4 className="font-medium text-xs text-gray-900 mb-1 leading-tight">{stage.name}</h4>
-                
+                <h4 className="font-medium text-xs text-gray-900 mb-1 leading-tight">
+                  {stage.name}
+                </h4>
+
                 {/* Status */}
                 <div className="flex flex-col space-y-1">
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium text-center ${
-                    isCompleted 
-                      ? 'bg-green-100 text-green-800'
-                      : isActive
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-600'
-                  }`}>
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded-full font-medium text-center ${
+                      isCompleted
+                        ? 'bg-green-100 text-green-800'
+                        : isActive
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
                     {stageInfo?.status || 'Not Started'}
                   </span>
-                  
+
                   {/* Estimated Days - Smaller */}
-                  <span className="text-xs text-gray-500 text-center">
-                    {stage.estimatedDays}d
-                  </span>
+                  <span className="text-xs text-gray-500 text-center">{stage.estimatedDays}d</span>
                 </div>
 
                 {/* Progress Indicator */}
@@ -135,11 +164,11 @@ export default function HandoverProgressTracker({
 
       {/* Stage Navigation Info - Compact */}
       <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-200">
-        <div className="text-xs text-gray-600">
-          Click any accessible stage to edit
-        </div>
+        <div className="text-xs text-gray-600">Click any accessible stage to edit</div>
         <div className="flex items-center space-x-2">
-          <span className="text-xs text-gray-500">Stage {currentStage} of {HANDOVER_PIPELINE_STAGES.length}</span>
+          <span className="text-xs text-gray-500">
+            Stage {currentStage} of {HANDOVER_PIPELINE_STAGES.length}
+          </span>
         </div>
       </div>
     </div>

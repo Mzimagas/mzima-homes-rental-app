@@ -5,10 +5,7 @@ import { Button } from '../../ui'
 import PropertyList from './PropertyList'
 import PropertySearch from './PropertySearch'
 import PropertyForm from '../property-form'
-import {
-  PropertyWithLifecycle,
-  PendingChanges
-} from '../types/property-management.types'
+import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 
 interface PropertiesTabProps {
   properties: PropertyWithLifecycle[]
@@ -39,13 +36,13 @@ export default function PropertiesTab({
   onSaveChanges,
   onCancelChanges,
   onNavigateToTabs,
-  onRefresh
+  onRefresh,
 }: PropertiesTabProps) {
   // Filter properties based on search term and lifecycle status
   const filteredProperties = useMemo(() => {
     // Filter out properties that are back in the purchase pipeline or fully subdivided
     // Keep properties that are just starting subdivision (they may not complete the process)
-    const activeProperties = properties.filter(property => {
+    const activeProperties = properties.filter((property) => {
       const lifecycleStatus = property.lifecycle_status
       const subdivisionStatus = property.subdivision_status
 
@@ -67,7 +64,7 @@ export default function PropertiesTab({
     if (!searchTerm.trim()) return activeProperties
 
     const lower = searchTerm.toLowerCase()
-    return activeProperties.filter(property => {
+    return activeProperties.filter((property) => {
       return (
         property.name.toLowerCase().includes(lower) ||
         (property.physical_address?.toLowerCase().includes(lower) ?? false) ||

@@ -29,6 +29,7 @@ This directory contains database migrations for the enhanced user management sys
 ### Prerequisites
 
 Ensure you have the following environment variables set:
+
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
@@ -57,31 +58,37 @@ You can also run migrations manually using the Supabase SQL editor:
 ### New Tables Created
 
 #### enhanced_users
+
 - **Purpose**: Enhanced user management with member numbers
 - **Key Fields**: member_number, phone_number, id_passport_number
 - **Features**: Profile completion tracking, password management
 
 #### user_profiles
+
 - **Purpose**: Detailed user profile information
 - **Key Fields**: department, position, hire_date, personal details
 - **Features**: Employment and contact information
 
 #### user_next_of_kin
+
 - **Purpose**: Emergency contact information
 - **Key Fields**: full_name, relationship, phone_number
 - **Features**: Priority ordering, emergency contact flags
 
 #### user_permissions
+
 - **Purpose**: Granular permission management
 - **Key Fields**: scope, property_id, role_template, section_permissions
 - **Features**: Global/property-specific permissions, JSON-based section control
 
 #### permission_templates
+
 - **Purpose**: Reusable role templates
 - **Key Fields**: template_name, role_template, section_permissions
 - **Features**: System templates, custom templates
 
 #### permission_audit_log
+
 - **Purpose**: Audit trail for permission changes
 - **Key Fields**: action, permission_details, performed_by
 - **Features**: Complete audit history, IP tracking
@@ -113,6 +120,7 @@ All tables have RLS enabled with appropriate policies:
 ### Audit Trail
 
 Complete audit trail for:
+
 - Permission grants/revokes
 - Role changes
 - Profile updates
@@ -130,21 +138,25 @@ Complete audit trail for:
 ### Role Templates
 
 #### 👑 Administrator
+
 - **Scope**: Global
 - **Access**: Edit access to all sections
 - **Use Case**: System administrators, company executives
 
 #### 👁️ Supervisor
+
 - **Scope**: Global
 - **Access**: View access to all sections
 - **Use Case**: Department heads, oversight roles
 
 #### 📝 Staff
+
 - **Scope**: Property-specific
 - **Access**: Edit access to Direct Addition & Property Handover, view to others
 - **Use Case**: Operational staff, property managers
 
 #### 👤 Member
+
 - **Scope**: Property-specific
 - **Access**: Limited view access (no Direct Addition or Audit Trail)
 - **Use Case**: Limited access users, external partners
@@ -192,6 +204,7 @@ SELECT * FROM get_user_by_member_number('USR0001');
 ### Backup Strategy
 
 Before running migrations:
+
 1. Backup existing users table (done automatically)
 2. Export current permission data
 3. Document current system state
@@ -199,6 +212,7 @@ Before running migrations:
 ### Rollback Steps
 
 If rollback is needed:
+
 1. Restore from backup tables
 2. Drop new tables and functions
 3. Restore original auth.users references
@@ -219,6 +233,7 @@ SELECT * FROM schema_migrations ORDER BY executed_at DESC;
 ```
 
 Each migration records:
+
 - Migration name
 - Execution timestamp
 - Success/failure status
@@ -238,7 +253,7 @@ Each migration records:
 
 ```sql
 -- Check table existence
-SELECT table_name FROM information_schema.tables 
+SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public' AND table_name LIKE '%user%';
 
 -- Check RLS policies
@@ -251,6 +266,7 @@ SELECT * FROM schema_migrations;
 ## 📞 Support
 
 For migration support:
+
 1. Check the troubleshooting section
 2. Review migration logs
 3. Contact the development team

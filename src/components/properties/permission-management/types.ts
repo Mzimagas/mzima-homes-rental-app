@@ -2,7 +2,12 @@
 
 export type PermissionLevel = 'view' | 'edit' | 'none'
 export type DetailPermission = 'basic_info' | 'location' | 'financials' | 'documents'
-export type Section = 'direct_addition' | 'purchase_pipeline' | 'subdivision_process' | 'property_handover' | 'audit_trail'
+export type Section =
+  | 'direct_addition'
+  | 'purchase_pipeline'
+  | 'subdivision_process'
+  | 'property_handover'
+  | 'audit_trail'
 export type RoleTemplate = 'admin' | 'supervisor' | 'staff' | 'member'
 export type LifecycleStage = 'global' | 'purchase_pipeline' | 'subdivision' | 'handover'
 

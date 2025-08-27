@@ -22,7 +22,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -46,8 +48,7 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin
-      .rpc('get_user_accessible_properties', { user_uuid: userId })
+    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       console.error('checkPropertyAccess - RPC error:', error)
@@ -89,7 +90,11 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
 }
 
 // GET /api/properties/[id]/purchase-price/history - Get purchase price change history
-export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const GET = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
@@ -110,7 +115,8 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
     // Get purchase price history
     const { data: history, error: historyError } = await admin
       .from('property_purchase_price_history')
-      .select(`
+      .select(
+        `
         id,
         previous_price_kes,
         new_price_kes,
@@ -118,7 +124,8 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
         changed_by,
         changed_by_name,
         changed_at
-      `)
+      `
+      )
       .eq('property_id', propertyId)
       .order('changed_at', { ascending: false })
 
@@ -128,9 +135,8 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
     }
     return NextResponse.json({
       success: true,
-      data: history || []
+      data: history || [],
     })
-
   } catch (error) {
     console.error('Error in purchase price history API:', error)
     return errors.internal('Internal server error')

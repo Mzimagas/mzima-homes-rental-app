@@ -48,9 +48,10 @@ export class MPESAService {
 
   constructor(config: MPESAConfig) {
     this.config = config
-    this.baseUrl = config.environment === 'production' 
-      ? 'https://api.safaricom.co.ke' 
-      : 'https://sandbox.safaricom.co.ke'
+    this.baseUrl =
+      config.environment === 'production'
+        ? 'https://api.safaricom.co.ke'
+        : 'https://sandbox.safaricom.co.ke'
   }
 
   // Generate access token
@@ -60,18 +61,23 @@ export class MPESAService {
     }
 
     try {
-      const auth = Buffer.from(`${this.config.consumerKey}:${this.config.consumerSecret}`).toString('base64')
-      
-      const response = await axios.get(`${this.baseUrl}/oauth/v1/generate?grant_type=client_credentials`, {
-        headers: {
-          'Authorization': `Basic ${auth}`
+      const auth = Buffer.from(`${this.config.consumerKey}:${this.config.consumerSecret}`).toString(
+        'base64'
+      )
+
+      const response = await axios.get(
+        `${this.baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
+        {
+          headers: {
+            Authorization: `Basic ${auth}`,
+          },
         }
-      })
+      )
 
       this.accessToken = response.data.access_token
-      this.tokenExpiry = new Date(Date.now() + (response.data.expires_in * 1000))
-      
-      return this.accessToken
+      this.tokenExpiry = new Date(Date.now() + response.data.expires_in * 1000)
+
+      return this.accessToken!
     } catch (error) {
       console.error('Error getting M-PESA access token:', error)
       throw new Error('Failed to authenticate with M-PESA API')
@@ -87,7 +93,7 @@ export class MPESAService {
     const hour = String(now.getHours()).padStart(2, '0')
     const minute = String(now.getMinutes()).padStart(2, '0')
     const second = String(now.getSeconds()).padStart(2, '0')
-    
+
     return `${year}${month}${day}${hour}${minute}${second}`
   }
 
@@ -101,7 +107,7 @@ export class MPESAService {
   private formatPhoneNumber(phoneNumber: string): string {
     // Remove any non-digit characters
     let cleaned = phoneNumber.replace(/\D/g, '')
-    
+
     // Handle different formats
     if (cleaned.startsWith('0')) {
       cleaned = '254' + cleaned.substring(1)
@@ -112,7 +118,7 @@ export class MPESAService {
     } else if (cleaned.length === 9) {
       cleaned = '254' + cleaned
     }
-    
+
     return cleaned
   }
 
@@ -135,7 +141,7 @@ export class MPESAService {
         PhoneNumber: formattedPhone,
         CallBackURL: request.callbackUrl,
         AccountReference: request.accountReference,
-        TransactionDesc: request.transactionDesc
+        TransactionDesc: request.transactionDesc,
       }
 
       const response = await axios.post(
@@ -143,9 +149,9 @@ export class MPESAService {
         payload,
         {
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
         }
       )
 
@@ -160,7 +166,7 @@ export class MPESAService {
         transaction_desc: request.transactionDesc,
         response_code: response.data.ResponseCode,
         response_description: response.data.ResponseDescription,
-        raw_response: response.data
+        raw_response: response.data,
       })
 
       return response.data
@@ -181,19 +187,15 @@ export class MPESAService {
         BusinessShortCode: this.config.businessShortCode,
         Password: password,
         Timestamp: timestamp,
-        CheckoutRequestID: checkoutRequestId
+        CheckoutRequestID: checkoutRequestId,
       }
 
-      const response = await axios.post(
-        `${this.baseUrl}/mpesa/stkpushquery/v1/query`,
-        payload,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
+      const response = await axios.post(`${this.baseUrl}/mpesa/stkpushquery/v1/query`, payload, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
 
       return response.data
     } catch (error) {
@@ -215,7 +217,7 @@ export class MPESAService {
         checkout_request_id: stkCallback.CheckoutRequestID,
         result_code: stkCallback.ResultCode,
         result_desc: stkCallback.ResultDesc,
-        raw_response: callbackData
+        raw_response: callbackData,
       })
 
       if (stkCallback.ResultCode === 0) {
@@ -246,7 +248,7 @@ export class MPESAService {
           mpesa_receipt_number: transactionData.mpesa_receipt_number,
           amount: transactionData.amount,
           phone_number: transactionData.phone_number,
-          transaction_date: transactionData.transaction_date
+          transaction_date: transactionData.transaction_date,
         })
 
         // Try to auto-match with pending invoices
@@ -263,12 +265,10 @@ export class MPESAService {
   // Log transaction to database
   private async logTransaction(data: any): Promise<void> {
     try {
-      await supabase
-        .from('mpesa_transactions')
-        .insert({
-          ...data,
-          created_at: new Date().toISOString()
-        })
+      await supabase.from('mpesa_transactions').insert({
+        ...data,
+        created_at: new Date().toISOString(),
+      })
     } catch (error) {
       console.error('Error logging M-PESA transaction:', error)
     }
@@ -286,11 +286,13 @@ export class MPESAService {
       // Find matching sale agreement by phone number or amount
       const { data: agreements } = await supabase
         .from('sale_agreements')
-        .select(`
+        .select(
+          `
           *,
           clients(phone),
           invoices(*)
-        `)
+        `
+        )
         .eq('clients.phone', data.phone_number)
         .eq('status', 'active')
 
@@ -300,8 +302,8 @@ export class MPESAService {
       if (agreements && agreements.length > 0) {
         // Find matching invoice by amount
         const agreement = agreements[0]
-        const matchingInvoice = agreement.invoices?.find((inv: any) => 
-          Math.abs(inv.amount_due - data.amount) < 1
+        const matchingInvoice = agreement.invoices?.find(
+          (inv: any) => Math.abs(inv.amount_due - data.amount) < 1
         )
 
         saleAgreementId = agreement.sale_agreement_id
@@ -312,20 +314,18 @@ export class MPESAService {
       const receiptNo = `MPE${Date.now()}`
 
       // Create receipt
-      await supabase
-        .from('receipts')
-        .insert({
-          receipt_no: receiptNo,
-          sale_agreement_id: saleAgreementId,
-          invoice_id: invoiceId,
-          payment_method: 'mpesa',
-          transaction_ref: data.mpesa_receipt_number,
-          paid_date: new Date(data.transaction_date).toISOString().split('T')[0],
-          amount: data.amount,
-          payer_name: 'M-PESA Customer',
-          notes: `M-PESA payment from ${data.phone_number}`,
-          mpesa_checkout_request_id: data.checkout_request_id
-        })
+      await supabase.from('receipts').insert({
+        receipt_no: receiptNo,
+        sale_agreement_id: saleAgreementId,
+        invoice_id: invoiceId,
+        payment_method: 'mpesa',
+        transaction_ref: data.mpesa_receipt_number,
+        paid_date: new Date(data.transaction_date).toISOString().split('T')[0],
+        amount: data.amount,
+        payer_name: 'M-PESA Customer',
+        notes: `M-PESA payment from ${data.phone_number}`,
+        mpesa_checkout_request_id: data.checkout_request_id,
+      })
 
       // Update invoice if matched
       if (invoiceId) {
@@ -339,28 +339,25 @@ export class MPESAService {
           await supabase
             .from('invoices')
             .update({
-              amount_paid: (invoice.amount_paid || 0) + data.amount
+              amount_paid: (invoice.amount_paid || 0) + data.amount,
             })
             .eq('invoice_id', invoiceId)
         }
       }
 
       // Create bank reconciliation record
-      await supabase
-        .from('bank_mpesa_recons')
-        .insert({
-          source: 'mpesa',
-          statement_date: new Date(data.transaction_date).toISOString().split('T')[0],
-          transaction_ref: data.mpesa_receipt_number,
-          amount: data.amount,
-          description: `M-PESA payment from ${data.phone_number}`,
-          payer_details: data.phone_number,
-          raw_row: data,
-          status: saleAgreementId ? 'matched' : 'unmatched',
-          auto_matched: !!saleAgreementId,
-          processed_at: new Date().toISOString()
-        })
-
+      await supabase.from('bank_mpesa_recons').insert({
+        source: 'mpesa',
+        statement_date: new Date(data.transaction_date).toISOString().split('T')[0],
+        transaction_ref: data.mpesa_receipt_number,
+        amount: data.amount,
+        description: `M-PESA payment from ${data.phone_number}`,
+        payer_details: data.phone_number,
+        raw_row: data,
+        status: saleAgreementId ? 'matched' : 'unmatched',
+        auto_matched: !!saleAgreementId,
+        processed_at: new Date().toISOString(),
+      })
     } catch (error) {
       console.error('Error creating receipt from M-PESA:', error)
     }
@@ -372,20 +369,22 @@ export class MPESAService {
       // Find pending invoices with matching amounts
       const { data: invoices } = await supabase
         .from('invoices')
-        .select(`
+        .select(
+          `
           *,
           sale_agreements(
             clients(phone)
           )
-        `)
+        `
+        )
         .eq('status', 'unpaid')
         .gte('amount_due', transactionData.amount - 10) // Allow small variance
         .lte('amount_due', transactionData.amount + 10)
 
       if (invoices && invoices.length > 0) {
         // Try to match by phone number first
-        const phoneMatch = invoices.find((inv: any) => 
-          inv.sale_agreements?.clients?.phone === transactionData.phone_number
+        const phoneMatch = invoices.find(
+          (inv: any) => inv.sale_agreements?.clients?.phone === transactionData.phone_number
         )
 
         const matchedInvoice = phoneMatch || invoices[0]
@@ -394,7 +393,7 @@ export class MPESAService {
         await supabase
           .from('invoices')
           .update({
-            amount_paid: (matchedInvoice.amount_paid || 0) + transactionData.amount
+            amount_paid: (matchedInvoice.amount_paid || 0) + transactionData.amount,
           })
           .eq('invoice_id', matchedInvoice.invoice_id)
 
@@ -452,7 +451,7 @@ export const mpesaService = new MPESAService({
   consumerSecret: process.env.MPESA_CONSUMER_SECRET!,
   businessShortCode: process.env.MPESA_BUSINESS_SHORT_CODE!,
   passkey: process.env.MPESA_PASSKEY!,
-  environment: (process.env.MPESA_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox'
+  environment: (process.env.MPESA_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox',
 })
 
 // Utility functions for M-PESA integration
@@ -461,7 +460,7 @@ export const mpesaUtils = {
   formatAmount: (amount: number): string => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
-      currency: 'KES'
+      currency: 'KES',
     }).format(amount)
   },
 
@@ -474,7 +473,9 @@ export const mpesaUtils = {
   // Generate payment reference
   generatePaymentReference: (prefix: string = 'PAY'): string => {
     const timestamp = Date.now()
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, '0')
     return `${prefix}${timestamp}${random}`
   },
 
@@ -487,7 +488,9 @@ export const mpesaUtils = {
     const hour = parseInt(mpesaDate.substring(8, 10))
     const minute = parseInt(mpesaDate.substring(10, 12))
     const second = parseInt(mpesaDate.substring(12, 14))
-    
+
     return new Date(year, month, day, hour, minute, second)
-  }
+  },
+
+  // Methods already exist above as object properties
 }

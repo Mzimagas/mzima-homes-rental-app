@@ -18,7 +18,8 @@ class MemoryCache {
   private cache = new Map<string, CacheEntry<any>>()
   private maxSize = 1000 // Maximum number of entries
 
-  set<T>(key: string, data: T, ttl: number = 300000): void { // Default 5 minutes
+  set<T>(key: string, data: T, ttl: number = 300000): void {
+    // Default 5 minutes
     // Remove oldest entries if cache is full
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value
@@ -28,21 +29,21 @@ class MemoryCache {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl
+      ttl,
     })
   }
 
   get<T>(key: string): T | null {
     const entry = this.cache.get(key)
-    
+
     if (!entry) return null
-    
+
     // Check if entry has expired
     if (Date.now() - entry.timestamp > entry.ttl) {
       this.cache.delete(key)
       return null
     }
-    
+
     return entry.data
   }
 
@@ -67,7 +68,7 @@ class MemoryCache {
   getStats(): { size: number; maxSize: number } {
     return {
       size: this.cache.size,
-      maxSize: this.maxSize
+      maxSize: this.maxSize,
     }
   }
 }
@@ -81,7 +82,7 @@ export class PerformanceMonitor {
 
   static startTimer(operation: string): () => number {
     const startTime = performance.now()
-    
+
     return () => {
       const duration = performance.now() - startTime
       this.recordMetric(operation, duration)
@@ -93,10 +94,10 @@ export class PerformanceMonitor {
     if (!this.metrics.has(operation)) {
       this.metrics.set(operation, [])
     }
-    
+
     const operationMetrics = this.metrics.get(operation)!
     operationMetrics.push(duration)
-    
+
     // Keep only last 100 measurements
     if (operationMetrics.length > 100) {
       operationMetrics.shift()
@@ -111,7 +112,7 @@ export class PerformanceMonitor {
     p95: number
   } | null {
     const operationMetrics = this.metrics.get(operation)
-    
+
     if (!operationMetrics || operationMetrics.length === 0) {
       return null
     }
@@ -130,11 +131,11 @@ export class PerformanceMonitor {
 
   static getAllMetrics(): Record<string, any> {
     const result: Record<string, any> = {}
-    
+
     for (const operation of this.metrics.keys()) {
       result[operation] = this.getMetrics(operation)
     }
-    
+
     return result
   }
 }
@@ -142,20 +143,22 @@ export class PerformanceMonitor {
 // Optimized query builder
 export class OptimizedQueryBuilder {
   // Get parcels with optimized joins and filtering
-  static async getParcelsOptimized(filters: {
-    county?: string
-    tenure?: string
-    current_use?: string
-    search?: string
-    limit?: number
-    offset?: number
-  } = {}) {
+  static async getParcelsOptimized(
+    filters: {
+      county?: string
+      tenure?: string
+      current_use?: string
+      search?: string
+      limit?: number
+      offset?: number
+    } = {}
+  ) {
     const endTimer = PerformanceMonitor.startTimer('get_parcels_optimized')
-    
+
     try {
       // Build cache key
       const cacheKey = `parcels:${JSON.stringify(filters)}`
-      
+
       // Check cache first
       const cached = cache.get(cacheKey)
       if (cached) {
@@ -166,7 +169,8 @@ export class OptimizedQueryBuilder {
       // Build optimized query
       let query = supabase
         .from('parcels')
-        .select(`
+        .select(
+          `
           parcel_id,
           lr_number,
           county,
@@ -182,7 +186,8 @@ export class OptimizedQueryBuilder {
             status,
             total_plots_planned
           )
-        `)
+        `
+        )
         .order('lr_number', { ascending: true })
 
       // Apply filters efficiently
@@ -204,7 +209,7 @@ export class OptimizedQueryBuilder {
         query = query.limit(filters.limit)
       }
       if (filters.offset) {
-        query = query.range(filters.offset, (filters.offset + (filters.limit || 10)) - 1)
+        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
       }
 
       const { data, error } = await query
@@ -213,7 +218,7 @@ export class OptimizedQueryBuilder {
 
       // Cache the result for 5 minutes
       cache.set(cacheKey, data, 300000)
-      
+
       return data
     } finally {
       endTimer()
@@ -221,19 +226,22 @@ export class OptimizedQueryBuilder {
   }
 
   // Get plots with optimized joins
-  static async getPlotsOptimized(subdivisionId?: string, filters: {
-    stage?: string
-    utility_level?: string
-    corner_plot?: boolean
-    premium_location?: boolean
-    limit?: number
-    offset?: number
-  } = {}) {
+  static async getPlotsOptimized(
+    subdivisionId?: string,
+    filters: {
+      stage?: string
+      utility_level?: string
+      corner_plot?: boolean
+      premium_location?: boolean
+      limit?: number
+      offset?: number
+    } = {}
+  ) {
     const endTimer = PerformanceMonitor.startTimer('get_plots_optimized')
-    
+
     try {
       const cacheKey = `plots:${subdivisionId}:${JSON.stringify(filters)}`
-      
+
       const cached = cache.get(cacheKey)
       if (cached) {
         endTimer()
@@ -242,7 +250,8 @@ export class OptimizedQueryBuilder {
 
       let query = supabase
         .from('plots')
-        .select(`
+        .select(
+          `
           plot_id,
           plot_no,
           size_sqm,
@@ -264,7 +273,8 @@ export class OptimizedQueryBuilder {
             price,
             clients(full_name)
           )
-        `)
+        `
+        )
         .order('plot_no', { ascending: true })
 
       if (subdivisionId) {
@@ -283,7 +293,7 @@ export class OptimizedQueryBuilder {
         query = query.limit(filters.limit)
       }
       if (filters.offset) {
-        query = query.range(filters.offset, (filters.offset + (filters.limit || 10)) - 1)
+        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
       }
 
       const { data, error } = await query
@@ -292,7 +302,7 @@ export class OptimizedQueryBuilder {
 
       // Cache for 2 minutes (plots change more frequently)
       cache.set(cacheKey, data, 120000)
-      
+
       return data
     } finally {
       endTimer()
@@ -302,10 +312,10 @@ export class OptimizedQueryBuilder {
   // Get sales dashboard data with single optimized query
   static async getSalesDashboardData(dateFrom?: string, dateTo?: string) {
     const endTimer = PerformanceMonitor.startTimer('get_sales_dashboard_data')
-    
+
     try {
       const cacheKey = `sales_dashboard:${dateFrom}:${dateTo}`
-      
+
       const cached = cache.get(cacheKey)
       if (cached) {
         endTimer()
@@ -313,17 +323,16 @@ export class OptimizedQueryBuilder {
       }
 
       // Use a single RPC call to get all dashboard data
-      const { data, error } = await supabase
-        .rpc('get_sales_dashboard_data', {
-          date_from: dateFrom,
-          date_to: dateTo
-        })
+      const { data, error } = await supabase.rpc('get_sales_dashboard_data', {
+        date_from: dateFrom,
+        date_to: dateTo,
+      })
 
       if (error) throw error
 
       // Cache for 1 minute (dashboard data should be fresh)
       cache.set(cacheKey, data, 60000)
-      
+
       return data
     } finally {
       endTimer()
@@ -333,28 +342,25 @@ export class OptimizedQueryBuilder {
   // Batch operations for better performance
   static async batchCreatePlots(plots: any[]) {
     const endTimer = PerformanceMonitor.startTimer('batch_create_plots')
-    
+
     try {
       // Process in batches of 50 to avoid timeout
       const batchSize = 50
       const results = []
-      
+
       for (let i = 0; i < plots.length; i += batchSize) {
         const batch = plots.slice(i, i + batchSize)
-        
-        const { data, error } = await supabase
-          .from('plots')
-          .insert(batch)
-          .select()
+
+        const { data, error } = await supabase.from('plots').insert(batch).select()
 
         if (error) throw error
-        
+
         results.push(...data)
       }
 
       // Invalidate related caches
       this.invalidateCachePattern('plots:')
-      
+
       return results
     } finally {
       endTimer()
@@ -365,7 +371,7 @@ export class OptimizedQueryBuilder {
   static invalidateCachePattern(pattern: string): void {
     // Get all cache keys that match the pattern
     const keysToDelete: string[] = []
-    
+
     // Note: In a real implementation, you might use Redis with pattern matching
     // For now, we'll clear the entire cache when patterns are used
     if (pattern.includes(':')) {
@@ -383,8 +389,7 @@ export class DatabaseOptimizer {
   // Analyze query performance
   static async analyzeQueryPerformance(query: string): Promise<any> {
     try {
-      const { data, error } = await supabase
-        .rpc('explain_query', { query_text: query })
+      const { data, error } = await supabase.rpc('explain_query', { query_text: query })
 
       if (error) throw error
       return data
@@ -404,20 +409,20 @@ export class DatabaseOptimizer {
       const [tableStats, indexUsage, slowQueries] = await Promise.all([
         supabase.rpc('get_table_stats'),
         supabase.rpc('get_index_usage'),
-        supabase.rpc('get_slow_queries')
+        supabase.rpc('get_slow_queries'),
       ])
 
       return {
         tableStats: tableStats.data || [],
         indexUsage: indexUsage.data || [],
-        slowQueries: slowQueries.data || []
+        slowQueries: slowQueries.data || [],
       }
     } catch (error) {
       console.error('Error getting database stats:', error)
       return {
         tableStats: [],
         indexUsage: [],
-        slowQueries: []
+        slowQueries: [],
       }
     }
   }
@@ -425,18 +430,22 @@ export class DatabaseOptimizer {
   // Suggest optimizations
   static async suggestOptimizations(): Promise<string[]> {
     const suggestions: string[] = []
-    
+
     try {
       const stats = await this.getDatabaseStats()
-      
+
       // Analyze table statistics
       stats.tableStats.forEach((table: any) => {
         if (table.seq_scan > table.idx_scan * 10) {
-          suggestions.push(`Table ${table.table_name} has high sequential scan ratio. Consider adding indexes.`)
+          suggestions.push(
+            `Table ${table.table_name} has high sequential scan ratio. Consider adding indexes.`
+          )
         }
-        
+
         if (table.n_dead_tup > table.n_live_tup * 0.1) {
-          suggestions.push(`Table ${table.table_name} has many dead tuples. Consider running VACUUM.`)
+          suggestions.push(
+            `Table ${table.table_name} has many dead tuples. Consider running VACUUM.`
+          )
         }
       })
 
@@ -449,13 +458,14 @@ export class DatabaseOptimizer {
 
       // Analyze slow queries
       if (stats.slowQueries.length > 0) {
-        suggestions.push(`Found ${stats.slowQueries.length} slow queries. Review and optimize them.`)
+        suggestions.push(
+          `Found ${stats.slowQueries.length} slow queries. Review and optimize them.`
+        )
       }
-
     } catch (error) {
       console.error('Error generating optimization suggestions:', error)
     }
-    
+
     return suggestions
   }
 }
@@ -500,7 +510,7 @@ export class ConnectionManager {
   } {
     return {
       activeConnections: this.connections.size,
-      maxConnections: this.maxConnections
+      maxConnections: this.maxConnections,
     }
   }
 }
@@ -510,15 +520,21 @@ export class PerformanceCleanup {
   // Run periodic cleanup tasks
   static startCleanupTasks(): void {
     // Clean up cache every 5 minutes
-    setInterval(() => {
-      cache.cleanup()
-    }, 5 * 60 * 1000)
+    setInterval(
+      () => {
+        cache.cleanup()
+      },
+      5 * 60 * 1000
+    )
 
     // Log performance metrics every 10 minutes
-    setInterval(() => {
-      const metrics = PerformanceMonitor.getAllMetrics()
-      console.log('Performance Metrics:', metrics)
-    }, 10 * 60 * 1000)
+    setInterval(
+      () => {
+        const metrics = PerformanceMonitor.getAllMetrics()
+        console.log('Performance Metrics:', metrics)
+      },
+      10 * 60 * 1000
+    )
   }
 
   // Manual cleanup
@@ -533,7 +549,7 @@ export const optimizedApi = {
   parcels: OptimizedQueryBuilder.getParcelsOptimized,
   plots: OptimizedQueryBuilder.getPlotsOptimized,
   salesDashboard: OptimizedQueryBuilder.getSalesDashboardData,
-  batchCreatePlots: OptimizedQueryBuilder.batchCreatePlots
+  batchCreatePlots: OptimizedQueryBuilder.batchCreatePlots,
 }
 
 // Initialize cleanup tasks

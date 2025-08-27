@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useState } from 'react'
 
 interface ReservationFormProps {
@@ -14,7 +14,7 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
     phone: '',
     email: '',
     preferred_move_in: '',
-    message: ''
+    message: '',
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -40,7 +40,7 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
       const moveInDate = new Date(formData.preferred_move_in)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      
+
       if (moveInDate < today) {
         newErrors.preferred_move_in = 'Move-in date cannot be in the past'
       }
@@ -52,17 +52,17 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    
+    setFormData((prev) => ({ ...prev, [name]: value }))
+
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
     setIsSubmitting(true)
@@ -76,8 +76,8 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
         },
         body: JSON.stringify({
           unit_id: unitId,
-          ...formData
-        })
+          ...formData,
+        }),
       })
 
       const result = await response.json()
@@ -92,7 +92,7 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
         phone: '',
         email: '',
         preferred_move_in: '',
-        message: ''
+        message: '',
       })
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
@@ -105,7 +105,12 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
     return (
       <div className="text-center py-8">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-8 h-8 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
@@ -126,12 +131,22 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Request to Reserve</h3>
-      
+
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
           <div className="flex">
-            <svg className="w-5 h-5 text-red-400 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-5 h-5 text-red-400 mt-0.5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <p className="text-sm text-red-700">{error}</p>
           </div>
@@ -151,9 +166,7 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
           placeholder="Enter your full name"
           required
         />
-        {errors.full_name && (
-          <p className="mt-1 text-sm text-red-600">{errors.full_name}</p>
-        )}
+        {errors.full_name && <p className="mt-1 text-sm text-red-600">{errors.full_name}</p>}
       </div>
 
       <div>
@@ -169,15 +182,11 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
           placeholder="+254 700 000 000"
           required
         />
-        {errors.phone && (
-          <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-        )}
+        {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Email Address
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
         <input
           type="email"
           name="email"
@@ -186,9 +195,7 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
           className={`form-input ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : ''}`}
           placeholder="your.email@example.com"
         />
-        {errors.email && (
-          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-        )}
+        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
       </div>
 
       <div>
@@ -209,9 +216,7 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Message
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
         <textarea
           name="message"
           value={formData.message}
@@ -229,9 +234,24 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
       >
         {isSubmitting ? (
           <>
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
             Submitting...
           </>
@@ -241,8 +261,8 @@ export default function ReservationForm({ unitId }: ReservationFormProps) {
       </button>
 
       <p className="text-xs text-gray-500 text-center">
-        By submitting this form, you agree to be contacted about this property. 
-        No commitment required.
+        By submitting this form, you agree to be contacted about this property. No commitment
+        required.
       </p>
     </form>
   )

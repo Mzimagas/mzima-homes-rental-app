@@ -12,7 +12,7 @@ export default function StageModal({
   stageId,
   purchaseId,
   stageData,
-  onStageUpdate
+  onStageUpdate,
 }: StageModalProps) {
   const [selectedStatus, setSelectedStatus] = useState(stageData?.status || 'Not Started')
   const [notes, setNotes] = useState(stageData?.notes || '')
@@ -37,11 +37,7 @@ export default function StageModal({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Stage ${stage.id}: ${stage.name}`}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={`Stage ${stage.id}: ${stage.name}`}>
       <div className="space-y-6">
         {/* Stage Description */}
         <div className="bg-gray-50 rounded-lg p-4">
@@ -59,13 +55,17 @@ export default function StageModal({
             <div className="space-y-2">
               <div>
                 <span className="font-medium text-gray-700">Status:</span>{' '}
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  stageData.status === 'Completed' || stageData.status === 'Verified' || stageData.status === 'Finalized'
-                    ? 'bg-green-100 text-green-800'
-                    : stageData.status === 'In Progress'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    stageData.status === 'Completed' ||
+                    stageData.status === 'Verified' ||
+                    stageData.status === 'Finalized'
+                      ? 'bg-green-100 text-green-800'
+                      : stageData.status === 'In Progress'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
                   {stageData.status}
                 </span>
               </div>
@@ -89,9 +89,7 @@ export default function StageModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Status Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Update Status
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Update Status</label>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
@@ -108,9 +106,7 @@ export default function StageModal({
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -129,7 +125,7 @@ export default function StageModal({
                 {stage.requiredFields.map((field) => (
                   <li key={field} className="flex items-center">
                     <span className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></span>
-                    {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                    {field.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
                   </li>
                 ))}
               </ul>
@@ -138,19 +134,10 @@ export default function StageModal({
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" variant="primary" disabled={isSubmitting}>
               {isSubmitting ? 'Updating...' : 'Update Stage'}
             </Button>
           </div>

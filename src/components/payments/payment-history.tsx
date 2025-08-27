@@ -6,7 +6,10 @@ import { LoadingCard } from '../ui/loading'
 import { ErrorCard, EmptyState } from '../ui/error'
 import { Payment } from '../../lib/types/database'
 import { getPaymentMethod } from '../../lib/config/payment-methods'
-import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
+import DateRangeSelector, {
+  getDefaultDateRange,
+  getPredefinedDateRanges,
+} from '../ui/date-range-selector'
 
 interface PaymentWithDetails extends Payment {
   // tenants relationship removed during tenant module rebuild
@@ -40,7 +43,8 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
       try {
         setLoading(true)
         setError(null)
-        const { data: landlordIds, error: landlordErr } = await clientBusinessFunctions.getUserLandlordIds(true)
+        const { data: landlordIds, error: landlordErr } =
+          await clientBusinessFunctions.getUserLandlordIds(true)
         if (!isMounted) return
         if (landlordErr || !landlordIds || landlordIds.length === 0) {
           setError(landlordErr || 'No landlord access found for this user')
@@ -58,11 +62,17 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
 
         // Load tenants for selected property (if any), else all
         if (selectedProperty) {
-          const { data: units } = await supabase.from('units').select('id').eq('property_id', selectedProperty)
+          const { data: units } = await supabase
+            .from('units')
+            .select('id')
+            .eq('property_id', selectedProperty)
           if (!isMounted) return
-          const unitIds = (units || []).map(u => u.id)
+          const unitIds = (units || []).map((u) => u.id)
           if (unitIds.length > 0) {
-            const { data: tenants } = await supabase.from('tenants').select('id, full_name').in('current_unit_id', unitIds)
+            const { data: tenants } = await supabase
+              .from('tenants')
+              .select('id, full_name')
+              .in('current_unit_id', unitIds)
             if (!isMounted) return
             setTenantsList(tenants || [])
             if (!selectedTenant && tenants && tenants.length > 0) setSelectedTenant(tenants[0].id)
@@ -80,8 +90,10 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
         if (isMounted) setLoading(false)
       }
     })()
-    return () => { isMounted = false }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      isMounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Reload tenants when property changes
@@ -95,18 +107,26 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
         setTenantsList(tenants || [])
         return
       }
-      const { data: units } = await supabase.from('units').select('id').eq('property_id', selectedProperty)
+      const { data: units } = await supabase
+        .from('units')
+        .select('id')
+        .eq('property_id', selectedProperty)
       if (!isMounted) return
-      const unitIds = (units || []).map(u => u.id)
+      const unitIds = (units || []).map((u) => u.id)
       if (unitIds.length === 0) {
         setTenantsList([])
         return
       }
-      const { data: tenants } = await supabase.from('tenants').select('id, full_name').in('current_unit_id', unitIds)
+      const { data: tenants } = await supabase
+        .from('tenants')
+        .select('id, full_name')
+        .in('current_unit_id', unitIds)
       if (!isMounted) return
       setTenantsList(tenants || [])
     })()
-    return () => { isMounted = false }
+    return () => {
+      isMounted = false
+    }
   }, [selectedProperty, landlordId])
 
   // Load payments when ready or filters change
@@ -120,10 +140,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
       setIsLoadingPayments(true)
       setError(null)
 
-      let query = supabase
-        .from('payments')
-        .select('*')
-        .order('payment_date', { ascending: false })
+      let query = supabase.from('payments').select('*').order('payment_date', { ascending: false })
 
       if (selectedTenant) {
         query = query.eq('tenant_id', selectedTenant)
@@ -137,17 +154,29 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
         const now = new Date()
         let startDate: Date
         switch (filterDateRange) {
-          case 'today': startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); break
-          case 'week': startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break
-          case 'month': startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()); break
-          case 'quarter': startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()); break
-          default: startDate = new Date(0)
+          case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+            break
+          case 'week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+            break
+          case 'month':
+            startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+            break
+          case 'quarter':
+            startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
+            break
+          default:
+            startDate = new Date(0)
         }
         query = query.gte('payment_date', startDate.toISOString().split('T')[0])
       }
 
       const { data: paymentsData, error: paymentsError } = await query
-      if (paymentsError) { setError(paymentsError.message || 'Unable to load payments'); return }
+      if (paymentsError) {
+        setError(paymentsError.message || 'Unable to load payments')
+        return
+      }
       setPayments(paymentsData || [])
     } catch (err: any) {
       setError(err?.message || 'Unable to load payments')
@@ -169,7 +198,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
     return new Date(dateString).toLocaleDateString('en-KE', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -179,7 +208,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -199,9 +228,9 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
   }
 
   // Filter payments based on search and method (date filtering now done server-side)
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = searchTerm === '' ||
-      (payment.tx_ref || '').toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPayments = payments.filter((payment) => {
+    const matchesSearch =
+      searchTerm === '' || (payment.tx_ref || '').toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesMethod = filterMethod === 'all' || payment.method === filterMethod
 
@@ -229,7 +258,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
           const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
           setCustomDateRange({
             startDate: weekAgo.toISOString().split('T')[0],
-            endDate: now.toISOString().split('T')[0]
+            endDate: now.toISOString().split('T')[0],
           })
           break
         }
@@ -237,7 +266,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
           const today = new Date().toISOString().split('T')[0]
           setCustomDateRange({
             startDate: today,
-            endDate: today
+            endDate: today,
           })
           break
         }
@@ -258,13 +287,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
   }
 
   if (error) {
-    return (
-      <ErrorCard
-        title="Unable to load payments"
-        message={error}
-        onRetry={loadPayments}
-      />
-    )
+    return <ErrorCard title="Unable to load payments" message={error} onRetry={loadPayments} />
   }
 
   return (
@@ -274,9 +297,25 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
         {isLoadingPayments && (
           <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
             <div className="flex items-center text-gray-600">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin -ml-1 mr-3 h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Filtering payments...
             </div>
@@ -287,7 +326,9 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
           <h3 className="text-lg font-medium text-gray-900">Filter Payments</h3>
           {filterDateRange === 'custom' && (
             <div className="text-sm text-gray-600">
-              <strong>Selected Range:</strong> {new Date(customDateRange.startDate).toLocaleDateString()} - {new Date(customDateRange.endDate).toLocaleDateString()}
+              <strong>Selected Range:</strong>{' '}
+              {new Date(customDateRange.startDate).toLocaleDateString()} -{' '}
+              {new Date(customDateRange.endDate).toLocaleDateString()}
             </div>
           )}
         </div>
@@ -295,7 +336,9 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-              <label htmlFor="property" className="block text-sm font-medium text-gray-700">Property</label>
+              <label htmlFor="property" className="block text-sm font-medium text-gray-700">
+                Property
+              </label>
               <select
                 id="property"
                 value={selectedProperty}
@@ -304,14 +347,18 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
               >
                 <option value="">All Properties</option>
-                {properties.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label htmlFor="tenant" className="block text-sm font-medium text-gray-700">Tenant</label>
+              <label htmlFor="tenant" className="block text-sm font-medium text-gray-700">
+                Tenant
+              </label>
               <select
                 id="tenant"
                 value={selectedTenant}
@@ -320,8 +367,10 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
               >
                 <option value="">All Tenants</option>
-                {tenantsList.map(t => (
-                  <option key={t.id} value={t.id}>{t.full_name}</option>
+                {tenantsList.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.full_name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -384,7 +433,9 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
 
           {filterDateRange === 'custom' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Custom Date Range</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Custom Date Range
+              </label>
               <DateRangeSelector
                 value={customDateRange}
                 onChange={handleCustomDateRangeChange}
@@ -434,9 +485,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
       <div className="bg-white shadow rounded-lg p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">
-              {filteredPayments.length}
-            </div>
+            <div className="text-2xl font-bold text-gray-900">{filteredPayments.length}</div>
             <div className="text-sm text-gray-500">Total Payments</div>
           </div>
           <div className="text-center">
@@ -447,7 +496,12 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">
-              {formatCurrency(filteredPayments.length > 0 ? filteredPayments.reduce((sum, p) => sum + p.amount_kes, 0) / filteredPayments.length : 0)}
+              {formatCurrency(
+                filteredPayments.length > 0
+                  ? filteredPayments.reduce((sum, p) => sum + p.amount_kes, 0) /
+                      filteredPayments.length
+                  : 0
+              )}
             </div>
             <div className="text-sm text-gray-500">Average Payment</div>
           </div>
@@ -468,7 +522,12 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
           >
             <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
             </svg>
             Record Payment
           </button>
@@ -489,17 +548,25 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                        <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        <svg
+                          className="h-6 w-6 text-green-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="ml-4">
                       <div className="text-sm text-gray-500">Payment</div>
                       {payment.tx_ref && (
-                        <div className="text-xs text-gray-400">
-                          Ref: {payment.tx_ref}
-                        </div>
+                        <div className="text-xs text-gray-400">Ref: {payment.tx_ref}</div>
                       )}
                     </div>
                   </div>
@@ -508,7 +575,9 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
                       {formatCurrency(payment.amount_kes)}
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMethodBadgeColor(payment.method || 'UNKNOWN')}`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMethodBadgeColor(payment.method || 'UNKNOWN')}`}
+                      >
                         {payment.method || 'UNKNOWN'}
                       </span>
                     </div>
@@ -518,9 +587,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
                   </div>
                 </div>
                 {payment.notes && (
-                  <div className="mt-2 text-sm text-gray-600 ml-14">
-                    {payment.notes}
-                  </div>
+                  <div className="mt-2 text-sm text-gray-600 ml-14">{payment.notes}</div>
                 )}
               </li>
             ))}

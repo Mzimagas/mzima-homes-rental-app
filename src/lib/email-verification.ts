@@ -29,7 +29,7 @@ const RELIABLE_PROVIDERS = [
   'msn.com',
   'ymail.com',
   'mail.com',
-  'zoho.com'
+  'zoho.com',
 ]
 
 /**
@@ -44,7 +44,7 @@ const COMMON_TYPOS = {
   'hotmail.co': 'hotmail.com',
   'hotmail.con': 'hotmail.com',
   'outlook.co': 'outlook.com',
-  'outlook.con': 'outlook.com'
+  'outlook.con': 'outlook.com',
 }
 
 /**
@@ -57,7 +57,7 @@ export async function verifyEmailForDelivery(email: string): Promise<EmailVerifi
     confidence: 'low',
     warnings: [],
     errors: [],
-    shouldProceed: false
+    shouldProceed: false,
   }
 
   // Step 1: Basic validation
@@ -139,13 +139,13 @@ async function performDomainChecks(domain: string): Promise<{
 
   // For unknown domains, be cautious but allow
   warnings.push('Email domain is not recognized. Please verify this is your correct email address.')
-  
-  return { 
-    hasValidMX: true, 
-    confidence: 'medium', 
-    warnings, 
-    errors, 
-    shouldProceed: true 
+
+  return {
+    hasValidMX: true,
+    confidence: 'medium',
+    warnings,
+    errors,
+    shouldProceed: true,
   }
 }
 
@@ -162,7 +162,7 @@ export async function preflightEmailCheck(email: string): Promise<{
   if (!verification.isValid) {
     return {
       canProceed: false,
-      message: verification.errors[0] || 'Invalid email address'
+      message: verification.errors[0] || 'Invalid email address',
     }
   }
 
@@ -170,7 +170,7 @@ export async function preflightEmailCheck(email: string): Promise<{
     return {
       canProceed: false,
       message: verification.errors[0] || 'Email address may not be deliverable',
-      suggestions: verification.warnings
+      suggestions: verification.warnings,
     }
   }
 
@@ -178,13 +178,13 @@ export async function preflightEmailCheck(email: string): Promise<{
     return {
       canProceed: true,
       message: 'Email appears valid, but please verify it is correct',
-      suggestions: verification.warnings
+      suggestions: verification.warnings,
     }
   }
 
   return {
     canProceed: true,
-    message: 'Email address verified successfully'
+    message: 'Email address verified successfully',
   }
 }
 
@@ -204,29 +204,29 @@ export async function enhancedSignupFlow(
 }> {
   // Step 1: Pre-flight email check
   const preflightCheck = await preflightEmailCheck(email)
-  
+
   if (!preflightCheck.canProceed) {
     return {
       success: false,
       error: preflightCheck.message,
-      warnings: preflightCheck.suggestions
+      warnings: preflightCheck.suggestions,
     }
   }
 
   // Step 2: Proceed with signup if email is verified
   try {
     const result = await signUpFunction(email, password, fullName)
-    
+
     return {
       success: !result.error,
       error: result.error,
       warnings: preflightCheck.suggestions,
-      data: result.data
+      data: result.data,
     }
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Signup failed'
+      error: err instanceof Error ? err.message : 'Signup failed',
     }
   }
 }
@@ -236,7 +236,7 @@ export async function enhancedSignupFlow(
  */
 export function suggestEmailCorrection(email: string): string | null {
   if (!email.includes('@')) return null
-  
+
   const [localPart, domain] = email.toLowerCase().split('@')
   const suggestion = (COMMON_TYPOS as Record<string, string>)[domain]
 

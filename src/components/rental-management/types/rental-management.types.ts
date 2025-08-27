@@ -207,10 +207,7 @@ export interface ExpenseBreakdown {
 }
 
 // Tab types for navigation
-export type RentalManagementTab =
-  | 'properties'
-  | 'tenants'
-  | 'payments'
+export type RentalManagementTab = 'properties' | 'tenants' | 'payments'
 
 // Form types
 export interface RentalPropertyFormData {

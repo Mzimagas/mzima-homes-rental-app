@@ -11,7 +11,11 @@ interface PaymentConfirmationProps {
   isOpen: boolean
 }
 
-export default function PaymentConfirmationModal({ paymentId, onClose, isOpen }: PaymentConfirmationProps) {
+export default function PaymentConfirmationModal({
+  paymentId,
+  onClose,
+  isOpen,
+}: PaymentConfirmationProps) {
   const [confirmation, setConfirmation] = useState<PaymentConfirmation | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,7 +29,7 @@ export default function PaymentConfirmationModal({ paymentId, onClose, isOpen }:
   const loadConfirmation = async () => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const data = await PaymentService.getPaymentConfirmation(paymentId)
       if (data) {
@@ -53,7 +57,7 @@ export default function PaymentConfirmationModal({ paymentId, onClose, isOpen }:
     return new Date(dateString).toLocaleDateString('en-KE', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -67,12 +71,24 @@ export default function PaymentConfirmationModal({ paymentId, onClose, isOpen }:
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                <svg
+                  className="h-6 w-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
                 </svg>
               </div>
               <div className="ml-4">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">Payment Confirmation</h3>
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Payment Confirmation
+                </h3>
                 <p className="text-sm text-gray-500">Payment processed successfully</p>
               </div>
             </div>
@@ -81,16 +97,21 @@ export default function PaymentConfirmationModal({ paymentId, onClose, isOpen }:
               className="text-gray-400 hover:text-gray-600 focus:outline-none"
             >
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                ></path>
               </svg>
             </button>
           </div>
 
           {/* Content */}
           {loading && <LoadingCard />}
-          
+
           {error && (
-            <ErrorCard 
+            <ErrorCard
               title="Error Loading Confirmation"
               message={error}
               onRetry={loadConfirmation}
@@ -105,7 +126,9 @@ export default function PaymentConfirmationModal({ paymentId, onClose, isOpen }:
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-500">Amount</p>
-                    <p className="text-lg font-semibold text-green-600">{formatCurrency(confirmation.amount)}</p>
+                    <p className="text-lg font-semibold text-green-600">
+                      {formatCurrency(confirmation.amount)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Payment Date</p>
@@ -134,7 +157,10 @@ export default function PaymentConfirmationModal({ paymentId, onClose, isOpen }:
                   {confirmation.paidByName && (
                     <div className="col-span-2">
                       <p className="text-sm font-medium text-gray-500">Paid By</p>
-                      <p className="text-sm text-gray-900">{confirmation.paidByName}{confirmation.paidByContact ? ` • ${confirmation.paidByContact}` : ''}</p>
+                      <p className="text-sm text-gray-900">
+                        {confirmation.paidByName}
+                        {confirmation.paidByContact ? ` • ${confirmation.paidByContact}` : ''}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -160,7 +186,8 @@ export default function PaymentConfirmationModal({ paymentId, onClose, isOpen }:
                         {confirmation.allocations.map((allocation, index) => (
                           <tr key={index}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatDate(allocation.periodStart)} - {formatDate(allocation.periodEnd)}
+                              {formatDate(allocation.periodStart)} -{' '}
+                              {formatDate(allocation.periodEnd)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               {formatCurrency(allocation.amount)}
@@ -197,16 +224,16 @@ export default function PaymentConfirmationModal({ paymentId, onClose, isOpen }:
 }
 
 // Simplified inline confirmation component for quick display
-export function PaymentSuccessMessage({ 
-  amount, 
-  method, 
-  txRef, 
-  onViewDetails 
-}: { 
+export function PaymentSuccessMessage({
+  amount,
+  method,
+  txRef,
+  onViewDetails,
+}: {
   amount: number
   method: string
   txRef?: string
-  onViewDetails?: () => void 
+  onViewDetails?: () => void
 }) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -221,7 +248,11 @@ export function PaymentSuccessMessage({
       <div className="flex">
         <div className="flex-shrink-0">
           <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clipRule="evenodd"
+            />
           </svg>
         </div>
         <div className="ml-3 flex-1">
@@ -229,7 +260,8 @@ export function PaymentSuccessMessage({
           <div className="mt-2 text-sm text-green-700">
             <p>
               {formatCurrency(amount)} payment via {method}
-              {txRef && ` (Ref: ${txRef})`} has been processed and allocated to outstanding invoices.
+              {txRef && ` (Ref: ${txRef})`} has been processed and allocated to outstanding
+              invoices.
             </p>
           </div>
           {onViewDetails && (

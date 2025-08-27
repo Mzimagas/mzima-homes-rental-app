@@ -32,7 +32,9 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'rent' | 'utilities' | 'analytics'>('overview')
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'history' | 'rent' | 'utilities' | 'analytics'
+  >('overview')
 
   const loadPaymentStats = async () => {
     try {
@@ -79,13 +81,15 @@ export default function PaymentsPage() {
       const today = new Date().toISOString().split('T')[0]
       const thisMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
 
-      const totalPaymentsToday = recentPayments
-        ?.filter((p: PaymentWithDetails) => p.payment_date === today)
-        .reduce((sum: number, p: PaymentWithDetails) => sum + p.amount_kes, 0) || 0
+      const totalPaymentsToday =
+        recentPayments
+          ?.filter((p: PaymentWithDetails) => p.payment_date === today)
+          .reduce((sum: number, p: PaymentWithDetails) => sum + p.amount_kes, 0) || 0
 
-      const totalPaymentsThisMonth = recentPayments
-        ?.filter((p: PaymentWithDetails) => p.payment_date.startsWith(thisMonth))
-        .reduce((sum: number, p: PaymentWithDetails) => sum + p.amount_kes, 0) || 0
+      const totalPaymentsThisMonth =
+        recentPayments
+          ?.filter((p: PaymentWithDetails) => p.payment_date.startsWith(thisMonth))
+          .reduce((sum: number, p: PaymentWithDetails) => sum + p.amount_kes, 0) || 0
 
       // Get outstanding invoices count
       console.info('[Payments] Loading overdue invoices...')
@@ -100,8 +104,12 @@ export default function PaymentsPage() {
       }
       console.info('[Payments] Loaded invoices:', overdueInvoices?.length || 0)
 
-      const totalOutstanding = overdueInvoices
-        ?.reduce((sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0) || 0
+      const totalOutstanding =
+        overdueInvoices?.reduce(
+          (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) =>
+            sum + (inv.amount_due_kes - inv.amount_paid_kes),
+          0
+        ) || 0
 
       const overdueCount = overdueInvoices?.length || 0
 
@@ -110,9 +118,8 @@ export default function PaymentsPage() {
         totalPaymentsThisMonth,
         totalOutstanding,
         overdueCount,
-        recentPayments: recentPayments || []
+        recentPayments: recentPayments || [],
       })
-
     } catch (err) {
       console.error('[Payments] Unhandled error:', err)
       setError('Failed to load payment statistics: ' + (err as any)?.message)
@@ -138,7 +145,7 @@ export default function PaymentsPage() {
     return new Date(dateString).toLocaleDateString('en-KE', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -160,11 +167,7 @@ export default function PaymentsPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold text-gray-900">Payments</h1>
         </div>
-        <ErrorCard 
-          title="Failed to load payments" 
-          message={error} 
-          onRetry={loadPaymentStats}
-        />
+        <ErrorCard title="Failed to load payments" message={error} onRetry={loadPaymentStats} />
       </div>
     )
   }
@@ -179,7 +182,12 @@ export default function PaymentsPage() {
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
           Record Payment
         </button>
@@ -193,7 +201,7 @@ export default function PaymentsPage() {
             { key: 'history', label: 'Payment History' },
             { key: 'rent', label: 'Rent Balances' },
             { key: 'utilities', label: 'Utility Balances' },
-            { key: 'analytics', label: 'Analytics' }
+            { key: 'analytics', label: 'Analytics' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -221,15 +229,29 @@ export default function PaymentsPage() {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                        <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        <svg
+                          className="w-5 h-5 text-green-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Today's Payments</dt>
-                        <dd className="text-lg font-medium text-gray-900">{formatCurrency(stats.totalPaymentsToday)}</dd>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Today's Payments
+                        </dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {formatCurrency(stats.totalPaymentsToday)}
+                        </dd>
                       </dl>
                     </div>
                   </div>
@@ -241,15 +263,27 @@ export default function PaymentsPage() {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        <svg
+                          className="w-5 h-5 text-blue-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
                         <dt className="text-sm font-medium text-gray-500 truncate">This Month</dt>
-                        <dd className="text-lg font-medium text-gray-900">{formatCurrency(stats.totalPaymentsThisMonth)}</dd>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {formatCurrency(stats.totalPaymentsThisMonth)}
+                        </dd>
                       </dl>
                     </div>
                   </div>
@@ -261,15 +295,27 @@ export default function PaymentsPage() {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-red-100 rounded-md flex items-center justify-center">
-                        <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        <svg
+                          className="w-5 h-5 text-red-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
                         <dt className="text-sm font-medium text-gray-500 truncate">Outstanding</dt>
-                        <dd className="text-lg font-medium text-gray-900">{formatCurrency(stats.totalOutstanding)}</dd>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {formatCurrency(stats.totalOutstanding)}
+                        </dd>
                       </dl>
                     </div>
                   </div>
@@ -281,14 +327,26 @@ export default function PaymentsPage() {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                        <svg className="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg
+                          className="w-5 h-5 text-yellow-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Overdue Invoices</dt>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Overdue Invoices
+                        </dt>
                         <dd className="text-lg font-medium text-gray-900">{stats.overdueCount}</dd>
                       </dl>
                     </div>
@@ -319,15 +377,23 @@ export default function PaymentsPage() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
                           <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                            <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            <svg
+                              className="h-6 w-6 text-green-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                              />
                             </svg>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm text-gray-500">
-                            Payment
-                          </div>
+                          <div className="text-sm text-gray-500">Payment</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -364,9 +430,7 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      {activeTab === 'analytics' && (
-        <PaymentAnalytics />
-      )}
+      {activeTab === 'analytics' && <PaymentAnalytics />}
 
       {/* Payment Form Modal */}
       <PaymentForm

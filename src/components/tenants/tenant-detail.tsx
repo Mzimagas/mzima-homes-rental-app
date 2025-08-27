@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -16,10 +16,9 @@ export default function TenantDetail({ id }: { id: string }) {
   const [restoring, setRestoring] = useState(false)
 
   // Check if user has admin permissions (OWNER or PROPERTY_MANAGER)
-  const hasAdminAccess = userProperties.some(p =>
+  const hasAdminAccess = userProperties.some((p) =>
     ['OWNER', 'PROPERTY_MANAGER'].includes(p.user_role)
   )
-
 
   const load = async () => {
     setLoading(true)
@@ -30,30 +29,45 @@ export default function TenantDetail({ id }: { id: string }) {
       if (!res.ok || !j.ok) throw new Error(j?.message || 'Failed to load tenant')
       setData(j.data)
       // Preload all properties and units used in agreements and current unit
-      const unitIds = Array.from(new Set([
-        ...(j.data?.tenancy_agreements || []).map((a: any) => a.unit_id),
-        j.data?.current_unit_id,
-      ].filter(Boolean)))
+      const unitIds = Array.from(
+        new Set(
+          [
+            ...(j.data?.tenancy_agreements || []).map((a: any) => a.unit_id),
+            j.data?.current_unit_id,
+          ].filter(Boolean)
+        )
+      )
       if (unitIds.length) {
         const { data: unitsData, error: unitsErr } = await supabase
           .from('units')
           .select('id, unit_label, property_id')
           .in('id', unitIds as any)
         if (!unitsErr && unitsData) {
-          setUnitsById((unitsData as any[]).reduce((acc: any, u: any) => { acc[u.id] = u; return acc }, {}))
-          const propIds = Array.from(new Set((unitsData as any[]).map((u: any) => u.property_id).filter(Boolean)))
+          setUnitsById(
+            (unitsData as any[]).reduce((acc: any, u: any) => {
+              acc[u.id] = u
+              return acc
+            }, {})
+          )
+          const propIds = Array.from(
+            new Set((unitsData as any[]).map((u: any) => u.property_id).filter(Boolean))
+          )
           if (propIds.length) {
             const { data: propsData, error: propsErr } = await supabase
               .from('properties')
               .select('id, name')
               .in('id', propIds as any)
             if (!propsErr && propsData) {
-              setPropertiesById((propsData as any[]).reduce((acc: any, p: any) => { acc[p.id] = p; return acc }, {}))
+              setPropertiesById(
+                (propsData as any[]).reduce((acc: any, p: any) => {
+                  acc[p.id] = p
+                  return acc
+                }, {})
+              )
             }
           }
         }
       }
-
     } catch (e: any) {
       setError(e.message || 'Failed to load tenant')
     } finally {
@@ -61,12 +75,16 @@ export default function TenantDetail({ id }: { id: string }) {
     }
   }
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => {
+    load()
+  }, [id])
 
   const onDelete = async () => {
     if (!confirm('Delete this tenant? This is a soft delete and can be reversed by admin.')) return
 
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     const csrf = document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || ''
     const headers: Record<string, string> = { 'x-csrf-token': csrf }
     if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
@@ -74,7 +92,7 @@ export default function TenantDetail({ id }: { id: string }) {
     const res = await fetch(`/api/tenants/${id}`, {
       method: 'DELETE',
       headers,
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     })
     const j = await res.json().catch(() => ({}))
     if (!res.ok || !j.ok) {
@@ -91,11 +109,13 @@ export default function TenantDetail({ id }: { id: string }) {
     try {
       setRestoring(true)
 
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const csrf = document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)?.[1] || ''
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'x-csrf-token': csrf
+        'x-csrf-token': csrf,
       }
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
 
@@ -104,8 +124,8 @@ export default function TenantDetail({ id }: { id: string }) {
         headers,
         credentials: 'same-origin',
         body: JSON.stringify({
-          restore_to_unit: data?.current_unit_id
-        })
+          restore_to_unit: data?.current_unit_id,
+        }),
       })
 
       const result = await response.json()
@@ -124,8 +144,8 @@ export default function TenantDetail({ id }: { id: string }) {
             credentials: 'same-origin',
             body: JSON.stringify({
               restore_to_unit: data?.current_unit_id,
-              force_restore: true
-            })
+              force_restore: true,
+            }),
           })
 
           const forceResult = await forceResponse.json()
@@ -183,9 +203,15 @@ export default function TenantDetail({ id }: { id: string }) {
           ) : (
             // Show normal actions for active tenants
             <>
-              <span className="px-3 py-2 rounded border text-gray-500">Edit (use inline management)</span>
-              <span className="px-3 py-2 rounded border text-gray-500">Move (use inline management)</span>
-              <button className="px-3 py-2 rounded border text-red-600" onClick={onDelete}>Delete</button>
+              <span className="px-3 py-2 rounded border text-gray-500">
+                Edit (use inline management)
+              </span>
+              <span className="px-3 py-2 rounded border text-gray-500">
+                Move (use inline management)
+              </span>
+              <button className="px-3 py-2 rounded border text-red-600" onClick={onDelete}>
+                Delete
+              </button>
             </>
           )}
         </div>
@@ -250,18 +276,28 @@ export default function TenantDetail({ id }: { id: string }) {
                 {t.tenancy_agreements.map((a: any) => {
                   const unit = a.unit_id ? unitsById[a.unit_id] : null
                   const prop = unit ? propertiesById[unit.property_id] : null
-                  const unitPart = unit?.unit_label || (a.unit_id ? `${a.unit_id} (not found)` : '-')
+                  const unitPart =
+                    unit?.unit_label || (a.unit_id ? `${a.unit_id} (not found)` : '-')
                   const propPart = unit ? (prop?.name ? ` - ${prop.name}` : '') : ''
                   return (
                     <tr key={a.id} className="border-t">
-                      <td className="p-2">{unitPart}{propPart}</td>
+                      <td className="p-2">
+                        {unitPart}
+                        {propPart}
+                      </td>
                       <td className="p-2">{a.start_date}</td>
                       <td className="p-2">{a.end_date || '-'}</td>
                       <td className="p-2">{a.status}</td>
-                      <td className="p-2">{a.monthly_rent_kes ? `KES ${Number(a.monthly_rent_kes).toLocaleString()}` : '-'}</td>
+                      <td className="p-2">
+                        {a.monthly_rent_kes
+                          ? `KES ${Number(a.monthly_rent_kes).toLocaleString()}`
+                          : '-'}
+                      </td>
                       <td className="p-2">
                         <div className="text-xs text-gray-700">
-                          {a.align_billing_to_start ? 'Align to start' : `Custom day ${a.billing_day || '-'}`}
+                          {a.align_billing_to_start
+                            ? 'Align to start'
+                            : `Custom day ${a.billing_day || '-'}`}
                         </div>
                         <div className="mt-1">
                           <AgreementEditInline agreementId={a.id} onSaved={load} />
@@ -280,4 +316,3 @@ export default function TenantDetail({ id }: { id: string }) {
     </div>
   )
 }
-

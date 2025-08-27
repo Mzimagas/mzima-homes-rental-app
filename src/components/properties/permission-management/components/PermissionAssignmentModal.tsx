@@ -2,22 +2,22 @@
 
 import React, { useState } from 'react'
 import { Button } from '../../../ui'
-import { 
-  UserPermissions, 
-  SectionPermission, 
-  PermissionLevel, 
+import {
+  UserPermissions,
+  SectionPermission,
+  PermissionLevel,
   Section,
-  DetailPermission 
+  DetailPermission,
 } from '../types'
-import { 
+import {
   createDefaultUserPermissions,
   DEFAULT_SECTIONS,
-  DEFAULT_DETAIL_PERMISSIONS 
+  DEFAULT_DETAIL_PERMISSIONS,
 } from '../utils/permissionUtils'
-import { 
+import {
   getAllRoleTemplates,
   applyRoleTemplate,
-  setAllSectionsPermission 
+  setAllSectionsPermission,
 } from '../utils/roleTemplates'
 
 interface PermissionAssignmentModalProps {
@@ -35,7 +35,7 @@ export default function PermissionAssignmentModal({
   onAssign,
   selectedUsers,
   selectedProperty,
-  isAssigning = false
+  isAssigning = false,
 }: PermissionAssignmentModalProps) {
   const [currentPermissions, setCurrentPermissions] = useState<UserPermissions[]>([])
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
@@ -43,9 +43,9 @@ export default function PermissionAssignmentModal({
   // Initialize permissions when modal opens
   React.useEffect(() => {
     if (isOpen && selectedUsers.length > 0) {
-      const initialPermissions = selectedUsers.map(userId => 
+      const initialPermissions = selectedUsers.map((userId) =>
         createDefaultUserPermissions(
-          userId, 
+          userId,
           `user-${userId}@example.com`, // Replace with actual user lookup
           selectedProperty === 'global'
         )
@@ -60,20 +60,20 @@ export default function PermissionAssignmentModal({
 
   // Update section permission
   const updateSectionPermission = (
-    userIndex: number, 
-    sectionIndex: number, 
+    userIndex: number,
+    sectionIndex: number,
     level: PermissionLevel
   ) => {
     const updated = [...currentPermissions]
     updated[userIndex].sections[sectionIndex].level = level
-    
+
     // Update all detail permissions to match section level
     const details = {} as Record<DetailPermission, PermissionLevel>
-    DEFAULT_DETAIL_PERMISSIONS.forEach(detail => {
+    DEFAULT_DETAIL_PERMISSIONS.forEach((detail) => {
       details[detail] = level
     })
     updated[userIndex].sections[sectionIndex].details = details
-    
+
     setCurrentPermissions(updated)
   }
 
@@ -90,7 +90,10 @@ export default function PermissionAssignmentModal({
   }
 
   // Apply role template
-  const applyTemplate = (userIndex: number, templateKey: keyof typeof import('../utils/roleTemplates').ROLE_TEMPLATES) => {
+  const applyTemplate = (
+    userIndex: number,
+    templateKey: keyof typeof import('../utils/roleTemplates').ROLE_TEMPLATES
+  ) => {
     const updated = [...currentPermissions]
     updated[userIndex] = applyRoleTemplate(updated[userIndex], templateKey)
     setCurrentPermissions(updated)
@@ -125,11 +128,7 @@ export default function PermissionAssignmentModal({
         {/* Modal Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h3 className="text-lg font-semibold">Detailed Permission Assignment</h3>
-          <Button
-            onClick={onClose}
-            variant="secondary"
-            className="text-gray-500"
-          >
+          <Button onClick={onClose} variant="secondary" className="text-gray-500">
             ✕
           </Button>
         </div>
@@ -139,13 +138,11 @@ export default function PermissionAssignmentModal({
           {currentPermissions.map((userPerm, userIndex) => (
             <div key={userIndex} className="mb-8 border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-medium text-gray-900">
-                  User: {userPerm.email}
-                </h4>
+                <h4 className="font-medium text-gray-900">User: {userPerm.email}</h4>
                 <div className="flex space-x-2">
                   {/* Role Templates */}
                   <div className="flex flex-wrap gap-2">
-                    {roleTemplates.map(template => (
+                    {roleTemplates.map((template) => (
                       <Button
                         key={template.key}
                         onClick={() => applyTemplate(userIndex, template.key)}
@@ -190,7 +187,7 @@ export default function PermissionAssignmentModal({
               <div className="space-y-3">
                 {userPerm.sections.map((section, sectionIndex) => {
                   const isExpanded = expandedRows.has(userIndex * 100 + sectionIndex)
-                  
+
                   return (
                     <div key={section.section} className="border border-gray-200 rounded-md">
                       <div className="p-3 bg-gray-50 flex items-center justify-between">
@@ -200,11 +197,13 @@ export default function PermissionAssignmentModal({
                           </span>
                           <select
                             value={section.level}
-                            onChange={(e) => updateSectionPermission(
-                              userIndex, 
-                              sectionIndex, 
-                              e.target.value as PermissionLevel
-                            )}
+                            onChange={(e) =>
+                              updateSectionPermission(
+                                userIndex,
+                                sectionIndex,
+                                e.target.value as PermissionLevel
+                              )
+                            }
                             className="px-3 py-1 border border-gray-300 rounded text-sm"
                           >
                             <option value="none">🚫 No Access</option>
@@ -224,21 +223,25 @@ export default function PermissionAssignmentModal({
                       {/* Detail Permissions - Only show for sections that have detail permissions */}
                       {isExpanded && section.section !== 'audit_trail' && (
                         <div className="p-3 border-t border-gray-200">
-                          <h6 className="text-sm font-medium text-gray-700 mb-3">Detail Permissions</h6>
+                          <h6 className="text-sm font-medium text-gray-700 mb-3">
+                            Detail Permissions
+                          </h6>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {DEFAULT_DETAIL_PERMISSIONS.map(detail => (
+                            {DEFAULT_DETAIL_PERMISSIONS.map((detail) => (
                               <div key={detail} className="flex items-center gap-2">
                                 <span className="text-sm text-gray-600 capitalize">
                                   {detail.replace('_', ' ')}
                                 </span>
                                 <select
                                   value={section.details[detail]}
-                                  onChange={(e) => updateDetailPermission(
-                                    userIndex,
-                                    sectionIndex,
-                                    detail,
-                                    e.target.value as PermissionLevel
-                                  )}
+                                  onChange={(e) =>
+                                    updateDetailPermission(
+                                      userIndex,
+                                      sectionIndex,
+                                      detail,
+                                      e.target.value as PermissionLevel
+                                    )
+                                  }
                                   className="px-2 py-1 border border-gray-300 rounded text-xs"
                                 >
                                   <option value="none">🚫</option>
@@ -255,7 +258,8 @@ export default function PermissionAssignmentModal({
                       {isExpanded && section.section === 'audit_trail' && (
                         <div className="p-3 border-t border-gray-200">
                           <div className="text-sm text-gray-600 italic">
-                            🔍 Audit trail permissions control access to system logs and audit records. No detail permissions apply.
+                            🔍 Audit trail permissions control access to system logs and audit
+                            records. No detail permissions apply.
                           </div>
                         </div>
                       )}
@@ -269,18 +273,13 @@ export default function PermissionAssignmentModal({
 
         {/* Modal Actions */}
         <div className="flex justify-end space-x-3 p-6 border-t">
-          <Button
-            onClick={onClose}
-            variant="secondary"
-            disabled={isAssigning}
-          >
+          <Button onClick={onClose} variant="secondary" disabled={isAssigning}>
             Cancel
           </Button>
-          <Button
-            onClick={handleAssign}
-            disabled={isAssigning || currentPermissions.length === 0}
-          >
-            {isAssigning ? 'Assigning...' : `Assign Permissions (${currentPermissions.length} users)`}
+          <Button onClick={handleAssign} disabled={isAssigning || currentPermissions.length === 0}>
+            {isAssigning
+              ? 'Assigning...'
+              : `Assign Permissions (${currentPermissions.length} users)`}
           </Button>
         </div>
       </div>

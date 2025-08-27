@@ -8,23 +8,32 @@ export const PropertyTypeEnum = z.enum([
   'RESIDENTIAL_LAND',
   'COMMERCIAL_LAND',
   'AGRICULTURAL_LAND',
-  'MIXED_USE_LAND'
+  'MIXED_USE_LAND',
 ])
 
-export const propertySchema = z.object({
-  name: z.string().min(1, 'Property name is required').max(120),
-  physical_address: z.string().max(250).optional().or(z.literal('')),
-  property_type: PropertyTypeEnum.default('HOME'),
-  lat: z.number().gte(-90).lte(90).optional(),
-  lng: z.number().gte(-180).lte(180).optional(),
-  notes: z.string().max(1000).optional().or(z.literal('')),
-  default_billing_day: z.number().int().min(1).max(31).optional(),
-  default_align_billing_to_start: z.boolean().default(true),
-}).refine((val) => {
-  // If one coordinate provided, require the other
-  if ((val.lat !== undefined && val.lng === undefined) || (val.lng !== undefined && val.lat === undefined)) return false
-  return true
-}, { message: 'Please provide both latitude and longitude, or leave both empty', path: ['lat'] })
+export const propertySchema = z
+  .object({
+    name: z.string().min(1, 'Property name is required').max(120),
+    physical_address: z.string().max(250).optional().or(z.literal('')),
+    property_type: PropertyTypeEnum.default('HOME'),
+    lat: z.number().gte(-90).lte(90).optional(),
+    lng: z.number().gte(-180).lte(180).optional(),
+    notes: z.string().max(1000).optional().or(z.literal('')),
+    default_billing_day: z.number().int().min(1).max(31).optional(),
+    default_align_billing_to_start: z.boolean().default(true),
+  })
+  .refine(
+    (val) => {
+      // If one coordinate provided, require the other
+      if (
+        (val.lat !== undefined && val.lng === undefined) ||
+        (val.lng !== undefined && val.lat === undefined)
+      )
+        return false
+      return true
+    },
+    { message: 'Please provide both latitude and longitude, or leave both empty', path: ['lat'] }
+  )
 
 // Land-specific details schema
 export const landDetailsSchema = z.object({
@@ -72,30 +81,33 @@ export const isLandProperty = (type: PropertyType): boolean => {
 
 export const getPropertyTypeLabel = (type: PropertyType): string => {
   const labels: Record<PropertyType, string> = {
-    'HOME': 'Homes',
-    'HOSTEL': 'Hostels',
-    'STALL': 'Stalls',
-    'RESIDENTIAL_LAND': 'Residential Land',
-    'COMMERCIAL_LAND': 'Commercial Land',
-    'AGRICULTURAL_LAND': 'Agricultural Land',
-    'MIXED_USE_LAND': 'Mixed-Use Land'
+    HOME: 'Homes',
+    HOSTEL: 'Hostels',
+    STALL: 'Stalls',
+    RESIDENTIAL_LAND: 'Residential Land',
+    COMMERCIAL_LAND: 'Commercial Land',
+    AGRICULTURAL_LAND: 'Agricultural Land',
+    MIXED_USE_LAND: 'Mixed-Use Land',
   }
   const key = normalizeType(type)
   return labels[key]
 }
 
 // Enhanced property schema with conditional validation
-export const enhancedPropertySchema = propertySchema.refine((data) => {
-  // For land properties, certain fields might be required in the future
-  if (isLandProperty(data.property_type)) {
-    // Land-specific validation can be added here
+export const enhancedPropertySchema = propertySchema.refine(
+  (data) => {
+    // For land properties, certain fields might be required in the future
+    if (isLandProperty(data.property_type)) {
+      // Land-specific validation can be added here
+      return true
+    }
     return true
+  },
+  {
+    message: 'Invalid property configuration for the selected type',
+    path: ['property_type'],
   }
-  return true
-}, {
-  message: 'Invalid property configuration for the selected type',
-  path: ['property_type']
-})
+)
 
 // Property type categories for UI grouping
 export const getPropertyTypeCategory = (type: PropertyType): 'rental' | 'land' => {
@@ -105,13 +117,13 @@ export const getPropertyTypeCategory = (type: PropertyType): 'rental' | 'land' =
 // Property type icons mapping
 export const getPropertyTypeIcon = (type: PropertyType): string => {
   const icons: Record<PropertyType, string> = {
-    'HOME': '🏠',
-    'HOSTEL': '🏢',
-    'STALL': '🏪',
-    'RESIDENTIAL_LAND': '🏞️',
-    'COMMERCIAL_LAND': '🏗️',
-    'AGRICULTURAL_LAND': '🌾',
-    'MIXED_USE_LAND': '🏘️'
+    HOME: '🏠',
+    HOSTEL: '🏢',
+    STALL: '🏪',
+    RESIDENTIAL_LAND: '🏞️',
+    COMMERCIAL_LAND: '🏗️',
+    AGRICULTURAL_LAND: '🌾',
+    MIXED_USE_LAND: '🏘️',
   }
   const key = normalizeType(type)
   return icons[key]
@@ -120,15 +132,14 @@ export const getPropertyTypeIcon = (type: PropertyType): string => {
 // Property type colors for UI consistency
 export const getPropertyTypeColor = (type: PropertyType): string => {
   const colors: Record<PropertyType, string> = {
-    'HOME': 'blue',
-    'HOSTEL': 'purple',
-    'STALL': 'green',
-    'RESIDENTIAL_LAND': 'amber',
-    'COMMERCIAL_LAND': 'orange',
-    'AGRICULTURAL_LAND': 'emerald',
-    'MIXED_USE_LAND': 'indigo'
+    HOME: 'blue',
+    HOSTEL: 'purple',
+    STALL: 'green',
+    RESIDENTIAL_LAND: 'amber',
+    COMMERCIAL_LAND: 'orange',
+    AGRICULTURAL_LAND: 'emerald',
+    MIXED_USE_LAND: 'indigo',
   }
   const key = normalizeType(type)
   return colors[key]
 }
-

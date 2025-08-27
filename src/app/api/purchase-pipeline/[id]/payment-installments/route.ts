@@ -12,7 +12,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -40,9 +42,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 // Check if user has access to this purchase pipeline entry
 async function checkPurchaseAccess(userId: string, purchaseId: string): Promise<boolean> {
   console.log('checkPurchaseAccess - userId:', userId, 'purchaseId:', purchaseId)
-  
+
   const supabase = createClient(supabaseUrl, serviceKey)
-  
+
   const { data, error } = await supabase
     .from('purchase_pipeline')
     .select('created_by')
@@ -62,15 +64,20 @@ async function checkPurchaseAccess(userId: string, purchaseId: string): Promise<
 }
 
 // GET /api/purchase-pipeline/[id]/payment-installments - Get payment installments for purchase pipeline entry
-export const GET = compose(withAuth, withRateLimit, withCsrf)(async (req: NextRequest) => {
+export const GET = compose(
+  withAuth,
+  withRateLimit,
+  withCsrf
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract purchase id from path
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const pipelineIdx = segments.findIndex(s => s === 'purchase-pipeline')
-    const purchaseId = pipelineIdx >= 0 && segments[pipelineIdx + 1] ? segments[pipelineIdx + 1] : undefined
+    const pipelineIdx = segments.findIndex((s) => s === 'purchase-pipeline')
+    const purchaseId =
+      pipelineIdx >= 0 && segments[pipelineIdx + 1] ? segments[pipelineIdx + 1] : undefined
     if (!purchaseId) return errors.badRequest('Missing purchase id in path')
 
     console.log('GET payment-installments - userId:', userId)
@@ -106,15 +113,20 @@ export const GET = compose(withAuth, withRateLimit, withCsrf)(async (req: NextRe
 })
 
 // POST /api/purchase-pipeline/[id]/payment-installments - Create payment installment for purchase pipeline entry
-export const POST = compose(withAuth, withRateLimit, withCsrf)(async (req: NextRequest) => {
+export const POST = compose(
+  withAuth,
+  withRateLimit,
+  withCsrf
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract purchase id from path
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const pipelineIdx = segments.findIndex(s => s === 'purchase-pipeline')
-    const purchaseId = pipelineIdx >= 0 && segments[pipelineIdx + 1] ? segments[pipelineIdx + 1] : undefined
+    const pipelineIdx = segments.findIndex((s) => s === 'purchase-pipeline')
+    const purchaseId =
+      pipelineIdx >= 0 && segments[pipelineIdx + 1] ? segments[pipelineIdx + 1] : undefined
     if (!purchaseId) return errors.badRequest('Missing purchase id in path')
 
     console.log('POST payment-installments - userId:', userId)
@@ -140,9 +152,10 @@ export const POST = compose(withAuth, withRateLimit, withCsrf)(async (req: NextR
       .order('installment_number', { ascending: false })
       .limit(1)
 
-    const nextInstallmentNumber = existingInstallments && existingInstallments.length > 0
-      ? existingInstallments[0].installment_number + 1
-      : 1
+    const nextInstallmentNumber =
+      existingInstallments && existingInstallments.length > 0
+        ? existingInstallments[0].installment_number + 1
+        : 1
 
     const { data, error } = await supabase
       .from('property_payment_installments')

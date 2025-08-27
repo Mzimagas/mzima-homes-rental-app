@@ -24,7 +24,7 @@ export default function LazyImage({
   blurDataURL,
   onLoad,
   onError,
-  priority = false
+  priority = false,
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isInView, setIsInView] = useState(priority)
@@ -42,7 +42,7 @@ export default function LazyImage({
         }
       },
       {
-        rootMargin: '50px' // Start loading 50px before the image comes into view
+        rootMargin: '50px', // Start loading 50px before the image comes into view
       }
     )
 
@@ -69,11 +69,7 @@ export default function LazyImage({
       {!isLoaded && !hasError && (
         <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
           {blurDataURL ? (
-            <img
-              src={blurDataURL}
-              alt=""
-              className="w-full h-full object-cover filter blur-sm"
-            />
+            <img src={blurDataURL} alt="" className="w-full h-full object-cover filter blur-sm" />
           ) : (
             <svg
               className="w-8 h-8 text-gray-400"

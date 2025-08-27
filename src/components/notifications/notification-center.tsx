@@ -67,11 +67,9 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
         .eq('id', notificationId)
 
       if (!error) {
-        setNotifications(prev =>
-          prev.map(notification =>
-            notification.id === notificationId
-              ? { ...notification, read: true }
-              : notification
+        setNotifications((prev) =>
+          prev.map((notification) =>
+            notification.id === notificationId ? { ...notification, read: true } : notification
           )
         )
       }
@@ -82,8 +80,8 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
 
   const markAllAsRead = async () => {
     try {
-      const unreadIds = notifications.filter(n => !n.read).map(n => n.id)
-      
+      const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id)
+
       if (unreadIds.length === 0) return
 
       const { error } = await supabase
@@ -92,9 +90,7 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
         .in('id', unreadIds)
 
       if (!error) {
-        setNotifications(prev =>
-          prev.map(notification => ({ ...notification, read: true }))
-        )
+        setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })))
       }
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error)
@@ -109,8 +105,8 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
         .eq('id', notificationId)
 
       if (!error) {
-        setNotifications(prev =>
-          prev.filter(notification => notification.id !== notificationId)
+        setNotifications((prev) =>
+          prev.filter((notification) => notification.id !== notificationId)
         )
       }
     } catch (error) {
@@ -123,32 +119,72 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
       case 'success':
         return (
           <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="w-5 h-5 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
         )
       case 'warning':
         return (
           <div className="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            <svg
+              className="w-5 h-5 text-yellow-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
             </svg>
           </div>
         )
       case 'error':
         return (
           <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </div>
         )
       default:
         return (
           <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-5 h-5 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
         )
@@ -164,15 +200,15 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
-    
+
     return date.toLocaleDateString()
   }
 
-  const filteredNotifications = notifications.filter(notification => 
-    filter === 'all' || (filter === 'unread' && !notification.read)
+  const filteredNotifications = notifications.filter(
+    (notification) => filter === 'all' || (filter === 'unread' && !notification.read)
   )
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length
 
   if (!isOpen) return null
 
@@ -193,7 +229,12 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
             className="text-gray-400 hover:text-gray-600 focus:outline-none"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -204,9 +245,7 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
             <button
               onClick={() => setFilter('all')}
               className={`px-3 py-1 text-sm font-medium rounded-md ${
-                filter === 'all'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-500 hover:text-gray-700'
+                filter === 'all' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               All
@@ -222,12 +261,9 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
               Unread ({unreadCount})
             </button>
           </div>
-          
+
           {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              className="text-sm text-blue-600 hover:text-blue-800"
-            >
+            <button onClick={markAllAsRead} className="text-sm text-blue-600 hover:text-blue-800">
               Mark all as read
             </button>
           )}
@@ -236,9 +272,9 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
         {/* Notifications List */}
         <div className="max-h-96 overflow-y-auto">
           {loading && <LoadingCard />}
-          
+
           {error && (
-            <ErrorCard 
+            <ErrorCard
               title="Error Loading Notifications"
               message={error}
               onRetry={loadNotifications}
@@ -247,8 +283,18 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
 
           {!loading && !error && filteredNotifications.length === 0 && (
             <div className="text-center py-8">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM9 7H4l5-5v5zm6 10V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z" />
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-5 5v-5zM9 7H4l5-5v5zm6 10V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z"
+                />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">No notifications</h3>
               <p className="mt-1 text-sm text-gray-500">
@@ -257,49 +303,63 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
             </div>
           )}
 
-          {!loading && !error && filteredNotifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`p-4 border-b border-gray-200 hover:bg-gray-50 ${
-                !notification.read ? 'bg-blue-50' : ''
-              }`}
-            >
-              <div className="flex items-start">
-                {getNotificationIcon(notification.type)}
-                <div className="ml-3 flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className={`text-sm font-medium ${
-                      !notification.read ? 'text-gray-900' : 'text-gray-700'
-                    }`}>
-                      {notification.title}
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500">
-                        {formatTimeAgo(notification.created_at)}
-                      </span>
-                      <button
-                        onClick={() => deleteNotification(notification.id)}
-                        className="text-gray-400 hover:text-red-600"
+          {!loading &&
+            !error &&
+            filteredNotifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-4 border-b border-gray-200 hover:bg-gray-50 ${
+                  !notification.read ? 'bg-blue-50' : ''
+                }`}
+              >
+                <div className="flex items-start">
+                  {getNotificationIcon(notification.type)}
+                  <div className="ml-3 flex-1">
+                    <div className="flex items-center justify-between">
+                      <p
+                        className={`text-sm font-medium ${
+                          !notification.read ? 'text-gray-900' : 'text-gray-700'
+                        }`}
                       >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                        {notification.title}
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500">
+                          {formatTimeAgo(notification.created_at)}
+                        </span>
+                        <button
+                          onClick={() => deleteNotification(notification.id)}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
+                    <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
+                    {!notification.read && (
+                      <button
+                        onClick={() => markAsRead(notification.id)}
+                        className="mt-2 text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        Mark as read
+                      </button>
+                    )}
                   </div>
-                  <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
-                  {!notification.read && (
-                    <button
-                      onClick={() => markAsRead(notification.id)}
-                      className="mt-2 text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      Mark as read
-                    </button>
-                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </div>

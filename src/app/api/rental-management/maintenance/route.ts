@@ -15,7 +15,15 @@ const maintenanceRequestSchema = z.object({
   tenant_id: z.string().uuid('Invalid tenant ID').optional(),
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
   description: z.string().min(1, 'Description is required').max(2000, 'Description too long'),
-  category: z.enum(['PLUMBING', 'ELECTRICAL', 'HVAC', 'APPLIANCE', 'STRUCTURAL', 'COSMETIC', 'OTHER']),
+  category: z.enum([
+    'PLUMBING',
+    'ELECTRICAL',
+    'HVAC',
+    'APPLIANCE',
+    'STRUCTURAL',
+    'COSMETIC',
+    'OTHER',
+  ]),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
   estimated_cost: z.number().min(0).optional(),
   notes: z.string().max(1000, 'Notes too long').optional(),
@@ -24,7 +32,9 @@ const maintenanceRequestSchema = z.object({
 const updateMaintenanceRequestSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().min(1).max(2000).optional(),
-  category: z.enum(['PLUMBING', 'ELECTRICAL', 'HVAC', 'APPLIANCE', 'STRUCTURAL', 'COSMETIC', 'OTHER']).optional(),
+  category: z
+    .enum(['PLUMBING', 'ELECTRICAL', 'HVAC', 'APPLIANCE', 'STRUCTURAL', 'COSMETIC', 'OTHER'])
+    .optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   status: z.enum(['SUBMITTED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
   assigned_to: z.string().uuid().optional(),
@@ -36,7 +46,9 @@ const updateMaintenanceRequestSchema = z.object({
 async function getUserId(req: NextRequest): Promise<string | null> {
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     return user?.id || null
   } catch {
     return null
@@ -46,19 +58,18 @@ async function getUserId(req: NextRequest): Promise<string | null> {
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     // Check if user is property owner or has access through property_users
-    const { data, error } = await admin
-      .rpc('check_property_access', {
-        user_id: userId,
-        property_id: propertyId
-      })
-    
+    const { data, error } = await admin.rpc('check_property_access', {
+      user_id: userId,
+      property_id: propertyId,
+    })
+
     if (error) {
       console.error('Error checking property access:', error)
       return false
     }
-    
+
     return data === true
   } catch (error) {
     console.error('Error in checkPropertyAccess:', error)
@@ -81,16 +92,18 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(url.searchParams.get('offset') || '0')
 
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     // Build query
     let query = admin
       .from('maintenance_requests')
-      .select(`
+      .select(
+        `
         *,
         properties(id, name),
         units(id, unit_label),
         tenants(id, full_name)
-      `)
+      `
+      )
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -99,17 +112,18 @@ export async function GET(req: NextRequest) {
       // Check access to specific property
       const hasAccess = await checkPropertyAccess(userId, propertyId)
       if (!hasAccess) return errors.forbidden()
-      
+
       query = query.eq('property_id', propertyId)
     } else {
       // Get user's accessible properties
-      const { data: accessibleProperties } = await admin
-        .rpc('get_user_accessible_properties', { user_id: userId })
-      
+      const { data: accessibleProperties } = await admin.rpc('get_user_accessible_properties', {
+        user_id: userId,
+      })
+
       if (!accessibleProperties || accessibleProperties.length === 0) {
         return NextResponse.json({ ok: true, data: [] })
       }
-      
+
       const propertyIds = accessibleProperties.map((p: any) => p.property_id)
       query = query.in('property_id', propertyIds)
     }
@@ -133,14 +147,18 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/rental-management/maintenance - Create maintenance request
-export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const POST = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await getUserId(req)
     if (!userId) return errors.unauthorized()
 
     const json = await req.json().catch(() => ({}))
     const parsed = maintenanceRequestSchema.safeParse(json)
-    
+
     if (!parsed.success) {
       return errors.validation(parsed.error.flatten())
     }
@@ -150,7 +168,7 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
     if (!hasAccess) return errors.forbidden()
 
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     // Create maintenance request
     const { data, error } = await admin
       .from('maintenance_requests')
@@ -159,12 +177,14 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
         status: 'SUBMITTED',
         submitted_date: new Date().toISOString(),
       })
-      .select(`
+      .select(
+        `
         *,
         properties(id, name),
         units(id, unit_label),
         tenants(id, full_name)
-      `)
+      `
+      )
       .single()
 
     if (error) {
@@ -180,7 +200,11 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
 })
 
 // PUT /api/rental-management/maintenance/[id] - Update maintenance request
-export const PUT = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const PUT = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await getUserId(req)
     if (!userId) return errors.unauthorized()
@@ -195,13 +219,13 @@ export const PUT = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
 
     const json = await req.json().catch(() => ({}))
     const parsed = updateMaintenanceRequestSchema.safeParse(json)
-    
+
     if (!parsed.success) {
       return errors.validation(parsed.error.flatten())
     }
 
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     // Get existing request to check access
     const { data: existingRequest, error: fetchError } = await admin
       .from('maintenance_requests')
@@ -219,7 +243,7 @@ export const PUT = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
 
     // Update request
     const updateData: any = { ...parsed.data }
-    
+
     // Set timestamps based on status changes
     if (parsed.data.status === 'ACKNOWLEDGED' && !existingRequest.acknowledged_date) {
       updateData.acknowledged_date = new Date().toISOString()
@@ -232,12 +256,14 @@ export const PUT = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
       .from('maintenance_requests')
       .update(updateData)
       .eq('id', requestId)
-      .select(`
+      .select(
+        `
         *,
         properties(id, name),
         units(id, unit_label),
         tenants(id, full_name)
-      `)
+      `
+      )
       .single()
 
     if (error) {

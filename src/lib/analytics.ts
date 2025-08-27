@@ -17,4 +17,3 @@ export function capture(event: string, props?: Record<string, any>) {
     posthog.capture(event, props)
   } catch {}
 }
-

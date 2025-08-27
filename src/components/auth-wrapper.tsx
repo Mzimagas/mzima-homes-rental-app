@@ -7,9 +7,5 @@ interface AuthWrapperProps {
 }
 
 export default function AuthWrapper({ children }: AuthWrapperProps) {
-  return (
-    <AuthProvider>
-      {children}
-    </AuthProvider>
-  )
+  return <AuthProvider>{children}</AuthProvider>
 }

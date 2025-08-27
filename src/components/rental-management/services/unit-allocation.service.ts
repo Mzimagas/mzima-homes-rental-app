@@ -29,7 +29,6 @@ export interface ReallocationOptions {
 }
 
 export class UnitAllocationService {
-  
   /**
    * Check unit availability for a specific date range
    */
@@ -40,12 +39,11 @@ export class UnitAllocationService {
   ): Promise<UnitAvailability> {
     try {
       // Try to use the database function first, fallback to manual query if function doesn't exist
-      const { data, error } = await supabase
-        .rpc('check_unit_availability', {
-          unit_id_param: unitId,
-          start_date_param: startDate,
-          end_date_param: endDate || null
-        })
+      const { data, error } = await supabase.rpc('check_unit_availability', {
+        unit_id_param: unitId,
+        start_date_param: startDate,
+        end_date_param: endDate || null,
+      })
 
       if (error && error.code === '42883') {
         // Function doesn't exist, use manual query
@@ -62,22 +60,26 @@ export class UnitAllocationService {
           available: true,
           conflictingLeases: [],
           availableFrom: undefined,
-          conflictingTenant: undefined
+          conflictingTenant: undefined,
         }
       }
 
       return {
         available: result.available === true,
-        conflictingLeases: result.conflicting_lease_id ? [{
-          id: result.conflicting_lease_id,
-          tenant_id: '',
-          unit_id: unitId,
-          start_date: result.conflict_start,
-          end_date: result.conflict_end,
-          status: 'ACTIVE'
-        }] : [],
+        conflictingLeases: result.conflicting_lease_id
+          ? [
+              {
+                id: result.conflicting_lease_id,
+                tenant_id: '',
+                unit_id: unitId,
+                start_date: result.conflict_start,
+                end_date: result.conflict_end,
+                status: 'ACTIVE',
+              },
+            ]
+          : [],
         availableFrom: result.available_from,
-        conflictingTenant: result.conflicting_tenant
+        conflictingTenant: result.conflicting_tenant,
       }
     } catch (error) {
       console.error('Error checking unit availability:', error)
@@ -97,14 +99,16 @@ export class UnitAllocationService {
     try {
       const { data: conflictingLeases, error } = await supabase
         .from('tenancy_agreements')
-        .select(`
+        .select(
+          `
           id,
           start_date,
           end_date,
           status,
           tenant_id,
           tenants!inner(full_name)
-        `)
+        `
+        )
         .eq('unit_id', unitId)
         .eq('status', 'ACTIVE')
         .or(`end_date.is.null,end_date.gte.${startDate}`)
@@ -116,16 +120,17 @@ export class UnitAllocationService {
 
       return {
         available: !hasConflict,
-        conflictingLeases: conflictingLeases?.map(lease => ({
-          id: lease.id,
-          tenant_id: lease.tenant_id,
-          unit_id: unitId,
-          start_date: lease.start_date,
-          end_date: lease.end_date,
-          status: lease.status
-        })) || [],
+        conflictingLeases:
+          conflictingLeases?.map((lease) => ({
+            id: lease.id,
+            tenant_id: lease.tenant_id,
+            unit_id: unitId,
+            start_date: lease.start_date,
+            end_date: lease.end_date,
+            status: lease.status,
+          })) || [],
         availableFrom: firstConflict?.end_date,
-        conflictingTenant: (firstConflict?.tenants as any)?.full_name
+        conflictingTenant: (firstConflict?.tenants as any)?.full_name,
       }
     } catch (error) {
       console.error('Error in manual availability check:', error)
@@ -137,14 +142,15 @@ export class UnitAllocationService {
    * Get all available units for a date range
    */
   static async getAvailableUnits(
-    startDate: string, 
+    startDate: string,
     endDate?: string,
     propertyId?: string
   ): Promise<Unit[]> {
     try {
       let query = supabase
         .from('units')
-        .select(`
+        .select(
+          `
           id,
           unit_label,
           monthly_rent_kes,
@@ -159,7 +165,8 @@ export class UnitAllocationService {
             tenant_id,
             tenants(full_name)
           )
-        `)
+        `
+        )
         .eq('is_active', true)
         .neq('status', 'MAINTENANCE')
 
@@ -197,15 +204,15 @@ export class UnitAllocationService {
     try {
       // 1. Final availability check
       const availability = await this.checkUnitAvailability(
-        unitId, 
-        leaseData.start_date, 
+        unitId,
+        leaseData.start_date,
         leaseData.end_date
       )
 
       if (!availability.available) {
         return {
           success: false,
-          error: `Unit not available. ${availability.availableFrom ? `Available from: ${availability.availableFrom}` : 'Currently occupied.'}`
+          error: `Unit not available. ${availability.availableFrom ? `Available from: ${availability.availableFrom}` : 'Currently occupied.'}`,
         }
       }
 
@@ -239,7 +246,7 @@ export class UnitAllocationService {
           pet_deposit_kes: leaseData.pet_deposit || 0,
           status: 'ACTIVE',
           lease_type: 'FIXED_TERM',
-          notes: leaseData.notes
+          notes: leaseData.notes,
         })
         .select()
         .single()
@@ -249,9 +256,8 @@ export class UnitAllocationService {
       return {
         success: true,
         leaseId: newLease.id,
-        warnings: warnings.length > 0 ? warnings : undefined
+        warnings: warnings.length > 0 ? warnings : undefined,
       }
-
     } catch (error) {
       console.error('Error allocating unit to tenant:', error)
 
@@ -276,7 +282,7 @@ export class UnitAllocationService {
 
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       }
     }
   }
@@ -291,29 +297,28 @@ export class UnitAllocationService {
   ): Promise<AllocationResult> {
     try {
       // 1. Check new unit availability
-      const availability = await this.checkUnitAvailability(
-        newUnitId,
-        options.effectiveDate
-      )
+      const availability = await this.checkUnitAvailability(newUnitId, options.effectiveDate)
 
       if (!availability.available) {
         return {
           success: false,
-          error: `New unit not available. ${availability.availableFrom ? `Available from: ${availability.availableFrom}` : ''}`
+          error: `New unit not available. ${availability.availableFrom ? `Available from: ${availability.availableFrom}` : ''}`,
         }
       }
 
       // 2. Get current active lease
       const { data: currentLeases, error: fetchError } = await supabase
         .from('tenancy_agreements')
-        .select(`
+        .select(
+          `
           id,
           unit_id,
           start_date,
           monthly_rent_kes,
           notes,
           units(unit_label, monthly_rent_kes, properties(name))
-        `)
+        `
+        )
         .eq('tenant_id', tenantId)
         .eq('status', 'ACTIVE')
 
@@ -323,7 +328,7 @@ export class UnitAllocationService {
       if (!currentLease) {
         return {
           success: false,
-          error: 'No active lease found for tenant'
+          error: 'No active lease found for tenant',
         }
       }
 
@@ -343,8 +348,10 @@ export class UnitAllocationService {
         p_new_unit_id: newUnitId,
         p_effective_date: options.effectiveDate,
         p_new_rent: newUnit.monthly_rent_kes,
-        p_notes: options.notes || `Reallocated from ${(currentLease.units as any)?.properties?.name} - ${(currentLease.units as any)?.unit_label} to ${(newUnit as any).properties?.name} - ${(newUnit as any).unit_label}`,
-        p_terminate_current: options.terminateCurrentLease
+        p_notes:
+          options.notes ||
+          `Reallocated from ${(currentLease.units as any)?.properties?.name} - ${(currentLease.units as any)?.unit_label} to ${(newUnit as any).properties?.name} - ${(newUnit as any).unit_label}`,
+        p_terminate_current: options.terminateCurrentLease,
       })
 
       if (transactionError && transactionError.code === '42883') {
@@ -356,14 +363,15 @@ export class UnitAllocationService {
 
       return {
         success: true,
-        warnings: [`Tenant reallocated from ${(currentLease.units as any)?.unit_label} to ${(newUnit as any).unit_label}`]
+        warnings: [
+          `Tenant reallocated from ${(currentLease.units as any)?.unit_label} to ${(newUnit as any).unit_label}`,
+        ],
       }
-
     } catch (error) {
       console.error('Error reallocating tenant:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to reallocate tenant'
+        error: error instanceof Error ? error.message : 'Failed to reallocate tenant',
       }
     }
   }
@@ -386,7 +394,7 @@ export class UnitAllocationService {
           .update({
             status: 'TERMINATED',
             end_date: options.effectiveDate,
-            notes: `${currentLease.notes || ''}\nTerminated for reallocation: ${options.notes || ''}`
+            notes: `${currentLease.notes || ''}\nTerminated for reallocation: ${options.notes || ''}`,
           })
           .eq('id', currentLease.id)
 
@@ -394,28 +402,26 @@ export class UnitAllocationService {
       }
 
       // Create new lease
-      const { error: createError } = await supabase
-        .from('tenancy_agreements')
-        .insert({
-          tenant_id: tenantId,
-          unit_id: newUnitId,
-          start_date: options.effectiveDate,
-          monthly_rent_kes: newUnit.monthly_rent_kes,
-          status: 'ACTIVE',
-          notes: `Reallocation: ${options.notes || ''}`
-        })
+      const { error: createError } = await supabase.from('tenancy_agreements').insert({
+        tenant_id: tenantId,
+        unit_id: newUnitId,
+        start_date: options.effectiveDate,
+        monthly_rent_kes: newUnit.monthly_rent_kes,
+        status: 'ACTIVE',
+        notes: `Reallocation: ${options.notes || ''}`,
+      })
 
       if (createError) throw createError
 
       return {
         success: true,
-        warnings: [`Tenant reallocated manually (database functions not available)`]
+        warnings: [`Tenant reallocated manually (database functions not available)`],
       }
     } catch (error) {
       console.error('Error in manual reallocation:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Manual reallocation failed'
+        error: error instanceof Error ? error.message : 'Manual reallocation failed',
       }
     }
   }
@@ -427,13 +433,15 @@ export class UnitAllocationService {
     try {
       const { data, error } = await supabase
         .from('tenancy_agreements')
-        .select(`
+        .select(
+          `
           *,
           units(
             unit_label,
             properties(name)
           )
-        `)
+        `
+        )
         .eq('tenant_id', tenantId)
         .order('start_date', { ascending: false })
 
@@ -452,10 +460,12 @@ export class UnitAllocationService {
     try {
       const { data, error } = await supabase
         .from('tenancy_agreements')
-        .select(`
+        .select(
+          `
           *,
           tenants(full_name, phone, email)
-        `)
+        `
+        )
         .eq('unit_id', unitId)
         .order('start_date', { ascending: false })
 
@@ -482,27 +492,29 @@ export class UnitAllocationService {
       // Try to use the optimized view first, fallback to manual query if view doesn't exist
       let data, error
 
-      const viewResult = await supabase
-        .from('unit_occupancy_summary')
-        .select('*')
+      const viewResult = await supabase.from('unit_occupancy_summary').select('*')
 
       if (viewResult.error && viewResult.error.code === '42P01') {
         // View doesn't exist, use manual calculation
         const { data: unitsData, error: unitsError } = await supabase
           .from('units')
-          .select(`
+          .select(
+            `
             id,
             tenancy_agreements!left(id, status)
-          `)
+          `
+          )
           .eq('is_active', true)
 
         if (unitsError) throw unitsError
 
         // Transform to match view format
-        data = unitsData?.map(unit => ({
-          occupancy_status: unit.tenancy_agreements?.some((agreement: any) =>
-            agreement.status === 'ACTIVE'
-          ) ? 'OCCUPIED' : 'VACANT'
+        data = unitsData?.map((unit) => ({
+          occupancy_status: unit.tenancy_agreements?.some(
+            (agreement: any) => agreement.status === 'ACTIVE'
+          )
+            ? 'OCCUPIED'
+            : 'VACANT',
         }))
         error = null
       } else {
@@ -513,7 +525,8 @@ export class UnitAllocationService {
       if (error) throw error
 
       const totalUnits = data?.length || 0
-      const occupiedUnits = data?.filter((unit: any) => unit.occupancy_status === 'OCCUPIED').length || 0
+      const occupiedUnits =
+        data?.filter((unit: any) => unit.occupancy_status === 'OCCUPIED').length || 0
       const vacantUnits = totalUnits - occupiedUnits
       const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0
 
@@ -526,12 +539,13 @@ export class UnitAllocationService {
 
       if (leaseError) throw leaseError
 
-      const averageLeaseLength = leaseData?.reduce((acc, lease) => {
-        const start = new Date(lease.start_date)
-        const end = new Date(lease.end_date!)
-        const lengthInDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-        return acc + lengthInDays
-      }, 0) / (leaseData?.length || 1) || 0
+      const averageLeaseLength =
+        leaseData?.reduce((acc, lease) => {
+          const start = new Date(lease.start_date)
+          const end = new Date(lease.end_date!)
+          const lengthInDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+          return acc + lengthInDays
+        }, 0) / (leaseData?.length || 1) || 0
 
       return {
         totalUnits,
@@ -539,7 +553,7 @@ export class UnitAllocationService {
         vacantUnits,
         occupancyRate,
         averageLeaseLength: Math.round(averageLeaseLength),
-        totalActiveLeases: occupiedUnits
+        totalActiveLeases: occupiedUnits,
       }
     } catch (error) {
       console.error('Error getting allocation stats:', error)
@@ -550,7 +564,7 @@ export class UnitAllocationService {
         vacantUnits: 0,
         occupancyRate: 0,
         averageLeaseLength: 0,
-        totalActiveLeases: 0
+        totalActiveLeases: 0,
       }
     }
   }

@@ -5,11 +5,13 @@ import { createServerSupabaseClient } from '../../../../../lib/supabase-server'
 
 async function handler(req: NextRequest) {
   const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return errors.unauthorized()
 
   const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-  const unitsIdx = segments.findIndex(s => s === 'units')
+  const unitsIdx = segments.findIndex((s) => s === 'units')
   const unitId = unitsIdx >= 0 && segments[unitsIdx + 1] ? segments[unitsIdx + 1] : undefined
   if (!unitId) return errors.badRequest('Missing unit id in path')
 
@@ -26,11 +28,15 @@ async function handler(req: NextRequest) {
 }
 
 export const POST = compose(
-  (h) => withRateLimit(h, (req) => {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    return `unit-enable:${ip}`
-  }, 'unit-enable'),
+  (h) =>
+    withRateLimit(
+      h,
+      (req) => {
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+        return `unit-enable:${ip}`
+      },
+      'unit-enable'
+    ),
   withCsrf,
-  withAuth,
+  withAuth
 )(handler)
-

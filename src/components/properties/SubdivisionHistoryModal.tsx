@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
-import { SubdivisionHistoryEntry, SubdivisionHistoryService } from '../../lib/services/subdivision-history'
+import {
+  SubdivisionHistoryEntry,
+  SubdivisionHistoryService,
+} from '../../lib/services/subdivision-history'
 
 interface SubdivisionHistoryModalProps {
   isOpen: boolean
@@ -16,7 +19,7 @@ export default function SubdivisionHistoryModal({
   isOpen,
   onClose,
   propertyId,
-  propertyName
+  propertyName,
 }: SubdivisionHistoryModalProps) {
   const [history, setHistory] = useState<SubdivisionHistoryEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -65,11 +68,7 @@ export default function SubdivisionHistoryModal({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Subdivision History - ${propertyName}`}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={`Subdivision History - ${propertyName}`}>
       <div className="space-y-4">
         {loading ? (
           <div className="flex items-center justify-center py-8">
@@ -80,7 +79,11 @@ export default function SubdivisionHistoryModal({
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-center space-x-2">
               <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
               </svg>
               <span className="text-sm text-red-700">{error}</span>
             </div>
@@ -88,24 +91,38 @@ export default function SubdivisionHistoryModal({
         ) : !history || history.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <div className="mb-4">
-              <svg className="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="w-12 h-12 mx-auto text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
             </div>
             <p className="text-sm">No subdivision history recorded yet.</p>
-            <p className="text-xs text-gray-400 mt-1">History will appear here once subdivision activities begin.</p>
+            <p className="text-xs text-gray-400 mt-1">
+              History will appear here once subdivision activities begin.
+            </p>
           </div>
         ) : (
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {history.map((entry, index) => {
               const actionDisplay = getActionTypeDisplay(entry.action_type)
-              
+
               return (
                 <div key={entry.id} className="border border-gray-200 rounded-lg p-4 bg-white">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${actionDisplay.color}`}>
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${actionDisplay.color}`}
+                        >
                           <span className="mr-1">{actionDisplay.icon}</span>
                           {actionDisplay.text}
                         </span>
@@ -151,14 +168,12 @@ export default function SubdivisionHistoryModal({
                               {(() => {
                                 const changes = []
 
-
-
                                 // Only show actual changes - compare previous vs new values
                                 if (entry.details.previous_values && entry.details.new_values) {
                                   // Get all unique field names from both objects
                                   const allFields = new Set([
                                     ...Object.keys(entry.details.previous_values),
-                                    ...Object.keys(entry.details.new_values)
+                                    ...Object.keys(entry.details.new_values),
                                   ])
 
                                   allFields.forEach((field: string) => {
@@ -175,12 +190,19 @@ export default function SubdivisionHistoryModal({
                                 }
 
                                 // If no previous values, show new additions only
-                                else if (entry.details.new_values && !entry.details.previous_values) {
+                                else if (
+                                  entry.details.new_values &&
+                                  !entry.details.previous_values
+                                ) {
                                   Object.keys(entry.details.new_values).forEach((field: string) => {
                                     if (field === 'updated_at') return // Skip timestamp
 
                                     const newValue = entry.details.new_values[field]
-                                    if (newValue !== undefined && newValue !== null && newValue !== '') {
+                                    if (
+                                      newValue !== undefined &&
+                                      newValue !== null &&
+                                      newValue !== ''
+                                    ) {
                                       changes.push({ field, oldValue: undefined, newValue })
                                     }
                                   })
@@ -190,26 +212,35 @@ export default function SubdivisionHistoryModal({
                                   // Format field name for display
                                   const fieldName = field
                                     .replace(/_/g, ' ')
-                                    .replace(/\b\w/g, l => l.toUpperCase())
+                                    .replace(/\b\w/g, (l) => l.toUpperCase())
                                     .replace(/Kes/g, 'KES')
 
                                   return (
-                                    <div key={field} className="text-xs bg-blue-50 p-2 rounded border">
+                                    <div
+                                      key={field}
+                                      className="text-xs bg-blue-50 p-2 rounded border"
+                                    >
                                       <span className="font-medium">{fieldName}:</span>
                                       <div className="flex items-center space-x-2 mt-1">
-                                        {oldValue !== undefined && oldValue !== null && oldValue !== '' && oldValue !== 'Updated' ? (
+                                        {oldValue !== undefined &&
+                                        oldValue !== null &&
+                                        oldValue !== '' &&
+                                        oldValue !== 'Updated' ? (
                                           <>
-                                            <span className="text-red-600 line-through">{String(oldValue)}</span>
+                                            <span className="text-red-600 line-through">
+                                              {String(oldValue)}
+                                            </span>
                                             <span className="text-gray-400">→</span>
                                           </>
                                         ) : oldValue === undefined && newValue !== 'Updated' ? (
                                           <span className="text-gray-500 text-xs">(new)</span>
                                         ) : null}
                                         <span className="text-green-600 font-medium">
-                                          {newValue !== undefined && newValue !== null && newValue !== ''
+                                          {newValue !== undefined &&
+                                          newValue !== null &&
+                                          newValue !== ''
                                             ? String(newValue)
-                                            : '(removed)'
-                                          }
+                                            : '(removed)'}
                                         </span>
                                       </div>
                                     </div>
@@ -219,12 +250,16 @@ export default function SubdivisionHistoryModal({
 
                               {/* Show message if no changes detected */}
                               {(() => {
-                                const hasAnyData = entry.details.updated_fields || entry.details.new_values || entry.details.previous_values
+                                const hasAnyData =
+                                  entry.details.updated_fields ||
+                                  entry.details.new_values ||
+                                  entry.details.previous_values
 
                                 if (!hasAnyData) {
                                   return (
                                     <div className="text-xs text-gray-500 italic">
-                                      Subdivision plan was updated but specific changes are not available.
+                                      Subdivision plan was updated but specific changes are not
+                                      available.
                                     </div>
                                   )
                                 }
@@ -244,12 +279,8 @@ export default function SubdivisionHistoryModal({
                   {/* Footer with user and timestamp */}
                   <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-200">
                     <div className="flex items-center space-x-4">
-                      <span>
-                        👤 {entry.changed_by_name}
-                      </span>
-                      <span>
-                        🕒 {formatDate(entry.changed_at)}
-                      </span>
+                      <span>👤 {entry.changed_by_name}</span>
+                      <span>🕒 {formatDate(entry.changed_at)}</span>
                     </div>
                   </div>
                 </div>
@@ -259,10 +290,7 @@ export default function SubdivisionHistoryModal({
         )}
 
         <div className="flex justify-end pt-4 border-t border-gray-200">
-          <Button
-            variant="primary"
-            onClick={onClose}
-          >
+          <Button variant="primary" onClick={onClose}>
             Close
           </Button>
         </div>

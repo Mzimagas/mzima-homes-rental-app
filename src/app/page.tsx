@@ -1,22 +1,23 @@
 'use client'
 
-import Image from "next/image";
-import { useAuth } from "../lib/auth-context";
-import { useRouter } from "next/navigation";
+// import Image from 'next/image' // Unused import
+import { useRouter } from 'next/navigation'
+
+import { useAuth } from '../lib/auth-context'
 
 export default function Home() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+  const { user, loading } = useAuth()
+  const router = useRouter()
 
   const handleAccessDashboard = () => {
     if (user) {
       // User is authenticated, navigate to dashboard
-      router.push('/dashboard');
+      router.push('/dashboard')
     } else {
       // User is not authenticated, navigate to login with redirect
-      router.push('/auth/login?redirectTo=/dashboard');
+      router.push('/auth/login?redirectTo=/dashboard')
     }
-  };
+  }
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -54,9 +55,7 @@ export default function Home() {
           </div>
           <div className="bg-green-50 p-6 rounded-lg">
             <h3 className="font-semibold text-green-900 mb-2">Tenant Management</h3>
-            <p className="text-green-700 text-sm">
-              Handle tenant profiles, agreements, and status
-            </p>
+            <p className="text-green-700 text-sm">Handle tenant profiles, agreements, and status</p>
           </div>
           <div className="bg-purple-50 p-6 rounded-lg">
             <h3 className="font-semibold text-purple-900 mb-2">Financial Tracking</h3>
@@ -74,9 +73,25 @@ export default function Home() {
           >
             {loading ? (
               <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Loading...
               </>
@@ -89,12 +104,12 @@ export default function Home() {
           </button>
         </div>
       </main>
-      
+
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center text-sm text-gray-500">
         <span>KodiRent</span>
         <span>•</span>
         <span>Built with Next.js & Supabase</span>
       </footer>
     </div>
-  );
+  )
 }

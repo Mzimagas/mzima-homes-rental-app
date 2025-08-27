@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { 
+import {
   getPropertiesForPermissionManagement,
   getPurchasePipelineProperties,
   getSubdivisionProperties,
   getHandoverProperties,
-  Property 
+  Property,
 } from '../../services/propertyService'
 
 export default function PropertyLifecycleTest() {
@@ -25,7 +25,7 @@ export default function PropertyLifecycleTest() {
           getPropertiesForPermissionManagement(),
           getPurchasePipelineProperties(),
           getSubdivisionProperties(),
-          getHandoverProperties()
+          getHandoverProperties(),
         ])
 
         // Extract successful results and handle failures gracefully
@@ -33,7 +33,9 @@ export default function PropertyLifecycleTest() {
 
         setAllProperties(allResult.status === 'fulfilled' ? allResult.value : [])
         setPipelineProperties(pipelineResult.status === 'fulfilled' ? pipelineResult.value : [])
-        setSubdivisionProperties(subdivisionResult.status === 'fulfilled' ? subdivisionResult.value : [])
+        setSubdivisionProperties(
+          subdivisionResult.status === 'fulfilled' ? subdivisionResult.value : []
+        )
         setHandoverProperties(handoverResult.status === 'fulfilled' ? handoverResult.value : [])
 
         // Log any failures for debugging
@@ -71,7 +73,7 @@ export default function PropertyLifecycleTest() {
   return (
     <div className="p-6 bg-white rounded-lg shadow">
       <h3 className="text-lg font-semibold mb-4">Property Lifecycle Filter Test</h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* All Properties */}
         <div className="bg-blue-50 p-4 rounded-lg">
@@ -105,14 +107,16 @@ export default function PropertyLifecycleTest() {
       {/* Sample Properties */}
       <div className="mt-6">
         <h4 className="font-medium mb-3">Sample Properties by Lifecycle Stage</h4>
-        
+
         <div className="space-y-4">
           {/* Purchase Pipeline Sample */}
           {pipelineProperties.length > 0 && (
             <div>
-              <h5 className="text-sm font-medium text-orange-700 mb-2">🏗️ Purchase Pipeline Properties:</h5>
+              <h5 className="text-sm font-medium text-orange-700 mb-2">
+                🏗️ Purchase Pipeline Properties:
+              </h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {pipelineProperties.slice(0, 4).map(property => (
+                {pipelineProperties.slice(0, 4).map((property) => (
                   <div key={property.id} className="bg-orange-50 p-2 rounded text-sm">
                     <span className="font-medium">{property.name}</span>
                     {property.lifecycle_status && (
@@ -129,9 +133,11 @@ export default function PropertyLifecycleTest() {
           {/* Subdivision Sample */}
           {subdivisionProperties.length > 0 && (
             <div>
-              <h5 className="text-sm font-medium text-green-700 mb-2">📐 Subdivision Properties:</h5>
+              <h5 className="text-sm font-medium text-green-700 mb-2">
+                📐 Subdivision Properties:
+              </h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {subdivisionProperties.slice(0, 4).map(property => (
+                {subdivisionProperties.slice(0, 4).map((property) => (
                   <div key={property.id} className="bg-green-50 p-2 rounded text-sm">
                     <span className="font-medium">{property.name}</span>
                     {property.subdivision_status && (
@@ -150,7 +156,7 @@ export default function PropertyLifecycleTest() {
             <div>
               <h5 className="text-sm font-medium text-purple-700 mb-2">🤝 Handover Properties:</h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {handoverProperties.slice(0, 4).map(property => (
+                {handoverProperties.slice(0, 4).map((property) => (
                   <div key={property.id} className="bg-purple-50 p-2 rounded text-sm">
                     <span className="font-medium">{property.name}</span>
                     {property.handover_status && (
@@ -175,11 +181,17 @@ export default function PropertyLifecycleTest() {
           <p>Subdivision: {subdivisionProperties.length}</p>
           <p>Handover: {handoverProperties.length}</p>
           <p>
-            Coverage: {
-              allProperties.length > 0 
-                ? Math.round(((pipelineProperties.length + subdivisionProperties.length + handoverProperties.length) / allProperties.length) * 100)
-                : 0
-            }% of properties have lifecycle status
+            Coverage:{' '}
+            {allProperties.length > 0
+              ? Math.round(
+                  ((pipelineProperties.length +
+                    subdivisionProperties.length +
+                    handoverProperties.length) /
+                    allProperties.length) *
+                    100
+                )
+              : 0}
+            % of properties have lifecycle status
           </p>
         </div>
       </div>

@@ -13,9 +13,14 @@ function getCsrfToken(): string | null {
 }
 
 export class SubdivisionCostsService {
-  private static async makeRequest(url: string, options: RequestInit = {}) {
+  private static async makeRequest(
+    url: string,
+    options: import('../../../lib/types/fetch').FetchOptions = {}
+  ) {
     // Get the auth token and CSRF token
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     const token = session?.access_token
     const csrfToken = getCsrfToken()
 
@@ -85,8 +90,6 @@ export class SubdivisionCostsService {
       // Handle both response formats: {data: cost} and {success: true, data: cost}
       if (response.data) {
         return response.data
-      } else if (response.success && response.data) {
-        return response.data
       } else {
         throw new Error('Invalid response format from API')
       }
@@ -99,13 +102,21 @@ export class SubdivisionCostsService {
   static async updateSubdivisionCost(
     propertyId: string,
     costId: string,
-    updates: Partial<Omit<SubdivisionCostEntry, 'id' | 'property_id' | 'cost_type_id' | 'cost_category' | 'created_at' | 'updated_at'>>
+    updates: Partial<
+      Omit<
+        SubdivisionCostEntry,
+        'id' | 'property_id' | 'cost_type_id' | 'cost_category' | 'created_at' | 'updated_at'
+      >
+    >
   ): Promise<SubdivisionCostEntry> {
     try {
-      const data = await this.makeRequest(`/api/properties/${propertyId}/subdivision-costs/${costId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates),
-      })
+      const data = await this.makeRequest(
+        `/api/properties/${propertyId}/subdivision-costs/${costId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(updates),
+        }
+      )
       console.log('Successfully updated subdivision cost:', data)
       return data.data
     } catch (error) {
@@ -132,50 +143,55 @@ export class SubdivisionCostsService {
       console.log('calculateSubdivisionSummary called with:', costs)
 
       // Ensure costs is an array and filter out any invalid entries
-      const validCosts = Array.isArray(costs) ? costs.filter(cost => {
-        const isValid = cost &&
-          typeof cost.amount_kes === 'number' &&
-          cost.payment_status &&
-          cost.cost_category
-        console.log('Cost validation:', cost, 'isValid:', isValid)
-        return isValid
-      }) : []
+      const validCosts = Array.isArray(costs)
+        ? costs.filter((cost) => {
+            const isValid =
+              cost &&
+              typeof cost.amount_kes === 'number' &&
+              cost.payment_status &&
+              cost.cost_category
+            console.log('Cost validation:', cost, 'isValid:', isValid)
+            return isValid
+          })
+        : []
 
       console.log('Valid costs after filtering:', validCosts)
 
-    const totalCosts = validCosts.reduce((sum, cost) => sum + cost.amount_kes, 0)
-    const paidCosts = validCosts
-      .filter(cost => cost.payment_status === 'PAID')
-      .reduce((sum, cost) => sum + cost.amount_kes, 0)
-    const pendingCosts = validCosts
-      .filter(cost => cost.payment_status === 'PENDING' || cost.payment_status === 'PARTIALLY_PAID')
-      .reduce((sum, cost) => sum + cost.amount_kes, 0)
-
-    // Calculate breakdown by category
-    const costsByCategory: Record<SubdivisionCostCategory, number> = {
-      STATUTORY_BOARD_FEES: 0,
-      SURVEY_PLANNING_FEES: 0,
-      REGISTRATION_TITLE_FEES: 0,
-      LEGAL_COMPLIANCE: 0,
-      OTHER_CHARGES: 0
-    }
-
-    validCosts.forEach(cost => {
-      if (cost.cost_category && costsByCategory.hasOwnProperty(cost.cost_category)) {
-        costsByCategory[cost.cost_category] += cost.amount_kes
-      }
-    })
-
-    // Calculate breakdown by payment status
-    const costsByStatus = {
-      PENDING: validCosts
-        .filter(cost => cost.payment_status === 'PENDING')
-        .reduce((sum, cost) => sum + cost.amount_kes, 0),
-      PAID: paidCosts,
-      PARTIALLY_PAID: validCosts
-        .filter(cost => cost.payment_status === 'PARTIALLY_PAID')
+      const totalCosts = validCosts.reduce((sum, cost) => sum + cost.amount_kes, 0)
+      const paidCosts = validCosts
+        .filter((cost) => cost.payment_status === 'PAID')
         .reduce((sum, cost) => sum + cost.amount_kes, 0)
-    }
+      const pendingCosts = validCosts
+        .filter(
+          (cost) => cost.payment_status === 'PENDING' || cost.payment_status === 'PARTIALLY_PAID'
+        )
+        .reduce((sum, cost) => sum + cost.amount_kes, 0)
+
+      // Calculate breakdown by category
+      const costsByCategory: Record<SubdivisionCostCategory, number> = {
+        STATUTORY_BOARD_FEES: 0,
+        SURVEY_PLANNING_FEES: 0,
+        REGISTRATION_TITLE_FEES: 0,
+        LEGAL_COMPLIANCE: 0,
+        OTHER_CHARGES: 0,
+      }
+
+      validCosts.forEach((cost) => {
+        if (cost.cost_category && Object.hasOwn(costsByCategory, cost.cost_category)) {
+          costsByCategory[cost.cost_category] += cost.amount_kes
+        }
+      })
+
+      // Calculate breakdown by payment status
+      const costsByStatus = {
+        PENDING: validCosts
+          .filter((cost) => cost.payment_status === 'PENDING')
+          .reduce((sum, cost) => sum + cost.amount_kes, 0),
+        PAID: paidCosts,
+        PARTIALLY_PAID: validCosts
+          .filter((cost) => cost.payment_status === 'PARTIALLY_PAID')
+          .reduce((sum, cost) => sum + cost.amount_kes, 0),
+      }
 
       return {
         totalSubdivisionCosts: totalCosts,
@@ -184,8 +200,10 @@ export class SubdivisionCostsService {
         subdivisionCostsByCategory: costsByCategory,
         subdivisionCostsByStatus: costsByStatus,
         subdivisionCostCount: validCosts.length,
-        paidCostCount: validCosts.filter(cost => cost.payment_status === 'PAID').length,
-        pendingCostCount: validCosts.filter(cost => cost.payment_status === 'PENDING' || cost.payment_status === 'PARTIALLY_PAID').length
+        paidCostCount: validCosts.filter((cost) => cost.payment_status === 'PAID').length,
+        pendingCostCount: validCosts.filter(
+          (cost) => cost.payment_status === 'PENDING' || cost.payment_status === 'PARTIALLY_PAID'
+        ).length,
       }
     } catch (error) {
       console.error('Error in calculateSubdivisionSummary:', error)
@@ -199,16 +217,16 @@ export class SubdivisionCostsService {
           SURVEY_PLANNING_FEES: 0,
           REGISTRATION_TITLE_FEES: 0,
           LEGAL_COMPLIANCE: 0,
-          OTHER_CHARGES: 0
+          OTHER_CHARGES: 0,
         },
         subdivisionCostsByStatus: {
           PENDING: 0,
           PAID: 0,
-          PARTIALLY_PAID: 0
+          PARTIALLY_PAID: 0,
         },
         subdivisionCostCount: 0,
         paidCostCount: 0,
-        pendingCostCount: 0
+        pendingCostCount: 0,
       }
     }
   }
@@ -217,36 +235,36 @@ export class SubdivisionCostsService {
   static getCostTypeLabel(costTypeId: string): string {
     const costTypeLabels: Record<string, string> = {
       // Statutory & Board Fees
-      'lcb_normal_fee': 'Land Control Board (Normal)',
-      'lcb_special_fee': 'Land Control Board (Special)',
-      'board_application_fee': 'Board Application Fee',
-      
+      lcb_normal_fee: 'Land Control Board (Normal)',
+      lcb_special_fee: 'Land Control Board (Special)',
+      board_application_fee: 'Board Application Fee',
+
       // Survey & Planning Fees
-      'scheme_plan_preparation': 'Scheme Plan Preparation',
-      'mutation_drawing': 'Mutation Drawing',
-      'mutation_checking': 'Mutation Checking',
-      'surveyor_professional_fees': 'Surveyor Professional Fees',
-      'map_amendment': 'Map Amendment',
-      'rim_update': 'RIM Update',
-      'new_parcel_numbers': 'New Parcel Numbers',
-      
+      scheme_plan_preparation: 'Scheme Plan Preparation',
+      mutation_drawing: 'Mutation Drawing',
+      mutation_checking: 'Mutation Checking',
+      surveyor_professional_fees: 'Surveyor Professional Fees',
+      map_amendment: 'Map Amendment',
+      rim_update: 'RIM Update',
+      new_parcel_numbers: 'New Parcel Numbers',
+
       // Registration & Title Fees
-      'new_title_registration': 'New Title Registration',
-      'registrar_fees': 'Registrar Fees',
-      'title_printing': 'Title Printing',
-      
+      new_title_registration: 'New Title Registration',
+      registrar_fees: 'Registrar Fees',
+      title_printing: 'Title Printing',
+
       // Legal & Compliance
-      'compliance_certificate': 'Compliance Certificate',
-      'development_fee': 'Development Fee',
-      'admin_costs': 'Administrative Costs',
-      'search_fee': 'Search Fee',
-      'land_rates_clearance': 'Land Rates Clearance',
-      'stamp_duty': 'Stamp Duty',
-      
+      compliance_certificate: 'Compliance Certificate',
+      development_fee: 'Development Fee',
+      admin_costs: 'Administrative Costs',
+      search_fee: 'Search Fee',
+      land_rates_clearance: 'Land Rates Clearance',
+      stamp_duty: 'Stamp Duty',
+
       // Other Charges
-      'county_planning_fees': 'County Planning Fees',
-      'professional_legal_fees': 'Professional/Legal Fees',
-      'miscellaneous_disbursements': 'Miscellaneous Disbursements'
+      county_planning_fees: 'County Planning Fees',
+      professional_legal_fees: 'Professional/Legal Fees',
+      miscellaneous_disbursements: 'Miscellaneous Disbursements',
     }
 
     return costTypeLabels[costTypeId] || costTypeId
@@ -255,9 +273,9 @@ export class SubdivisionCostsService {
   // Helper function to get payment status label
   static getPaymentStatusLabel(status: string): string {
     const statusLabels: Record<string, string> = {
-      'PENDING': 'Pending',
-      'PAID': 'Paid',
-      'PARTIALLY_PAID': 'Partially Paid'
+      PENDING: 'Pending',
+      PAID: 'Paid',
+      PARTIALLY_PAID: 'Partially Paid',
     }
 
     return statusLabels[status] || status
@@ -266,9 +284,9 @@ export class SubdivisionCostsService {
   // Helper function to get payment status color
   static getPaymentStatusColor(status: string): string {
     const statusColors: Record<string, string> = {
-      'PENDING': 'bg-yellow-100 text-yellow-800',
-      'PAID': 'bg-green-100 text-green-800',
-      'PARTIALLY_PAID': 'bg-blue-100 text-blue-800'
+      PENDING: 'bg-yellow-100 text-yellow-800',
+      PAID: 'bg-green-100 text-green-800',
+      PARTIALLY_PAID: 'bg-blue-100 text-blue-800',
     }
 
     return statusColors[status] || 'bg-gray-100 text-gray-800'

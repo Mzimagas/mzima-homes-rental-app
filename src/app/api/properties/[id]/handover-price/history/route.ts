@@ -12,7 +12,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -35,7 +37,7 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     const { data, error } = await admin
       .from('properties')
       .select('landlord_id')
@@ -55,15 +57,20 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
 }
 
 // GET /api/properties/[id]/handover-price/history - Get handover price history
-export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const GET = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id from path /api/properties/[id]/handover-price/history
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
@@ -72,7 +79,7 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
     // TODO: Replace with actual price history table query once table is created
     // For now, return mock history data based on current property price
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     const { data: property, error: propertyError } = await admin
       .from('properties')
       .select('handover_price_agreement_kes, created_at, updated_at')
@@ -86,7 +93,7 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
 
     // Mock history data - replace with actual table query when available
     const mockHistory = []
-    
+
     if (property?.handover_price_agreement_kes) {
       mockHistory.push({
         id: 'initial',
@@ -95,14 +102,14 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
         change_date: property.created_at,
         change_reason: 'Initial handover price set',
         changed_by: 'System',
-        created_at: property.created_at
+        created_at: property.created_at,
       })
     }
 
-    return NextResponse.json({ 
-      ok: true, 
+    return NextResponse.json({
+      ok: true,
       data: mockHistory,
-      message: 'Price history retrieved successfully'
+      message: 'Price history retrieved successfully',
     })
   } catch (e: any) {
     console.error('GET /api/properties/[id]/handover-price/history error:', e)

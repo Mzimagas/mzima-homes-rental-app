@@ -1,4 +1,8 @@
-import { AcquisitionCostEntry, PaymentInstallment, PurchasePriceHistoryEntry } from '../types/property-management.types'
+import {
+  AcquisitionCostEntry,
+  PaymentInstallment,
+  PurchasePriceHistoryEntry,
+} from '../types/property-management.types'
 import supabase from '../../../lib/supabase-client'
 
 // Helper function to get CSRF token
@@ -18,16 +22,19 @@ export class AcquisitionFinancialsService {
   private static readonly FEATURE_FLAGS = {
     PURCHASE_PIPELINE_API: false, // Set to true when API is implemented
     ACQUISITION_COSTS_API: false, // Set to true when API is implemented
-    PAYMENT_INSTALLMENTS_API: false // Set to true when API is implemented
+    PAYMENT_INSTALLMENTS_API: false, // Set to true when API is implemented
   }
 
-  private static async makeRequest(url: string, options: RequestInit = {}) {
+  private static async makeRequest(
+    url: string,
+    options: import('../../../lib/types/fetch').FetchOptions = {}
+  ) {
     // Get the auth token and CSRF token
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     const token = session?.access_token
     const csrfToken = getCsrfToken()
-
-
 
     if (!csrfToken) {
       throw new Error('CSRF token not found. Please refresh the page and try again.')
@@ -48,8 +55,6 @@ export class AcquisitionFinancialsService {
       headers,
       credentials: 'same-origin',
     })
-
-
 
     // Check if response has content before trying to parse JSON
     const contentType = response.headers.get('content-type')
@@ -90,18 +95,27 @@ export class AcquisitionFinancialsService {
     }
   }
 
-  static async createAcquisitionCost(propertyId: string, cost: Omit<AcquisitionCostEntry, 'id' | 'property_id' | 'created_at' | 'updated_at'>): Promise<AcquisitionCostEntry> {
+  static async createAcquisitionCost(
+    propertyId: string,
+    cost: Omit<AcquisitionCostEntry, 'id' | 'property_id' | 'created_at' | 'updated_at'>
+  ): Promise<AcquisitionCostEntry> {
     try {
       // Try purchase pipeline API first
       try {
-        const data = await this.makeRequest(`/api/purchase-pipeline/${propertyId}/acquisition-costs`, {
-          method: 'POST',
-          body: JSON.stringify(cost),
-        })
+        const data = await this.makeRequest(
+          `/api/purchase-pipeline/${propertyId}/acquisition-costs`,
+          {
+            method: 'POST',
+            body: JSON.stringify(cost),
+          }
+        )
         console.log('Successfully created acquisition cost via purchase pipeline API:', data)
         return data.data
       } catch (pipelineError) {
-        console.log('Purchase pipeline acquisition cost creation failed, trying property API:', pipelineError)
+        console.log(
+          'Purchase pipeline acquisition cost creation failed, trying property API:',
+          pipelineError
+        )
         // Fall back to property API
         const data = await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs`, {
           method: 'POST',
@@ -126,7 +140,10 @@ export class AcquisitionFinancialsService {
         console.log('Successfully deleted acquisition cost via purchase pipeline API')
         return
       } catch (pipelineError) {
-        console.log('Purchase pipeline acquisition cost deletion failed, trying property API:', pipelineError)
+        console.log(
+          'Purchase pipeline acquisition cost deletion failed, trying property API:',
+          pipelineError
+        )
         // Fall back to property API
         await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs/${costId}`, {
           method: 'DELETE',
@@ -150,18 +167,30 @@ export class AcquisitionFinancialsService {
     }
   }
 
-  static async createPaymentInstallment(propertyId: string, payment: Omit<PaymentInstallment, 'id' | 'property_id' | 'installment_number' | 'created_at' | 'updated_at'>): Promise<PaymentInstallment> {
+  static async createPaymentInstallment(
+    propertyId: string,
+    payment: Omit<
+      PaymentInstallment,
+      'id' | 'property_id' | 'installment_number' | 'created_at' | 'updated_at'
+    >
+  ): Promise<PaymentInstallment> {
     try {
       // Try purchase pipeline API first
       try {
-        const data = await this.makeRequest(`/api/purchase-pipeline/${propertyId}/payment-installments`, {
-          method: 'POST',
-          body: JSON.stringify(payment),
-        })
+        const data = await this.makeRequest(
+          `/api/purchase-pipeline/${propertyId}/payment-installments`,
+          {
+            method: 'POST',
+            body: JSON.stringify(payment),
+          }
+        )
         console.log('Successfully created payment installment via purchase pipeline API:', data)
         return data.data
       } catch (pipelineError) {
-        console.log('Purchase pipeline payment installment creation failed, trying property API:', pipelineError)
+        console.log(
+          'Purchase pipeline payment installment creation failed, trying property API:',
+          pipelineError
+        )
         // Fall back to property API
         const data = await this.makeRequest(`/api/properties/${propertyId}/payment-installments`, {
           method: 'POST',
@@ -180,13 +209,19 @@ export class AcquisitionFinancialsService {
     try {
       // Try purchase pipeline API first
       try {
-        await this.makeRequest(`/api/purchase-pipeline/${propertyId}/payment-installments/${paymentId}`, {
-          method: 'DELETE',
-        })
+        await this.makeRequest(
+          `/api/purchase-pipeline/${propertyId}/payment-installments/${paymentId}`,
+          {
+            method: 'DELETE',
+          }
+        )
         console.log('Successfully deleted payment installment via purchase pipeline API')
         return
       } catch (pipelineError) {
-        console.log('Purchase pipeline payment installment deletion failed, trying property API:', pipelineError)
+        console.log(
+          'Purchase pipeline payment installment deletion failed, trying property API:',
+          pipelineError
+        )
         // Fall back to property API
         await this.makeRequest(`/api/properties/${propertyId}/payment-installments/${paymentId}`, {
           method: 'DELETE',
@@ -200,7 +235,11 @@ export class AcquisitionFinancialsService {
   }
 
   // Purchase Price API calls
-  static async updatePurchasePrice(propertyId: string, purchasePrice: number, changeReason?: string): Promise<void> {
+  static async updatePurchasePrice(
+    propertyId: string,
+    purchasePrice: number,
+    changeReason?: string
+  ): Promise<void> {
     try {
       // Try purchase pipeline API first
       try {
@@ -239,18 +278,30 @@ export class AcquisitionFinancialsService {
     try {
       // Try purchase pipeline API first
       try {
-        const response = await this.makeRequest(`/api/purchase-pipeline/${propertyId}/purchase-price/history`, {
-          method: 'GET',
-        })
-        console.log('Successfully loaded purchase price history via purchase pipeline API:', response)
+        const response = await this.makeRequest(
+          `/api/purchase-pipeline/${propertyId}/purchase-price/history`,
+          {
+            method: 'GET',
+          }
+        )
+        console.log(
+          'Successfully loaded purchase price history via purchase pipeline API:',
+          response
+        )
         return response.data || []
       } catch (pipelineError) {
-        console.log('Purchase pipeline purchase price history failed, trying property API:', pipelineError)
+        console.log(
+          'Purchase pipeline purchase price history failed, trying property API:',
+          pipelineError
+        )
         // Fall back to property API
         try {
-          const response = await this.makeRequest(`/api/properties/${propertyId}/purchase-price/history`, {
-            method: 'GET',
-          })
+          const response = await this.makeRequest(
+            `/api/properties/${propertyId}/purchase-price/history`,
+            {
+              method: 'GET',
+            }
+          )
           console.log('Successfully loaded purchase price history via property API:', response)
           return response.data || []
         } catch (propertyError) {
@@ -271,9 +322,11 @@ export class AcquisitionFinancialsService {
     payments: PaymentInstallment[]
   }> {
     // Skip API calls entirely if features are disabled to avoid 403 errors
-    if (!this.FEATURE_FLAGS.PURCHASE_PIPELINE_API &&
-        !this.FEATURE_FLAGS.ACQUISITION_COSTS_API &&
-        !this.FEATURE_FLAGS.PAYMENT_INSTALLMENTS_API) {
+    if (
+      !this.FEATURE_FLAGS.PURCHASE_PIPELINE_API &&
+      !this.FEATURE_FLAGS.ACQUISITION_COSTS_API &&
+      !this.FEATURE_FLAGS.PAYMENT_INSTALLMENTS_API
+    ) {
       // Return empty data immediately if no APIs are available
       return { costs: [], payments: [] }
     }
@@ -292,7 +345,7 @@ export class AcquisitionFinancialsService {
           console.log('Successfully loaded from purchase pipeline API:', data)
           return {
             costs: data.costs || [],
-            payments: data.payments || []
+            payments: data.payments || [],
           }
         } catch (pipelineError) {
           console.log('Purchase pipeline API failed, trying property APIs:', pipelineError)
@@ -304,10 +357,7 @@ export class AcquisitionFinancialsService {
 
       if (this.FEATURE_FLAGS.ACQUISITION_COSTS_API) {
         promises.push(
-          Promise.race([
-            this.getAcquisitionCosts(propertyId),
-            timeoutPromise
-          ]).catch(() => [])
+          Promise.race([this.getAcquisitionCosts(propertyId), timeoutPromise]).catch(() => [])
         )
       } else {
         promises.push(Promise.resolve([]))
@@ -315,24 +365,25 @@ export class AcquisitionFinancialsService {
 
       if (this.FEATURE_FLAGS.PAYMENT_INSTALLMENTS_API) {
         promises.push(
-          Promise.race([
-            this.getPaymentInstallments(propertyId),
-            timeoutPromise
-          ]).catch(() => [])
+          Promise.race([this.getPaymentInstallments(propertyId), timeoutPromise]).catch(() => [])
         )
       } else {
         promises.push(Promise.resolve([]))
       }
 
-      const [costs, payments] = await Promise.allSettled(promises).then(results => [
+      const [costs, payments] = await Promise.allSettled(promises).then((results) => [
         results[0].status === 'fulfilled' ? results[0].value : [],
-        results[1].status === 'fulfilled' ? results[1].value : []
+        results[1].status === 'fulfilled' ? results[1].value : [],
       ])
 
       return { costs, payments }
     } catch (error) {
       // Don't log expected errors to reduce console noise
-      if (!error.message?.includes('403') && !error.message?.includes('404') && !error.message?.includes('timeout')) {
+      if (
+        !error.message?.includes('403') &&
+        !error.message?.includes('404') &&
+        !error.message?.includes('timeout')
+      ) {
         console.error('Error loading financial data:', error)
       }
       // Always return empty data instead of throwing to prevent UI blocking

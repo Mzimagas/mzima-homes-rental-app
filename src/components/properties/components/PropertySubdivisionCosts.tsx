@@ -5,7 +5,7 @@ import {
   SubdivisionCostEntry,
   SUBDIVISION_COST_TYPES,
   SUBDIVISION_COST_CATEGORY_LABELS,
-  SubdivisionCostCategory
+  SubdivisionCostCategory,
 } from '../types/property-management.types'
 import { SubdivisionCostsService } from '../services/subdivision-costs.service'
 
@@ -24,16 +24,19 @@ interface NewSubdivisionCost {
 }
 
 const LS_KEYS = {
-  subdivisionCosts: `subdivision-costs-collapsed-${typeof window !== 'undefined' ? window.location.pathname : ''}`
+  subdivisionCosts: `subdivision-costs-collapsed-${typeof window !== 'undefined' ? window.location.pathname : ''}`,
 }
 
-export default function PropertySubdivisionCosts({ property, onUpdate }: PropertySubdivisionCostsProps) {
+export default function PropertySubdivisionCosts({
+  property,
+  onUpdate,
+}: PropertySubdivisionCostsProps) {
   const [subdivisionCosts, setSubdivisionCosts] = useState<SubdivisionCostEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showAddCost, setShowAddCost] = useState(false)
-  
+
   // Collapsible section state
   const [collapsedSubdivisionCosts, setCollapsedSubdivisionCosts] = useState(() => {
     try {
@@ -44,9 +47,11 @@ export default function PropertySubdivisionCosts({ property, onUpdate }: Propert
   })
 
   const handleToggleSubdivisionCosts = () => {
-    setCollapsedSubdivisionCosts(prev => {
+    setCollapsedSubdivisionCosts((prev) => {
       const next = !prev
-      try { localStorage.setItem(LS_KEYS.subdivisionCosts, String(next)) } catch {}
+      try {
+        localStorage.setItem(LS_KEYS.subdivisionCosts, String(next))
+      } catch {}
       return next
     })
   }
@@ -58,7 +63,7 @@ export default function PropertySubdivisionCosts({ property, onUpdate }: Propert
     payment_status: 'PENDING',
     payment_reference: '',
     payment_date: '',
-    notes: ''
+    notes: '',
   })
 
   // Load existing subdivision costs
@@ -75,13 +80,16 @@ export default function PropertySubdivisionCosts({ property, onUpdate }: Propert
       console.log('PropertySubdivisionCosts: Loaded costs from API:', costs)
 
       // Ensure we only set valid cost entries
-      const validCosts = Array.isArray(costs) ? costs.filter(cost =>
-        cost &&
-        typeof cost === 'object' &&
-        cost.id &&
-        cost.cost_type_id &&
-        typeof cost.amount_kes === 'number'
-      ) : []
+      const validCosts = Array.isArray(costs)
+        ? costs.filter(
+            (cost) =>
+              cost &&
+              typeof cost === 'object' &&
+              cost.id &&
+              cost.cost_type_id &&
+              typeof cost.amount_kes === 'number'
+          )
+        : []
 
       console.log('PropertySubdivisionCosts: Valid costs after filtering:', validCosts)
       setSubdivisionCosts(validCosts)
@@ -104,7 +112,7 @@ export default function PropertySubdivisionCosts({ property, onUpdate }: Propert
 
     try {
       // Find the cost type to get the category
-      const costType = SUBDIVISION_COST_TYPES.find(type => type.id === newCost.cost_type_id)
+      const costType = SUBDIVISION_COST_TYPES.find((type) => type.id === newCost.cost_type_id)
       if (!costType) {
         throw new Error('Invalid cost type selected')
       }
@@ -117,17 +125,17 @@ export default function PropertySubdivisionCosts({ property, onUpdate }: Propert
         payment_status: newCost.payment_status,
         payment_reference: newCost.payment_reference || undefined,
         payment_date: newCost.payment_date || undefined,
-        notes: newCost.notes || undefined
+        notes: newCost.notes || undefined,
       })
 
-      setSubdivisionCosts(prev => [...prev, costEntry])
+      setSubdivisionCosts((prev) => [...prev, costEntry])
       setNewCost({
         cost_type_id: '',
         amount_kes: '',
         payment_status: 'PENDING',
         payment_reference: '',
         payment_date: '',
-        notes: ''
+        notes: '',
       })
       setShowAddCost(false)
       onUpdate?.(property.id)
@@ -139,18 +147,19 @@ export default function PropertySubdivisionCosts({ property, onUpdate }: Propert
     }
   }
 
-  const handleUpdatePaymentStatus = async (costId: string, newStatus: 'PENDING' | 'PAID' | 'PARTIALLY_PAID') => {
+  const handleUpdatePaymentStatus = async (
+    costId: string,
+    newStatus: 'PENDING' | 'PAID' | 'PARTIALLY_PAID'
+  ) => {
     setLoading(true)
     setError(null)
 
     try {
       const updatedCost = await SubdivisionCostsService.updateSubdivisionCost(property.id, costId, {
-        payment_status: newStatus
+        payment_status: newStatus,
       })
 
-      setSubdivisionCosts(prev => 
-        prev.map(cost => cost.id === costId ? updatedCost : cost)
-      )
+      setSubdivisionCosts((prev) => prev.map((cost) => (cost.id === costId ? updatedCost : cost)))
       onUpdate?.(property.id)
     } catch (error) {
       console.error('Error updating payment status:', error)
@@ -170,7 +179,7 @@ export default function PropertySubdivisionCosts({ property, onUpdate }: Propert
 
     try {
       await SubdivisionCostsService.deleteSubdivisionCost(property.id, costId)
-      setSubdivisionCosts(prev => prev.filter(cost => cost.id !== costId))
+      setSubdivisionCosts((prev) => prev.filter((cost) => cost.id !== costId))
       onUpdate?.(property.id)
     } catch (error) {
       console.error('Error deleting subdivision cost:', error)
@@ -232,201 +241,245 @@ export default function PropertySubdivisionCosts({ property, onUpdate }: Propert
       </div>
 
       <div id={`subdivision-costs-section-${property.id}`} aria-hidden={collapsedSubdivisionCosts}>
-      {!collapsedSubdivisionCosts && (
-        <>
-          {/* Error Display */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Add Cost Form */}
-          {showAddCost && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 mb-4">
-              <h5 className="font-medium text-gray-900 mb-3">Add Subdivision Cost</h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cost Type</label>
-                  <Select
-                    value={newCost.cost_type_id}
-                    onChange={(e) => {
-                      const selectedType = SUBDIVISION_COST_TYPES.find(type => type.id === e.target.value)
-                      setNewCost(prev => ({ 
-                        ...prev, 
-                        cost_type_id: e.target.value,
-                        amount_kes: selectedType?.default_amount_kes ? selectedType.default_amount_kes.toString() : prev.amount_kes
-                      }))
-                    }}
-                  >
-                    <option value="">Select cost type...</option>
-                    {Object.entries(SUBDIVISION_COST_CATEGORY_LABELS).map(([category, label]) => (
-                      <optgroup key={category} label={label}>
-                        {SUBDIVISION_COST_TYPES
-                          .filter(type => type.category === category)
-                          .map(type => (
-                            <option key={type.id} value={type.id}>
-                              {type.label}
-                            </option>
-                          ))}
-                      </optgroup>
-                    ))}
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount (KES)</label>
-                  <TextField
-                    type="number"
-                    value={newCost.amount_kes}
-                    onChange={(e) => setNewCost(prev => ({ ...prev, amount_kes: e.target.value }))}
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
-                  <Select
-                    value={newCost.payment_status}
-                    onChange={(e) => setNewCost(prev => ({ ...prev, payment_status: e.target.value as any }))}
-                  >
-                    <option value="PENDING">Pending</option>
-                    <option value="PAID">Paid</option>
-                    <option value="PARTIALLY_PAID">Partially Paid</option>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date (Optional)</label>
-                  <TextField
-                    type="date"
-                    value={newCost.payment_date}
-                    onChange={(e) => setNewCost(prev => ({ ...prev, payment_date: e.target.value }))}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Reference (Optional)</label>
-                  <TextField
-                    value={newCost.payment_reference}
-                    onChange={(e) => setNewCost(prev => ({ ...prev, payment_reference: e.target.value }))}
-                    placeholder="Payment reference or transaction ID"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
-                  <TextField
-                    value={newCost.notes}
-                    onChange={(e) => setNewCost(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Additional notes about this cost"
-                  />
-                </div>
+        {!collapsedSubdivisionCosts && (
+          <>
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+                <p className="text-red-700 text-sm">{error}</p>
               </div>
-              <div className="flex justify-end space-x-3 mt-4">
-                <Button
-                  variant="secondary"
-                  onClick={() => setShowAddCost(false)}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleAddSubdivisionCost}
-                  disabled={loading}
-                >
-                  {loading ? 'Adding...' : 'Add Cost'}
-                </Button>
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* Subdivision Costs List */}
-          {subdivisionCosts.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No subdivision costs recorded yet</p>
-          ) : (
-            <div className="space-y-2 mt-4">
-              {subdivisionCosts.filter(cost => cost && cost.id && cost.cost_type_id).map((cost) => (
-                <div key={cost.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">
-                      {SubdivisionCostsService.getCostTypeLabel(cost.cost_type_id)}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {cost.payment_date && `Date: ${new Date(cost.payment_date).toLocaleDateString()}`}
-                      {cost.payment_reference && ` • Ref: ${cost.payment_reference}`}
-                    </div>
-                    {cost.notes && <div className="text-sm text-gray-500 mt-1">{cost.notes}</div>}
+            {/* Add Cost Form */}
+            {showAddCost && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 mb-4">
+                <h5 className="font-medium text-gray-900 mb-3">Add Subdivision Cost</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Cost Type
+                    </label>
+                    <Select
+                      value={newCost.cost_type_id}
+                      onChange={(e) => {
+                        const selectedType = SUBDIVISION_COST_TYPES.find(
+                          (type) => type.id === e.target.value
+                        )
+                        setNewCost((prev) => ({
+                          ...prev,
+                          cost_type_id: e.target.value,
+                          amount_kes: selectedType?.default_amount_kes
+                            ? selectedType.default_amount_kes.toString()
+                            : prev.amount_kes,
+                        }))
+                      }}
+                    >
+                      <option value="">Select cost type...</option>
+                      {Object.entries(SUBDIVISION_COST_CATEGORY_LABELS).map(([category, label]) => (
+                        <optgroup key={category} label={label}>
+                          {SUBDIVISION_COST_TYPES.filter((type) => type.category === category).map(
+                            (type) => (
+                              <option key={type.id} value={type.id}>
+                                {type.label}
+                              </option>
+                            )
+                          )}
+                        </optgroup>
+                      ))}
+                    </Select>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="text-right">
-                      <div className="font-bold text-gray-900">{formatCurrency(cost.amount_kes)}</div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${SubdivisionCostsService.getPaymentStatusColor(cost.payment_status)}`}>
-                          {SubdivisionCostsService.getPaymentStatusLabel(cost.payment_status)}
-                        </span>
-                        <Select
-                          value={cost.payment_status}
-                          onChange={(e) => handleUpdatePaymentStatus(cost.id, e.target.value as any)}
-                          className="text-xs"
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount (KES)
+                    </label>
+                    <TextField
+                      type="number"
+                      value={newCost.amount_kes}
+                      onChange={(e) =>
+                        setNewCost((prev) => ({ ...prev, amount_kes: e.target.value }))
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Status
+                    </label>
+                    <Select
+                      value={newCost.payment_status}
+                      onChange={(e) =>
+                        setNewCost((prev) => ({ ...prev, payment_status: e.target.value as any }))
+                      }
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="PAID">Paid</option>
+                      <option value="PARTIALLY_PAID">Partially Paid</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Date (Optional)
+                    </label>
+                    <TextField
+                      type="date"
+                      value={newCost.payment_date}
+                      onChange={(e) =>
+                        setNewCost((prev) => ({ ...prev, payment_date: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Reference (Optional)
+                    </label>
+                    <TextField
+                      value={newCost.payment_reference}
+                      onChange={(e) =>
+                        setNewCost((prev) => ({ ...prev, payment_reference: e.target.value }))
+                      }
+                      placeholder="Payment reference or transaction ID"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notes (Optional)
+                    </label>
+                    <TextField
+                      value={newCost.notes}
+                      onChange={(e) => setNewCost((prev) => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Additional notes about this cost"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-3 mt-4">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowAddCost(false)}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button variant="primary" onClick={handleAddSubdivisionCost} disabled={loading}>
+                    {loading ? 'Adding...' : 'Add Cost'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Subdivision Costs List */}
+            {subdivisionCosts.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No subdivision costs recorded yet</p>
+            ) : (
+              <div className="space-y-2 mt-4">
+                {subdivisionCosts
+                  .filter((cost) => cost && cost.id && cost.cost_type_id)
+                  .map((cost) => (
+                    <div
+                      key={cost.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">
+                          {SubdivisionCostsService.getCostTypeLabel(cost.cost_type_id)}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {cost.payment_date &&
+                            `Date: ${new Date(cost.payment_date).toLocaleDateString()}`}
+                          {cost.payment_reference && ` • Ref: ${cost.payment_reference}`}
+                        </div>
+                        {cost.notes && (
+                          <div className="text-sm text-gray-500 mt-1">{cost.notes}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="text-right">
+                          <div className="font-bold text-gray-900">
+                            {formatCurrency(cost.amount_kes)}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${SubdivisionCostsService.getPaymentStatusColor(cost.payment_status)}`}
+                            >
+                              {SubdivisionCostsService.getPaymentStatusLabel(cost.payment_status)}
+                            </span>
+                            <Select
+                              value={cost.payment_status}
+                              onChange={(e) =>
+                                handleUpdatePaymentStatus(cost.id, e.target.value as any)
+                              }
+                              className="text-xs"
+                              disabled={loading}
+                            >
+                              <option value="PENDING">Pending</option>
+                              <option value="PAID">Paid</option>
+                              <option value="PARTIALLY_PAID">Partially Paid</option>
+                            </Select>
+                          </div>
+                        </div>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleDeleteCost(cost.id)}
                           disabled={loading}
+                          className="text-red-600 hover:text-red-700"
                         >
-                          <option value="PENDING">Pending</option>
-                          <option value="PAID">Paid</option>
-                          <option value="PARTIALLY_PAID">Partially Paid</option>
-                        </Select>
+                          Delete
+                        </Button>
                       </div>
                     </div>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleDeleteCost(cost.id)}
-                      disabled={loading}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  ))}
+              </div>
+            )}
 
-          {/* Summary */}
-          {subdivisionCosts.length > 0 && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h5 className="font-medium text-blue-900 mb-3">Subdivision Costs Summary</h5>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <div className="text-sm text-blue-700">Total Costs</div>
-                  <div className="font-bold text-blue-900">{formatCurrency(summary.totalSubdivisionCosts)}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-blue-700">Paid</div>
-                  <div className="font-bold text-blue-900">{formatCurrency(summary.paidSubdivisionCosts)}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-blue-700">Pending</div>
-                  <div className="font-bold text-blue-900">{formatCurrency(summary.pendingSubdivisionCosts)}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-blue-700">Items</div>
-                  <div className="font-bold text-blue-900">{summary.subdivisionCostCount} total</div>
-                </div>
-              </div>
-              
-              {/* Category Breakdown */}
-              <div className="space-y-2">
-                <h6 className="font-medium text-blue-900">By Category:</h6>
-                {Object.entries(SUBDIVISION_COST_CATEGORY_LABELS).map(([category, label]) => (
-                  <div key={category} className="flex justify-between items-center">
-                    <span className="text-blue-700">{label}</span>
-                    <span className="font-medium text-blue-900">
-                      {formatCurrency(summary.subdivisionCostsByCategory[category as SubdivisionCostCategory])}
-                    </span>
+            {/* Summary */}
+            {subdivisionCosts.length > 0 && (
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h5 className="font-medium text-blue-900 mb-3">Subdivision Costs Summary</h5>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div>
+                    <div className="text-sm text-blue-700">Total Costs</div>
+                    <div className="font-bold text-blue-900">
+                      {formatCurrency(summary.totalSubdivisionCosts)}
+                    </div>
                   </div>
-                ))}
+                  <div>
+                    <div className="text-sm text-blue-700">Paid</div>
+                    <div className="font-bold text-blue-900">
+                      {formatCurrency(summary.paidSubdivisionCosts)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-blue-700">Pending</div>
+                    <div className="font-bold text-blue-900">
+                      {formatCurrency(summary.pendingSubdivisionCosts)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-blue-700">Items</div>
+                    <div className="font-bold text-blue-900">
+                      {summary.subdivisionCostCount} total
+                    </div>
+                  </div>
+                </div>
+
+                {/* Category Breakdown */}
+                <div className="space-y-2">
+                  <h6 className="font-medium text-blue-900">By Category:</h6>
+                  {Object.entries(SUBDIVISION_COST_CATEGORY_LABELS).map(([category, label]) => (
+                    <div key={category} className="flex justify-between items-center">
+                      <span className="text-blue-700">{label}</span>
+                      <span className="font-medium text-blue-900">
+                        {formatCurrency(
+                          summary.subdivisionCostsByCategory[category as SubdivisionCostCategory]
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </>
-      )}
+            )}
+          </>
+        )}
       </div>
     </div>
   )

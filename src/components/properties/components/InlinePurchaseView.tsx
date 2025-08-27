@@ -14,11 +14,10 @@ import {
   initializePipelineStages,
   getPurchaseStatusColor,
   formatCurrency,
-  calculateBalanceDue
+  calculateBalanceDue,
 } from '../utils/purchase-pipeline.utils'
 import { getSourceIcon, getSourceLabel } from '../utils/property-management.utils'
 import { usePropertyAccess } from '../../../hooks/usePropertyAccess'
-
 
 interface InlinePurchaseViewProps {
   purchase: PurchaseItem
@@ -28,7 +27,11 @@ interface InlinePurchaseViewProps {
 
 type TabType = 'details' | 'location' | 'financial' | 'documents'
 
-export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate }: InlinePurchaseViewProps) {
+export default function InlinePurchaseView({
+  purchase,
+  onClose,
+  onPurchaseUpdate,
+}: InlinePurchaseViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('details')
 
   const [pipelineLoading, setPipelineLoading] = useState(false)
@@ -49,7 +52,8 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
       property_type: 'UNKNOWN' as any, // Default since purchase pipeline doesn't have this
       property_source: 'PURCHASE_PIPELINE',
       lifecycle_status: 'ACTIVE',
-      purchase_price_agreement_kes: purchaseItem.negotiated_price_kes || purchaseItem.asking_price_kes || 0,
+      purchase_price_agreement_kes:
+        purchaseItem.negotiated_price_kes || purchaseItem.asking_price_kes || 0,
       purchase_completion_date: null,
       total_area_acres: null,
       subdivision_status: 'NOT_STARTED',
@@ -58,7 +62,7 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
       handover_date: null,
       acquisition_notes: null,
       created_at: purchaseItem.created_at,
-      updated_at: purchaseItem.updated_at
+      updated_at: purchaseItem.updated_at,
     }
   }
 
@@ -66,8 +70,6 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
     loadPurchaseData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [purchase.id])
-
-
 
   const loadPurchaseData = async () => {
     try {
@@ -99,7 +101,8 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
           risk_assessment: data.risk_assessment || undefined,
           property_condition_notes: data.property_condition_notes || undefined,
           current_stage: data.current_stage || 1,
-          pipeline_stages: (data.pipeline_stages as PipelineStageData[]) || initializePipelineStages(),
+          pipeline_stages:
+            (data.pipeline_stages as PipelineStageData[]) || initializePipelineStages(),
           overall_progress: data.overall_progress || 0,
           created_at: data.created_at,
           updated_at: data.updated_at,
@@ -137,13 +140,19 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
     notes?: string,
     stageData?: any
   ) => {
-    await PurchasePipelineService.updateStageStatus(purchaseId, stageId, newStatus, notes, stageData)
+    await PurchasePipelineService.updateStageStatus(
+      purchaseId,
+      stageId,
+      newStatus,
+      notes,
+      stageData
+    )
     await loadPurchaseData()
   }
 
   const getCurrentStageData = () => {
     if (!purchaseData?.pipeline_stages || !selectedStageId) return undefined
-    return purchaseData.pipeline_stages.find(stage => stage.stage_id === selectedStageId)
+    return purchaseData.pipeline_stages.find((stage) => stage.stage_id === selectedStageId)
   }
 
   return (
@@ -158,13 +167,17 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
               {getSourceLabel('PURCHASE_PIPELINE')}
             </span>
             {purchaseData?.purchase_status && (
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPurchaseStatusColor(purchaseData.purchase_status)}`}>
+              <span
+                className={`text-xs px-2 py-1 rounded-full font-medium ${getPurchaseStatusColor(purchaseData.purchase_status)}`}
+              >
                 {purchaseData.purchase_status.replace('_', ' ')}
               </span>
             )}
           </div>
           {onClose && (
-            <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
+            <Button variant="secondary" size="sm" onClick={onClose}>
+              Close
+            </Button>
           )}
         </div>
       </div>
@@ -172,12 +185,14 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
       {/* Tabs */}
       <div className="px-6 pt-4">
         <div className="flex border-b border-gray-200 mb-4">
-          {(['details','location','financial','documents'] as TabType[]).map(tab => (
+          {(['details', 'location', 'financial', 'documents'] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 focus:outline-none transition-colors ${
-                activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'
+                activeTab === tab
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-800'
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -192,15 +207,22 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h4 className="text-sm font-medium text-gray-900 mb-2">Property Name</h4>
-              <p className="text-gray-700">{purchaseData?.property_name || purchase.property_name}</p>
+              <p className="text-gray-700">
+                {purchaseData?.property_name || purchase.property_name}
+              </p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-900 mb-2">Property Type</h4>
-              <p className="text-gray-700">{purchaseData?.property_type?.replace('_', ' ') || purchase.property_type?.replace('_', ' ')}</p>
+              <p className="text-gray-700">
+                {purchaseData?.property_type?.replace('_', ' ') ||
+                  purchase.property_type?.replace('_', ' ')}
+              </p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-900 mb-2">Address</h4>
-              <p className="text-gray-700">{purchaseData?.property_address || purchase.property_address}</p>
+              <p className="text-gray-700">
+                {purchaseData?.property_address || purchase.property_address}
+              </p>
             </div>
             {purchaseData?.seller_name && (
               <div>
@@ -214,7 +236,11 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
         {activeTab === 'location' && (
           <div className="space-y-4">
             <ViewOnGoogleMapsButton
-              address={(purchaseData?.property_address || purchase.property_address) || purchase.property_name}
+              address={
+                purchaseData?.property_address ||
+                purchase.property_address ||
+                purchase.property_name
+              }
               propertyName={purchaseData?.property_name || purchase.property_name}
             />
           </div>
@@ -251,8 +277,12 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
             ) : (
               <div className="text-center py-8 bg-gray-50 rounded-lg">
                 <div className="text-4xl mb-4">🏢</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Purchase Pipeline Data Not Found</h3>
-                <p className="text-gray-600">Pipeline data could not be loaded for this purchase.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Purchase Pipeline Data Not Found
+                </h3>
+                <p className="text-gray-600">
+                  Pipeline data could not be loaded for this purchase.
+                </p>
               </div>
             )}
           </div>
@@ -273,4 +303,3 @@ export default function InlinePurchaseView({ purchase, onClose, onPurchaseUpdate
     </div>
   )
 }
-

@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,13 +23,10 @@ serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { 
-        status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   try {
@@ -38,13 +35,10 @@ serve(async (req) => {
 
     // Validate required fields
     if (!to || !message || !settings) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     let result
@@ -62,26 +56,25 @@ serve(async (req) => {
     console.log(`SMS sent successfully to ${to} via ${settings.provider}`)
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         message: 'SMS sent successfully',
         provider: settings.provider,
-        result: result
+        result: result,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-
   } catch (error) {
     console.error('Error sending SMS:', error)
-    
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Failed to send SMS',
-        details: error.message 
+        details: error.message,
       }),
-      { 
+      {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
   }
@@ -89,7 +82,7 @@ serve(async (req) => {
 
 async function sendAfricasTalkingSMS(to: string, message: string, settings: any) {
   const url = 'https://api.africastalking.com/version1/messaging'
-  
+
   const formData = new FormData()
   formData.append('username', 'sandbox') // Use 'sandbox' for testing, actual username for production
   formData.append('to', to)
@@ -99,8 +92,8 @@ async function sendAfricasTalkingSMS(to: string, message: string, settings: any)
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'apiKey': settings.api_key,
-      'Accept': 'application/json',
+      apiKey: settings.api_key,
+      Accept: 'application/json',
     },
     body: formData,
   })
@@ -110,7 +103,7 @@ async function sendAfricasTalkingSMS(to: string, message: string, settings: any)
   }
 
   const result = await response.json()
-  
+
   if (result.SMSMessageData?.Recipients?.[0]?.status !== 'Success') {
     throw new Error(`SMS delivery failed: ${result.SMSMessageData?.Recipients?.[0]?.status}`)
   }
@@ -133,7 +126,7 @@ async function sendTwilioSMS(to: string, message: string, settings: any) {
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+      Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams(formData as any),
@@ -144,7 +137,7 @@ async function sendTwilioSMS(to: string, message: string, settings: any) {
   }
 
   const result = await response.json()
-  
+
   if (result.error_code) {
     throw new Error(`SMS delivery failed: ${result.error_message}`)
   }

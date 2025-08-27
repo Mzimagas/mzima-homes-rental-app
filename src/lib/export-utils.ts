@@ -46,7 +46,7 @@ export const formatDate = (date: string | Date): string => {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -132,15 +132,15 @@ export const addTableToPDF = (
     headStyles: {
       fillColor: [59, 130, 246], // Blue color
       textColor: 255,
-      fontStyle: 'bold'
+      fontStyle: 'bold',
     },
     styles: {
       fontSize: 9,
-      cellPadding: 3
+      cellPadding: 3,
     },
     alternateRowStyles: {
-      fillColor: [248, 250, 252] // Light gray
-    }
+      fillColor: [248, 250, 252], // Light gray
+    },
   })
 
   return (doc as any).lastAutoTable?.finalY + 15 || currentY + 50
@@ -208,7 +208,7 @@ export const createExcelWorkbook = (options: ExportOptions): XLSX.WorkBook => {
     ['Generated On', new Date().toLocaleString()],
     [''],
     ['Filters:'],
-    ...(options.filters ? Object.entries(options.filters).map(([key, value]) => [key, value]) : [])
+    ...(options.filters ? Object.entries(options.filters).map(([key, value]) => [key, value]) : []),
   ]
 
   const metadataSheet = XLSX.utils.aoa_to_sheet(metadataData)
@@ -234,19 +234,20 @@ export const addTableToExcel = (
     worksheet[cellAddress].s = {
       font: { bold: true, color: { rgb: 'FFFFFF' } },
       fill: { fgColor: { rgb: '3B82F6' } }, // Blue background to match PDF
-      alignment: { horizontal: 'center' }
+      alignment: { horizontal: 'center' },
     }
   }
 
   // Style alternating rows to match PDF
   for (let row = 1; row <= tableData.rows.length; row++) {
-    if (row % 2 === 0) { // Even rows (alternating)
+    if (row % 2 === 0) {
+      // Even rows (alternating)
       for (let col = range.s.c; col <= range.e.c; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
         if (worksheet[cellAddress]) {
           worksheet[cellAddress].s = {
             ...worksheet[cellAddress].s,
-            fill: { fgColor: { rgb: 'F8FAFC' } } // Light gray to match PDF
+            fill: { fgColor: { rgb: 'F8FAFC' } }, // Light gray to match PDF
           }
         }
       }
@@ -257,7 +258,7 @@ export const addTableToExcel = (
   const colWidths = tableData.headers.map((header, i) => {
     const maxLength = Math.max(
       header.length,
-      ...tableData.rows.map(row => String(row[i] || '').length)
+      ...tableData.rows.map((row) => String(row[i] || '').length)
     )
     return { wch: Math.min(maxLength + 2, 50) }
   })
@@ -277,15 +278,22 @@ export const addSummaryDashboardToExcel = (
     [options.title, '', '', ''],
     [options.subtitle || '', '', '', ''],
     [''],
-    [`Period: ${formatDate(options.dateRange.startDate)} - ${formatDate(options.dateRange.endDate)}`, '', '', ''],
+    [
+      `Period: ${formatDate(options.dateRange.startDate)} - ${formatDate(options.dateRange.endDate)}`,
+      '',
+      '',
+      '',
+    ],
     [`Generated: ${new Date().toLocaleString()}`, '', '', ''],
     [''],
     ['KEY METRICS', '', '', ''],
     [''],
-    ...summaryData.map(item => [item.title, item.value, '', '']),
+    ...summaryData.map((item) => [item.title, item.value, '', '']),
     [''],
     ['FILTERS', '', '', ''],
-    ...(options.filters ? Object.entries(options.filters).map(([key, value]) => [key, value, '', '']) : [])
+    ...(options.filters
+      ? Object.entries(options.filters).map(([key, value]) => [key, value, '', ''])
+      : []),
   ]
 
   const worksheet = XLSX.utils.aoa_to_sheet(dashboardData)
@@ -296,19 +304,19 @@ export const addSummaryDashboardToExcel = (
     if (worksheet[cell]) {
       worksheet[cell].s = {
         font: { bold: true, size: index === 0 ? 16 : index === 1 ? 14 : 12 },
-        alignment: { horizontal: 'center' }
+        alignment: { horizontal: 'center' },
       }
     }
   })
 
   // Style section headers
   const sectionHeaders = ['A8', 'A13'] // KEY METRICS, FILTERS
-  sectionHeaders.forEach(cell => {
+  sectionHeaders.forEach((cell) => {
     if (worksheet[cell]) {
       worksheet[cell].s = {
         font: { bold: true, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '3B82F6' } },
-        alignment: { horizontal: 'center' }
+        alignment: { horizontal: 'center' },
       }
     }
   })
@@ -318,7 +326,7 @@ export const addSummaryDashboardToExcel = (
     { wch: 25 }, // Column A
     { wch: 20 }, // Column B
     { wch: 15 }, // Column C
-    { wch: 15 }  // Column D
+    { wch: 15 }, // Column D
   ]
 
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Executive Summary')
@@ -326,7 +334,9 @@ export const addSummaryDashboardToExcel = (
 
 export const saveExcelFile = (workbook: XLSX.WorkBook, filename: string): void => {
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
   saveAs(blob, `${filename}.xlsx`)
 }
 
@@ -335,7 +345,10 @@ export const savePDFFile = (doc: jsPDF, filename: string): void => {
 }
 
 // Generate filename with timestamp
-export const generateFilename = (reportType: string, dateRange: { startDate: string; endDate: string }): string => {
+export const generateFilename = (
+  reportType: string,
+  dateRange: { startDate: string; endDate: string }
+): string => {
   const start = new Date(dateRange.startDate).toISOString().split('T')[0]
   const end = new Date(dateRange.endDate).toISOString().split('T')[0]
   const timestamp = new Date().toISOString().split('T')[0]

@@ -11,7 +11,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -32,11 +34,19 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 async function getRoleForTenant(userId: string, tenantId: string) {
   const admin = createClient(supabaseUrl, serviceKey)
   // Find the tenant's property via current_unit or latest active agreement
-  const { data: tenant } = await admin.from('tenants').select('current_unit_id').eq('id', tenantId).maybeSingle()
+  const { data: tenant } = await admin
+    .from('tenants')
+    .select('current_unit_id')
+    .eq('id', tenantId)
+    .maybeSingle()
 
   let propertyId: string | null = null
   if (tenant?.current_unit_id) {
-    const { data: unit } = await admin.from('units').select('property_id').eq('id', tenant.current_unit_id).maybeSingle()
+    const { data: unit } = await admin
+      .from('units')
+      .select('property_id')
+      .eq('id', tenant.current_unit_id)
+      .maybeSingle()
     propertyId = unit?.property_id || null
   }
 
@@ -49,9 +59,13 @@ async function getRoleForTenant(userId: string, tenantId: string) {
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
-    
+
     if (agreement?.unit_id) {
-      const { data: unit } = await admin.from('units').select('property_id').eq('id', agreement.unit_id).maybeSingle()
+      const { data: unit } = await admin
+        .from('units')
+        .select('property_id')
+        .eq('id', agreement.unit_id)
+        .maybeSingle()
       propertyId = unit?.property_id || null
     }
   }
@@ -68,9 +82,11 @@ async function getRoleForTenant(userId: string, tenantId: string) {
   return membership
 }
 
-async function checkUnitAvailability(unitId: string): Promise<{ available: boolean; occupiedBy?: string }> {
+async function checkUnitAvailability(
+  unitId: string
+): Promise<{ available: boolean; occupiedBy?: string }> {
   const admin = createClient(supabaseUrl, serviceKey)
-  
+
   // Check if unit is currently occupied by another active tenant
   const { data: currentTenant } = await admin
     .from('tenants')
@@ -101,7 +117,10 @@ async function checkUnitAvailability(unitId: string): Promise<{ available: boole
   return { available: true }
 }
 
-export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) => {
+export const PATCH = compose(
+  withRateLimit,
+  withCsrf
+)(async (req: NextRequest) => {
   try {
     console.info('[PATCH /api/tenants/[id]/restore] start')
 
@@ -119,8 +138,9 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
 
     // Extract tenant id from path /api/tenants/[id]/restore
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const tenantsIdx = segments.findIndex(s => s === 'tenants')
-    const tenantId = tenantsIdx >= 0 && segments[tenantsIdx + 1] ? segments[tenantsIdx + 1] : undefined
+    const tenantsIdx = segments.findIndex((s) => s === 'tenants')
+    const tenantId =
+      tenantsIdx >= 0 && segments[tenantsIdx + 1] ? segments[tenantsIdx + 1] : undefined
     if (!tenantId) return errors.badRequest('Missing tenant id in path')
 
     // Get tenant details
@@ -141,9 +161,11 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
 
     // Check permissions - only OWNER or PROPERTY_MANAGER can restore
     const membership = await getRoleForTenant(userId, tenantId)
-    if (!membership || membership.status !== 'ACTIVE') return errors.forbidden('No access to tenant')
+    if (!membership || membership.status !== 'ACTIVE')
+      return errors.forbidden('No access to tenant')
     const role = (membership as any).role
-    if (!['OWNER', 'PROPERTY_MANAGER'].includes(role)) return errors.forbidden('Cannot restore tenant - insufficient permissions')
+    if (!['OWNER', 'PROPERTY_MANAGER'].includes(role))
+      return errors.forbidden('Cannot restore tenant - insufficient permissions')
 
     // Parse request body for restore options
     const body = await req.json().catch(() => ({}))
@@ -155,34 +177,37 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
     // Check unit availability if restoring to a unit
     if (targetUnitId) {
       const availability = await checkUnitAvailability(targetUnitId)
-      
+
       if (!availability.available) {
         if (availability.occupiedBy) {
           unitConflict = {
             type: 'occupied',
             message: `Unit is currently occupied by ${availability.occupiedBy}`,
-            occupiedBy: availability.occupiedBy
+            occupiedBy: availability.occupiedBy,
           }
         } else {
           unitConflict = {
             type: 'unavailable',
-            message: 'Unit is no longer available or does not exist'
+            message: 'Unit is no longer available or does not exist',
           }
         }
 
         // If force_restore is not set and there's a conflict, return the conflict info
         if (!force_restore) {
-          return NextResponse.json({
-            ok: false,
-            error: 'Unit conflict',
-            conflict: unitConflict,
-            tenant: {
-              id: tenant.id,
-              full_name: tenant.full_name,
-              email: tenant.email,
-              phone: tenant.phone
-            }
-          }, { status: 409 })
+          return NextResponse.json(
+            {
+              ok: false,
+              error: 'Unit conflict',
+              conflict: unitConflict,
+              tenant: {
+                id: tenant.id,
+                full_name: tenant.full_name,
+                email: tenant.email,
+                phone: tenant.phone,
+              },
+            },
+            { status: 409 }
+          )
         }
 
         // If force_restore is true, restore without unit assignment
@@ -192,7 +217,7 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
 
     // Perform the restore
     const updateData: any = {
-      status: 'ACTIVE'
+      status: 'ACTIVE',
     }
 
     // Only set unit if available
@@ -202,10 +227,7 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
       updateData.current_unit_id = null
     }
 
-    const { error: updateError } = await admin
-      .from('tenants')
-      .update(updateData)
-      .eq('id', tenantId)
+    const { error: updateError } = await admin.from('tenants').update(updateData).eq('id', tenantId)
 
     if (updateError) return errors.badRequest('Failed to restore tenant', updateError)
 
@@ -215,7 +237,7 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
       restoredBy: userId,
       targetUnitId,
       hadConflict: !!unitConflict,
-      forceRestore: !!force_restore
+      forceRestore: !!force_restore,
     })
 
     return NextResponse.json({
@@ -227,10 +249,9 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
         current_unit_id: targetUnitId,
         restored_to_unit: targetUnitId,
         had_unit_conflict: !!unitConflict,
-        conflict_resolved: force_restore && !!unitConflict
-      }
+        conflict_resolved: force_restore && !!unitConflict,
+      },
     })
-
   } catch (e) {
     console.error('[PATCH /api/tenants/[id]/restore] error:', e)
     return errors.internal()

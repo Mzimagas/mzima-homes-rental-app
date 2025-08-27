@@ -26,7 +26,7 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
     memberNumber: '',
     phoneNumber: '',
     role: 'member',
-    status: 'active'
+    status: 'active',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<EditUserForm>>({})
@@ -39,7 +39,7 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
       memberNumber: user.memberNumber || '',
       phoneNumber: user.phoneNumber || '',
       role: user.role,
-      status: user.isActive ? 'active' : 'inactive'
+      status: user.isActive ? 'active' : 'inactive',
     })
   }, [user])
 
@@ -72,7 +72,7 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
     setIsSubmitting(true)
@@ -89,8 +89,8 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
           memberNumber: formData.memberNumber.toUpperCase(),
           phoneNumber: formData.phoneNumber,
           role: formData.role,
-          status: formData.status
-        })
+          status: formData.status,
+        }),
       })
 
       if (!response.ok) {
@@ -101,8 +101,8 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
       onUserUpdated()
     } catch (error) {
       console.error('Error updating user:', error)
-      setErrors({ 
-        email: error instanceof Error ? error.message : 'Failed to update user. Please try again.' 
+      setErrors({
+        email: error instanceof Error ? error.message : 'Failed to update user. Please try again.',
       })
     } finally {
       setIsSubmitting(false)
@@ -110,9 +110,9 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
   }
 
   const handleInputChange = (field: keyof EditUserForm, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
+      setErrors((prev) => ({ ...prev, [field]: undefined }))
     }
   }
 
@@ -122,12 +122,14 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Edit User</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -149,9 +151,7 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
               }`}
               placeholder="Enter full name"
             />
-            {errors.fullName && (
-              <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
-            )}
+            {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
           </div>
 
           {/* Email */}
@@ -169,9 +169,7 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
               }`}
               placeholder="Enter email address"
             />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-            )}
+            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
 
           {/* Member Number */}
@@ -251,18 +249,10 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
 
           {/* Actions */}
           <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Updating...' : 'Update User'}
             </Button>
           </div>

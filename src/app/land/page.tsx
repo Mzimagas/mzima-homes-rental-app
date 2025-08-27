@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useState, useEffect } from 'react'
 import LandCard from './components/LandCard'
 import LandSearchBar from './components/LandSearchBar'
@@ -82,7 +82,7 @@ export default function LandPage() {
 
   const handleToggleUtility = (utility: string) => {
     const newUtilities = selectedUtilities.includes(utility)
-      ? selectedUtilities.filter(u => u !== utility)
+      ? selectedUtilities.filter((u) => u !== utility)
       : [...selectedUtilities, utility]
     setSelectedUtilities(newUtilities)
     applyFilters(searchQuery, selectedPropertyType, newUtilities)
@@ -110,21 +110,22 @@ export default function LandPage() {
     // Apply search query
     if (query) {
       const searchTerm = query.toLowerCase()
-      filtered = filtered.filter(property =>
-        property.property_name.toLowerCase().includes(searchTerm) ||
-        property.physical_address?.toLowerCase().includes(searchTerm) ||
-        property.zoning_classification?.toLowerCase().includes(searchTerm)
+      filtered = filtered.filter(
+        (property) =>
+          property.property_name.toLowerCase().includes(searchTerm) ||
+          property.physical_address?.toLowerCase().includes(searchTerm) ||
+          property.zoning_classification?.toLowerCase().includes(searchTerm)
       )
     }
 
     // Apply property type filter
     if (propertyType) {
-      filtered = filtered.filter(property => property.property_type === propertyType)
+      filtered = filtered.filter((property) => property.property_type === propertyType)
     }
 
     // Apply utility filters
     if (utilities.length > 0) {
-      filtered = filtered.filter(property => {
+      filtered = filtered.filter((property) => {
         if (utilities.includes('electricity') && !property.electricity_available) return false
         if (utilities.includes('water') && !property.water_available) return false
         // Add more utility checks as needed
@@ -134,26 +135,34 @@ export default function LandPage() {
 
     // Apply area filter
     if (areaFilter) {
-      filtered = filtered.filter(property => {
+      filtered = filtered.filter((property) => {
         const acres = property.total_area_acres || 0
         switch (areaFilter) {
-          case 'SMALL': return acres < 1
-          case 'MEDIUM': return acres >= 1 && acres <= 5
-          case 'LARGE': return acres > 5
-          default: return true
+          case 'SMALL':
+            return acres < 1
+          case 'MEDIUM':
+            return acres >= 1 && acres <= 5
+          case 'LARGE':
+            return acres > 5
+          default:
+            return true
         }
       })
     }
 
     // Apply price filter
     if (priceFilter) {
-      filtered = filtered.filter(property => {
+      filtered = filtered.filter((property) => {
         const price = property.sale_price_kes || property.total_lease_price_kes || 0
         switch (priceFilter) {
-          case 'UNDER_1M': return price < 1000000
-          case '1M_5M': return price >= 1000000 && price <= 5000000
-          case '5M_PLUS': return price > 5000000
-          default: return true
+          case 'UNDER_1M':
+            return price < 1000000
+          case '1M_5M':
+            return price >= 1000000 && price <= 5000000
+          case '5M_PLUS':
+            return price > 5000000
+          default:
+            return true
         }
       })
     }
@@ -170,7 +179,9 @@ export default function LandPage() {
         <mark key={index} className="bg-yellow-200 text-yellow-900 px-1 rounded">
           {part}
         </mark>
-      ) : part
+      ) : (
+        part
+      )
     )
   }
 
@@ -193,7 +204,7 @@ export default function LandPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <p className="text-red-600">Error: {error}</p>
-            <button 
+            <button
               onClick={fetchLandProperties}
               className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
             >
@@ -211,9 +222,7 @@ export default function LandPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-primary mb-2">Land Properties</h1>
-          <p className="text-secondary">
-            Discover available land for sale and lease in Kenya
-          </p>
+          <p className="text-secondary">Discover available land for sale and lease in Kenya</p>
         </div>
 
         {/* Search Bar */}
@@ -245,8 +254,8 @@ export default function LandPage() {
         {filteredProperties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProperties.map((property) => (
-              <LandCard 
-                key={property.property_id} 
+              <LandCard
+                key={property.property_id}
                 land={property}
                 highlight={(text) => highlightText(text)}
               />
@@ -254,8 +263,18 @@ export default function LandPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <svg className="w-16 h-16 text-quaternary mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="w-16 h-16 text-quaternary mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             <h3 className="text-lg font-medium text-secondary mb-2">No properties found</h3>
             <p className="text-tertiary">Try adjusting your search criteria</p>

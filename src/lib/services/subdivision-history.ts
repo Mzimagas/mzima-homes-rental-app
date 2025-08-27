@@ -42,7 +42,9 @@ export class SubdivisionHistoryService {
    */
   static async getSubdivisionHistory(propertyId: string): Promise<SubdivisionHistoryEntry[]> {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       if (!session?.access_token) {
         throw new Error('No authentication token available')
       }
@@ -55,7 +57,7 @@ export class SubdivisionHistoryService {
       const response = await fetch(`/api/properties/${propertyId}/subdivision-history`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
           'x-csrf-token': csrfToken,
         },
@@ -80,7 +82,9 @@ export class SubdivisionHistoryService {
    */
   static async recordSubdivisionHistory(params: RecordSubdivisionHistoryParams): Promise<string> {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       if (!session?.access_token) {
         throw new Error('No authentication token available')
       }
@@ -93,7 +97,7 @@ export class SubdivisionHistoryService {
       const response = await fetch(`/api/properties/${params.propertyId}/subdivision-history`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
           'x-csrf-token': csrfToken,
         },
@@ -106,7 +110,7 @@ export class SubdivisionHistoryService {
           subdivision_name: params.subdivisionName,
           total_plots_planned: params.totalPlotsPlanned,
           change_reason: params.changeReason,
-          details: params.details || {}
+          details: params.details || {},
         }),
       })
 
@@ -142,7 +146,7 @@ export class SubdivisionHistoryService {
       subdivisionName,
       totalPlotsPlanned,
       changeReason,
-      details
+      details,
     })
   }
 
@@ -164,7 +168,7 @@ export class SubdivisionHistoryService {
       previousStatus,
       newStatus,
       changeReason,
-      details
+      details,
     })
   }
 
@@ -182,7 +186,7 @@ export class SubdivisionHistoryService {
       subdivisionId,
       actionType: 'PLAN_MODIFIED',
       changeReason,
-      details
+      details,
     })
   }
 
@@ -201,7 +205,7 @@ export class SubdivisionHistoryService {
       actionType: 'PLAN_CANCELLED',
       newStatus: 'CANCELLED',
       changeReason,
-      details
+      details,
     })
   }
 }

@@ -30,13 +30,15 @@ interface PropertyWithStats extends DbProperty {
     monthly_rent_potential: number
     monthly_rent_actual: number
   }
-  units: Array<DbUnit & {
-    tenants: Array<{
-      id: string
-      full_name: string
-      status: string
-    }>
-  }>
+  units: Array<
+    DbUnit & {
+      tenants: Array<{
+        id: string
+        full_name: string
+        status: string
+      }>
+    }
+  >
 }
 
 interface AccessibleProperty {
@@ -46,13 +48,15 @@ interface AccessibleProperty {
 }
 
 type PropertyRow = DbProperty & {
-  units: Array<DbUnit & {
-    tenants: Array<{
-      id: string
-      full_name: string
-      status: string
-    }>
-  }>
+  units: Array<
+    DbUnit & {
+      tenants: Array<{
+        id: string
+        full_name: string
+        status: string
+      }>
+    }
+  >
 }
 
 /**
@@ -77,17 +81,17 @@ type PropertyRow = DbProperty & {
  */
 export default function InlinePropertiesOverview({
   isVisible,
-  onClose
+  onClose,
 }: InlinePropertiesOverviewProps) {
   const { user } = useAuth()
   const { properties: userProperties } = usePropertyAccess()
-  
+
   // State management
   const [properties, setProperties] = useState<PropertyWithStats[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   // Property form removed - using workflow-based creation
-  
+
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<PropertyType[]>([])
@@ -100,7 +104,7 @@ export default function InlinePropertiesOverview({
   // Reset component state when visibility changes
   useEffect(() => {
     if (isVisible) {
-      setComponentKey(prev => prev + 1)
+      setComponentKey((prev) => prev + 1)
       loadProperties()
     } else {
       // Reset state when hidden
@@ -129,7 +133,10 @@ export default function InlinePropertiesOverview({
       const currentUser = authData?.user ?? null
 
       if (authError || !currentUser) {
-        console.log('Properties: Authentication verification failed:', authError?.message || 'No current user')
+        console.log(
+          'Properties: Authentication verification failed:',
+          authError?.message || 'No current user'
+        )
         setError('Authentication expired. Please log in again.')
         return
       }
@@ -140,17 +147,21 @@ export default function InlinePropertiesOverview({
       }
 
       // Get accessible property IDs via RPC
-      const { data: accessibleProperties, error: accessError } =
-        await supabase.rpc<AccessibleProperty[]>('get_user_properties_simple')
+      const { data: accessibleProperties, error: accessError } = await supabase.rpc<
+        AccessibleProperty[]
+      >('get_user_properties_simple')
 
       if (accessError) {
         const msg =
-          accessError.message || accessError.details || JSON.stringify(accessError) || 'Unknown error occurred'
+          accessError.message ||
+          accessError.details ||
+          JSON.stringify(accessError) ||
+          'Unknown error occurred'
         console.error('INLINE PROPERTIES OVERVIEW ERROR - Accessible properties loading failed:', {
           message: msg,
           userEmail: user.email,
           errorKeys: Object.keys(accessError ?? {}),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         })
         setError(`Failed to load your properties: ${msg}`)
         return
@@ -162,12 +173,13 @@ export default function InlinePropertiesOverview({
         return
       }
 
-      const propertyIds = accessibleProperties.map(p => p.property_id)
+      const propertyIds = accessibleProperties.map((p) => p.property_id)
 
       // Fetch full property details (exclude soft-deleted)
-      const { data: propertiesData, error: propertiesError } = await supabase
+      const { data: propertiesData, error: propertiesError } = (await supabase
         .from('properties')
-        .select(`
+        .select(
+          `
           id,
           name,
           physical_address,
@@ -190,10 +202,11 @@ export default function InlinePropertiesOverview({
               status
             )
           )
-        `)
+        `
+        )
         .in('id', propertyIds)
         .is('disabled_at', null)
-        .order('name') as unknown as { data: PropertyRow[] | null; error: typeof propertiesError }
+        .order('name')) as unknown as { data: PropertyRow[] | null; error: typeof propertiesError }
 
       if (propertiesError) {
         console.error('Error loading property details:', propertiesError)
@@ -207,12 +220,15 @@ export default function InlinePropertiesOverview({
       const withStats: PropertyWithStats[] = rows.map((property) => {
         const units = property.units ?? []
 
-        const activeUnits = units.filter(u => Boolean(u.is_active))
-        const occupiedUnits = activeUnits.filter(u =>
-          (u.tenants ?? []).some(t => t.status === 'ACTIVE')
+        const activeUnits = units.filter((u) => Boolean(u.is_active))
+        const occupiedUnits = activeUnits.filter((u) =>
+          (u.tenants ?? []).some((t) => t.status === 'ACTIVE')
         )
 
-        const totalRentPotential = activeUnits.reduce((sum, u) => sum + (u.monthly_rent_kes ?? 0), 0)
+        const totalRentPotential = activeUnits.reduce(
+          (sum, u) => sum + (u.monthly_rent_kes ?? 0),
+          0
+        )
         const totalRentActual = occupiedUnits.reduce((sum, u) => sum + (u.monthly_rent_kes ?? 0), 0)
         const occupancyRate =
           activeUnits.length > 0 ? (occupiedUnits.length / activeUnits.length) * 100 : 0
@@ -225,8 +241,8 @@ export default function InlinePropertiesOverview({
             vacant_units: activeUnits.length - occupiedUnits.length,
             occupancy_rate: occupancyRate,
             monthly_rent_potential: totalRentPotential,
-            monthly_rent_actual: totalRentActual
-          }
+            monthly_rent_actual: totalRentActual,
+          },
         }
       })
 
@@ -240,7 +256,7 @@ export default function InlinePropertiesOverview({
         message,
         user: user?.email,
         stack: err instanceof Error ? err.stack : undefined,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       })
       setError(`Failed to load properties: ${message}`)
     } finally {
@@ -258,7 +274,7 @@ export default function InlinePropertiesOverview({
   // Filter properties based on search term and filters
   const filteredProperties = useMemo(() => {
     const lower = searchTerm.toLowerCase()
-    return properties.filter(property => {
+    return properties.filter((property) => {
       // In Rentals Overview, exclude all land properties
       if (isLandProperty(property.property_type as PropertyType)) return false
 
@@ -284,13 +300,21 @@ export default function InlinePropertiesOverview({
 
   // Calculate portfolio statistics
   const portfolioStats = useMemo(() => {
-    const rentalProperties = properties.filter(p => !isLandProperty(p.property_type as PropertyType))
-    
+    const rentalProperties = properties.filter(
+      (p) => !isLandProperty(p.property_type as PropertyType)
+    )
+
     const totalUnits = rentalProperties.reduce((sum, p) => sum + p.stats.total_units, 0)
     const occupiedUnits = rentalProperties.reduce((sum, p) => sum + p.stats.occupied_units, 0)
     const vacantUnits = rentalProperties.reduce((sum, p) => sum + p.stats.vacant_units, 0)
-    const monthlyRentPotential = rentalProperties.reduce((sum, p) => sum + p.stats.monthly_rent_potential, 0)
-    const monthlyRentActual = rentalProperties.reduce((sum, p) => sum + p.stats.monthly_rent_actual, 0)
+    const monthlyRentPotential = rentalProperties.reduce(
+      (sum, p) => sum + p.stats.monthly_rent_potential,
+      0
+    )
+    const monthlyRentActual = rentalProperties.reduce(
+      (sum, p) => sum + p.stats.monthly_rent_actual,
+      0
+    )
     const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0
 
     return {
@@ -300,7 +324,7 @@ export default function InlinePropertiesOverview({
       vacantUnits,
       occupancyRate,
       monthlyRentPotential,
-      monthlyRentActual
+      monthlyRentActual,
     }
   }, [properties])
 
@@ -330,7 +354,12 @@ export default function InlinePropertiesOverview({
               title="Close Properties Overview"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -361,11 +390,15 @@ export default function InlinePropertiesOverview({
                 <div className="px-6 pt-6 pb-4 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">Portfolio Summary</h3>
                   <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <label htmlFor="range" className="sr-only">Date range</label>
+                    <label htmlFor="range" className="sr-only">
+                      Date range
+                    </label>
                     <select
                       id="range"
                       value={dateRange}
-                      onChange={(e) => setDateRange(e.target.value as '30d' | '90d' | 'ytd' | '12m')}
+                      onChange={(e) =>
+                        setDateRange(e.target.value as '30d' | '90d' | 'ytd' | '12m')
+                      }
                       className="px-2 py-1 border rounded-md bg-gray-50 hover:bg-gray-100"
                       title="Change date range"
                     >
@@ -381,7 +414,9 @@ export default function InlinePropertiesOverview({
                   {/* Total Rental Properties */}
                   <button
                     type="button"
-                    onClick={() => { setSelectedPropertyTypes([]) }}
+                    onClick={() => {
+                      setSelectedPropertyTypes([])
+                    }}
                     className="group text-left p-4 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                     title="Show all rental properties"
                   >
@@ -392,7 +427,9 @@ export default function InlinePropertiesOverview({
                           {portfolioStats.totalProperties}
                         </div>
                       </div>
-                      <div className="w-10 h-10 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center">🏢</div>
+                      <div className="w-10 h-10 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center">
+                        🏢
+                      </div>
                     </div>
                   </button>
 
@@ -405,7 +442,9 @@ export default function InlinePropertiesOverview({
                           {portfolioStats.totalUnits}
                         </div>
                       </div>
-                      <div className="w-10 h-10 rounded-md bg-green-50 text-green-600 flex items-center justify-center">🏠</div>
+                      <div className="w-10 h-10 rounded-md bg-green-50 text-green-600 flex items-center justify-center">
+                        🏠
+                      </div>
                     </div>
                   </div>
 
@@ -421,7 +460,9 @@ export default function InlinePropertiesOverview({
                           {portfolioStats.occupiedUnits}/{portfolioStats.totalUnits} occupied
                         </div>
                       </div>
-                      <div className="w-10 h-10 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center">📊</div>
+                      <div className="w-10 h-10 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center">
+                        📊
+                      </div>
                     </div>
                   </div>
 
@@ -437,15 +478,23 @@ export default function InlinePropertiesOverview({
                           of KES {portfolioStats.monthlyRentPotential.toLocaleString()} potential
                         </div>
                       </div>
-                      <div className="w-10 h-10 rounded-md bg-yellow-50 text-yellow-600 flex items-center justify-center">💰</div>
+                      <div className="w-10 h-10 rounded-md bg-yellow-50 text-yellow-600 flex items-center justify-center">
+                        💰
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="px-6 pb-6 pt-2">
                   <div className="text-xs text-gray-500">
-                    Revenue efficiency: {portfolioStats.monthlyRentPotential > 0 ?
-                      ((portfolioStats.monthlyRentActual / portfolioStats.monthlyRentPotential) * 100).toFixed(1) : 0}%
+                    Revenue efficiency:{' '}
+                    {portfolioStats.monthlyRentPotential > 0
+                      ? (
+                          (portfolioStats.monthlyRentActual / portfolioStats.monthlyRentPotential) *
+                          100
+                        ).toFixed(1)
+                      : 0}
+                    %
                   </div>
                 </div>
               </div>
@@ -456,8 +505,18 @@ export default function InlinePropertiesOverview({
               {/* Search Bar */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
                 <input
@@ -480,7 +539,9 @@ export default function InlinePropertiesOverview({
                   <label className="text-sm font-medium text-gray-700">Occupancy:</label>
                   <select
                     value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value as 'all' | 'high' | 'medium' | 'low')}
+                    onChange={(e) =>
+                      setFilterStatus(e.target.value as 'all' | 'high' | 'medium' | 'low')
+                    }
                     className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="all">All Properties</option>
@@ -491,7 +552,12 @@ export default function InlinePropertiesOverview({
                 </div>
 
                 <div className="text-sm text-gray-600">
-                  Showing {filteredProperties.length} of {properties.filter(p => !isLandProperty(p.property_type as PropertyType)).length} properties
+                  Showing {filteredProperties.length} of{' '}
+                  {
+                    properties.filter((p) => !isLandProperty(p.property_type as PropertyType))
+                      .length
+                  }{' '}
+                  properties
                 </div>
               </div>
             </div>
@@ -504,8 +570,7 @@ export default function InlinePropertiesOverview({
                 <p className="text-gray-600 mb-4">
                   {searchTerm || selectedPropertyTypes.length > 0 || filterStatus !== 'all'
                     ? 'Try adjusting your search or filters'
-                    : 'Get started by adding your first property'
-                  }
+                    : 'Get started by adding your first property'}
                 </p>
                 {!searchTerm && selectedPropertyTypes.length === 0 && filterStatus === 'all' && (
                   <div className="text-sm text-gray-600">
@@ -516,7 +581,10 @@ export default function InlinePropertiesOverview({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProperties.map((property) => (
-                  <div key={property.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div
+                    key={property.id}
+                    className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                  >
                     <div className="p-6">
                       {/* Property Header */}
                       <div className="flex items-start justify-between mb-4">
@@ -576,14 +644,19 @@ export default function InlinePropertiesOverview({
                             <div className="flex justify-between text-xs text-gray-500 mb-1">
                               <span>Revenue Efficiency</span>
                               <span>
-                                {((property.stats.monthly_rent_actual / property.stats.monthly_rent_potential) * 100).toFixed(1)}%
+                                {(
+                                  (property.stats.monthly_rent_actual /
+                                    property.stats.monthly_rent_potential) *
+                                  100
+                                ).toFixed(1)}
+                                %
                               </span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div
                                 className="bg-blue-600 h-2 rounded-full"
                                 style={{
-                                  width: `${(property.stats.monthly_rent_actual / property.stats.monthly_rent_potential) * 100}%`
+                                  width: `${(property.stats.monthly_rent_actual / property.stats.monthly_rent_potential) * 100}%`,
                                 }}
                               ></div>
                             </div>
@@ -599,8 +672,8 @@ export default function InlinePropertiesOverview({
                               property.stats.occupancy_rate >= 80
                                 ? 'bg-green-500'
                                 : property.stats.occupancy_rate >= 50
-                                ? 'bg-yellow-500'
-                                : 'bg-red-500'
+                                  ? 'bg-yellow-500'
+                                  : 'bg-red-500'
                             }`}
                           ></div>
                           <span className="text-sm text-gray-600">

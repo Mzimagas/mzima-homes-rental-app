@@ -9,7 +9,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 async function handler(request: NextRequest) {
-  const body = await request.json().catch(()=>({}))
+  const body = await request.json().catch(() => ({}))
   const schema = z.object({ email: z.string().email() })
   const parsed = schema.safeParse(body)
   if (!parsed.success) return errors.validation(parsed.error.flatten())
@@ -25,10 +25,14 @@ async function handler(request: NextRequest) {
 }
 
 export const POST = compose(
-  (h) => withRateLimit(h, (req) => {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    return `resend:${ip}`
-  }, 'resend'),
-  withCsrf,
+  (h) =>
+    withRateLimit(
+      h,
+      (req) => {
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+        return `resend:${ip}`
+      },
+      'resend'
+    ),
+  withCsrf
 )(handler)
-

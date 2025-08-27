@@ -6,7 +6,7 @@ import {
   PaymentInstallment,
   ACQUISITION_COST_TYPES,
   ACQUISITION_COST_CATEGORY_LABELS,
-  AcquisitionCostCategory
+  AcquisitionCostCategory,
 } from '../types/property-management.types'
 import { AcquisitionFinancialsService } from '../services/acquisition-financials.service'
 import EnhancedPurchasePriceManager from './EnhancedPurchasePriceManager'
@@ -33,13 +33,16 @@ interface NewPaymentInstallment {
   notes: string
 }
 
-export default function PropertyAcquisitionFinancials({ property, onUpdate }: PropertyAcquisitionFinancialsProps) {
+export default function PropertyAcquisitionFinancials({
+  property,
+  onUpdate,
+}: PropertyAcquisitionFinancialsProps) {
   const [costEntries, setCostEntries] = useState<AcquisitionCostEntry[]>([])
   const [paymentInstallments, setPaymentInstallments] = useState<PaymentInstallment[]>([])
   const [subdivisionCostsSummary, setSubdivisionCostsSummary] = useState({
     totalSubdivisionCosts: 0,
     paidSubdivisionCosts: 0,
-    pendingSubdivisionCosts: 0
+    pendingSubdivisionCosts: 0,
   })
   const [totalPurchasePrice, setTotalPurchasePrice] = useState<string>('')
   const [loading, setLoading] = useState(false)
@@ -72,25 +75,31 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
   }, [property.id])
 
   const handleTogglePayments = () => {
-    setCollapsedPayments(prev => {
+    setCollapsedPayments((prev) => {
       const next = !prev
-      try { localStorage.setItem(LS_KEYS.payments, String(next)) } catch {}
+      try {
+        localStorage.setItem(LS_KEYS.payments, String(next))
+      } catch {}
       return next
     })
   }
 
   const handleToggleCosts = () => {
-    setCollapsedCosts(prev => {
+    setCollapsedCosts((prev) => {
       const next = !prev
-      try { localStorage.setItem(LS_KEYS.costs, String(next)) } catch {}
+      try {
+        localStorage.setItem(LS_KEYS.costs, String(next))
+      } catch {}
       return next
     })
   }
 
   const handleToggleBreakdown = () => {
-    setCollapsedBreakdown(prev => {
+    setCollapsedBreakdown((prev) => {
       const next = !prev
-      try { localStorage.setItem(LS_KEYS.breakdown, String(next)) } catch {}
+      try {
+        localStorage.setItem(LS_KEYS.breakdown, String(next))
+      } catch {}
       return next
     })
   }
@@ -101,7 +110,7 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
     amount_kes: '',
     payment_reference: '',
     payment_date: '',
-    notes: ''
+    notes: '',
   })
 
   // New payment installment form state
@@ -110,7 +119,7 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
     payment_date: '',
     payment_reference: '',
     payment_method: '',
-    notes: ''
+    notes: '',
   })
 
   // Load existing financial data
@@ -125,7 +134,9 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
 
     try {
       // Load financial data from API
-      const { costs, payments } = await AcquisitionFinancialsService.loadAllFinancialData(property.id)
+      const { costs, payments } = await AcquisitionFinancialsService.loadAllFinancialData(
+        property.id
+      )
 
       setCostEntries(costs)
       setPaymentInstallments(payments)
@@ -137,13 +148,20 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       // Check if it's a database schema issue (migration not applied)
       const errorMessage = error instanceof Error ? error.message : String(error)
       if (errorMessage.includes('403') || errorMessage.includes('Not allowed')) {
-        setError('You do not have access to financial data for this property. Please ensure you have the correct permissions.')
+        setError(
+          'You do not have access to financial data for this property. Please ensure you have the correct permissions.'
+        )
         // Set empty data for now
         setCostEntries([])
         setPaymentInstallments([])
         setTotalPurchasePrice('')
-      } else if (errorMessage.includes('404') || errorMessage.includes('column') && errorMessage.includes('does not exist')) {
-        setError('Database migration required. Please apply the acquisition financials migration to enable this feature.')
+      } else if (
+        errorMessage.includes('404') ||
+        (errorMessage.includes('column') && errorMessage.includes('does not exist'))
+      ) {
+        setError(
+          'Database migration required. Please apply the acquisition financials migration to enable this feature.'
+        )
         // Set empty data for now
         setCostEntries([])
         setPaymentInstallments([])
@@ -166,7 +184,7 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       setSubdivisionCostsSummary({
         totalSubdivisionCosts: summary.totalSubdivisionCosts,
         paidSubdivisionCosts: summary.paidSubdivisionCosts,
-        pendingSubdivisionCosts: summary.pendingSubdivisionCosts
+        pendingSubdivisionCosts: summary.pendingSubdivisionCosts,
       })
     } catch (error) {
       console.error('Error loading subdivision costs summary:', error)
@@ -188,11 +206,11 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       LCB_PROCESS: 0,
       PAYMENTS: totalPayments,
       TRANSFER_REGISTRATION: 0,
-      OTHER: 0
+      OTHER: 0,
     }
 
-    costEntries.forEach(entry => {
-      const costType = ACQUISITION_COST_TYPES.find(type => type.id === entry.cost_type_id)
+    costEntries.forEach((entry) => {
+      const costType = ACQUISITION_COST_TYPES.find((type) => type.id === entry.cost_type_id)
       if (costType) {
         costsByCategory[costType.category] += entry.amount_kes
       }
@@ -203,11 +221,12 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       totalPayments,
       purchasePrice,
       remainingBalance,
-      totalAcquisitionCost: totalCosts + purchasePrice + subdivisionCostsSummary.totalSubdivisionCosts,
+      totalAcquisitionCost:
+        totalCosts + purchasePrice + subdivisionCostsSummary.totalSubdivisionCosts,
       totalSubdivisionCosts: subdivisionCostsSummary.totalSubdivisionCosts,
       paidSubdivisionCosts: subdivisionCostsSummary.paidSubdivisionCosts,
       pendingSubdivisionCosts: subdivisionCostsSummary.pendingSubdivisionCosts,
-      costsByCategory
+      costsByCategory,
     }
   }
 
@@ -219,7 +238,7 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
 
     try {
       // Find the cost type to get the category
-      const costType = ACQUISITION_COST_TYPES.find(type => type.id === newCost.cost_type_id)
+      const costType = ACQUISITION_COST_TYPES.find((type) => type.id === newCost.cost_type_id)
       if (!costType) {
         throw new Error('Invalid cost type selected')
       }
@@ -230,16 +249,16 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
         amount_kes: parseFloat(newCost.amount_kes),
         payment_reference: newCost.payment_reference || undefined,
         payment_date: newCost.payment_date || undefined,
-        notes: newCost.notes || undefined
+        notes: newCost.notes || undefined,
       })
 
-      setCostEntries(prev => [...prev, costEntry])
+      setCostEntries((prev) => [...prev, costEntry])
       setNewCost({
         cost_type_id: '',
         amount_kes: '',
         payment_reference: '',
         payment_date: '',
-        notes: ''
+        notes: '',
       })
       setShowAddCost(false)
       onUpdate?.(property.id)
@@ -264,16 +283,16 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
         payment_date: newPayment.payment_date || undefined,
         payment_reference: newPayment.payment_reference || undefined,
         payment_method: newPayment.payment_method || undefined,
-        notes: newPayment.notes || undefined
+        notes: newPayment.notes || undefined,
       })
 
-      setPaymentInstallments(prev => [...prev, payment])
+      setPaymentInstallments((prev) => [...prev, payment])
       setNewPayment({
         amount_kes: '',
         payment_date: '',
         payment_reference: '',
         payment_method: '',
-        notes: ''
+        notes: '',
       })
       setShowAddPayment(false)
       onUpdate?.(property.id)
@@ -293,7 +312,7 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
 
     try {
       await AcquisitionFinancialsService.deleteAcquisitionCost(property.id, costId)
-      setCostEntries(prev => prev.filter(entry => entry.id !== costId))
+      setCostEntries((prev) => prev.filter((entry) => entry.id !== costId))
       onUpdate?.(property.id)
     } catch (error) {
       console.error('Error deleting cost entry:', error)
@@ -328,7 +347,7 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
   }
 
   const getCostTypeLabel = (costTypeId: string) => {
-    return ACQUISITION_COST_TYPES.find(type => type.id === costTypeId)?.label || 'Unknown'
+    return ACQUISITION_COST_TYPES.find((type) => type.id === costTypeId)?.label || 'Unknown'
   }
 
   // Handle subdivision costs updates
@@ -342,7 +361,7 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       setSubdivisionCostsSummary({
         totalSubdivisionCosts: summary.totalSubdivisionCosts,
         paidSubdivisionCosts: summary.paidSubdivisionCosts,
-        pendingSubdivisionCosts: summary.pendingSubdivisionCosts
+        pendingSubdivisionCosts: summary.pendingSubdivisionCosts,
       })
 
       onUpdate?.(propertyId)
@@ -368,28 +387,29 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
     <div className="space-y-6">
       {/* Error Display */}
       {error && (
-        <div className={`border rounded-lg p-4 ${
-          error.includes('migration')
-            ? 'bg-blue-50 border-blue-200'
-            : 'bg-red-50 border-red-200'
-        }`}>
+        <div
+          className={`border rounded-lg p-4 ${
+            error.includes('migration') ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'
+          }`}
+        >
           <div className="flex items-center">
-            <span className={`mr-2 ${
-              error.includes('migration') ? 'text-blue-600' : 'text-red-600'
-            }`}>
+            <span
+              className={`mr-2 ${error.includes('migration') ? 'text-blue-600' : 'text-red-600'}`}
+            >
               {error.includes('migration') ? 'ℹ️' : '⚠️'}
             </span>
             <div className="flex-1">
-              <span className={`${
-                error.includes('migration') ? 'text-blue-800' : 'text-red-800'
-              }`}>
+              <span className={`${error.includes('migration') ? 'text-blue-800' : 'text-red-800'}`}>
                 {error}
               </span>
               {error.includes('migration') && (
                 <div className="mt-2 text-sm text-blue-700">
                   <p>To enable the acquisition cost tracking feature:</p>
                   <ol className="list-decimal list-inside mt-1 space-y-1">
-                    <li>Apply the database migration: <code className="bg-blue-100 px-1 rounded">supabase db push</code></li>
+                    <li>
+                      Apply the database migration:{' '}
+                      <code className="bg-blue-100 px-1 rounded">supabase db push</code>
+                    </li>
                     <li>Or run the SQL migration in your Supabase dashboard</li>
                   </ol>
                 </div>
@@ -398,7 +418,9 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
             <button
               onClick={() => setError(null)}
               className={`ml-2 ${
-                error.includes('migration') ? 'text-blue-600 hover:text-blue-800' : 'text-red-600 hover:text-red-800'
+                error.includes('migration')
+                  ? 'text-blue-600 hover:text-blue-800'
+                  : 'text-red-600 hover:text-red-800'
               }`}
             >
               ✕
@@ -408,7 +430,9 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
       )}
       {/* Enhanced Purchase Price Management */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-lg font-semibold text-blue-900 mb-3">Purchase Price in Sales Agreement</h4>
+        <h4 className="text-lg font-semibold text-blue-900 mb-3">
+          Purchase Price in Sales Agreement
+        </h4>
         <EnhancedPurchasePriceManager
           propertyId={property.id}
           initialPrice={property.purchase_price_agreement_kes ?? null}
@@ -433,7 +457,9 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
           </div>
           <div>
             <div className="text-sm text-green-700">Subdivision Costs</div>
-            <div className="font-bold text-green-900">{formatCurrency(totals.totalSubdivisionCosts)}</div>
+            <div className="font-bold text-green-900">
+              {formatCurrency(totals.totalSubdivisionCosts)}
+            </div>
           </div>
           <div>
             <div className="text-sm text-green-700">Paid Purchase Price</div>
@@ -441,13 +467,17 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
           </div>
           <div>
             <div className="text-sm text-green-700">Purchase Price Balance</div>
-            <div className="font-bold text-green-900">{formatCurrency(totals.remainingBalance)}</div>
+            <div className="font-bold text-green-900">
+              {formatCurrency(totals.remainingBalance)}
+            </div>
           </div>
         </div>
         <div className="border-t border-green-200 pt-3">
           <div className="flex justify-between items-center">
             <span className="text-lg font-bold text-green-900">Total Investment</span>
-            <span className="text-xl font-bold text-green-900">{formatCurrency(totals.totalAcquisitionCost)}</span>
+            <span className="text-xl font-bold text-green-900">
+              {formatCurrency(totals.totalAcquisitionCost)}
+            </span>
           </div>
           <div className="text-sm text-green-700 mt-1">
             Purchase Price + Acquisition Costs + Subdivision Costs
@@ -466,7 +496,9 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
             className="flex items-center space-x-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
           >
             <span aria-hidden="true">{collapsedPayments ? '▶' : '▼'}</span>
-            <h4 className="text-lg font-semibold text-gray-900">Purchase Price Deposit and Installments</h4>
+            <h4 className="text-lg font-semibold text-gray-900">
+              Purchase Price Deposit and Installments
+            </h4>
           </button>
           {!collapsedPayments && (
             <Button
@@ -481,116 +513,150 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
         </div>
 
         <div id={`payments-section-${property.id}`} aria-hidden={collapsedPayments}>
-        {!collapsedPayments && (
-          <>
-            {/* Add Payment Form */}
-            {showAddPayment && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 mb-4">
-                <h5 className="font-medium text-gray-900 mb-3">Add Deposit/Installment Payment</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount (KES)</label>
-                    <TextField
-                      type="number"
-                      value={newPayment.amount_kes}
-                      onChange={(e) => setNewPayment(prev => ({ ...prev, amount_kes: e.target.value }))}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date (Optional)</label>
-                    <TextField
-                      type="date"
-                      value={newPayment.payment_date}
-                      onChange={(e) => setNewPayment(prev => ({ ...prev, payment_date: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Reference (Optional)</label>
-                    <TextField
-                      value={newPayment.payment_reference}
-                      onChange={(e) => setNewPayment(prev => ({ ...prev, payment_reference: e.target.value }))}
-                      placeholder="Transaction/receipt number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method (Optional)</label>
-                    <Select
-                      value={newPayment.payment_method}
-                      onChange={(e) => setNewPayment(prev => ({ ...prev, payment_method: e.target.value }))}
-                    >
-                      <option value="">Select method...</option>
-                      <option value="CASH">Cash</option>
-                      <option value="BANK_TRANSFER">Bank Transfer</option>
-                      <option value="CHEQUE">Cheque</option>
-                      <option value="MOBILE_MONEY">Mobile Money</option>
-                      <option value="OTHER">Other</option>
-                    </Select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
-                    <TextField
-                      value={newPayment.notes}
-                      onChange={(e) => setNewPayment(prev => ({ ...prev, notes: e.target.value }))}
-                      placeholder="Additional notes about this payment"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2 mt-4">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowAddPayment(false)}
-                    disabled={loading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleAddPayment}
-                    disabled={loading || !newPayment.amount_kes}
-                  >
-                    {loading ? 'Adding...' : 'Add Deposit/Installment'}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Payment Installments List */}
-            {paymentInstallments.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No deposits or installments recorded yet</p>
-            ) : (
-              <div className="space-y-2 mt-4">
-                {paymentInstallments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">Installment #{payment.installment_number}</div>
-                      <div className="text-sm text-gray-600">
-                        {payment.payment_date && `Date: ${new Date(payment.payment_date).toLocaleDateString()}`}
-                        {payment.payment_method && ` • Method: ${payment.payment_method}`}
-                        {payment.payment_reference && ` • Ref: ${payment.payment_reference}`}
-                      </div>
-                      {payment.notes && <div className="text-sm text-gray-500 mt-1">{payment.notes}</div>}
+          {!collapsedPayments && (
+            <>
+              {/* Add Payment Form */}
+              {showAddPayment && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 mb-4">
+                  <h5 className="font-medium text-gray-900 mb-3">
+                    Add Deposit/Installment Payment
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Amount (KES)
+                      </label>
+                      <TextField
+                        type="number"
+                        value={newPayment.amount_kes}
+                        onChange={(e) =>
+                          setNewPayment((prev) => ({ ...prev, amount_kes: e.target.value }))
+                        }
+                        placeholder="0"
+                      />
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="font-bold text-gray-900">{formatCurrency(payment.amount_kes)}</div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleDeletePayment(payment.id)}
-                        disabled={loading}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Date (Optional)
+                      </label>
+                      <TextField
+                        type="date"
+                        value={newPayment.payment_date}
+                        onChange={(e) =>
+                          setNewPayment((prev) => ({ ...prev, payment_date: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Reference (Optional)
+                      </label>
+                      <TextField
+                        value={newPayment.payment_reference}
+                        onChange={(e) =>
+                          setNewPayment((prev) => ({ ...prev, payment_reference: e.target.value }))
+                        }
+                        placeholder="Transaction/receipt number"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Method (Optional)
+                      </label>
+                      <Select
+                        value={newPayment.payment_method}
+                        onChange={(e) =>
+                          setNewPayment((prev) => ({ ...prev, payment_method: e.target.value }))
+                        }
                       >
-                        Delete
-                      </Button>
+                        <option value="">Select method...</option>
+                        <option value="CASH">Cash</option>
+                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                        <option value="CHEQUE">Cheque</option>
+                        <option value="MOBILE_MONEY">Mobile Money</option>
+                        <option value="OTHER">Other</option>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Notes (Optional)
+                      </label>
+                      <TextField
+                        value={newPayment.notes}
+                        onChange={(e) =>
+                          setNewPayment((prev) => ({ ...prev, notes: e.target.value }))
+                        }
+                        placeholder="Additional notes about this payment"
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowAddPayment(false)}
+                      disabled={loading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleAddPayment}
+                      disabled={loading || !newPayment.amount_kes}
+                    >
+                      {loading ? 'Adding...' : 'Add Deposit/Installment'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Installments List */}
+              {paymentInstallments.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">
+                  No deposits or installments recorded yet
+                </p>
+              ) : (
+                <div className="space-y-2 mt-4">
+                  {paymentInstallments.map((payment) => (
+                    <div
+                      key={payment.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">
+                          Installment #{payment.installment_number}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {payment.payment_date &&
+                            `Date: ${new Date(payment.payment_date).toLocaleDateString()}`}
+                          {payment.payment_method && ` • Method: ${payment.payment_method}`}
+                          {payment.payment_reference && ` • Ref: ${payment.payment_reference}`}
+                        </div>
+                        {payment.notes && (
+                          <div className="text-sm text-gray-500 mt-1">{payment.notes}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="font-bold text-gray-900">
+                          {formatCurrency(payment.amount_kes)}
+                        </div>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleDeletePayment(payment.id)}
+                          disabled={loading}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Acquisition Costs */}
@@ -619,128 +685,155 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
         </div>
 
         <div id={`costs-section-${property.id}`} aria-hidden={collapsedCosts}>
-        {!collapsedCosts && (
-          <>
-            {/* Add Cost Form */}
-            {showAddCost && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 mb-4">
-                <h5 className="font-medium text-gray-900 mb-3">Add New Cost</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cost Type</label>
-                    <Select
-                      value={newCost.cost_type_id}
-                      onChange={(e) => setNewCost(prev => ({ ...prev, cost_type_id: e.target.value }))}
-                    >
-                      <option value="">Select cost type...</option>
-                      {Object.entries(ACQUISITION_COST_CATEGORY_LABELS).map(([category, label]) => (
-                        <optgroup key={category} label={label}>
-                          {ACQUISITION_COST_TYPES
-                            .filter(type => type.category === category)
-                            .map(type => (
-                              <option key={type.id} value={type.id}>
-                                {type.label}
-                              </option>
-                            ))}
-                        </optgroup>
-                      ))}
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount (KES)</label>
-                    <TextField
-                      type="number"
-                      value={newCost.amount_kes}
-                      onChange={(e) => setNewCost(prev => ({ ...prev, amount_kes: e.target.value }))}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Reference (Optional)</label>
-                    <TextField
-                      value={newCost.payment_reference}
-                      onChange={(e) => setNewCost(prev => ({ ...prev, payment_reference: e.target.value }))}
-                      placeholder="Receipt/reference number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date (Optional)</label>
-                    <TextField
-                      type="date"
-                      value={newCost.payment_date}
-                      onChange={(e) => setNewCost(prev => ({ ...prev, payment_date: e.target.value }))}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
-                    <TextField
-                      value={newCost.notes}
-                      onChange={(e) => setNewCost(prev => ({ ...prev, notes: e.target.value }))}
-                      placeholder="Additional notes about this cost"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2 mt-4">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowAddCost(false)}
-                    disabled={loading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleAddCost}
-                    disabled={loading || !newCost.cost_type_id || !newCost.amount_kes}
-                  >
-                    {loading ? 'Adding...' : 'Add Cost'}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Cost Entries List */}
-            {costEntries.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No costs recorded yet</p>
-            ) : (
-              <div className="space-y-2 mt-4">
-                {costEntries.map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{getCostTypeLabel(entry.cost_type_id)}</div>
-                      <div className="text-sm text-gray-600">
-                        {entry.payment_date && `Date: ${new Date(entry.payment_date).toLocaleDateString()}`}
-                        {entry.payment_reference && ` • Ref: ${entry.payment_reference}`}
-                      </div>
-                      {entry.notes && <div className="text-sm text-gray-500 mt-1">{entry.notes}</div>}
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="font-bold text-gray-900">{formatCurrency(entry.amount_kes)}</div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleDeleteCost(entry.id)}
-                        disabled={loading}
+          {!collapsedCosts && (
+            <>
+              {/* Add Cost Form */}
+              {showAddCost && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 mb-4">
+                  <h5 className="font-medium text-gray-900 mb-3">Add New Cost</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Cost Type
+                      </label>
+                      <Select
+                        value={newCost.cost_type_id}
+                        onChange={(e) =>
+                          setNewCost((prev) => ({ ...prev, cost_type_id: e.target.value }))
+                        }
                       >
-                        Delete
-                      </Button>
+                        <option value="">Select cost type...</option>
+                        {Object.entries(ACQUISITION_COST_CATEGORY_LABELS).map(
+                          ([category, label]) => (
+                            <optgroup key={category} label={label}>
+                              {ACQUISITION_COST_TYPES.filter(
+                                (type) => type.category === category
+                              ).map((type) => (
+                                <option key={type.id} value={type.id}>
+                                  {type.label}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )
+                        )}
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Amount (KES)
+                      </label>
+                      <TextField
+                        type="number"
+                        value={newCost.amount_kes}
+                        onChange={(e) =>
+                          setNewCost((prev) => ({ ...prev, amount_kes: e.target.value }))
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Reference (Optional)
+                      </label>
+                      <TextField
+                        value={newCost.payment_reference}
+                        onChange={(e) =>
+                          setNewCost((prev) => ({ ...prev, payment_reference: e.target.value }))
+                        }
+                        placeholder="Receipt/reference number"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Date (Optional)
+                      </label>
+                      <TextField
+                        type="date"
+                        value={newCost.payment_date}
+                        onChange={(e) =>
+                          setNewCost((prev) => ({ ...prev, payment_date: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Notes (Optional)
+                      </label>
+                      <TextField
+                        value={newCost.notes}
+                        onChange={(e) => setNewCost((prev) => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Additional notes about this cost"
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowAddCost(false)}
+                      disabled={loading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleAddCost}
+                      disabled={loading || !newCost.cost_type_id || !newCost.amount_kes}
+                    >
+                      {loading ? 'Adding...' : 'Add Cost'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Cost Entries List */}
+              {costEntries.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No costs recorded yet</p>
+              ) : (
+                <div className="space-y-2 mt-4">
+                  {costEntries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">
+                          {getCostTypeLabel(entry.cost_type_id)}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {entry.payment_date &&
+                            `Date: ${new Date(entry.payment_date).toLocaleDateString()}`}
+                          {entry.payment_reference && ` • Ref: ${entry.payment_reference}`}
+                        </div>
+                        {entry.notes && (
+                          <div className="text-sm text-gray-500 mt-1">{entry.notes}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="font-bold text-gray-900">
+                          {formatCurrency(entry.amount_kes)}
+                        </div>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleDeleteCost(entry.id)}
+                          disabled={loading}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Subdivision Costs */}
-      <PropertySubdivisionCosts
-        property={property}
-        onUpdate={handleSubdivisionCostsUpdate}
-      />
+      <PropertySubdivisionCosts property={property} onUpdate={handleSubdivisionCostsUpdate} />
 
       {/* Cost Breakdown by Category */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -757,24 +850,26 @@ export default function PropertyAcquisitionFinancials({ property, onUpdate }: Pr
           </button>
         </div>
         <div id={`breakdown-section-${property.id}`} aria-hidden={collapsedBreakdown}>
-        {!collapsedBreakdown && (
-          <div className="space-y-3 mt-4">
-            {Object.entries(ACQUISITION_COST_CATEGORY_LABELS).map(([category, label]) => (
-              <div key={category} className="flex justify-between items-center">
-                <span className="text-gray-700">{label}</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(totals.costsByCategory[category as AcquisitionCostCategory])}
-                </span>
-              </div>
-            ))}
-            <div className="border-t border-gray-200 pt-3 mt-3">
-              <div className="flex justify-between items-center font-bold text-lg">
-                <span className="text-gray-900">Total Acquisition Cost</span>
-                <span className="text-gray-900">{formatCurrency(totals.totalAcquisitionCost)}</span>
+          {!collapsedBreakdown && (
+            <div className="space-y-3 mt-4">
+              {Object.entries(ACQUISITION_COST_CATEGORY_LABELS).map(([category, label]) => (
+                <div key={category} className="flex justify-between items-center">
+                  <span className="text-gray-700">{label}</span>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(totals.costsByCategory[category as AcquisitionCostCategory])}
+                  </span>
+                </div>
+              ))}
+              <div className="border-t border-gray-200 pt-3 mt-3">
+                <div className="flex justify-between items-center font-bold text-lg">
+                  <span className="text-gray-900">Total Acquisition Cost</span>
+                  <span className="text-gray-900">
+                    {formatCurrency(totals.totalAcquisitionCost)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
     </div>

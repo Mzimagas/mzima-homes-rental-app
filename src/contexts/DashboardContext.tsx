@@ -33,27 +33,27 @@ export interface DashboardState {
   selectedTenant: Tenant | null
   selectedUnit: Unit | null
   selectedPayment: Payment | null
-  
+
   // Navigation state
   searchTerm: string
   activeFilters: FilterState
   navigationHistory: NavigationItem[]
   currentTab: string
-  
+
   // Quick actions and context
   recentActions: Action[]
   contextualActions: Action[]
-  
+
   // Data cache for cross-tab sharing
   propertiesCache: Property[]
   tenantsCache: Tenant[]
   unitsCache: Unit[]
   paymentsCache: Payment[]
-  
+
   // UI state
   sidebarCollapsed: boolean
   quickActionsVisible: boolean
-  
+
   // Performance tracking
   lastUpdated: Date
   cacheExpiry: Date
@@ -70,7 +70,10 @@ export type DashboardAction =
   | { type: 'SET_CURRENT_TAB'; payload: string }
   | { type: 'ADD_NAVIGATION_ITEM'; payload: NavigationItem }
   | { type: 'ADD_RECENT_ACTION'; payload: Action }
-  | { type: 'UPDATE_CACHE'; payload: { type: 'properties' | 'tenants' | 'units' | 'payments'; data: any[] } }
+  | {
+      type: 'UPDATE_CACHE'
+      payload: { type: 'properties' | 'tenants' | 'units' | 'payments'; data: any[] }
+    }
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'TOGGLE_QUICK_ACTIONS' }
   | { type: 'CLEAR_CONTEXT' }
@@ -88,7 +91,7 @@ const initialState: DashboardState = {
     dateRange: { start: null, end: null },
     status: [],
     propertyTypes: [],
-    paymentMethods: []
+    paymentMethods: [],
   },
   navigationHistory: [],
   currentTab: 'dashboard',
@@ -101,13 +104,13 @@ const initialState: DashboardState = {
   sidebarCollapsed: false,
   quickActionsVisible: true,
   lastUpdated: new Date(),
-  cacheExpiry: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+  cacheExpiry: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
 }
 
 // Reducer function
 function dashboardReducer(state: DashboardState, action: DashboardAction): DashboardState {
   const now = new Date()
-  
+
   switch (action.type) {
     case 'SET_SELECTED_PROPERTY':
       return {
@@ -115,94 +118,94 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
         selectedProperty: action.payload,
         selectedTenant: null, // Clear dependent selections
         selectedUnit: null,
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'SET_SELECTED_TENANT':
       return {
         ...state,
         selectedTenant: action.payload,
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'SET_SELECTED_UNIT':
       return {
         ...state,
         selectedUnit: action.payload,
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'SET_SELECTED_PAYMENT':
       return {
         ...state,
         selectedPayment: action.payload,
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'SET_SEARCH_TERM':
       return {
         ...state,
         searchTerm: action.payload,
         activeFilters: {
           ...state.activeFilters,
-          searchTerm: action.payload
+          searchTerm: action.payload,
         },
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'SET_ACTIVE_FILTERS':
       return {
         ...state,
         activeFilters: {
           ...state.activeFilters,
-          ...action.payload
+          ...action.payload,
         },
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'SET_CURRENT_TAB':
       return {
         ...state,
         currentTab: action.payload,
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'ADD_NAVIGATION_ITEM':
       return {
         ...state,
         navigationHistory: [action.payload, ...state.navigationHistory].slice(0, 10), // Keep last 10
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'ADD_RECENT_ACTION':
       return {
         ...state,
         recentActions: [action.payload, ...state.recentActions].slice(0, 5), // Keep last 5
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'UPDATE_CACHE':
       return {
         ...state,
         [`${action.payload.type}Cache`]: action.payload.data,
         cacheExpiry: new Date(Date.now() + 5 * 60 * 1000), // Reset cache expiry
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'TOGGLE_SIDEBAR':
       return {
         ...state,
         sidebarCollapsed: !state.sidebarCollapsed,
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'TOGGLE_QUICK_ACTIONS':
       return {
         ...state,
         quickActionsVisible: !state.quickActionsVisible,
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     case 'CLEAR_CONTEXT':
       return {
         ...initialState,
@@ -210,16 +213,16 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
         tenantsCache: state.tenantsCache,
         unitsCache: state.unitsCache,
         paymentsCache: state.paymentsCache,
-        cacheExpiry: state.cacheExpiry
+        cacheExpiry: state.cacheExpiry,
       }
-      
+
     case 'RESTORE_CONTEXT':
       return {
         ...state,
         ...action.payload,
-        lastUpdated: now
+        lastUpdated: now,
       }
-      
+
     default:
       return state
   }
@@ -234,7 +237,7 @@ const DashboardContext = createContext<{
 // Provider component
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
-  
+
   // Persist context to localStorage (debounced)
   useEffect(() => {
     const persistableState = {
@@ -245,7 +248,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       activeFilters: state.activeFilters,
       currentTab: state.currentTab,
       sidebarCollapsed: state.sidebarCollapsed,
-      quickActionsVisible: state.quickActionsVisible
+      quickActionsVisible: state.quickActionsVisible,
     }
 
     // Debounce localStorage writes to prevent excessive updates
@@ -261,9 +264,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     state.searchTerm,
     state.currentTab,
     state.sidebarCollapsed,
-    state.quickActionsVisible
+    state.quickActionsVisible,
   ])
-  
+
   // Restore context from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('dashboardContext')
@@ -276,11 +279,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [])
-  
+
   return (
-    <DashboardContext.Provider value={{ state, dispatch }}>
-      {children}
-    </DashboardContext.Provider>
+    <DashboardContext.Provider value={{ state, dispatch }}>{children}</DashboardContext.Provider>
   )
 }
 

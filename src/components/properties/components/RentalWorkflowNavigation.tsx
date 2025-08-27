@@ -12,7 +12,9 @@ interface RentalWorkflowNavigationProps {
   onWorkflowClick?: (workflow: RentalWorkflowType) => void
 }
 
-export default function RentalWorkflowNavigation({ onWorkflowClick }: RentalWorkflowNavigationProps) {
+export default function RentalWorkflowNavigation({
+  onWorkflowClick,
+}: RentalWorkflowNavigationProps) {
   const { properties: userProperties } = usePropertyAccess()
   const [activeWorkflow, setActiveWorkflow] = useState<RentalWorkflowType | null>(null)
   const [showTenantManagement, setShowTenantManagement] = useState(false)
@@ -29,40 +31,43 @@ export default function RentalWorkflowNavigation({ onWorkflowClick }: RentalWork
     setSelectedPropertyId(undefined)
   }, [])
 
-  const handleWorkflowClick = useCallback((workflow: RentalWorkflowType) => {
-    // Reset all states first to prevent cross-contamination
-    resetWorkflowStates()
+  const handleWorkflowClick = useCallback(
+    (workflow: RentalWorkflowType) => {
+      // Reset all states first to prevent cross-contamination
+      resetWorkflowStates()
 
-    // Set the new active workflow
-    setActiveWorkflow(workflow)
-    onWorkflowClick?.(workflow)
+      // Set the new active workflow
+      setActiveWorkflow(workflow)
+      onWorkflowClick?.(workflow)
 
-    // Handle specific workflows
-    if (workflow === 'unitAddition') {
-      // Show unit addition card
-      setShowUnitAddition(true)
-      return
-    }
-
-    if (workflow === 'tenants') {
-      // Show inline tenant management with property selection
-      setShowTenantManagement(true)
-      // Default to first available property if none selected
-      if (!selectedPropertyId && userProperties.length > 0) {
-        setSelectedPropertyId(userProperties[0].property_id)
+      // Handle specific workflows
+      if (workflow === 'unitAddition') {
+        // Show unit addition card
+        setShowUnitAddition(true)
+        return
       }
-      return
-    }
 
-    if (workflow === 'properties') {
-      // Show inline properties overview
-      setShowPropertiesOverview(true)
-      return
-    }
+      if (workflow === 'tenants') {
+        // Show inline tenant management with property selection
+        setShowTenantManagement(true)
+        // Default to first available property if none selected
+        if (!selectedPropertyId && userProperties.length > 0) {
+          setSelectedPropertyId(userProperties[0].property_id)
+        }
+        return
+      }
 
-    // For other workflows, show a placeholder message - these can be connected to actual features later
-    alert(`${workflow.charAt(0).toUpperCase() + workflow.slice(1)} workflow coming soon!`)
-  }, [onWorkflowClick, resetWorkflowStates])
+      if (workflow === 'properties') {
+        // Show inline properties overview
+        setShowPropertiesOverview(true)
+        return
+      }
+
+      // For other workflows, show a placeholder message - these can be connected to actual features later
+      alert(`${workflow.charAt(0).toUpperCase() + workflow.slice(1)} workflow coming soon!`)
+    },
+    [onWorkflowClick, resetWorkflowStates]
+  )
 
   // Close tenant management handler
   const closeTenantManagement = useCallback(() => {
@@ -93,7 +98,9 @@ export default function RentalWorkflowNavigation({ onWorkflowClick }: RentalWork
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
-      <h2 className="text-xl font-bold text-gray-900 mb-3 text-center">Rental Management Workflows</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-3 text-center">
+        Rental Management Workflows
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2">
         {/* Unit Addition */}
         <button
@@ -105,10 +112,22 @@ export default function RentalWorkflowNavigation({ onWorkflowClick }: RentalWork
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeWorkflow === 'unitAddition' ? 'bg-indigo-200' : 'bg-indigo-100'}`}>📄</div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeWorkflow === 'unitAddition' ? 'bg-indigo-200' : 'bg-indigo-100'}`}
+            >
+              📄
+            </div>
             <div>
-              <h3 className={`font-bold text-base transition-colors ${activeWorkflow === 'unitAddition' ? 'text-indigo-900' : 'text-indigo-800'}`}>Unit Addition</h3>
-              <p className={`text-sm mt-1 transition-colors opacity-75 ${activeWorkflow === 'unitAddition' ? 'text-indigo-700' : 'text-indigo-600'}`}>Add new units to existing properties</p>
+              <h3
+                className={`font-bold text-base transition-colors ${activeWorkflow === 'unitAddition' ? 'text-indigo-900' : 'text-indigo-800'}`}
+              >
+                Unit Addition
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeWorkflow === 'unitAddition' ? 'text-indigo-700' : 'text-indigo-600'}`}
+              >
+                Add new units to existing properties
+              </p>
             </div>
           </div>
         </button>
@@ -123,10 +142,22 @@ export default function RentalWorkflowNavigation({ onWorkflowClick }: RentalWork
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${showTenantManagement ? 'bg-green-200' : 'bg-green-100'}`}>👥</div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${showTenantManagement ? 'bg-green-200' : 'bg-green-100'}`}
+            >
+              👥
+            </div>
             <div>
-              <h3 className={`font-bold text-base transition-colors ${showTenantManagement ? 'text-green-900' : 'text-green-800'}`}>Tenant Management</h3>
-              <p className={`text-sm mt-1 transition-colors opacity-75 ${showTenantManagement ? 'text-green-700' : 'text-green-600'}`}>Onboarding, renewals, and move-outs</p>
+              <h3
+                className={`font-bold text-base transition-colors ${showTenantManagement ? 'text-green-900' : 'text-green-800'}`}
+              >
+                Tenant Management
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${showTenantManagement ? 'text-green-700' : 'text-green-600'}`}
+              >
+                Onboarding, renewals, and move-outs
+              </p>
             </div>
           </div>
         </button>
@@ -141,10 +172,22 @@ export default function RentalWorkflowNavigation({ onWorkflowClick }: RentalWork
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeWorkflow === 'billing' ? 'bg-blue-200' : 'bg-blue-100'}`}>💰</div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeWorkflow === 'billing' ? 'bg-blue-200' : 'bg-blue-100'}`}
+            >
+              💰
+            </div>
             <div>
-              <h3 className={`font-bold text-base transition-colors ${activeWorkflow === 'billing' ? 'text-blue-900' : 'text-blue-800'}`}>Rent Collection</h3>
-              <p className={`text-sm mt-1 transition-colors opacity-75 ${activeWorkflow === 'billing' ? 'text-blue-700' : 'text-blue-600'}`}>Billing, payments, and collections</p>
+              <h3
+                className={`font-bold text-base transition-colors ${activeWorkflow === 'billing' ? 'text-blue-900' : 'text-blue-800'}`}
+              >
+                Rent Collection
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeWorkflow === 'billing' ? 'text-blue-700' : 'text-blue-600'}`}
+              >
+                Billing, payments, and collections
+              </p>
             </div>
           </div>
         </button>
@@ -159,10 +202,22 @@ export default function RentalWorkflowNavigation({ onWorkflowClick }: RentalWork
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeWorkflow === 'maintenance' ? 'bg-orange-200' : 'bg-orange-100'}`}>🔧</div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeWorkflow === 'maintenance' ? 'bg-orange-200' : 'bg-orange-100'}`}
+            >
+              🔧
+            </div>
             <div>
-              <h3 className={`font-bold text-base transition-colors ${activeWorkflow === 'maintenance' ? 'text-orange-900' : 'text-orange-800'}`}>Maintenance</h3>
-              <p className={`text-sm mt-1 transition-colors opacity-75 ${activeWorkflow === 'maintenance' ? 'text-orange-700' : 'text-orange-600'}`}>Repairs, requests, and scheduling</p>
+              <h3
+                className={`font-bold text-base transition-colors ${activeWorkflow === 'maintenance' ? 'text-orange-900' : 'text-orange-800'}`}
+              >
+                Maintenance
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeWorkflow === 'maintenance' ? 'text-orange-700' : 'text-orange-600'}`}
+              >
+                Repairs, requests, and scheduling
+              </p>
             </div>
           </div>
         </button>
@@ -177,10 +232,22 @@ export default function RentalWorkflowNavigation({ onWorkflowClick }: RentalWork
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${showPropertiesOverview ? 'bg-teal-200' : 'bg-teal-100'}`}>🏘️</div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${showPropertiesOverview ? 'bg-teal-200' : 'bg-teal-100'}`}
+            >
+              🏘️
+            </div>
             <div>
-              <h3 className={`font-bold text-base transition-colors ${showPropertiesOverview ? 'text-teal-900' : 'text-teal-800'}`}>Properties Overview</h3>
-              <p className={`text-sm mt-1 transition-colors opacity-75 ${showPropertiesOverview ? 'text-teal-700' : 'text-teal-600'}`}>View all properties, stats, and analytics</p>
+              <h3
+                className={`font-bold text-base transition-colors ${showPropertiesOverview ? 'text-teal-900' : 'text-teal-800'}`}
+              >
+                Properties Overview
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${showPropertiesOverview ? 'text-teal-700' : 'text-teal-600'}`}
+              >
+                View all properties, stats, and analytics
+              </p>
             </div>
           </div>
         </button>
@@ -205,7 +272,8 @@ export default function RentalWorkflowNavigation({ onWorkflowClick }: RentalWork
             ))}
           </select>
           <p className="mt-1 text-xs text-gray-600">
-            Select a specific property to manage tenants for that property only, or choose "All Properties" to see all tenants.
+            Select a specific property to manage tenants for that property only, or choose "All
+            Properties" to see all tenants.
           </p>
         </div>
       )}

@@ -16,8 +16,8 @@ export default function UserManagementPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">User Management Dashboard</h1>
           <p className="text-gray-600 mt-2 max-w-2xl mx-auto">
-            Streamline your user management process with our comprehensive workflow system.
-            Add new users and manage permissions efficiently.
+            Streamline your user management process with our comprehensive workflow system. Add new
+            users and manage permissions efficiently.
           </p>
         </div>
 
@@ -43,7 +43,10 @@ export default function UserManagementPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Permission Management</h2>
-                  <p className="text-gray-600">Manage user permissions, access control, and role assignments with lifecycle-based filtering</p>
+                  <p className="text-gray-600">
+                    Manage user permissions, access control, and role assignments with
+                    lifecycle-based filtering
+                  </p>
                 </div>
               </div>
               <GranularPermissionManager />

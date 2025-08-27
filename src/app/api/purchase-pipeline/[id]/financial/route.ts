@@ -12,7 +12,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -66,15 +68,19 @@ async function checkPurchaseAccess(userId: string, purchaseId: string): Promise<
 }
 
 // GET /api/purchase-pipeline/[id]/financial - Get financial data for purchase pipeline entry
-export const GET = compose(withRateLimit, withAuth)(async (req: NextRequest) => {
+export const GET = compose(
+  withRateLimit,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract purchase id from path
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const pipelineIdx = segments.findIndex(s => s === 'purchase-pipeline')
-    const purchaseId = pipelineIdx >= 0 && segments[pipelineIdx + 1] ? segments[pipelineIdx + 1] : undefined
+    const pipelineIdx = segments.findIndex((s) => s === 'purchase-pipeline')
+    const purchaseId =
+      pipelineIdx >= 0 && segments[pipelineIdx + 1] ? segments[pipelineIdx + 1] : undefined
     if (!purchaseId) return errors.badRequest('Missing purchase id in path')
 
     const hasAccess = await checkPurchaseAccess(userId, purchaseId)
@@ -95,21 +101,23 @@ export const GET = compose(withRateLimit, withAuth)(async (req: NextRequest) => 
 
     // Get real financial data from the shared tables using purchase pipeline ID as property_id
     const [costsResult, paymentsResult] = await Promise.all([
-      admin.from('property_acquisition_costs')
+      admin
+        .from('property_acquisition_costs')
         .select('*')
         .eq('property_id', purchaseId)
         .order('created_at', { ascending: true }),
-      admin.from('property_payment_installments')
+      admin
+        .from('property_payment_installments')
         .select('*')
         .eq('property_id', purchaseId)
-        .order('payment_date', { ascending: true })
+        .order('payment_date', { ascending: true }),
     ])
 
     const financialData = {
       costs: costsResult.data || [],
       payments: paymentsResult.data || [],
       purchase_price_agreement_kes: purchase.negotiated_price_kes || purchase.asking_price_kes || 0,
-      purchase_price_history: [] // Purchase pipeline doesn't have price history yet
+      purchase_price_history: [], // Purchase pipeline doesn't have price history yet
     }
 
     return Response.json(financialData)
@@ -120,7 +128,11 @@ export const GET = compose(withRateLimit, withAuth)(async (req: NextRequest) => 
 })
 
 // PATCH /api/purchase-pipeline/[id]/financial - Update financial data for purchase pipeline entry
-export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const PATCH = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     console.log('PATCH purchase-pipeline financial - userId:', userId)
@@ -128,8 +140,9 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
 
     // Extract purchase id from path
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const pipelineIdx = segments.findIndex(s => s === 'purchase-pipeline')
-    const purchaseId = pipelineIdx >= 0 && segments[pipelineIdx + 1] ? segments[pipelineIdx + 1] : undefined
+    const pipelineIdx = segments.findIndex((s) => s === 'purchase-pipeline')
+    const purchaseId =
+      pipelineIdx >= 0 && segments[pipelineIdx + 1] ? segments[pipelineIdx + 1] : undefined
     console.log('PATCH purchase-pipeline financial - purchaseId:', purchaseId)
     if (!purchaseId) return errors.badRequest('Missing purchase id in path')
 
@@ -195,7 +208,12 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
       }
 
       // Record price change history if price changed
-      console.log('Checking price change history - priceChanged:', priceChanged, 'change_reason:', json.change_reason)
+      console.log(
+        'Checking price change history - priceChanged:',
+        priceChanged,
+        'change_reason:',
+        json.change_reason
+      )
       if (priceChanged && json.change_reason) {
         console.log('Recording price change history...')
         try {
@@ -220,7 +238,12 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
           // Don't fail the whole request if history recording fails
         }
       } else {
-        console.log('Not recording price change history - priceChanged:', priceChanged, 'change_reason present:', !!json.change_reason)
+        console.log(
+          'Not recording price change history - priceChanged:',
+          priceChanged,
+          'change_reason present:',
+          !!json.change_reason
+        )
       }
     }
 

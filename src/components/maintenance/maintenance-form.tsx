@@ -41,14 +41,19 @@ interface UnitOption {
   }
 }
 
-export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }: MaintenanceFormProps) {
+export default function MaintenanceForm({
+  onSuccess,
+  onCancel,
+  isOpen,
+  ticket,
+}: MaintenanceFormProps) {
   const [formData, setFormData] = useState<MaintenanceFormData>({
     unitId: '',
     description: '',
     priority: 'MEDIUM',
     status: 'OPEN',
     estCost: '',
-    actualCost: ''
+    actualCost: '',
   })
   const [units, setUnits] = useState<UnitOption[]>([])
   const [loading, setLoading] = useState(false)
@@ -66,7 +71,7 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
           priority: ticket.priority,
           status: ticket.status,
           estCost: ticket.est_cost_kes?.toString() || '',
-          actualCost: ticket.actual_cost_kes?.toString() || ''
+          actualCost: ticket.actual_cost_kes?.toString() || '',
         })
       } else {
         // Creating new ticket
@@ -76,7 +81,7 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
           priority: 'MEDIUM',
           status: 'OPEN',
           estCost: '',
-          actualCost: ''
+          actualCost: '',
         })
       }
     }
@@ -88,18 +93,25 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
       setError(null)
 
       // 1) Get landlord IDs for the current authenticated user
-      const { data: landlordIds, error: landlordError } = await clientBusinessFunctions.getUserLandlordIds()
+      const { data: landlordIds, error: landlordError } =
+        await clientBusinessFunctions.getUserLandlordIds()
       if (landlordError) {
         console.error('Error determining user access (landlord IDs):', landlordError)
         setUnits([])
-        setError(typeof landlordError === 'string' ? landlordError : 'Unable to determine your property access. Please sign in again.')
+        setError(
+          typeof landlordError === 'string'
+            ? landlordError
+            : 'Unable to determine your property access. Please sign in again.'
+        )
         return
       }
 
       if (!landlordIds || landlordIds.length === 0) {
         // No access means no properties/units to show
         setUnits([])
-        setError('You have no accessible properties. Please contact the administrator to gain access.')
+        setError(
+          'You have no accessible properties. Please contact the administrator to gain access.'
+        )
         return
       }
 
@@ -128,14 +140,16 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
       // 3) Get active units for those properties and include property name
       const { data: unitsData, error: unitsError } = await supabase
         .from('units')
-        .select(`
+        .select(
+          `
           id,
           unit_label,
           property_id,
           properties (
             name
           )
-        `)
+        `
+        )
         .in('property_id', propertyIds)
         .eq('is_active', true)
         .order('unit_label', { ascending: true })
@@ -153,8 +167,8 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
           id: unit.id,
           unit_label: unit.unit_label,
           properties: {
-            name: unit.properties?.name || 'Unknown Property'
-          }
+            name: unit.properties?.name || 'Unknown Property',
+          },
         }))
         .sort((a: UnitOption, b: UnitOption) => {
           const byProperty = a.properties.name.localeCompare(b.properties.name)
@@ -171,11 +185,13 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }))
   }
 
@@ -215,7 +231,7 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
         status: formData.status,
         est_cost_kes: formData.estCost ? parseFloat(formData.estCost) : null,
         actual_cost_kes: formData.actualCost ? parseFloat(formData.actualCost) : null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
       if (ticket) {
@@ -231,12 +247,10 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
         }
       } else {
         // Create new ticket
-        const { error: insertError } = await supabase
-          .from('maintenance_tickets')
-          .insert({
-            ...ticketData,
-            created_by_user_id: null // TODO: Set to current user ID when auth is implemented
-          })
+        const { error: insertError } = await supabase.from('maintenance_tickets').insert({
+          ...ticketData,
+          created_by_user_id: null, // TODO: Set to current user ID when auth is implemented
+        })
 
         if (insertError) {
           setError('Failed to create maintenance ticket')
@@ -253,7 +267,7 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
     }
   }
 
-  const selectedUnit = units.find(u => u.id === formData.unitId)
+  const selectedUnit = units.find((u) => u.id === formData.unitId)
 
   if (!isOpen) return null
 
@@ -265,12 +279,14 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
             <h3 className="text-lg font-medium text-gray-900">
               {ticket ? 'Update Maintenance Ticket' : 'Create Maintenance Ticket'}
             </h3>
-            <button
-              onClick={onCancel}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -302,9 +318,7 @@ export default function MaintenanceForm({ onSuccess, onCancel, isOpen, ticket }:
                   </option>
                 ))}
               </select>
-              {loadingUnits && (
-                <p className="mt-1 text-sm text-gray-500">Loading units...</p>
-              )}
+              {loadingUnits && <p className="mt-1 text-sm text-gray-500">Loading units...</p>}
             </div>
 
             <div>

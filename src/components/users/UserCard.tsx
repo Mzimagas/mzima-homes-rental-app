@@ -12,7 +12,13 @@ interface UserCardProps {
   onToggleStatus: (newStatus: boolean) => void
 }
 
-const UserCard = React.memo(function UserCard({ user, onEdit, onView, onDelete, onToggleStatus }: UserCardProps) {
+const UserCard = React.memo(function UserCard({
+  user,
+  onEdit,
+  onView,
+  onDelete,
+  onToggleStatus,
+}: UserCardProps) {
   const [isToggling, setIsToggling] = useState(false)
 
   const handleStatusToggle = async () => {
@@ -29,7 +35,7 @@ const UserCard = React.memo(function UserCard({ user, onEdit, onView, onDelete, 
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -37,7 +43,7 @@ const UserCard = React.memo(function UserCard({ user, onEdit, onView, onDelete, 
     if (!name) return '??'
     return name
       .split(' ')
-      .map(word => word.charAt(0))
+      .map((word) => word.charAt(0))
       .join('')
       .toUpperCase()
       .slice(0, 2)
@@ -76,14 +82,14 @@ const UserCard = React.memo(function UserCard({ user, onEdit, onView, onDelete, 
               <h3 className="text-lg font-semibold text-gray-900 truncate">
                 {user.name || 'Unnamed User'}
               </h3>
-              <p className="text-sm text-gray-600 truncate">
-                {user.email}
-              </p>
+              <p className="text-sm text-gray-600 truncate">{user.email}</p>
             </div>
           </div>
-          
+
           {/* Status Badge */}
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(user.isActive)}`}>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(user.isActive)}`}
+          >
             {user.isActive ? 'Active' : 'Inactive'}
           </span>
         </div>
@@ -91,10 +97,10 @@ const UserCard = React.memo(function UserCard({ user, onEdit, onView, onDelete, 
         {/* Member Number and Role */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-700">
-              #{user.memberNumber}
-            </span>
-            <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getRoleColor(user.role)}`}>
+            <span className="text-sm font-medium text-gray-700">#{user.memberNumber}</span>
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getRoleColor(user.role)}`}
+            >
               {user.role}
             </span>
           </div>
@@ -104,8 +110,18 @@ const UserCard = React.memo(function UserCard({ user, onEdit, onView, onDelete, 
         <div className="space-y-2 mb-4">
           {user.phoneNumber && (
             <div className="flex items-center text-sm text-gray-600">
-              <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              <svg
+                className="w-4 h-4 mr-2 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                />
               </svg>
               {user.phoneNumber}
             </div>
@@ -138,20 +154,10 @@ const UserCard = React.memo(function UserCard({ user, onEdit, onView, onDelete, 
         <div className="flex items-center justify-between">
           {/* Primary Actions */}
           <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onView}
-              className="text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={onView} className="text-xs">
               View
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onEdit}
-              className="text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={onEdit} className="text-xs">
               Edit
             </Button>
           </div>
@@ -181,7 +187,12 @@ const UserCard = React.memo(function UserCard({ user, onEdit, onView, onDelete, 
               title="Delete user"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
               </svg>
             </button>
           </div>

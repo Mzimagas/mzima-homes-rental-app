@@ -4,21 +4,21 @@ import { createServerSupabaseClient } from '../../../../../lib/supabase-server'
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = await createServerSupabaseClient()
-    
+
     // Check if user is authenticated (but allow for testing)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     const userId = params.id
     const body = await request.json()
-    
+
     console.log('Updating user:', userId, 'with data:', body)
 
     // Validate required fields
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 
     // Check if user exists
@@ -29,10 +29,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       .single()
 
     if (fetchError || !existingUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Check for duplicate email or member number (excluding current user)
@@ -45,10 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         .single()
 
       if (emailCheck) {
-        return NextResponse.json(
-          { error: 'Email address is already in use' },
-          { status: 409 }
-        )
+        return NextResponse.json({ error: 'Email address is already in use' }, { status: 409 })
       }
     }
 
@@ -61,16 +55,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         .single()
 
       if (memberCheck) {
-        return NextResponse.json(
-          { error: 'Member number is already in use' },
-          { status: 409 }
-        )
+        return NextResponse.json({ error: 'Member number is already in use' }, { status: 409 })
       }
     }
 
     // Prepare update data
     const updateData: any = {
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     }
 
     if (body.fullName) updateData.full_name = body.fullName
@@ -95,16 +86,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // Log the user update
     try {
-      await supabase
-        .from('activities_audit')
-        .insert({
-          actor_id: user?.id || userId,
-          entity_type: 'enhanced_users',
-          entity_id: userId,
-          action: 'user_updated',
-          description: `Updated user: ${body.fullName || existingUser.email}`,
-          after_snapshot: updateData
-        })
+      await supabase.from('activities_audit').insert({
+        actor_id: user?.id || userId,
+        entity_type: 'enhanced_users',
+        entity_id: userId,
+        action: 'user_updated',
+        description: `Updated user: ${body.fullName || existingUser.email}`,
+        after_snapshot: updateData,
+      })
     } catch (auditError) {
       console.error('Error logging user update audit:', auditError)
       // Don't fail the entire operation for audit logging
@@ -112,35 +101,31 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     return NextResponse.json({
       success: true,
-      message: 'User updated successfully'
+      message: 'User updated successfully',
     })
-
   } catch (error) {
     console.error('Error in user PATCH API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = await createServerSupabaseClient()
-    
+
     // Check if user is authenticated (but allow for testing)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     const userId = params.id
 
     console.log('Deleting user:', userId)
 
     // Validate required fields
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 
     // Check if user exists and get their data for logging
@@ -151,18 +136,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       .single()
 
     if (fetchError || !existingUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Check if user is already soft deleted
     if (existingUser.deleted_at) {
-      return NextResponse.json(
-        { error: 'User is already deleted' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'User is already deleted' }, { status: 400 })
     }
 
     // Soft delete: Set deleted_at timestamp instead of actually deleting
@@ -171,7 +150,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       .update({
         deleted_at: new Date().toISOString(),
         status: 'inactive', // Also set status to inactive
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
       .is('deleted_at', null) // Only update if not already deleted
@@ -186,25 +165,23 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     // Log the user soft deletion
     try {
-      await supabase
-        .from('activities_audit')
-        .insert({
-          actor_id: user?.id || userId,
-          entity_type: 'enhanced_users',
-          entity_id: userId,
-          action: 'user_soft_deleted',
-          description: `Soft deleted user: ${existingUser.full_name} (${existingUser.email}) - Data retained for recovery`,
-          before_snapshot: {
-            email: existingUser.email,
-            full_name: existingUser.full_name,
-            member_number: existingUser.member_number,
-            status: existingUser.status
-          },
-          after_snapshot: {
-            deleted_at: new Date().toISOString(),
-            status: 'inactive'
-          }
-        })
+      await supabase.from('activities_audit').insert({
+        actor_id: user?.id || userId,
+        entity_type: 'enhanced_users',
+        entity_id: userId,
+        action: 'user_soft_deleted',
+        description: `Soft deleted user: ${existingUser.full_name} (${existingUser.email}) - Data retained for recovery`,
+        before_snapshot: {
+          email: existingUser.email,
+          full_name: existingUser.full_name,
+          member_number: existingUser.member_number,
+          status: existingUser.status,
+        },
+        after_snapshot: {
+          deleted_at: new Date().toISOString(),
+          status: 'inactive',
+        },
+      })
     } catch (auditError) {
       console.error('Error logging user soft deletion audit:', auditError)
       // Don't fail the entire operation for audit logging
@@ -214,39 +191,36 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       success: true,
       message: 'User deleted successfully. Data has been retained and can be recovered if needed.',
       soft_delete: true,
-      deleted_at: new Date().toISOString()
+      deleted_at: new Date().toISOString(),
     })
-
   } catch (error) {
     console.error('Error in user DELETE API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = await createServerSupabaseClient()
-    
+
     // Check if user is authenticated (but allow for testing)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     const userId = params.id
 
     // Validate required fields
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 
     // Get user data (exclude soft deleted)
     const { data: userData, error: fetchError } = await supabase
       .from('enhanced_users')
-      .select(`
+      .select(
+        `
         id,
         member_number,
         email,
@@ -257,27 +231,21 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         created_at,
         last_login,
         deleted_at
-      `)
+      `
+      )
       .eq('id', userId)
       .is('deleted_at', null) // Only get non-deleted users
       .single()
 
     if (fetchError || !userData) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     return NextResponse.json({
-      user: userData
+      user: userData,
     })
-
   } catch (error) {
     console.error('Error in user GET API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

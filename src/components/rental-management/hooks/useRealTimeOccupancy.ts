@@ -40,15 +40,14 @@ export const useRealTimeOccupancy = () => {
       let data, error
 
       // First try the optimized view
-      const viewResult = await supabase
-        .from('unit_occupancy_summary')
-        .select('*')
+      const viewResult = await supabase.from('unit_occupancy_summary').select('*')
 
       if (viewResult.error && viewResult.error.code === '42P01') {
         // View doesn't exist, use manual query with existing tables
         const manualResult = await supabase
           .from('units')
-          .select(`
+          .select(
+            `
             id,
             unit_label,
             monthly_rent_kes,
@@ -63,15 +62,16 @@ export const useRealTimeOccupancy = () => {
               status,
               tenants!inner(id, full_name)
             )
-          `)
+          `
+          )
           .eq('is_active', true)
 
         if (manualResult.error) throw manualResult.error
 
         // Transform manual query result to match view format
-        data = manualResult.data?.map(unit => {
-          const activeAgreement = unit.tenancy_agreements?.find((agreement: any) =>
-            agreement.status === 'ACTIVE'
+        data = manualResult.data?.map((unit) => {
+          const activeAgreement = unit.tenancy_agreements?.find(
+            (agreement: any) => agreement.status === 'ACTIVE'
           )
 
           return {
@@ -85,7 +85,7 @@ export const useRealTimeOccupancy = () => {
             tenant_name: activeAgreement?.tenants?.full_name,
             lease_start: activeAgreement?.start_date,
             lease_end: activeAgreement?.end_date,
-            actual_rent: activeAgreement?.monthly_rent_kes
+            actual_rent: activeAgreement?.monthly_rent_kes,
           }
         })
         error = null
@@ -105,7 +105,7 @@ export const useRealTimeOccupancy = () => {
           lease_start: unit.lease_start,
           lease_end: unit.lease_end,
           monthly_rent: unit.actual_rent || unit.monthly_rent_kes,
-          available_from: unit.lease_end
+          available_from: unit.lease_end,
         }
       })
 
@@ -125,15 +125,15 @@ export const useRealTimeOccupancy = () => {
 
     if (eventType === 'INSERT' && newRecord.status === 'ACTIVE') {
       // New lease created
-      setOccupancyData(prev => ({
+      setOccupancyData((prev) => ({
         ...prev,
         [newRecord.unit_id]: {
           occupied: true,
           tenant_id: newRecord.tenant_id,
           lease_start: newRecord.start_date,
           lease_end: newRecord.end_date,
-          monthly_rent: newRecord.monthly_rent_kes
-        }
+          monthly_rent: newRecord.monthly_rent_kes,
+        },
       }))
 
       event = {
@@ -141,18 +141,17 @@ export const useRealTimeOccupancy = () => {
         unitId: newRecord.unit_id,
         tenantId: newRecord.tenant_id,
         data: newRecord,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
-
     } else if (eventType === 'UPDATE') {
       if (oldRecord.status === 'ACTIVE' && newRecord.status !== 'ACTIVE') {
         // Lease terminated
-        setOccupancyData(prev => ({
+        setOccupancyData((prev) => ({
           ...prev,
           [oldRecord.unit_id]: {
             occupied: false,
-            available_from: newRecord.end_date || new Date().toISOString().split('T')[0]
-          }
+            available_from: newRecord.end_date || new Date().toISOString().split('T')[0],
+          },
         }))
 
         event = {
@@ -160,19 +159,18 @@ export const useRealTimeOccupancy = () => {
           unitId: oldRecord.unit_id,
           tenantId: oldRecord.tenant_id,
           data: { oldRecord, newRecord },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         }
-
       } else if (newRecord.status === 'ACTIVE') {
         // Lease updated
-        setOccupancyData(prev => ({
+        setOccupancyData((prev) => ({
           ...prev,
           [newRecord.unit_id]: {
             ...prev[newRecord.unit_id],
             lease_start: newRecord.start_date,
             lease_end: newRecord.end_date,
-            monthly_rent: newRecord.monthly_rent_kes
-          }
+            monthly_rent: newRecord.monthly_rent_kes,
+          },
         }))
 
         event = {
@@ -180,18 +178,17 @@ export const useRealTimeOccupancy = () => {
           unitId: newRecord.unit_id,
           tenantId: newRecord.tenant_id,
           data: newRecord,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         }
       }
-
     } else if (eventType === 'DELETE' && oldRecord.status === 'ACTIVE') {
       // Lease deleted
-      setOccupancyData(prev => ({
+      setOccupancyData((prev) => ({
         ...prev,
         [oldRecord.unit_id]: {
           occupied: false,
-          available_from: new Date().toISOString().split('T')[0]
-        }
+          available_from: new Date().toISOString().split('T')[0],
+        },
       }))
 
       event = {
@@ -199,12 +196,12 @@ export const useRealTimeOccupancy = () => {
         unitId: oldRecord.unit_id,
         tenantId: oldRecord.tenant_id,
         data: oldRecord,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
     }
 
     if (event) {
-      setRecentEvents(prev => [event!, ...prev.slice(0, 9)]) // Keep last 10 events
+      setRecentEvents((prev) => [event!, ...prev.slice(0, 9)]) // Keep last 10 events
       setLastUpdate(new Date())
     }
   }, [])
@@ -214,22 +211,22 @@ export const useRealTimeOccupancy = () => {
     const { eventType, new: newRecord, old: oldRecord } = payload
 
     if (eventType === 'UPDATE' && oldRecord.status !== newRecord.status) {
-      setOccupancyData(prev => ({
+      setOccupancyData((prev) => ({
         ...prev,
         [newRecord.id]: {
           ...prev[newRecord.id],
-          occupied: newRecord.status === 'OCCUPIED'
-        }
+          occupied: newRecord.status === 'OCCUPIED',
+        },
       }))
 
       const event: RealTimeEvent = {
         type: 'UNIT_STATUS_CHANGED',
         unitId: newRecord.id,
         data: { oldStatus: oldRecord.status, newStatus: newRecord.status },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
 
-      setRecentEvents(prev => [event, ...prev.slice(0, 9)])
+      setRecentEvents((prev) => [event, ...prev.slice(0, 9)])
       setLastUpdate(new Date())
     }
   }, [])
@@ -246,7 +243,7 @@ export const useRealTimeOccupancy = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'tenancy_agreements'
+          table: 'tenancy_agreements',
         },
         handleTenancyChange
       )
@@ -255,7 +252,7 @@ export const useRealTimeOccupancy = () => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'units'
+          table: 'units',
         },
         handleUnitStatusChange
       )
@@ -269,14 +266,17 @@ export const useRealTimeOccupancy = () => {
   }, [loadInitialOccupancyData, handleTenancyChange, handleUnitStatusChange])
 
   // Utility functions
-  const getUnitOccupancy = useCallback((unitId: string) => {
-    return occupancyData[unitId] || { occupied: false }
-  }, [occupancyData])
+  const getUnitOccupancy = useCallback(
+    (unitId: string) => {
+      return occupancyData[unitId] || { occupied: false }
+    },
+    [occupancyData]
+  )
 
   const getOccupancyStats = useCallback(() => {
     const units = Object.values(occupancyData)
     const totalUnits = units.length
-    const occupiedUnits = units.filter(unit => unit.occupied).length
+    const occupiedUnits = units.filter((unit) => unit.occupied).length
     const vacantUnits = totalUnits - occupiedUnits
     const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0
 
@@ -284,7 +284,7 @@ export const useRealTimeOccupancy = () => {
       totalUnits,
       occupiedUnits,
       vacantUnits,
-      occupancyRate
+      occupancyRate,
     }
   }, [occupancyData])
 
@@ -299,20 +299,20 @@ export const useRealTimeOccupancy = () => {
     recentEvents,
     getUnitOccupancy,
     getOccupancyStats,
-    refreshOccupancyData
+    refreshOccupancyData,
   }
 }
 
 // Hook for specific unit real-time updates
 export const useUnitRealTime = (unitId: string) => {
   const { occupancyData, getUnitOccupancy, isConnected } = useRealTimeOccupancy()
-  
+
   return {
     unitData: getUnitOccupancy(unitId),
     isConnected,
     isOccupied: occupancyData[unitId]?.occupied || false,
     tenantName: occupancyData[unitId]?.tenant_name,
-    leaseEnd: occupancyData[unitId]?.lease_end
+    leaseEnd: occupancyData[unitId]?.lease_end,
   }
 }
 
@@ -331,7 +331,7 @@ export const usePropertyRealTime = (propertyId: string) => {
           .eq('is_active', true)
 
         if (error) throw error
-        setPropertyUnits(data?.map(unit => unit.id) || [])
+        setPropertyUnits(data?.map((unit) => unit.id) || [])
       } catch (error) {
         console.error('Error loading property units:', error)
       }
@@ -340,21 +340,25 @@ export const usePropertyRealTime = (propertyId: string) => {
     loadPropertyUnits()
   }, [propertyId])
 
-  const propertyOccupancy = propertyUnits.reduce((acc, unitId) => {
-    const unitData = occupancyData[unitId]
-    if (unitData) {
-      acc.totalUnits++
-      if (unitData.occupied) acc.occupiedUnits++
-    }
-    return acc
-  }, { totalUnits: 0, occupiedUnits: 0 })
+  const propertyOccupancy = propertyUnits.reduce(
+    (acc, unitId) => {
+      const unitData = occupancyData[unitId]
+      if (unitData) {
+        acc.totalUnits++
+        if (unitData.occupied) acc.occupiedUnits++
+      }
+      return acc
+    },
+    { totalUnits: 0, occupiedUnits: 0 }
+  )
 
   return {
     ...propertyOccupancy,
     vacantUnits: propertyOccupancy.totalUnits - propertyOccupancy.occupiedUnits,
-    occupancyRate: propertyOccupancy.totalUnits > 0 
-      ? (propertyOccupancy.occupiedUnits / propertyOccupancy.totalUnits) * 100 
-      : 0,
-    isConnected
+    occupancyRate:
+      propertyOccupancy.totalUnits > 0
+        ? (propertyOccupancy.occupiedUnits / propertyOccupancy.totalUnits) * 100
+        : 0,
+    isConnected,
   }
 }

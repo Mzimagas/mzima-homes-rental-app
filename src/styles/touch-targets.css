@@ -1,0 +1,115 @@
+/* Touch Target Optimization for Mobile Accessibility */
+
+/* Minimum 44px touch targets as per iOS/Android guidelines */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.touch-target-sm {
+  min-height: 40px;
+  min-width: 40px;
+}
+
+.touch-target-lg {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+/* Interactive elements that need touch optimization */
+button:not(.no-touch-target),
+[role='button']:not(.no-touch-target),
+a:not(.no-touch-target),
+input[type='checkbox']:not(.no-touch-target),
+input[type='radio']:not(.no-touch-target),
+select:not(.no-touch-target) {
+  min-height: 44px;
+}
+
+/* Specific component touch targets */
+.search-result-item {
+  min-height: 44px;
+  padding: 12px 16px;
+}
+
+.nav-item {
+  min-height: 44px;
+  padding: 12px 16px;
+}
+
+.menu-item {
+  min-height: 44px;
+  padding: 12px 16px;
+}
+
+.icon-button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px;
+}
+
+/* Form controls */
+.form-input {
+  min-height: 44px;
+  padding: 12px 16px;
+}
+
+.form-select {
+  min-height: 44px;
+  padding: 12px 16px;
+}
+
+.form-checkbox,
+.form-radio {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Card actions */
+.card-action {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Table row actions */
+.table-action {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Responsive touch targets */
+@media (max-width: 768px) {
+  /* Increase touch targets on mobile */
+  .touch-target-responsive {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Ensure adequate spacing between touch targets */
+  .touch-spacing > * + * {
+    margin-top: 8px;
+  }
+
+  .touch-spacing-horizontal > * + * {
+    margin-left: 8px;
+  }
+}
+
+/* Focus states for touch targets */
+.touch-target:focus,
+button:focus,
+[role='button']:focus,
+a:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Hover states for touch-capable devices */
+@media (hover: hover) {
+  .touch-target:hover,
+  button:hover,
+  [role='button']:hover,
+  a:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}

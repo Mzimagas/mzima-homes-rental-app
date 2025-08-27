@@ -16,7 +16,9 @@ export class RentalManagementService {
   static async getDashboardStats() {
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
 
       // Use the database function to get dashboard stats
@@ -60,22 +62,28 @@ export class RentalManagementService {
   static async getRecentActivity() {
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
 
       // Use the database function to get recent activity
-      const { data: activities, error } = await supabase
-        .rpc('get_recent_activity', { user_id: user.id, limit_count: 10 })
+      const { data: activities, error } = await supabase.rpc('get_recent_activity', {
+        user_id: user.id,
+        limit_count: 10,
+      })
 
       if (error) throw error
 
-      return activities?.map((activity: any) => ({
-        icon: activity.icon,
-        title: activity.title,
-        description: activity.description,
-        timestamp: new Date(activity.created_at).toLocaleDateString(),
-        property_name: activity.property_name,
-      })) || []
+      return (
+        activities?.map((activity: any) => ({
+          icon: activity.icon,
+          title: activity.title,
+          description: activity.description,
+          timestamp: new Date(activity.created_at).toLocaleDateString(),
+          property_name: activity.property_name,
+        })) || []
+      )
     } catch (error) {
       console.error('Error getting recent activity:', error)
       return []
@@ -87,7 +95,8 @@ export class RentalManagementService {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select(`
+        .select(
+          `
           *,
           units(
             id,
@@ -101,28 +110,39 @@ export class RentalManagementService {
               tenants(full_name)
             )
           )
-        `)
+        `
+        )
         .eq('lifecycle_status', 'ACTIVE')
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      return data?.map(property => ({
-        ...property,
-        total_units: property.units?.length || 0,
-        occupied_units: property.units?.filter((unit: any) => 
-          unit.tenancy_agreements?.some((agreement: any) => agreement.status === 'ACTIVE')
-        ).length || 0,
-        vacancy_rate: property.units?.length > 0 
-          ? ((property.units.length - property.units.filter((unit: any) => 
+      return (
+        data?.map((property) => ({
+          ...property,
+          total_units: property.units?.length || 0,
+          occupied_units:
+            property.units?.filter((unit: any) =>
               unit.tenancy_agreements?.some((agreement: any) => agreement.status === 'ACTIVE')
-            ).length) / property.units.length) * 100 
-          : 0,
-        monthly_income: property.units?.reduce((total: number, unit: any) => {
-          const hasActiveTenant = unit.tenancy_agreements?.some((agreement: any) => agreement.status === 'ACTIVE')
-          return total + (hasActiveTenant ? (unit.monthly_rent_kes || 0) : 0)
-        }, 0) || 0,
-      })) || []
+            ).length || 0,
+          vacancy_rate:
+            property.units?.length > 0
+              ? ((property.units.length -
+                  property.units.filter((unit: any) =>
+                    unit.tenancy_agreements?.some((agreement: any) => agreement.status === 'ACTIVE')
+                  ).length) /
+                  property.units.length) *
+                100
+              : 0,
+          monthly_income:
+            property.units?.reduce((total: number, unit: any) => {
+              const hasActiveTenant = unit.tenancy_agreements?.some(
+                (agreement: any) => agreement.status === 'ACTIVE'
+              )
+              return total + (hasActiveTenant ? unit.monthly_rent_kes || 0 : 0)
+            }, 0) || 0,
+        })) || []
+      )
     } catch (error) {
       console.error('Error getting rental properties:', error)
       throw new Error('Failed to load rental properties')
@@ -134,7 +154,8 @@ export class RentalManagementService {
     try {
       const { data, error } = await supabase
         .from('tenants')
-        .select(`
+        .select(
+          `
           *,
           tenancy_agreements(
             id,
@@ -149,39 +170,42 @@ export class RentalManagementService {
               properties(name)
             )
           )
-        `)
+        `
+        )
         .neq('status', 'DELETED')
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      return data?.map(tenant => ({
-        ...tenant,
-        current_unit: tenant.tenancy_agreements?.find((agreement: any) => 
-          agreement.status === 'ACTIVE'
-        )?.units || null,
-        rent_balance: 0, // TODO: Calculate from payments
-        last_payment_date: null, // TODO: Get from payments
-      })) || []
+      return (
+        data?.map((tenant) => ({
+          ...tenant,
+          current_unit:
+            tenant.tenancy_agreements?.find((agreement: any) => agreement.status === 'ACTIVE')
+              ?.units || null,
+          rent_balance: 0, // TODO: Calculate from payments
+          last_payment_date: null, // TODO: Get from payments
+        })) || []
+      )
     } catch (error) {
       console.error('Error getting tenants:', error)
       throw new Error('Failed to load tenants')
     }
   }
 
-
-
   // Maintenance Requests
   static async getMaintenanceRequests(): Promise<MaintenanceRequest[]> {
     try {
       const { data, error } = await supabase
         .from('maintenance_requests')
-        .select(`
+        .select(
+          `
           *,
           properties(name),
           units(unit_label),
           tenants(full_name)
-        `)
+        `
+        )
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -196,11 +220,7 @@ export class RentalManagementService {
   // Create new tenant
   static async createTenant(tenantData: any): Promise<RentalTenant> {
     try {
-      const { data, error } = await supabase
-        .from('tenants')
-        .insert(tenantData)
-        .select()
-        .single()
+      const { data, error } = await supabase.from('tenants').insert(tenantData).select().single()
 
       if (error) throw error
 
@@ -217,11 +237,13 @@ export class RentalManagementService {
       const { data, error } = await supabase
         .from('tenancy_agreements')
         .insert(leaseData)
-        .select(`
+        .select(
+          `
           *,
           tenants(full_name),
           units(unit_label, properties(name))
-        `)
+        `
+        )
         .single()
 
       if (error) throw error
@@ -256,7 +278,8 @@ export class RentalManagementService {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select(`
+        .select(
+          `
           id,
           name,
           units(
@@ -271,7 +294,8 @@ export class RentalManagementService {
               tenants(full_name)
             )
           )
-        `)
+        `
+        )
         .eq('id', propertyId)
         .single()
 
@@ -280,14 +304,16 @@ export class RentalManagementService {
       const property = data
       const units = property.units || []
       const totalUnits = units.length
-      const occupiedUnits = units.filter((unit: any) => 
+      const occupiedUnits = units.filter((unit: any) =>
         unit.tenancy_agreements?.some((agreement: any) => agreement.status === 'ACTIVE')
       ).length
 
       const rentRollUnits = units.map((unit: any) => {
-        const activeAgreement = unit.tenancy_agreements?.find((agreement: any) => agreement.status === 'ACTIVE')
+        const activeAgreement = unit.tenancy_agreements?.find(
+          (agreement: any) => agreement.status === 'ACTIVE'
+        )
         const tenant = activeAgreement?.tenants
-        
+
         return {
           unit_id: unit.id,
           unit_label: unit.unit_label,
@@ -324,13 +350,8 @@ export class RentalManagementService {
 
   // Payment methods (placeholder implementations)
   static async getPayments(): Promise<any[]> {
-    try {
-      // TODO: Implement when payments table is ready
-      return []
-    } catch (error) {
-      console.error('Error getting payments:', error)
-      throw new Error('Failed to load payments')
-    }
+    // TODO: Implement when payments table is ready
+    return []
   }
 
   static async createPayment(paymentData: any): Promise<any> {
@@ -346,13 +367,8 @@ export class RentalManagementService {
 
   // Inspection methods (placeholder implementations)
   static async getInspections(): Promise<any[]> {
-    try {
-      // TODO: Implement when inspections table is ready
-      return []
-    } catch (error) {
-      console.error('Error getting inspections:', error)
-      throw new Error('Failed to load inspections')
-    }
+    // TODO: Implement when inspections table is ready
+    return []
   }
 
   static async createInspection(inspectionData: any): Promise<any> {
@@ -368,13 +384,8 @@ export class RentalManagementService {
 
   // Document methods (placeholder implementations)
   static async getDocuments(): Promise<any[]> {
-    try {
-      // TODO: Implement when documents table and Supabase Storage are ready
-      return []
-    } catch (error) {
-      console.error('Error getting documents:', error)
-      throw new Error('Failed to load documents')
-    }
+    // TODO: Implement when documents table and Supabase Storage are ready
+    return []
   }
 
   static async uploadDocument(file: File, metadata: any): Promise<any> {

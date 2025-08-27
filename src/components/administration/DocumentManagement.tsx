@@ -59,7 +59,7 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
     try {
       setLoading(true)
       setError(null)
-      
+
       // TODO: Implement actual document loading from Supabase
       // For now, using mock data
       const mockDocuments: Document[] = [
@@ -73,7 +73,7 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
           property_id: 'prop-1',
           url: '#',
           tags: ['legal', 'ownership'],
-          description: 'Original property deed document'
+          description: 'Original property deed document',
         },
         {
           id: '2',
@@ -86,10 +86,10 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
           tenant_id: 'tenant-1',
           url: '#',
           tags: ['lease', 'rental'],
-          description: 'Standard lease agreement for rental unit'
-        }
+          description: 'Standard lease agreement for rental unit',
+        },
       ]
-      
+
       setDocuments(mockDocuments)
     } catch (err) {
       setError('Failed to load documents')
@@ -112,7 +112,14 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
     try {
       setUploading(true)
       // TODO: Implement file upload to Supabase Storage
-      console.log('Uploading file:', selectedFile.name, 'Category:', uploadCategory, 'Type:', uploadType)
+      console.log(
+        'Uploading file:',
+        selectedFile.name,
+        'Category:',
+        uploadCategory,
+        'Type:',
+        uploadType
+      )
       alert('Document upload functionality will be implemented in the next phase')
       setShowUploadModal(false)
       setSelectedFile(null)
@@ -129,10 +136,11 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
     }
   }
 
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredDocuments = documents.filter((doc) => {
+    const matchesSearch =
+      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.tags?.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesCategory = categoryFilter === 'all' || doc.category === categoryFilter
     const matchesType = typeFilter === 'all' || doc.type === typeFilter
     return matchesSearch && matchesCategory && matchesType
@@ -140,12 +148,12 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
 
   const getDocumentCounts = () => {
     return {
-      property: documents.filter(d => d.category === 'property').length,
-      rental: documents.filter(d => d.category === 'rental').length,
-      legal: documents.filter(d => d.category === 'legal').length,
-      financial: documents.filter(d => d.category === 'financial').length,
-      maintenance: documents.filter(d => d.category === 'maintenance').length,
-      other: documents.filter(d => d.category === 'other').length,
+      property: documents.filter((d) => d.category === 'property').length,
+      rental: documents.filter((d) => d.category === 'rental').length,
+      legal: documents.filter((d) => d.category === 'legal').length,
+      financial: documents.filter((d) => d.category === 'financial').length,
+      maintenance: documents.filter((d) => d.category === 'maintenance').length,
+      other: documents.filter((d) => d.category === 'other').length,
     }
   }
 
@@ -231,9 +239,13 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
           <div
             key={category.key}
             className={`bg-white border rounded-lg p-4 text-center cursor-pointer transition-colors ${
-              categoryFilter === category.key ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+              categoryFilter === category.key
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
             }`}
-            onClick={() => setCategoryFilter(categoryFilter === category.key ? 'all' : category.key)}
+            onClick={() =>
+              setCategoryFilter(categoryFilter === category.key ? 'all' : category.key)
+            }
           >
             <div className="text-2xl mb-2">{category.icon}</div>
             <div className="text-sm font-medium text-gray-900">{category.label}</div>
@@ -358,9 +370,7 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
         <div className="space-y-6">
           {/* File Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select File *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Select File *</label>
             <input
               type="file"
               onChange={handleFileSelect}
@@ -376,9 +386,7 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
 
           {/* Category Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
             <select
               value={uploadCategory}
               onChange={(e) => setUploadCategory(e.target.value)}
@@ -396,9 +404,7 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
 
           {/* Type Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Document Type *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Document Type *</label>
             <select
               value={uploadType}
               onChange={(e) => setUploadType(e.target.value)}
@@ -417,9 +423,7 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea
               value={uploadDescription}
               onChange={(e) => setUploadDescription(e.target.value)}

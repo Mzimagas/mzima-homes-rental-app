@@ -14,16 +14,16 @@ import HandoverPipelineManager from './components/HandoverPipelineManager'
 import { RoleManagementService } from '../../lib/auth/role-management.service'
 
 import { PropertyManagementService } from './services/property-management.service'
-import { 
+import {
   PropertyManagementTabsProps,
   PropertyWithLifecycle,
   PendingChanges,
-  ActiveTab
+  ActiveTab,
 } from './types/property-management.types'
 
 export default function PropertyManagementTabs({
   onPropertyCreated,
-  onRefreshProperties
+  onRefreshProperties,
 }: PropertyManagementTabsProps) {
   useAuth() // Keep auth context active
 
@@ -62,6 +62,24 @@ export default function PropertyManagementTabs({
     try {
       setLoading(true)
       const data = await PropertyManagementService.loadProperties()
+
+      // Debug: Check if coordinates are included in property data
+      if (process.env.NODE_ENV === 'development') {
+        console.group('🏠 Properties Data Loaded')
+        console.log(`Loaded ${data.length} properties`)
+        if (data.length > 0) {
+          const sampleProperty = data[0]
+          console.log('Sample property data:', sampleProperty)
+          console.log('Coordinate fields:', {
+            lat: sampleProperty.lat,
+            lng: sampleProperty.lng,
+            physical_address: sampleProperty.physical_address,
+            hasCoordinates: sampleProperty.lat != null && sampleProperty.lng != null,
+          })
+        }
+        console.groupEnd()
+      }
+
       setProperties(data)
     } catch (error) {
       console.error('Error loading properties:', error)
@@ -84,21 +102,21 @@ export default function PropertyManagementTabs({
 
   // Pending changes management
   const handleSubdivisionChange = (propertyId: string, value: string) => {
-    setPendingChanges(prev => ({ 
-      ...prev, 
-      [propertyId]: { ...prev[propertyId], subdivision: value } 
+    setPendingChanges((prev) => ({
+      ...prev,
+      [propertyId]: { ...prev[propertyId], subdivision: value },
     }))
   }
 
   const handleHandoverChange = (propertyId: string, value: string) => {
-    setPendingChanges(prev => ({ 
-      ...prev, 
-      [propertyId]: { ...prev[propertyId], handover: value } 
+    setPendingChanges((prev) => ({
+      ...prev,
+      [propertyId]: { ...prev[propertyId], handover: value },
     }))
   }
 
   const cancelChanges = (propertyId: string) => {
-    setPendingChanges(prev => {
+    setPendingChanges((prev) => {
       const copy = { ...prev }
       delete copy[propertyId]
       return copy
@@ -109,15 +127,15 @@ export default function PropertyManagementTabs({
     const changes = pendingChanges[propertyId]
     if (!changes) return
 
-    setSavingChanges(prev => ({ ...prev, [propertyId]: true }))
+    setSavingChanges((prev) => ({ ...prev, [propertyId]: true }))
 
     try {
       const success = await PropertyManagementService.savePropertyChanges(
-        propertyId, 
-        changes, 
+        propertyId,
+        changes,
         properties
       )
-      
+
       if (success) {
         cancelChanges(propertyId)
         await loadProperties()
@@ -125,7 +143,7 @@ export default function PropertyManagementTabs({
     } catch (error) {
       console.error('Error saving changes:', error)
     } finally {
-      setSavingChanges(prev => ({ ...prev, [propertyId]: false }))
+      setSavingChanges((prev) => ({ ...prev, [propertyId]: false }))
     }
   }
 
@@ -136,10 +154,7 @@ export default function PropertyManagementTabs({
   return (
     <div className="space-y-6">
       {/* Interactive Workflow Cards - Primary Navigation */}
-      <WorkflowNavigation 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-      />
+      <WorkflowNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Tab Content */}
       <div className="min-h-[600px]">
@@ -185,10 +200,6 @@ export default function PropertyManagementTabs({
             onSearchChange={setSearchTerm}
           />
         )}
-
-
-
-
       </div>
     </div>
   )

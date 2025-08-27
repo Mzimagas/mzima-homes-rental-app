@@ -8,7 +8,7 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const Body = z.object({
   billing_day: z.number().int().min(1).max(31).optional(),
-  align_billing_to_start: z.boolean().optional()
+  align_billing_to_start: z.boolean().optional(),
 })
 
 async function getRoleForAgreement(userId: string, agreementId: string) {
@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest) {
 
     // Extract agreement id from path
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const idx = segments.findIndex(s => s === 'tenancy-agreements')
+    const idx = segments.findIndex((s) => s === 'tenancy-agreements')
     const agreementId = idx >= 0 && segments[idx + 1] ? segments[idx + 1] : undefined
     if (!agreementId) return errors.badRequest('Missing agreement id in path')
 
@@ -51,9 +51,11 @@ export async function PATCH(req: NextRequest) {
     if (!userId) return errors.unauthorized()
 
     const membership = await getRoleForAgreement(userId, agreementId)
-    if (!membership || membership.status !== 'ACTIVE') return errors.forbidden('No access to tenancy agreement')
+    if (!membership || membership.status !== 'ACTIVE')
+      return errors.forbidden('No access to tenancy agreement')
     const role = (membership as any).role
-    if (!['OWNER', 'PROPERTY_MANAGER', 'LEASING_AGENT'].includes(role)) return errors.forbidden('Insufficient role')
+    if (!['OWNER', 'PROPERTY_MANAGER', 'LEASING_AGENT'].includes(role))
+      return errors.forbidden('Insufficient role')
 
     const parsed = Body.safeParse(await req.json().catch(() => ({})))
     if (!parsed.success) return errors.validation(parsed.error.flatten())
@@ -73,4 +75,3 @@ export async function PATCH(req: NextRequest) {
     return errors.internal()
   }
 }
-

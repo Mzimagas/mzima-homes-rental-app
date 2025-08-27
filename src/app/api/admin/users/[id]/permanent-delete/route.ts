@@ -5,18 +5,18 @@ import { createServerSupabaseClient } from '../../../../../../lib/supabase-serve
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = await createServerSupabaseClient()
-    
+
     // Check if user is authenticated (but allow for testing)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     const userId = params.id
 
     // Validate required fields
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 
     // Check if user exists and is soft deleted
@@ -27,10 +27,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       .single()
 
     if (fetchError || !existingUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Check if user is actually soft deleted
@@ -47,22 +44,19 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     if (confirm !== 'PERMANENTLY_DELETE') {
       return NextResponse.json(
-        { error: 'Permanent deletion requires confirmation. Send { "confirm": "PERMANENTLY_DELETE" } in request body.' },
+        {
+          error:
+            'Permanent deletion requires confirmation. Send { "confirm": "PERMANENTLY_DELETE" } in request body.',
+        },
         { status: 400 }
       )
     }
 
     // Delete user profile first (if exists)
-    await supabase
-      .from('user_profiles')
-      .delete()
-      .eq('user_id', userId)
+    await supabase.from('user_profiles').delete().eq('user_id', userId)
 
     // Permanently delete enhanced user record
-    const { error: deleteError } = await supabase
-      .from('enhanced_users')
-      .delete()
-      .eq('id', userId)
+    const { error: deleteError } = await supabase.from('enhanced_users').delete().eq('id', userId)
 
     if (deleteError) {
       console.error('Error permanently deleting user:', deleteError)
@@ -74,22 +68,20 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     // Log the permanent deletion
     try {
-      await supabase
-        .from('activities_audit')
-        .insert({
-          actor_id: user?.id || userId,
-          entity_type: 'enhanced_users',
-          entity_id: userId,
-          action: 'user_permanently_deleted',
-          description: `Permanently deleted user: ${existingUser.full_name} (${existingUser.email}) - Data cannot be recovered`,
-          before_snapshot: {
-            email: existingUser.email,
-            full_name: existingUser.full_name,
-            member_number: existingUser.member_number,
-            status: existingUser.status,
-            deleted_at: existingUser.deleted_at
-          }
-        })
+      await supabase.from('activities_audit').insert({
+        actor_id: user?.id || userId,
+        entity_type: 'enhanced_users',
+        entity_id: userId,
+        action: 'user_permanently_deleted',
+        description: `Permanently deleted user: ${existingUser.full_name} (${existingUser.email}) - Data cannot be recovered`,
+        before_snapshot: {
+          email: existingUser.email,
+          full_name: existingUser.full_name,
+          member_number: existingUser.member_number,
+          status: existingUser.status,
+          deleted_at: existingUser.deleted_at,
+        },
+      })
     } catch (auditError) {
       console.error('Error logging permanent deletion audit:', auditError)
       // Don't fail the entire operation for audit logging
@@ -104,15 +96,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         email: existingUser.email,
         full_name: existingUser.full_name,
         member_number: existingUser.member_number,
-        permanently_deleted_at: new Date().toISOString()
-      }
+        permanently_deleted_at: new Date().toISOString(),
+      },
     })
-
   } catch (error) {
     console.error('Error in permanent delete API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

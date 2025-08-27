@@ -7,7 +7,12 @@ import supabase from '../../../lib/supabase-client'
 import { UnitAllocationService } from './unit-allocation.service'
 
 export interface ConflictDetails {
-  type: 'UNIT_OCCUPIED' | 'TENANT_HAS_LEASE' | 'DATE_OVERLAP' | 'MAINTENANCE_CONFLICT' | 'RENT_MISMATCH'
+  type:
+    | 'UNIT_OCCUPIED'
+    | 'TENANT_HAS_LEASE'
+    | 'DATE_OVERLAP'
+    | 'MAINTENANCE_CONFLICT'
+    | 'RENT_MISMATCH'
   severity: 'CRITICAL' | 'WARNING' | 'INFO'
   message: string
   conflictingData: any
@@ -41,7 +46,6 @@ export interface AllocationRequest {
 }
 
 export class ConflictPreventionService {
-
   /**
    * Comprehensive conflict checking for allocation requests
    */
@@ -70,14 +74,14 @@ export class ConflictPreventionService {
       conflicts.push(...rentConflicts)
 
       // Determine if allocation can proceed
-      const criticalConflicts = conflicts.filter(c => c.severity === 'CRITICAL')
+      const criticalConflicts = conflicts.filter((c) => c.severity === 'CRITICAL')
       const canProceed = criticalConflicts.length === 0
 
       // Generate recommended action
       let recommendedAction = 'Proceed with allocation'
       if (criticalConflicts.length > 0) {
         recommendedAction = 'Resolve critical conflicts before proceeding'
-      } else if (conflicts.some(c => c.severity === 'WARNING')) {
+      } else if (conflicts.some((c) => c.severity === 'WARNING')) {
         recommendedAction = 'Review warnings and consider suggested resolutions'
       }
 
@@ -85,22 +89,23 @@ export class ConflictPreventionService {
         hasConflicts: conflicts.length > 0,
         conflicts,
         canProceed,
-        recommendedAction
+        recommendedAction,
       }
-
     } catch (error) {
       console.error('Error checking allocation conflicts:', error)
       return {
         hasConflicts: true,
-        conflicts: [{
-          type: 'UNIT_OCCUPIED',
-          severity: 'CRITICAL',
-          message: 'Unable to verify allocation safety due to system error',
-          conflictingData: { error: error instanceof Error ? error.message : 'Unknown error' },
-          suggestedResolutions: []
-        }],
+        conflicts: [
+          {
+            type: 'UNIT_OCCUPIED',
+            severity: 'CRITICAL',
+            message: 'Unable to verify allocation safety due to system error',
+            conflictingData: { error: error instanceof Error ? error.message : 'Unknown error' },
+            suggestedResolutions: [],
+          },
+        ],
         canProceed: false,
-        recommendedAction: 'System error - please try again'
+        recommendedAction: 'System error - please try again',
       }
     }
   }
@@ -127,7 +132,7 @@ export class ConflictPreventionService {
             conflictingData: {
               lease,
               tenant: availability.conflictingTenant,
-              availableFrom: availability.availableFrom
+              availableFrom: availability.availableFrom,
             },
             suggestedResolutions: [
               {
@@ -137,7 +142,7 @@ export class ConflictPreventionService {
                 action: 'ADJUST_DATES',
                 parameters: { newStartDate: availability.availableFrom },
                 risk: 'LOW',
-                automated: false
+                automated: false,
               },
               {
                 id: 'suggest-alternative',
@@ -145,7 +150,7 @@ export class ConflictPreventionService {
                 description: 'Find similar available units for the tenant',
                 action: 'SUGGEST_ALTERNATIVE',
                 risk: 'LOW',
-                automated: true
+                automated: true,
               },
               {
                 id: 'terminate-existing',
@@ -154,13 +159,12 @@ export class ConflictPreventionService {
                 action: 'TERMINATE_EXISTING',
                 parameters: { leaseId: lease.id },
                 risk: 'HIGH',
-                automated: false
-              }
-            ]
+                automated: false,
+              },
+            ],
           })
         }
       }
-
     } catch (error) {
       console.error('Error checking unit conflicts:', error)
     }
@@ -171,16 +175,20 @@ export class ConflictPreventionService {
   /**
    * Check for tenant lease conflicts
    */
-  private static async checkTenantConflicts(request: AllocationRequest): Promise<ConflictDetails[]> {
+  private static async checkTenantConflicts(
+    request: AllocationRequest
+  ): Promise<ConflictDetails[]> {
     const conflicts: ConflictDetails[] = []
 
     try {
       const { data: existingLeases, error } = await supabase
         .from('tenancy_agreements')
-        .select(`
+        .select(
+          `
           id, start_date, end_date, status, monthly_rent_kes,
           units(id, unit_label, properties(name))
-        `)
+        `
+        )
         .eq('tenant_id', request.tenantId)
         .eq('status', 'ACTIVE')
 
@@ -189,14 +197,14 @@ export class ConflictPreventionService {
       if (existingLeases && existingLeases.length > 0) {
         for (const lease of existingLeases) {
           const unit = lease.units as any
-          
+
           conflicts.push({
             type: 'TENANT_HAS_LEASE',
             severity: 'WARNING',
             message: `Tenant already has an active lease in ${unit?.properties?.name} - ${unit?.unit_label}`,
             conflictingData: {
               existingLease: lease,
-              currentUnit: unit
+              currentUnit: unit,
             },
             suggestedResolutions: [
               {
@@ -206,7 +214,7 @@ export class ConflictPreventionService {
                 action: 'TERMINATE_EXISTING',
                 parameters: { leaseId: lease.id },
                 risk: 'MEDIUM',
-                automated: false
+                automated: false,
               },
               {
                 id: 'dual-lease',
@@ -214,13 +222,12 @@ export class ConflictPreventionService {
                 description: 'Permit tenant to have multiple active leases (unusual)',
                 action: 'OVERRIDE',
                 risk: 'HIGH',
-                automated: false
-              }
-            ]
+                automated: false,
+              },
+            ],
           })
         }
       }
-
     } catch (error) {
       console.error('Error checking tenant conflicts:', error)
     }
@@ -245,7 +252,10 @@ export class ConflictPreventionService {
           type: 'DATE_OVERLAP',
           severity: 'WARNING',
           message: 'Start date is in the past',
-          conflictingData: { startDate: request.startDate, today: today.toISOString().split('T')[0] },
+          conflictingData: {
+            startDate: request.startDate,
+            today: today.toISOString().split('T')[0],
+          },
           suggestedResolutions: [
             {
               id: 'adjust-to-today',
@@ -254,9 +264,9 @@ export class ConflictPreventionService {
               action: 'ADJUST_DATES',
               parameters: { newStartDate: today.toISOString().split('T')[0] },
               risk: 'LOW',
-              automated: true
-            }
-          ]
+              automated: true,
+            },
+          ],
         })
       }
 
@@ -275,15 +285,17 @@ export class ConflictPreventionService {
               action: 'ADJUST_DATES',
               parameters: { endDate: null },
               risk: 'LOW',
-              automated: false
-            }
-          ]
+              automated: false,
+            },
+          ],
         })
       }
 
       // Check for very short lease periods
       if (endDate) {
-        const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+        const daysDiff = Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        )
         if (daysDiff < 30) {
           conflicts.push({
             type: 'DATE_OVERLAP',
@@ -297,13 +309,12 @@ export class ConflictPreventionService {
                 description: 'Extend to minimum 30 days or make ongoing',
                 action: 'ADJUST_DATES',
                 risk: 'LOW',
-                automated: false
-              }
-            ]
+                automated: false,
+              },
+            ],
           })
         }
       }
-
     } catch (error) {
       console.error('Error checking date conflicts:', error)
     }
@@ -314,7 +325,9 @@ export class ConflictPreventionService {
   /**
    * Check for maintenance conflicts
    */
-  private static async checkMaintenanceConflicts(request: AllocationRequest): Promise<ConflictDetails[]> {
+  private static async checkMaintenanceConflicts(
+    request: AllocationRequest
+  ): Promise<ConflictDetails[]> {
     const conflicts: ConflictDetails[] = []
 
     try {
@@ -333,7 +346,7 @@ export class ConflictPreventionService {
           message: 'Unit is currently under maintenance',
           conflictingData: {
             unitStatus: unit.status,
-            maintenanceNotes: unit.maintenance_notes
+            maintenanceNotes: unit.maintenance_notes,
           },
           suggestedResolutions: [
             {
@@ -342,7 +355,7 @@ export class ConflictPreventionService {
               description: 'Delay allocation until maintenance is complete',
               action: 'WAIT',
               risk: 'LOW',
-              automated: false
+              automated: false,
             },
             {
               id: 'suggest-alternative',
@@ -350,9 +363,9 @@ export class ConflictPreventionService {
               description: 'Suggest similar units not under maintenance',
               action: 'SUGGEST_ALTERNATIVE',
               risk: 'LOW',
-              automated: true
-            }
-          ]
+              automated: true,
+            },
+          ],
         })
       }
 
@@ -369,12 +382,11 @@ export class ConflictPreventionService {
               description: 'Change unit status to active (requires authorization)',
               action: 'OVERRIDE',
               risk: 'MEDIUM',
-              automated: false
-            }
-          ]
+              automated: false,
+            },
+          ],
         })
       }
-
     } catch (error) {
       console.error('Error checking maintenance conflicts:', error)
     }
@@ -413,7 +425,7 @@ export class ConflictPreventionService {
             unitRent,
             requestedRent,
             difference: rentDifference,
-            percentageDiff: Math.round(percentageDiff)
+            percentageDiff: Math.round(percentageDiff),
           },
           suggestedResolutions: [
             {
@@ -423,7 +435,7 @@ export class ConflictPreventionService {
               action: 'ADJUST_DATES',
               parameters: { newRent: unitRent },
               risk: 'LOW',
-              automated: true
+              automated: true,
             },
             {
               id: 'approve-custom-rent',
@@ -431,12 +443,11 @@ export class ConflictPreventionService {
               description: 'Proceed with custom rent amount (requires approval)',
               action: 'OVERRIDE',
               risk: 'MEDIUM',
-              automated: false
-            }
-          ]
+              automated: false,
+            },
+          ],
         })
       }
-
     } catch (error) {
       console.error('Error checking rent conflicts:', error)
     }
@@ -455,33 +466,33 @@ export class ConflictPreventionService {
       switch (resolution.action) {
         case 'ADJUST_DATES':
           return this.handleDateAdjustment(resolution, originalRequest)
-        
+
         case 'SUGGEST_ALTERNATIVE':
           return this.handleAlternativeSuggestion(resolution, originalRequest)
-        
+
         case 'TERMINATE_EXISTING':
           return this.handleLeaseTermination(resolution, originalRequest)
-        
+
         case 'OVERRIDE':
           return this.handleOverride(resolution, originalRequest)
-        
+
         case 'WAIT':
           return {
             success: true,
             message: 'Allocation postponed. Please try again later.',
           }
-        
+
         default:
           return {
             success: false,
-            message: 'Unknown resolution action'
+            message: 'Unknown resolution action',
           }
       }
     } catch (error) {
       console.error('Error executing resolution:', error)
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to execute resolution'
+        message: error instanceof Error ? error.message : 'Failed to execute resolution',
       }
     }
   }
@@ -491,15 +502,15 @@ export class ConflictPreventionService {
     originalRequest: AllocationRequest
   ) {
     const updatedRequest = { ...originalRequest }
-    
+
     if (resolution.parameters?.newStartDate) {
       updatedRequest.startDate = resolution.parameters.newStartDate
     }
-    
+
     if (resolution.parameters?.endDate !== undefined) {
       updatedRequest.endDate = resolution.parameters.endDate
     }
-    
+
     if (resolution.parameters?.newRent) {
       updatedRequest.monthlyRent = resolution.parameters.newRent
     }
@@ -507,7 +518,7 @@ export class ConflictPreventionService {
     return {
       success: true,
       message: 'Dates adjusted successfully',
-      updatedRequest
+      updatedRequest,
     }
   }
 
@@ -523,7 +534,7 @@ export class ConflictPreventionService {
     return {
       success: true,
       message: `Found ${alternativeUnits.length} alternative units`,
-      updatedRequest: originalRequest
+      updatedRequest: originalRequest,
     }
   }
 
@@ -534,7 +545,7 @@ export class ConflictPreventionService {
     if (!resolution.parameters?.leaseId) {
       return {
         success: false,
-        message: 'Lease ID required for termination'
+        message: 'Lease ID required for termination',
       }
     }
 
@@ -542,7 +553,7 @@ export class ConflictPreventionService {
     return {
       success: true,
       message: 'Lease termination initiated (requires manual approval)',
-      updatedRequest: originalRequest
+      updatedRequest: originalRequest,
     }
   }
 
@@ -553,7 +564,7 @@ export class ConflictPreventionService {
     return {
       success: true,
       message: 'Override approved - proceeding with allocation',
-      updatedRequest: originalRequest
+      updatedRequest: originalRequest,
     }
   }
 }

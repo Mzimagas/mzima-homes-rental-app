@@ -7,11 +7,11 @@ export function redactEmail(email?: string | null): string {
   try {
     const [local, domain] = email.split('@')
     if (!domain) return '***'
-    const redactedLocal = local.length <= 2 ? '*'.repeat(local.length) : `${local[0]}***${local[local.length - 1]}`
+    const redactedLocal =
+      local.length <= 2 ? '*'.repeat(local.length) : `${local[0]}***${local[local.length - 1]}`
     const parts = domain.split('.')
-    const redactedDomain = parts.length > 1
-      ? `${parts[0][0]}***.${parts.slice(1).join('.')}`
-      : `${domain[0]}***`
+    const redactedDomain =
+      parts.length > 1 ? `${parts[0][0]}***.${parts.slice(1).join('.')}` : `${domain[0]}***`
     return `${redactedLocal}@${redactedDomain}`
   } catch {
     return '***'
@@ -33,18 +33,24 @@ function safeClone(obj: any) {
         cause: (obj as any).cause || undefined,
       }
     }
-    return JSON.parse(JSON.stringify(obj, (key, value) => {
-      if (typeof key === 'string') {
-        const k = key.toLowerCase()
-        if (k.includes('password')) return '***'
-        if (k.includes('token')) return '***'
-        if (k.includes('secret')) return '***'
-      }
-      return value
-    }))
+    return JSON.parse(
+      JSON.stringify(obj, (key, value) => {
+        if (typeof key === 'string') {
+          const k = key.toLowerCase()
+          if (k.includes('password')) return '***'
+          if (k.includes('token')) return '***'
+          if (k.includes('secret')) return '***'
+        }
+        return value
+      })
+    )
   } catch {
     // Last-resort stringification
-    try { return String(obj) } catch { return '[unserializable]' }
+    try {
+      return String(obj)
+    } catch {
+      return '[unserializable]'
+    }
   }
 }
 
@@ -69,4 +75,3 @@ export const logger = {
 export function shouldLogAuth(): boolean {
   return !isProd
 }
-

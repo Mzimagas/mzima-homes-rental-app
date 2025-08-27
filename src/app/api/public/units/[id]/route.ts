@@ -17,13 +17,19 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     if (!unit) return NextResponse.json({ ok: false, error: 'Not found' }, { status: 404 })
 
     const [{ data: media }, { data: amenities }] = await Promise.all([
-      supabase.from('units_media').select('id, type, url, alt_text, order_index').eq('unit_id', params.id).order('order_index'),
-      supabase.from('unit_amenities').select('amenities (code, label)').eq('unit_id', params.id)
+      supabase
+        .from('units_media')
+        .select('id, type, url, alt_text, order_index')
+        .eq('unit_id', params.id)
+        .order('order_index'),
+      supabase.from('unit_amenities').select('amenities (code, label)').eq('unit_id', params.id),
     ])
 
-    return NextResponse.json({ ok: true, data: { unit, media: media || [], amenities: (amenities || []).map((r: any) => r.amenities) } })
+    return NextResponse.json({
+      ok: true,
+      data: { unit, media: media || [], amenities: (amenities || []).map((r: any) => r.amenities) },
+    })
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || 'Failed' }, { status: 500 })
   }
 }
-

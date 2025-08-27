@@ -24,19 +24,19 @@ export const DOCUMENT_TYPES = {
   INVOICE: 'invoice',
   CORRESPONDENCE: 'correspondence',
   LEGAL_OPINION: 'legal_opinion',
-  COMPLIANCE_CERTIFICATE: 'compliance_certificate'
+  COMPLIANCE_CERTIFICATE: 'compliance_certificate',
 } as const
 
-export type DocumentType = typeof DOCUMENT_TYPES[keyof typeof DOCUMENT_TYPES]
+export type DocumentType = (typeof DOCUMENT_TYPES)[keyof typeof DOCUMENT_TYPES]
 
 // Access levels
 export const ACCESS_LEVELS = {
   PUBLIC: 'public',
   INTERNAL: 'internal',
-  RESTRICTED: 'restricted'
+  RESTRICTED: 'restricted',
 } as const
 
-export type AccessLevel = typeof ACCESS_LEVELS[keyof typeof ACCESS_LEVELS]
+export type AccessLevel = (typeof ACCESS_LEVELS)[keyof typeof ACCESS_LEVELS]
 
 // Document schema
 export const documentSchema = z.object({
@@ -56,7 +56,7 @@ export const documentSchema = z.object({
   access_level: z.nativeEnum(ACCESS_LEVELS).default(ACCESS_LEVELS.INTERNAL),
   expiry_date: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 })
 
 export type DocumentInput = z.infer<typeof documentSchema>
@@ -99,23 +99,19 @@ export class DocumentService {
       const filePath = folder ? `${folder}/${fileName}` : fileName
 
       // Upload file
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      const { data, error } = await supabase.storage.from(bucket).upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      })
 
       if (error) throw error
 
       // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(filePath)
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath)
 
       return {
         url: urlData.publicUrl,
-        path: filePath
+        path: filePath,
       }
     } catch (error) {
       console.error('Error uploading file:', error)
@@ -129,7 +125,7 @@ export class DocumentService {
       const arrayBuffer = await file.arrayBuffer()
       const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
       const hashArray = Array.from(new Uint8Array(hashBuffer))
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+      const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
       return hashHex
     } catch (error) {
       console.error('Error calculating file hash:', error)
@@ -138,10 +134,7 @@ export class DocumentService {
   }
 
   // Create document record
-  async createDocument(
-    documentData: DocumentInput,
-    userId: string
-  ): Promise<Document> {
+  async createDocument(documentData: DocumentInput, userId: string): Promise<Document> {
     try {
       const validatedData = documentSchema.parse(documentData)
 
@@ -159,7 +152,7 @@ export class DocumentService {
         .insert({
           ...validatedData,
           uploaded_by: userId,
-          uploaded_at: new Date().toISOString()
+          uploaded_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -169,7 +162,7 @@ export class DocumentService {
       // Log document creation
       await this.logDocumentActivity(data.document_id, 'upload', userId, {
         document_title: data.title,
-        file_name: data.file_name
+        file_name: data.file_name,
       })
 
       return data
@@ -201,7 +194,9 @@ export class DocumentService {
         query = query.eq('access_level', filters.access_level)
       }
       if (filters.search) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,file_name.ilike.%${filters.search}%`)
+        query = query.or(
+          `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,file_name.ilike.%${filters.search}%`
+        )
       }
       if (filters.tags && filters.tags.length > 0) {
         query = query.overlaps('tags', filters.tags)
@@ -216,7 +211,7 @@ export class DocumentService {
         query = query.limit(filters.limit)
       }
       if (filters.offset) {
-        query = query.range(filters.offset, (filters.offset + (filters.limit || 10)) - 1)
+        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
       }
 
       const { data, error } = await query
@@ -264,7 +259,7 @@ export class DocumentService {
 
       // Log document update
       await this.logDocumentActivity(documentId, 'update', userId, {
-        updates: Object.keys(updates)
+        updates: Object.keys(updates),
       })
 
       return data
@@ -279,11 +274,8 @@ export class DocumentService {
     try {
       // Get document info for logging
       const document = await this.getDocumentById(documentId)
-      
-      const { error } = await supabase
-        .from('documents')
-        .delete()
-        .eq('document_id', documentId)
+
+      const { error } = await supabase.from('documents').delete().eq('document_id', documentId)
 
       if (error) throw error
 
@@ -291,7 +283,7 @@ export class DocumentService {
       if (document) {
         await this.logDocumentActivity(documentId, 'delete', userId, {
           document_title: document.title,
-          file_name: document.file_name
+          file_name: document.file_name,
         })
       }
     } catch (error) {
@@ -309,7 +301,7 @@ export class DocumentService {
         .update({
           downloaded_count: supabase.rpc('increment_download_count', { doc_id: documentId }),
           last_downloaded_at: new Date().toISOString(),
-          last_downloaded_by: userId
+          last_downloaded_by: userId,
         })
         .eq('document_id', documentId)
 
@@ -362,18 +354,21 @@ export class DocumentService {
       const fileHash = await this.calculateFileHash(file)
 
       // Create new version
-      const newVersion = await this.createDocument({
-        ...parentDoc,
-        ...updates,
-        file_url: url,
-        file_name: file.name,
-        file_size_bytes: file.size,
-        mime_type: file.type,
-        file_hash: fileHash,
-        version_no: parentDoc.version_no + 1,
-        parent_document_id: parentDocumentId,
-        is_current_version: true
-      }, userId)
+      const newVersion = await this.createDocument(
+        {
+          ...parentDoc,
+          ...updates,
+          file_url: url,
+          file_name: file.name,
+          file_size_bytes: file.size,
+          mime_type: file.type,
+          file_hash: fileHash,
+          version_no: parentDoc.version_no + 1,
+          parent_document_id: parentDocumentId,
+          is_current_version: true,
+        },
+        userId
+      )
 
       return newVersion
     } catch (error) {
@@ -408,7 +403,7 @@ export class DocumentService {
   async getDocumentsByEntity(entityType: string, entityId: string): Promise<Document[]> {
     return this.getDocuments({
       entity_type: entityType,
-      entity_id: entityId
+      entity_id: entityId,
     })
   }
 
@@ -416,15 +411,18 @@ export class DocumentService {
   async getDocumentsByType(docType: DocumentType, entityId?: string): Promise<Document[]> {
     return this.getDocuments({
       doc_type: docType,
-      entity_id: entityId
+      entity_id: entityId,
     })
   }
 
   // Search documents
-  async searchDocuments(searchTerm: string, filters: Partial<DocumentSearchFilters> = {}): Promise<Document[]> {
+  async searchDocuments(
+    searchTerm: string,
+    filters: Partial<DocumentSearchFilters> = {}
+  ): Promise<Document[]> {
     return this.getDocuments({
       ...filters,
-      search: searchTerm
+      search: searchTerm,
     })
   }
 
@@ -449,21 +447,21 @@ export class DocumentService {
         by_type: {} as Record<string, number>,
         by_access_level: {} as Record<string, number>,
         total_size_bytes: 0,
-        recent_uploads: 0
+        recent_uploads: 0,
       }
 
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
 
-      data.forEach(doc => {
+      data.forEach((doc) => {
         // Count by type
         stats.by_type[doc.doc_type] = (stats.by_type[doc.doc_type] || 0) + 1
-        
+
         // Count by access level
         stats.by_access_level[doc.access_level] = (stats.by_access_level[doc.access_level] || 0) + 1
-        
+
         // Sum file sizes
         stats.total_size_bytes += doc.file_size_bytes || 0
-        
+
         // Count recent uploads
         if (new Date(doc.uploaded_at) > oneWeekAgo) {
           stats.recent_uploads++
@@ -485,16 +483,14 @@ export class DocumentService {
     metadata?: any
   ): Promise<void> {
     try {
-      await supabase
-        .from('activities_audit')
-        .insert({
-          actor_id: userId,
-          entity_type: 'document',
-          entity_id: documentId,
-          action: action,
-          description: `Document ${action}`,
-          after_snapshot: metadata
-        })
+      await supabase.from('activities_audit').insert({
+        actor_id: userId,
+        entity_type: 'document',
+        entity_id: documentId,
+        action: action,
+        description: `Document ${action}`,
+        after_snapshot: metadata,
+      })
     } catch (error) {
       console.error('Error logging document activity:', error)
     }
@@ -511,7 +507,7 @@ export const documentUtils = {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     if (bytes === 0) return '0 Bytes'
     const i = Math.floor(Math.log(bytes) / Math.log(1024))
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
   },
 
   // Get file extension
@@ -547,8 +543,8 @@ export const documentUtils = {
       [DOCUMENT_TYPES.INVOICE]: 'Invoice',
       [DOCUMENT_TYPES.CORRESPONDENCE]: 'Correspondence',
       [DOCUMENT_TYPES.LEGAL_OPINION]: 'Legal Opinion',
-      [DOCUMENT_TYPES.COMPLIANCE_CERTIFICATE]: 'Compliance Certificate'
+      [DOCUMENT_TYPES.COMPLIANCE_CERTIFICATE]: 'Compliance Certificate',
     }
     return displayNames[docType] || docType
-  }
+  },
 }

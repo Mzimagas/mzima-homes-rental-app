@@ -11,26 +11,21 @@ interface PullToRefreshOptions {
  * Custom hook for implementing pull-to-refresh functionality
  */
 export function usePullToRefresh(options: PullToRefreshOptions) {
-  const {
-    onRefresh,
-    threshold = 80,
-    resistance = 2.5,
-    enabled = true
-  } = options
+  const { onRefresh, threshold = 80, resistance = 2.5, enabled = true } = options
 
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [pullDistance, setPullDistance] = useState(0)
   const [isPulling, setIsPulling] = useState(false)
-  
+
   const touchStart = useRef<number>(0)
   const scrollElement = useRef<HTMLElement | null>(null)
 
   const handleTouchStart = (e: TouchEvent) => {
     if (!enabled || isRefreshing) return
-    
+
     const element = e.target as HTMLElement
     scrollElement.current = element.closest('[data-pull-to-refresh]') || document.documentElement
-    
+
     // Only start pull if we're at the top of the scroll container
     if (scrollElement.current.scrollTop === 0) {
       touchStart.current = e.touches[0].clientY
@@ -40,15 +35,15 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
 
   const handleTouchMove = (e: TouchEvent) => {
     if (!enabled || isRefreshing || !isPulling || touchStart.current === 0) return
-    
+
     const currentY = e.touches[0].clientY
     const deltaY = currentY - touchStart.current
-    
+
     if (deltaY > 0 && scrollElement.current?.scrollTop === 0) {
       // Apply resistance to the pull
       const distance = Math.min(deltaY / resistance, threshold * 1.5)
       setPullDistance(distance)
-      
+
       // Prevent default scroll behavior when pulling
       e.preventDefault()
     }
@@ -56,13 +51,13 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
 
   const handleTouchEnd = async () => {
     if (!enabled || isRefreshing || !isPulling) return
-    
+
     setIsPulling(false)
-    
+
     if (pullDistance >= threshold) {
       setIsRefreshing(true)
       setPullDistance(threshold)
-      
+
       try {
         await onRefresh()
       } catch (error) {
@@ -74,7 +69,7 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
     } else {
       setPullDistance(0)
     }
-    
+
     touchStart.current = 0
   }
 
@@ -96,16 +91,16 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
     'data-pull-to-refresh': true,
     style: {
       transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined,
-      transition: isPulling ? 'none' : 'transform 0.3s ease-out'
-    }
+      transition: isPulling ? 'none' : 'transform 0.3s ease-out',
+    },
   }
 
   const refreshIndicatorProps = {
     style: {
       opacity: pullDistance > 0 ? Math.min(pullDistance / threshold, 1) : 0,
       transform: `translateY(${Math.max(pullDistance - 40, 0)}px) rotate(${pullDistance * 2}deg)`,
-      transition: isPulling ? 'none' : 'all 0.3s ease-out'
-    }
+      transition: isPulling ? 'none' : 'all 0.3s ease-out',
+    },
   }
 
   return {
@@ -114,6 +109,6 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
     pullDistance,
     pullToRefreshProps,
     refreshIndicatorProps,
-    isThresholdReached: pullDistance >= threshold
+    isThresholdReached: pullDistance >= threshold,
   }
 }

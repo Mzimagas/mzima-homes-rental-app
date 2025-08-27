@@ -21,7 +21,7 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
     type: 'other',
     description: '',
     relatedType: 'none',
-    relatedId: ''
+    relatedId: '',
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
@@ -29,11 +29,13 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
   const [uploadProgress, setUploadProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }))
   }
 
@@ -54,7 +56,7 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
         'image/gif',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain'
+        'text/plain',
       ]
 
       if (!allowedTypes.includes(file.type)) {
@@ -86,7 +88,7 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
         'image/gif',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain'
+        'text/plain',
       ]
 
       if (!allowedTypes.includes(file.type)) {
@@ -143,7 +145,7 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
         .from('documents')
         .upload(filePath, selectedFile, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
         })
 
       if (uploadError) {
@@ -158,7 +160,7 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
         type: 'other',
         description: '',
         relatedType: 'none',
-        relatedId: ''
+        relatedId: '',
       })
       setSelectedFile(null)
       if (fileInputRef.current) {
@@ -191,12 +193,14 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
         <div className="mt-3">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900">Upload Document</h3>
-            <button
-              onClick={onCancel}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -210,9 +214,7 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* File Upload Area */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                File *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">File *</label>
               <div
                 className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors"
                 onDrop={handleDrop}
@@ -221,8 +223,18 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
                 {selectedFile ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-center">
-                      <svg className="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="h-8 w-8 text-green-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                     </div>
                     <div className="text-sm text-gray-900 font-medium">{selectedFile.name}</div>
@@ -241,8 +253,18 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
                 ) : (
                   <div className="space-y-2">
                     <div className="flex items-center justify-center">
-                      <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      <svg
+                        className="h-8 w-8 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
                       </svg>
                     </div>
                     <div className="text-sm text-gray-600">
@@ -352,7 +374,7 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
                   <span>{uploadProgress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   ></div>

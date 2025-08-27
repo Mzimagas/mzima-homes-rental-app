@@ -23,7 +23,12 @@ interface NotificationRuleFormProps {
   onSuccess: () => void
 }
 
-export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess }: NotificationRuleFormProps) {
+export default function NotificationRuleForm({
+  rule,
+  onSave,
+  onCancel,
+  onSuccess,
+}: NotificationRuleFormProps) {
   const [formData, setFormData] = useState<any>({
     type: 'rent_due',
     name: '',
@@ -31,7 +36,7 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
     enabled: true,
     trigger_days: 3,
     channels: ['email'],
-    template_id: null
+    template_id: null,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -69,7 +74,7 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
         enabled: formData.enabled!,
         trigger_days: formData.trigger_days!,
         channels: formData.channels,
-        template_id: formData.template_id
+        template_id: formData.template_id,
       }
 
       let result
@@ -99,12 +104,12 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
     if (checked) {
       setFormData({
         ...formData,
-        channels: [...currentChannels, channel]
+        channels: [...currentChannels, channel],
       })
     } else {
       setFormData({
         ...formData,
-        channels: currentChannels.filter((c: string) => c !== channel)
+        channels: currentChannels.filter((c: string) => c !== channel),
       })
     }
   }
@@ -155,7 +160,12 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
               disabled={loading}
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -169,9 +179,7 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Rule Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rule Type
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Rule Type</label>
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
@@ -188,9 +196,7 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
 
             {/* Rule Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rule Name *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Rule Name *</label>
               <input
                 type="text"
                 value={formData.name}
@@ -204,9 +210,7 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -220,14 +224,14 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
 
             {/* Trigger Days */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trigger Timing
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Trigger Timing</label>
               <div className="flex items-center space-x-2">
                 <input
                   type="number"
                   value={formData.trigger_days}
-                  onChange={(e) => setFormData({ ...formData, trigger_days: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, trigger_days: parseInt(e.target.value) || 0 })
+                  }
                   min="0"
                   max="365"
                   className="block w-20 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -248,7 +252,7 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
                 {[
                   { value: 'email', label: 'Email', icon: '📧' },
                   { value: 'sms', label: 'SMS', icon: '📱' },
-                  { value: 'in_app', label: 'In-App', icon: '🔔' }
+                  { value: 'in_app', label: 'In-App', icon: '🔔' },
                 ].map((channel) => (
                   <label key={channel.value} className="flex items-center">
                     <input
@@ -275,9 +279,7 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 disabled={loading}
               />
-              <label className="ml-2 text-sm text-gray-700">
-                Enable this rule immediately
-              </label>
+              <label className="ml-2 text-sm text-gray-700">Enable this rule immediately</label>
             </div>
 
             {/* Form Actions */}
@@ -295,7 +297,7 @@ export default function NotificationRuleForm({ rule, onSave, onCancel, onSuccess
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 disabled={loading}
               >
-                {loading ? 'Saving...' : (rule ? 'Update Rule' : 'Create Rule')}
+                {loading ? 'Saving...' : rule ? 'Update Rule' : 'Create Rule'}
               </button>
             </div>
           </form>

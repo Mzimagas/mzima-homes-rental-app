@@ -63,8 +63,8 @@ export class PaymentNotificationService {
           paymentId: data.paymentId,
           amount: data.amount,
           method: data.method,
-          txRef: data.txRef
-        }
+          txRef: data.txRef,
+        },
       })
 
       // Send email notification if email is available
@@ -81,8 +81,8 @@ export class PaymentNotificationService {
             txRef: data.txRef || 'N/A',
             propertyName: data.propertyName || '',
             unitLabel: data.unitLabel || '',
-            paidByName: data.paidByName || undefined
-          }
+            paidByName: data.paidByName || undefined,
+          },
         })
       }
 
@@ -92,7 +92,7 @@ export class PaymentNotificationService {
         const smsMessage = `Payment confirmed: ${this.formatCurrency(data.amount)} via ${data.method}. Ref: ${data.txRef || 'N/A'}.${payerInfo} Thank you! - KodiRent`
         await this.sendSMSNotification({
           to: tenant.phone,
-          message: smsMessage
+          message: smsMessage,
         })
       }
 
@@ -101,7 +101,7 @@ export class PaymentNotificationService {
         const smsMessage = `You paid ${this.formatCurrency(data.amount)} for ${data.tenantName} via ${data.method}. Ref: ${data.txRef || 'N/A'}. Thank you! - KodiRent`
         await this.sendSMSNotification({
           to: data.paidByContact,
-          message: smsMessage
+          message: smsMessage,
         })
       }
 
@@ -111,9 +111,8 @@ export class PaymentNotificationService {
         recipientId: data.tenantId,
         recipientType: 'tenant',
         paymentId: data.paymentId,
-        status: 'sent'
+        status: 'sent',
       })
-
     } catch (error) {
       console.error('Failed to send payment confirmation:', error)
       await this.logNotificationActivity({
@@ -122,7 +121,7 @@ export class PaymentNotificationService {
         recipientType: 'tenant',
         paymentId: data.paymentId,
         status: 'failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       })
     }
   }
@@ -156,8 +155,8 @@ export class PaymentNotificationService {
           invoiceId: data.invoiceId,
           amount: data.amount,
           dueDate: data.dueDate,
-          daysUntilDue
-        }
+          daysUntilDue,
+        },
       })
 
       // Send email reminder
@@ -173,8 +172,8 @@ export class PaymentNotificationService {
             daysUntilDue,
             propertyName: data.propertyName || '',
             unitLabel: data.unitLabel || '',
-            urgencyLevel
-          }
+            urgencyLevel,
+          },
         })
       }
 
@@ -183,7 +182,7 @@ export class PaymentNotificationService {
         const smsMessage = `URGENT: Rent payment of ${this.formatCurrency(data.amount)} is due ${daysUntilDue > 0 ? `in ${daysUntilDue} days` : 'today'}. Please pay to avoid late fees. - KodiRent`
         await this.sendSMSNotification({
           to: tenant.phone,
-          message: smsMessage
+          message: smsMessage,
         })
       }
 
@@ -192,9 +191,8 @@ export class PaymentNotificationService {
         recipientId: data.tenantId,
         recipientType: 'tenant',
         invoiceId: data.invoiceId,
-        status: 'sent'
+        status: 'sent',
       })
-
     } catch (error) {
       console.error('Failed to send payment reminder:', error)
     }
@@ -228,8 +226,8 @@ export class PaymentNotificationService {
           invoiceId: data.invoiceId,
           amount: data.overdueAmount || data.amount,
           dueDate: data.dueDate,
-          daysOverdue
-        }
+          daysOverdue,
+        },
       })
 
       // Send email notification
@@ -244,8 +242,8 @@ export class PaymentNotificationService {
             dueDate: this.formatDate(data.dueDate || ''),
             daysOverdue,
             propertyName: data.propertyName || '',
-            unitLabel: data.unitLabel || ''
-          }
+            unitLabel: data.unitLabel || '',
+          },
         })
       }
 
@@ -254,7 +252,7 @@ export class PaymentNotificationService {
         const smsMessage = `OVERDUE: Rent payment of ${this.formatCurrency(data.overdueAmount || data.amount)} is ${daysOverdue} days overdue. Pay now to avoid additional charges. - KodiRent`
         await this.sendSMSNotification({
           to: tenant.phone,
-          message: smsMessage
+          message: smsMessage,
         })
       }
 
@@ -263,9 +261,8 @@ export class PaymentNotificationService {
         recipientId: data.tenantId,
         recipientType: 'tenant',
         invoiceId: data.invoiceId,
-        status: 'sent'
+        status: 'sent',
       })
-
     } catch (error) {
       console.error('Failed to send overdue notification:', error)
     }
@@ -282,15 +279,13 @@ export class PaymentNotificationService {
     metadata?: any
   }): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('in_app_notifications')
-        .insert({
-          user_id: notification.userId,
-          title: notification.title,
-          message: notification.message,
-          type: notification.type,
-          metadata: notification.metadata || {}
-        })
+      const { error } = await supabase.from('in_app_notifications').insert({
+        user_id: notification.userId,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        metadata: notification.metadata || {},
+      })
 
       if (error) {
         console.error('Failed to create in-app notification:', error)
@@ -312,7 +307,7 @@ export class PaymentNotificationService {
     try {
       // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
       console.log('Email notification would be sent:', email)
-      
+
       // For now, just log the email that would be sent
       // In production, replace this with actual email service integration
     } catch (error) {
@@ -323,14 +318,11 @@ export class PaymentNotificationService {
   /**
    * Send SMS notification (placeholder - integrate with your SMS service)
    */
-  private static async sendSMSNotification(sms: {
-    to: string
-    message: string
-  }): Promise<void> {
+  private static async sendSMSNotification(sms: { to: string; message: string }): Promise<void> {
     try {
       // TODO: Integrate with SMS service (Twilio, Africa's Talking, etc.)
       console.log('SMS notification would be sent:', sms)
-      
+
       // For now, just log the SMS that would be sent
       // In production, replace this with actual SMS service integration
     } catch (error) {
@@ -373,7 +365,7 @@ export class PaymentNotificationService {
     return new Date(dateString).toLocaleDateString('en-KE', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 

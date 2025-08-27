@@ -17,16 +17,15 @@ async function handler(request: NextRequest) {
   }
 
   const schema = z.object({ userId: z.string().uuid(), email: z.string().email() })
-  const json = await request.json().catch(()=>({}))
+  const json = await request.json().catch(() => ({}))
   const parsed = schema.safeParse(json)
   if (!parsed.success) return errors.validation(parsed.error.flatten())
 
   const { userId } = parsed.data
 
-  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
-    userId,
-    { email_confirm: true }
-  )
+  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+    email_confirm: true,
+  })
 
   if (error) {
     return errors.internal('Failed to confirm user email')
@@ -37,11 +36,9 @@ async function handler(request: NextRequest) {
     user: {
       id: data.user.id,
       email: data.user.email,
-      email_confirmed_at: data.user.email_confirmed_at
-    }
+      email_confirmed_at: data.user.email_confirmed_at,
+    },
   })
 }
 
-export const POST = compose(
-  withCsrf,
-)(handler)
+export const POST = compose(withCsrf)(handler)

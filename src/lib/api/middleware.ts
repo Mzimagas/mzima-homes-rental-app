@@ -17,7 +17,11 @@ export function withCsrf(handler: Handler): Handler {
   }
 }
 
-export function withRateLimit(handler: Handler, keyFn?: (req: NextRequest) => string, limitLabel = 'generic'): Handler {
+export function withRateLimit(
+  handler: Handler,
+  keyFn?: (req: NextRequest) => string,
+  limitLabel = 'generic'
+): Handler {
   return async (req: NextRequest) => {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     const key = keyFn ? keyFn(req) : `${limitLabel}:${ip}`
@@ -33,7 +37,9 @@ export function withAuth(handler: Handler): Handler {
     // Primary: cookie-based session
     try {
       const supabase = createServerSupabaseClient()
-      const { data: { user } } = await (await supabase).auth.getUser()
+      const {
+        data: { user },
+      } = await (await supabase).auth.getUser()
       if (user) return handler(req)
     } catch {}
 
@@ -59,4 +65,3 @@ export function withAuth(handler: Handler): Handler {
 export function compose(...middlewares: ((h: Handler) => Handler)[]) {
   return (handler: Handler) => middlewares.reduceRight((acc, mw) => mw(acc), handler)
 }
-

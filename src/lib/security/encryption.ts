@@ -1,6 +1,7 @@
 // Security and Encryption Implementation
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import supabase from '../supabase-client'
 
 // Note: This should only be used server-side with service role key
 // For client-side operations, use the regular supabase client
@@ -8,10 +9,7 @@ const getAdminSupabaseClient = () => {
   if (typeof window !== 'undefined') {
     throw new Error('Admin Supabase client should not be used on client-side')
   }
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
 // Encryption configuration
@@ -37,14 +35,14 @@ export class EncryptionService {
       const key = getEncryptionKey()
       const iv = crypto.randomBytes(IV_LENGTH)
       const cipher = crypto.createCipher(ENCRYPTION_ALGORITHM, key)
-      
+
       cipher.setAAD(Buffer.from('additional-data'))
-      
+
       let encrypted = cipher.update(text, 'utf8', 'hex')
       encrypted += cipher.final('hex')
-      
+
       const tag = cipher.getAuthTag()
-      
+
       // Combine iv, tag, and encrypted data
       return iv.toString('hex') + ':' + tag.toString('hex') + ':' + encrypted
     } catch (error) {
@@ -58,22 +56,22 @@ export class EncryptionService {
     try {
       const key = getEncryptionKey()
       const parts = encryptedData.split(':')
-      
+
       if (parts.length !== 3) {
         throw new Error('Invalid encrypted data format')
       }
-      
+
       const iv = Buffer.from(parts[0], 'hex')
       const tag = Buffer.from(parts[1], 'hex')
       const encrypted = parts[2]
-      
+
       const decipher = crypto.createDecipher(ENCRYPTION_ALGORITHM, key)
       decipher.setAAD(Buffer.from('additional-data'))
       decipher.setAuthTag(tag)
-      
+
       let decrypted = decipher.update(encrypted, 'hex', 'utf8')
       decrypted += decipher.final('utf8')
-      
+
       return decrypted
     } catch (error) {
       console.error('Decryption error:', error)
@@ -85,10 +83,10 @@ export class EncryptionService {
   static hash(data: string, salt?: string): { hash: string; salt: string } {
     const saltBuffer = salt ? Buffer.from(salt, 'hex') : crypto.randomBytes(32)
     const hash = crypto.pbkdf2Sync(data, saltBuffer, 100000, 64, 'sha512')
-    
+
     return {
       hash: hash.toString('hex'),
-      salt: saltBuffer.toString('hex')
+      salt: saltBuffer.toString('hex'),
     }
   }
 
@@ -129,17 +127,19 @@ export class DataMaskingService {
   // Mask email addresses
   static maskEmail(email: string): string {
     if (!email || !email.includes('@')) return '****@****.***'
-    
+
     const [username, domain] = email.split('@')
-    const maskedUsername = username.length > 2 
-      ? username[0] + '*'.repeat(username.length - 2) + username.slice(-1)
-      : '**'
-    
+    const maskedUsername =
+      username.length > 2
+        ? username[0] + '*'.repeat(username.length - 2) + username.slice(-1)
+        : '**'
+
     const [domainName, extension] = domain.split('.')
-    const maskedDomain = domainName.length > 2
-      ? domainName[0] + '*'.repeat(domainName.length - 2) + domainName.slice(-1)
-      : '**'
-    
+    const maskedDomain =
+      domainName.length > 2
+        ? domainName[0] + '*'.repeat(domainName.length - 2) + domainName.slice(-1)
+        : '**'
+
     return `${maskedUsername}@${maskedDomain}.${extension}`
   }
 
@@ -169,20 +169,18 @@ export class AuditService {
     userAgent?: string
   ): Promise<void> {
     try {
-      await supabase
-        .from('activities_audit')
-        .insert({
-          actor_id: userId,
-          action,
-          entity_type: entityType,
-          entity_id: entityId,
-          description: `${action} ${entityType}`,
-          before_snapshot: details?.before || null,
-          after_snapshot: details?.after || null,
-          ip_address: ipAddress,
-          user_agent: userAgent,
-          created_at: new Date().toISOString()
-        })
+      await supabase.from('activities_audit').insert({
+        actor_id: userId,
+        action,
+        entity_type: entityType,
+        entity_id: entityId,
+        description: `${action} ${entityType}`,
+        before_snapshot: details?.before || null,
+        after_snapshot: details?.after || null,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        created_at: new Date().toISOString(),
+      })
     } catch (error) {
       console.error('Error logging audit activity:', error)
     }
@@ -197,16 +195,14 @@ export class AuditService {
     ipAddress?: string
   ): Promise<void> {
     try {
-      await supabase
-        .from('data_access_logs')
-        .insert({
-          user_id: userId,
-          entity_type: entityType,
-          entity_id: entityId,
-          access_type: accessType,
-          ip_address: ipAddress,
-          accessed_at: new Date().toISOString()
-        })
+      await supabase.from('data_access_logs').insert({
+        user_id: userId,
+        entity_type: entityType,
+        entity_id: entityId,
+        access_type: accessType,
+        ip_address: ipAddress,
+        accessed_at: new Date().toISOString(),
+      })
     } catch (error) {
       console.error('Error logging data access:', error)
     }
@@ -214,23 +210,26 @@ export class AuditService {
 
   // Log security events
   static async logSecurityEvent(
-    eventType: 'login_success' | 'login_failure' | 'password_change' | 'permission_denied' | 'suspicious_activity',
+    eventType:
+      | 'login_success'
+      | 'login_failure'
+      | 'password_change'
+      | 'permission_denied'
+      | 'suspicious_activity',
     userId?: string,
     details?: any,
     ipAddress?: string,
     userAgent?: string
   ): Promise<void> {
     try {
-      await supabase
-        .from('security_events')
-        .insert({
-          event_type: eventType,
-          user_id: userId,
-          details,
-          ip_address: ipAddress,
-          user_agent: userAgent,
-          created_at: new Date().toISOString()
-        })
+      await supabase.from('security_events').insert({
+        event_type: eventType,
+        user_id: userId,
+        details,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        created_at: new Date().toISOString(),
+      })
     } catch (error) {
       console.error('Error logging security event:', error)
     }
@@ -245,10 +244,12 @@ export class AuditService {
     try {
       const { data, error } = await supabase
         .from('activities_audit')
-        .select(`
+        .select(
+          `
           *,
           users:actor_id(email, raw_user_meta_data)
-        `)
+        `
+        )
         .eq('entity_type', entityType)
         .eq('entity_id', entityId)
         .order('created_at', { ascending: false })
@@ -268,7 +269,7 @@ export class InputValidator {
   // Sanitize string input
   static sanitizeString(input: string): string {
     if (typeof input !== 'string') return ''
-    
+
     return input
       .trim()
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
@@ -281,10 +282,10 @@ export class InputValidator {
   static validateEmail(email: string): { isValid: boolean; sanitized: string } {
     const sanitized = this.sanitizeString(email).toLowerCase()
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    
+
     return {
       isValid: emailRegex.test(sanitized),
-      sanitized
+      sanitized,
     }
   }
 
@@ -292,20 +293,20 @@ export class InputValidator {
   static validatePhoneNumber(phone: string): { isValid: boolean; sanitized: string } {
     const sanitized = phone.replace(/\D/g, '') // Remove non-digits
     const kenyanPhoneRegex = /^(254|0)[17]\d{8}$/
-    
+
     return {
       isValid: kenyanPhoneRegex.test(sanitized),
-      sanitized
+      sanitized,
     }
   }
 
   // Validate ID number
   static validateIdNumber(idNumber: string): { isValid: boolean; sanitized: string } {
     const sanitized = idNumber.replace(/\D/g, '') // Remove non-digits
-    
+
     return {
       isValid: sanitized.length >= 7 && sanitized.length <= 8,
-      sanitized
+      sanitized,
     }
   }
 
@@ -313,20 +314,20 @@ export class InputValidator {
   static validateKraPin(kraPin: string): { isValid: boolean; sanitized: string } {
     const sanitized = kraPin.toUpperCase().replace(/[^A-Z0-9]/g, '')
     const kraPinRegex = /^[A-Z]\d{9}[A-Z]$/
-    
+
     return {
       isValid: kraPinRegex.test(sanitized),
-      sanitized
+      sanitized,
     }
   }
 
   // Validate monetary amounts
   static validateAmount(amount: any): { isValid: boolean; value: number } {
     const numericAmount = parseFloat(amount)
-    
+
     return {
       isValid: !isNaN(numericAmount) && numericAmount >= 0 && numericAmount <= 999999999,
-      value: numericAmount
+      value: numericAmount,
     }
   }
 
@@ -348,7 +349,7 @@ export class FileSecurityService {
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   ]
 
   // Maximum file size (10MB)
@@ -381,16 +382,16 @@ export class FileSecurityService {
       /\.scr$/i,
       /\.vbs$/i,
       /\.js$/i,
-      /\.php$/i
+      /\.php$/i,
     ]
 
-    if (suspiciousPatterns.some(pattern => pattern.test(file.name))) {
+    if (suspiciousPatterns.some((pattern) => pattern.test(file.name))) {
       errors.push('Suspicious file type detected')
     }
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     }
   }
 
@@ -399,7 +400,7 @@ export class FileSecurityService {
     const timestamp = Date.now()
     const random = crypto.randomBytes(8).toString('hex')
     const extension = originalName.split('.').pop()?.toLowerCase() || ''
-    
+
     return `${timestamp}_${random}.${extension}`
   }
 
@@ -407,24 +408,18 @@ export class FileSecurityService {
   static async scanFile(fileBuffer: Buffer): Promise<{ isClean: boolean; threats: string[] }> {
     // This is a placeholder implementation
     // In production, integrate with services like ClamAV, VirusTotal, etc.
-    
+
     // Simple check for suspicious patterns
     const fileContent = fileBuffer.toString('utf8', 0, Math.min(1024, fileBuffer.length))
-    const suspiciousPatterns = [
-      /<script/i,
-      /javascript:/i,
-      /vbscript:/i,
-      /onload=/i,
-      /onerror=/i
-    ]
+    const suspiciousPatterns = [/<script/i, /javascript:/i, /vbscript:/i, /onload=/i, /onerror=/i]
 
     const threats = suspiciousPatterns
-      .filter(pattern => pattern.test(fileContent))
-      .map(pattern => `Suspicious pattern: ${pattern.source}`)
+      .filter((pattern) => pattern.test(fileContent))
+      .map((pattern) => `Suspicious pattern: ${pattern.source}`)
 
     return {
       isClean: threats.length === 0,
-      threats
+      threats,
     }
   }
 }
@@ -441,14 +436,14 @@ export class RateLimitService {
   ): { allowed: boolean; remaining: number; resetTime: number } {
     const now = Date.now()
     const key = identifier
-    
+
     let record = this.attempts.get(key)
-    
+
     // Reset if window has expired
     if (!record || now > record.resetTime) {
       record = {
         count: 0,
-        resetTime: now + windowMs
+        resetTime: now + windowMs,
       }
     }
 
@@ -461,7 +456,7 @@ export class RateLimitService {
     return {
       allowed,
       remaining,
-      resetTime: record.resetTime
+      resetTime: record.resetTime,
     }
   }
 
@@ -498,8 +493,8 @@ export class SecurityHeaders {
         "font-src 'self'",
         "connect-src 'self' https://api.supabase.co https://sandbox.safaricom.co.ke https://api.safaricom.co.ke",
         "frame-ancestors 'none'",
-        "frame-src https://challenges.cloudflare.com https://www.google.com"
-      ].join('; ')
+        'frame-src https://challenges.cloudflare.com https://www.google.com',
+      ].join('; '),
     }
   }
 }
@@ -507,18 +502,12 @@ export class SecurityHeaders {
 // Initialize security services
 export const initializeSecurity = () => {
   // Start rate limit cleanup
-  setInterval(() => {
-    RateLimitService.cleanup()
-  }, 5 * 60 * 1000) // Every 5 minutes
+  setInterval(
+    () => {
+      RateLimitService.cleanup()
+    },
+    5 * 60 * 1000
+  ) // Every 5 minutes
 }
 
-// Export all services
-export {
-  EncryptionService,
-  DataMaskingService,
-  AuditService,
-  InputValidator,
-  FileSecurityService,
-  RateLimitService,
-  SecurityHeaders
-}
+// All services are already exported individually above

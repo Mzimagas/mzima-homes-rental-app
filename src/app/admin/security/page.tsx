@@ -11,8 +11,8 @@ function SecurityAdmin() {
   const fetchData = async () => {
     try {
       const [l, a] = await Promise.all([
-        fetch('/api/admin/security/locks').then(r=>r.json()),
-        fetch('/api/admin/security/audit').then(r=>r.json()),
+        fetch('/api/admin/security/locks').then((r) => r.json()),
+        fetch('/api/admin/security/audit').then((r) => r.json()),
       ])
       setLocks(l.locks || [])
       setAudits(a.audits || [])
@@ -44,10 +44,17 @@ function SecurityAdmin() {
             </thead>
             <tbody>
               {locks.length === 0 && (
-                <tr><td className="p-2" colSpan={2}>None</td></tr>
+                <tr>
+                  <td className="p-2" colSpan={2}>
+                    None
+                  </td>
+                </tr>
               )}
               {locks.map((l, i) => (
-                <tr key={i} className="border-b"><td className="p-2">{l.key}</td><td className="p-2">{l.ttl}</td></tr>
+                <tr key={i} className="border-b">
+                  <td className="p-2">{l.key}</td>
+                  <td className="p-2">{l.ttl}</td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -66,10 +73,17 @@ function SecurityAdmin() {
             </thead>
             <tbody>
               {audits.length === 0 && (
-                <tr><td className="p-2" colSpan={2}>None</td></tr>
+                <tr>
+                  <td className="p-2" colSpan={2}>
+                    None
+                  </td>
+                </tr>
               )}
               {audits.map((a, i) => (
-                <tr key={i} className="border-b"><td className="p-2">{a.key}</td><td className="p-2">{a.ttl}</td></tr>
+                <tr key={i} className="border-b">
+                  <td className="p-2">{a.key}</td>
+                  <td className="p-2">{a.ttl}</td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -80,4 +94,3 @@ function SecurityAdmin() {
 }
 
 export default withAuth(SecurityAdmin)
-

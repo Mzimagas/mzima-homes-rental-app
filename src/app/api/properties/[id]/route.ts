@@ -11,7 +11,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -42,20 +44,19 @@ async function getRoleForProperty(userId: string, propertyId: string) {
   return membership
 }
 
-async function checkActiveTenantsInProperty(propertyId: string): Promise<{ hasActiveTenants: boolean; tenantCount: number }> {
+async function checkActiveTenantsInProperty(
+  propertyId: string
+): Promise<{ hasActiveTenants: boolean; tenantCount: number }> {
   const admin = createClient(supabaseUrl, serviceKey)
 
   // Get all units for this property
-  const { data: units } = await admin
-    .from('units')
-    .select('id')
-    .eq('property_id', propertyId)
+  const { data: units } = await admin.from('units').select('id').eq('property_id', propertyId)
 
   if (!units || units.length === 0) {
     return { hasActiveTenants: false, tenantCount: 0 }
   }
 
-  const unitIds = units.map(u => u.id)
+  const unitIds = units.map((u) => u.id)
 
   // Check for active tenants in any of these units
   const { data: activeTenants } = await admin
@@ -66,7 +67,7 @@ async function checkActiveTenantsInProperty(propertyId: string): Promise<{ hasAc
 
   return {
     hasActiveTenants: (activeTenants?.length || 0) > 0,
-    tenantCount: activeTenants?.length || 0
+    tenantCount: activeTenants?.length || 0,
   }
 }
 
@@ -88,8 +89,9 @@ async function handler(req: NextRequest) {
 
     // Extract property id from path /api/properties/[id]
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     // Get property details
@@ -105,14 +107,17 @@ async function handler(req: NextRequest) {
 
     // Check permissions - only OWNER can delete properties
     const membership = await getRoleForProperty(userId, propertyId)
-    if (!membership || membership.status !== 'ACTIVE') return errors.forbidden('No access to property')
+    if (!membership || membership.status !== 'ACTIVE')
+      return errors.forbidden('No access to property')
     const role = (membership as any).role
     if (role !== 'OWNER') return errors.forbidden('Only property owners can delete properties')
 
     // Check for active tenants
     const { hasActiveTenants, tenantCount } = await checkActiveTenantsInProperty(propertyId)
     if (hasActiveTenants) {
-      return errors.badRequest(`Cannot delete property with ${tenantCount} active tenant(s). Please move or remove all tenants first.`)
+      return errors.badRequest(
+        `Cannot delete property with ${tenantCount} active tenant(s). Please move or remove all tenants first.`
+      )
     }
 
     // Perform soft delete by setting disabled fields (using existing schema)
@@ -121,7 +126,7 @@ async function handler(req: NextRequest) {
       .update({
         disabled_at: new Date().toISOString(),
         disabled_by: userId,
-        disabled_reason: 'Soft deleted by owner'
+        disabled_reason: 'Soft deleted by owner',
       })
       .eq('id', propertyId)
 
@@ -132,25 +137,28 @@ async function handler(req: NextRequest) {
       propertyId,
       propertyName: property.name,
       deletedBy: userId,
-      tenantCount: 0
+      tenantCount: 0,
     })
 
     return NextResponse.json({ ok: true })
-
   } catch (e) {
     console.error('[DELETE /api/properties/[id]] error:', e)
     return errors.internal()
   }
 }
 
-export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) => {
+export const PATCH = compose(
+  withRateLimit,
+  withCsrf
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const body = await req.json().catch(() => ({}))
@@ -160,11 +168,16 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
       subdivision_status,
       handover_status,
       handover_date,
-      force
+      force,
     } = body || {}
 
     // Check if we have any fields to update
-    const hasUpdates = newType || lifecycle_status || subdivision_status || handover_status || handover_date !== undefined
+    const hasUpdates =
+      newType ||
+      lifecycle_status ||
+      subdivision_status ||
+      handover_status ||
+      handover_date !== undefined
     if (!hasUpdates) {
       return errors.badRequest('No fields to update')
     }
@@ -183,9 +196,11 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
 
     // Permission: OWNER or PROPERTY_MANAGER may update; OWNER required to change type
     const membership = await getRoleForProperty(userId, propertyId)
-    if (!membership || membership.status !== 'ACTIVE') return errors.forbidden('No access to property')
+    if (!membership || membership.status !== 'ACTIVE')
+      return errors.forbidden('No access to property')
     const role = (membership as any).role
-    if (!['OWNER', 'PROPERTY_MANAGER'].includes(role)) return errors.forbidden('Insufficient permission')
+    if (!['OWNER', 'PROPERTY_MANAGER'].includes(role))
+      return errors.forbidden('Insufficient permission')
 
     // Prepare update object
     const updateData: any = {}
@@ -193,13 +208,16 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
     // Handle property type changes (existing logic)
     if (newType) {
       const oldType = (existing as any).property_type as string | null
-      const isLand = (t: string | null) => ['RESIDENTIAL_LAND','COMMERCIAL_LAND','AGRICULTURAL_LAND','MIXED_USE_LAND'].includes((t || '').toString())
+      const isLand = (t: string | null) =>
+        ['RESIDENTIAL_LAND', 'COMMERCIAL_LAND', 'AGRICULTURAL_LAND', 'MIXED_USE_LAND'].includes(
+          (t || '').toString()
+        )
       const crossingCategory = isLand(oldType) !== isLand(newType)
 
       if (crossingCategory) {
         // Check units and active tenants
         const { data: units } = await admin.from('units').select('id').eq('property_id', propertyId)
-        const unitIds = (units || []).map(u => u.id)
+        const unitIds = (units || []).map((u) => u.id)
         let activeTenantCount = 0
         if (unitIds.length > 0) {
           const { data: activeTenants } = await admin
@@ -218,7 +236,7 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
               ok: false,
               code: 'TYPE_CHANGE_CONFLICT',
               message: 'Changing property type across categories will affect related data.',
-              details: { unitCount, activeTenantCount }
+              details: { unitCount, activeTenantCount },
             }),
             { status: 409, headers: { 'Content-Type': 'application/json' } }
           )
@@ -248,10 +266,7 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
     }
 
     // Perform the update
-    const { error: updErr } = await admin
-      .from('properties')
-      .update(updateData)
-      .eq('id', propertyId)
+    const { error: updErr } = await admin.from('properties').update(updateData).eq('id', propertyId)
 
     if (updErr) return errors.badRequest('Failed to update property', updErr)
 
@@ -271,7 +286,7 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
             event_type: 'property_type_changed',
             old_type: oldType as any,
             new_type: newType as any,
-            details: { ip_address: ip, user_agent: ua }
+            details: { ip_address: ip, user_agent: ua },
           })
         } catch (auditErr) {
           // Ignore audit errors
@@ -280,8 +295,8 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
         fetch(`${new URL(req.url).origin}/api/security/audit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ event: 'property_type_changed', identifier: propertyId })
-        }).catch(()=>{})
+          body: JSON.stringify({ event: 'property_type_changed', identifier: propertyId }),
+        }).catch(() => {})
       }
 
       // Log other property updates
@@ -292,9 +307,9 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
           body: JSON.stringify({
             event: 'property_updated',
             identifier: propertyId,
-            details: { lifecycle_status, handover_status, handover_date }
-          })
-        }).catch(()=>{})
+            details: { lifecycle_status, handover_status, handover_date },
+          }),
+        }).catch(() => {})
       }
     } catch {}
 
@@ -305,6 +320,4 @@ export const PATCH = compose(withRateLimit, withCsrf)(async (req: NextRequest) =
   }
 })
 
-
 export const DELETE = compose(withRateLimit, withCsrf)(handler)
-

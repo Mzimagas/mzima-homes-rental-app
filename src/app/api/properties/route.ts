@@ -12,7 +12,9 @@ async function getUserId(req: NextRequest): Promise<string | null> {
   try {
     // Primary: cookie-based session
     const supabase = createServerSupabaseClient()
-    const { data: { user } } = await (await supabase).auth.getUser()
+    const {
+      data: { user },
+    } = await (await supabase).auth.getUser()
     if (user) return user.id
   } catch {}
 
@@ -23,7 +25,10 @@ async function getUserId(req: NextRequest): Promise<string | null> {
 
     const token = authHeader.substring(7)
     const anonClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    const { data: { user }, error } = await anonClient.auth.getUser(token)
+    const {
+      data: { user },
+      error,
+    } = await anonClient.auth.getUser(token)
 
     return error ? null : user?.id || null
   } catch {
@@ -38,10 +43,12 @@ export async function GET(req: NextRequest) {
     if (!userId) return errors.unauthorized()
 
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     // Get user's accessible properties
-    const { data: accessibleProperties, error: accessError } = await admin
-      .rpc('get_user_accessible_properties', { user_id: userId })
+    const { data: accessibleProperties, error: accessError } = await admin.rpc(
+      'get_user_accessible_properties',
+      { user_id: userId }
+    )
 
     if (accessError) {
       console.error('Error getting accessible properties:', accessError)
@@ -57,7 +64,8 @@ export async function GET(req: NextRequest) {
     // Fetch full property details
     const { data: properties, error: propertiesError } = await admin
       .from('properties')
-      .select(`
+      .select(
+        `
         id,
         name,
         physical_address,
@@ -69,7 +77,8 @@ export async function GET(req: NextRequest) {
         default_align_billing_to_start,
         created_at,
         updated_at
-      `)
+      `
+      )
       .in('id', propertyIds)
       .is('disabled_at', null)
       .order('name')
@@ -87,11 +96,15 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/properties - Create new property
-export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const POST = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const json = await req.json().catch(() => ({}))
     const parsed = propertySchema.safeParse(json)
-    
+
     if (!parsed.success) {
       return errors.validation(parsed.error.flatten())
     }
@@ -100,7 +113,7 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
     if (!userId) return errors.unauthorized()
 
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     // Create the property
     const { data: property, error: propertyError } = await admin
       .from('properties')
@@ -115,7 +128,7 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
         default_align_billing_to_start: parsed.data.default_align_billing_to_start,
         landlord_id: userId, // Set the creator as the landlord
         property_source: 'DIRECT_ADDITION',
-        lifecycle_status: 'ACTIVE'
+        lifecycle_status: 'ACTIVE',
       })
       .select('id, name')
       .single()
@@ -126,22 +139,20 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
     }
 
     // Add the creator as the property owner with full permissions
-    const { error: accessError } = await admin
-      .from('property_users')
-      .insert({
-        property_id: property.id,
-        user_id: userId,
-        role: 'OWNER',
-        status: 'ACTIVE',
-        permissions: {
-          can_view: true,
-          can_edit: true,
-          can_delete: true,
-          can_manage_users: true,
-          can_manage_tenants: true,
-          can_manage_finances: true
-        }
-      })
+    const { error: accessError } = await admin.from('property_users').insert({
+      property_id: property.id,
+      user_id: userId,
+      role: 'OWNER',
+      status: 'ACTIVE',
+      permissions: {
+        can_view: true,
+        can_edit: true,
+        can_delete: true,
+        can_manage_users: true,
+        can_manage_tenants: true,
+        can_manage_finances: true,
+      },
+    })
 
     if (accessError) {
       console.error('Error setting property access:', accessError)
@@ -156,17 +167,17 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
         body: JSON.stringify({
           event: 'property_created',
           identifier: property.id,
-          details: { name: property.name, method: 'direct_addition' }
-        })
+          details: { name: property.name, method: 'direct_addition' },
+        }),
       })
     } catch {
       // Ignore audit logging errors
     }
 
-    return NextResponse.json({ 
-      ok: true, 
+    return NextResponse.json({
+      ok: true,
       data: property,
-      message: 'Property created successfully'
+      message: 'Property created successfully',
     })
   } catch (error: any) {
     console.error('POST /api/properties error:', error)

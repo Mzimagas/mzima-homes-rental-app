@@ -66,4 +66,3 @@ describe('land-mapping', () => {
     expect(db.price_negotiable).toBe(false)
   })
 })
-

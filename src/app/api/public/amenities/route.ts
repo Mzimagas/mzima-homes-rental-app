@@ -14,4 +14,3 @@ export async function GET(_req: NextRequest) {
     return NextResponse.json({ ok: false, error: e?.message || 'Failed' }, { status: 500 })
   }
 }
-

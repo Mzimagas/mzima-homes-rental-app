@@ -32,9 +32,9 @@ class EmailMonitor {
    * Log an email attempt
    */
   logEmailAttempt(
-    email: string, 
-    type: EmailAttempt['type'], 
-    status: EmailAttempt['status'], 
+    email: string,
+    type: EmailAttempt['type'],
+    status: EmailAttempt['status'],
     error?: string
   ): void {
     const attempt: EmailAttempt = {
@@ -44,19 +44,22 @@ class EmailMonitor {
       status,
       error,
       timestamp: new Date(),
-      supabaseProjectId: this.supabaseProjectId
+      supabaseProjectId: this.supabaseProjectId,
     }
 
     this.attempts.unshift(attempt)
-    
+
     // Keep only the most recent attempts
     if (this.attempts.length > this.maxStoredAttempts) {
       this.attempts = this.attempts.slice(0, this.maxStoredAttempts)
     }
 
     // Log to console for debugging
-    const statusEmoji = status === 'success' ? '✅' : status === 'failed' ? '❌' : status === 'bounced' ? '🚫' : '⏳'
-    console.log(`${statusEmoji} Email ${type}: ${this.sanitizeEmail(email)} - ${status}${error ? ` (${error})` : ''}`)
+    const statusEmoji =
+      status === 'success' ? '✅' : status === 'failed' ? '❌' : status === 'bounced' ? '🚫' : '⏳'
+    console.log(
+      `${statusEmoji} Email ${type}: ${this.sanitizeEmail(email)} - ${status}${error ? ` (${error})` : ''}`
+    )
 
     // Check if we're approaching dangerous bounce rates
     this.checkBounceRateWarning()
@@ -88,18 +91,18 @@ class EmailMonitor {
    */
   getStats(timeframeHours: number = 24): EmailStats {
     const cutoffTime = new Date(Date.now() - timeframeHours * 60 * 60 * 1000)
-    const recentAttempts = this.attempts.filter(attempt => attempt.timestamp >= cutoffTime)
+    const recentAttempts = this.attempts.filter((attempt) => attempt.timestamp >= cutoffTime)
 
     const totalAttempts = recentAttempts.length
-    const successCount = recentAttempts.filter(a => a.status === 'success').length
-    const failureCount = recentAttempts.filter(a => a.status === 'failed').length
-    const bounceCount = recentAttempts.filter(a => a.status === 'bounced').length
+    const successCount = recentAttempts.filter((a) => a.status === 'success').length
+    const failureCount = recentAttempts.filter((a) => a.status === 'failed').length
+    const bounceCount = recentAttempts.filter((a) => a.status === 'bounced').length
 
     const successRate = totalAttempts > 0 ? (successCount / totalAttempts) * 100 : 0
     const bounceRate = totalAttempts > 0 ? (bounceCount / totalAttempts) * 100 : 0
 
     const recentFailures = recentAttempts
-      .filter(a => a.status === 'failed' || a.status === 'bounced')
+      .filter((a) => a.status === 'failed' || a.status === 'bounced')
       .slice(0, 10)
 
     return {
@@ -109,7 +112,7 @@ class EmailMonitor {
       bounceCount,
       successRate,
       bounceRate,
-      recentFailures
+      recentFailures,
     }
   }
 
@@ -118,20 +121,21 @@ class EmailMonitor {
    */
   private checkBounceRateWarning(): void {
     const stats = this.getStats(1) // Last hour
-    
-    if (stats.totalAttempts >= 5) { // Only check if we have enough data
+
+    if (stats.totalAttempts >= 5) {
+      // Only check if we have enough data
       if (stats.bounceRate > 20) {
         console.warn('🚨 HIGH BOUNCE RATE WARNING:', {
           bounceRate: `${stats.bounceRate.toFixed(1)}%`,
           totalAttempts: stats.totalAttempts,
           bounceCount: stats.bounceCount,
-          message: 'High bounce rate detected! This could trigger Supabase email restrictions.'
+          message: 'High bounce rate detected! This could trigger Supabase email restrictions.',
         })
       } else if (stats.bounceRate > 10) {
         console.warn('⚠️ Elevated bounce rate:', {
           bounceRate: `${stats.bounceRate.toFixed(1)}%`,
           totalAttempts: stats.totalAttempts,
-          bounceCount: stats.bounceCount
+          bounceCount: stats.bounceCount,
         })
       }
     }
@@ -161,18 +165,25 @@ Last Hour:
 ${stats24h.bounceRate > 10 ? '🚨 WARNING: High bounce rate detected!' : '✅ Bounce rate within acceptable limits'}
 
 Recent Failures:
-${stats24h.recentFailures.slice(0, 5).map(f => 
-  `- ${f.timestamp.toISOString()}: ${this.sanitizeEmail(f.email)} (${f.type}) - ${f.error || f.status}`
-).join('\n') || 'None'}
+${
+  stats24h.recentFailures
+    .slice(0, 5)
+    .map(
+      (f) =>
+        `- ${f.timestamp.toISOString()}: ${this.sanitizeEmail(f.email)} (${f.type}) - ${f.error || f.status}`
+    )
+    .join('\n') || 'None'
+}
     `.trim()
   }
 
   /**
    * Clear old attempts (for memory management)
    */
-  clearOldAttempts(olderThanHours: number = 168): void { // Default: 1 week
+  clearOldAttempts(olderThanHours: number = 168): void {
+    // Default: 1 week
     const cutoffTime = new Date(Date.now() - olderThanHours * 60 * 60 * 1000)
-    this.attempts = this.attempts.filter(attempt => attempt.timestamp >= cutoffTime)
+    this.attempts = this.attempts.filter((attempt) => attempt.timestamp >= cutoffTime)
   }
 
   /**
@@ -180,10 +191,10 @@ ${stats24h.recentFailures.slice(0, 5).map(f =>
    */
   private sanitizeEmail(email: string): string {
     if (!email || !email.includes('@')) return '[invalid]'
-    
+
     const [local, domain] = email.split('@')
     if (local.length <= 2) return email
-    
+
     return `${local.charAt(0)}***${local.slice(-1)}@${domain}`
   }
 
@@ -199,24 +210,25 @@ ${stats24h.recentFailures.slice(0, 5).map(f =>
 export const emailMonitor = new EmailMonitor()
 
 // Helper functions for easy use
-export const logEmailSuccess = (email: string, type: EmailAttempt['type']) => 
+export const logEmailSuccess = (email: string, type: EmailAttempt['type']) =>
   emailMonitor.logSuccess(email, type)
 
-export const logEmailFailure = (email: string, type: EmailAttempt['type'], error: string) => 
+export const logEmailFailure = (email: string, type: EmailAttempt['type'], error: string) =>
   emailMonitor.logFailure(email, type, error)
 
-export const logEmailBounce = (email: string, type: EmailAttempt['type'], error: string) => 
+export const logEmailBounce = (email: string, type: EmailAttempt['type'], error: string) =>
   emailMonitor.logBounce(email, type, error)
 
-export const getEmailStats = (timeframeHours?: number) => 
-  emailMonitor.getStats(timeframeHours)
+export const getEmailStats = (timeframeHours?: number) => emailMonitor.getStats(timeframeHours)
 
-export const getEmailReport = () => 
-  emailMonitor.getSummaryReport()
+export const getEmailReport = () => emailMonitor.getSummaryReport()
 
 // Auto-cleanup every hour
 if (typeof window !== 'undefined') {
-  setInterval(() => {
-    emailMonitor.clearOldAttempts()
-  }, 60 * 60 * 1000) // 1 hour
+  setInterval(
+    () => {
+      emailMonitor.clearOldAttempts()
+    },
+    60 * 60 * 1000
+  ) // 1 hour
 }

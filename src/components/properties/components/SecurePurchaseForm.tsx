@@ -8,7 +8,11 @@ import Modal from '../../ui/Modal'
 import AddressAutocomplete from '../../location/AddressAutocomplete'
 import { PropertyTypeEnum } from '../../../lib/validation/property'
 import { FieldSecurityService, ChangeRequest } from '../../../lib/security/field-security.service'
-import { PurchasePipelineFormValues, purchasePipelineSchema } from '../types/purchase-pipeline.types'
+import {
+  PurchasePipelineFormValues,
+  purchasePipelineSchema,
+} from '../types/purchase-pipeline.types'
+import { PropertyManagementService } from '../services/property-management.service'
 
 interface SecurePurchaseFormProps {
   isOpen: boolean
@@ -23,25 +27,44 @@ export default function SecurePurchaseForm({
   onClose,
   onSubmit,
   editingPurchase,
-  userRole
+  userRole,
 }: SecurePurchaseFormProps) {
   const [fieldSecurity, setFieldSecurity] = useState<Record<string, any>>({})
   const [originalValues, setOriginalValues] = useState<any>({})
   const [changeReasons, setChangeReasons] = useState<Record<string, string>>({})
   const [showApprovalDialog, setShowApprovalDialog] = useState(false)
   const [pendingChanges, setPendingChanges] = useState<ChangeRequest[]>([])
+  const [availableProperties, setAvailableProperties] = useState<any[]>([])
+  const [selectedProperty, setSelectedProperty] = useState<any>(null)
+  const [useExistingProperty, setUseExistingProperty] = useState(false)
 
   const {
     register,
     handleSubmit,
     reset,
     watch,
-    formState: { errors, isSubmitting }
+    setValue,
+    formState: { errors, isSubmitting },
   } = useForm<PurchasePipelineFormValues>({
-    resolver: zodResolver(purchasePipelineSchema)
+    resolver: zodResolver(purchasePipelineSchema),
   })
 
   const watchedValues = watch()
+
+  // Load available properties
+  useEffect(() => {
+    const loadProperties = async () => {
+      if (isOpen) {
+        try {
+          const properties = await PropertyManagementService.loadProperties()
+          setAvailableProperties(properties)
+        } catch (error) {
+          console.error('Error loading properties:', error)
+        }
+      }
+    }
+    loadProperties()
+  }, [isOpen])
 
   // Load field security configuration
   useEffect(() => {
@@ -64,6 +87,7 @@ export default function SecurePurchaseForm({
     if (isOpen) {
       if (editingPurchase) {
         const formValues = {
+          propertyId: editingPurchase.property_id || '',
           propertyName: editingPurchase.property_name,
           propertyAddress: editingPurchase.property_address,
           propertyType: editingPurchase.property_type,
@@ -86,8 +110,21 @@ export default function SecurePurchaseForm({
         }
         reset(formValues)
         setOriginalValues(formValues)
+
+        // Set property selection state
+        if (editingPurchase.property_id) {
+          setUseExistingProperty(true)
+          const property = availableProperties.find((p) => p.id === editingPurchase.property_id)
+          if (property) {
+            setSelectedProperty(property)
+          }
+        } else {
+          setUseExistingProperty(false)
+          setSelectedProperty(null)
+        }
       } else {
         const emptyValues = {
+          propertyId: '',
           propertyName: '',
           propertyAddress: '',
           propertyType: 'HOME' as any,
@@ -110,36 +147,61 @@ export default function SecurePurchaseForm({
         }
         reset(emptyValues)
         setOriginalValues(emptyValues)
+
+        // Reset property selection state
+        setUseExistingProperty(false)
+        setSelectedProperty(null)
       }
       setChangeReasons({})
     }
-  }, [isOpen, editingPurchase, reset])
+  }, [isOpen, editingPurchase, reset, availableProperties])
+
+  // Handle property selection
+  const handlePropertySelection = (propertyId: string) => {
+    const property = availableProperties.find((p) => p.id === propertyId)
+    if (property) {
+      setSelectedProperty(property)
+      setValue('propertyId', propertyId)
+      setValue('propertyName', property.name)
+      setValue('propertyAddress', property.physical_address || '')
+      setValue('propertyType', property.property_type || 'HOME')
+    }
+  }
+
+  const handleUseExistingPropertyToggle = (use: boolean) => {
+    setUseExistingProperty(use)
+    if (!use) {
+      setSelectedProperty(null)
+      setValue('propertyId', '')
+      // Don't clear other fields to allow manual entry
+    }
+  }
 
   // Detect changes and build change requests
   const detectChanges = (): ChangeRequest[] => {
     const changes: ChangeRequest[] = []
-    
-    Object.keys(watchedValues).forEach(fieldName => {
+
+    Object.keys(watchedValues).forEach((fieldName) => {
       const oldValue = originalValues[fieldName]
       const newValue = watchedValues[fieldName as keyof PurchasePipelineFormValues]
-      
+
       if (oldValue !== newValue) {
         changes.push({
           field_name: fieldName,
           old_value: oldValue,
           new_value: newValue,
-          reason: changeReasons[fieldName]
+          reason: changeReasons[fieldName],
         })
       }
     })
-    
+
     return changes
   }
 
   // Handle form submission with security validation
   const handleSecureSubmit = async (values: PurchasePipelineFormValues) => {
     const changes = detectChanges()
-    
+
     if (changes.length === 0) {
       // No changes, proceed normally
       await onSubmit(values, [])
@@ -178,8 +240,10 @@ export default function SecurePurchaseForm({
         businessJustification,
         riskAssessment
       )
-      
-      alert(`Change approval request submitted (ID: ${approvalId}). Changes will be applied once approved.`)
+
+      alert(
+        `Change approval request submitted (ID: ${approvalId}). Changes will be applied once approved.`
+      )
       setShowApprovalDialog(false)
       onClose()
     } catch (error) {
@@ -193,19 +257,22 @@ export default function SecurePurchaseForm({
     const security = fieldSecurity[fieldName]
     if (!security) return component
 
-    const isChanged = originalValues[fieldName] !== watchedValues[fieldName as keyof PurchasePipelineFormValues]
-    
+    const isChanged =
+      originalValues[fieldName] !== watchedValues[fieldName as keyof PurchasePipelineFormValues]
+
     return (
       <div className="relative">
         {component}
-        
+
         {/* Security indicators */}
         <div className="flex items-center gap-2 mt-1 text-xs">
           {security.isLocked && (
             <span className="bg-red-100 text-red-800 px-2 py-1 rounded">🔒 Locked</span>
           )}
           {security.requiresApproval && (
-            <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">⚠️ Requires Approval</span>
+            <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+              ⚠️ Requires Approval
+            </span>
           )}
           {security.requiresReason && isChanged && (
             <input
@@ -213,10 +280,12 @@ export default function SecurePurchaseForm({
               placeholder="Reason for change (required)"
               className="border rounded px-2 py-1 text-xs flex-1"
               value={changeReasons[fieldName] || ''}
-              onChange={(e) => setChangeReasons(prev => ({
-                ...prev,
-                [fieldName]: e.target.value
-              }))}
+              onChange={(e) =>
+                setChangeReasons((prev) => ({
+                  ...prev,
+                  [fieldName]: e.target.value,
+                }))
+              }
             />
           )}
         </div>
@@ -226,46 +295,152 @@ export default function SecurePurchaseForm({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title={editingPurchase ? 'Edit Purchase (Secure)' : 'New Purchase'}>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={editingPurchase ? 'Edit Purchase (Secure)' : 'New Purchase'}
+      >
         <form onSubmit={handleSubmit(handleSecureSubmit)} className="space-y-6">
           {/* Property Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Property Information</h3>
 
-            {renderSecureField('propertyName',
-              <FormField name="propertyName" label="Property Name" error={errors.propertyName?.message}>
+            {/* Property Selection Toggle */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center space-x-4 mb-3">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="propertySource"
+                    checked={!useExistingProperty}
+                    onChange={() => handleUseExistingPropertyToggle(false)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Create New Property</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="propertySource"
+                    checked={useExistingProperty}
+                    onChange={() => handleUseExistingPropertyToggle(true)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Link to Existing Property
+                  </span>
+                </label>
+              </div>
+
+              {useExistingProperty && (
+                <div className="space-y-3">
+                  <FormField
+                    name="propertyId"
+                    label="Select Existing Property"
+                    error={errors.propertyId?.message}
+                  >
+                    {({ id }) => (
+                      <select
+                        id={id}
+                        value={watchedValues.propertyId || ''}
+                        onChange={(e) => handlePropertySelection(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select a property...</option>
+                        {availableProperties.map((property) => (
+                          <option key={property.id} value={property.id}>
+                            {property.name} - {property.physical_address || 'No address'}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </FormField>
+
+                  {selectedProperty && (
+                    <div className="bg-white border border-gray-200 rounded-md p-3">
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">
+                        Selected Property Details
+                      </h4>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div>
+                          <strong>Name:</strong> {selectedProperty.name}
+                        </div>
+                        <div>
+                          <strong>Address:</strong>{' '}
+                          {selectedProperty.physical_address || 'Not specified'}
+                        </div>
+                        <div>
+                          <strong>Type:</strong> {selectedProperty.property_type || 'Not specified'}
+                        </div>
+                        {selectedProperty.lat && selectedProperty.lng && (
+                          <div>
+                            <strong>Coordinates:</strong> {selectedProperty.lat},{' '}
+                            {selectedProperty.lng}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {renderSecureField(
+              'propertyName',
+              <FormField
+                name="propertyName"
+                label="Property Name"
+                error={errors.propertyName?.message}
+              >
                 {({ id }) => (
                   <TextField
                     id={id}
                     {...register('propertyName')}
-                    disabled={fieldSecurity.propertyName?.isLocked || !fieldSecurity.propertyName?.canModify}
+                    disabled={
+                      fieldSecurity.propertyName?.isLocked || !fieldSecurity.propertyName?.canModify
+                    }
                     placeholder="Enter property name"
                   />
                 )}
               </FormField>
             )}
 
-            {renderSecureField('propertyAddress',
-              <FormField name="propertyAddress" label="Property Address" error={errors.propertyAddress?.message}>
+            {renderSecureField(
+              'propertyAddress',
+              <FormField
+                name="propertyAddress"
+                label="Property Address"
+                error={errors.propertyAddress?.message}
+              >
                 {({ id }) => (
                   <AddressAutocomplete
                     id={id}
                     value={watchedValues.propertyAddress || ''}
                     onChange={(address) => setValue('propertyAddress', address)}
-                    disabled={fieldSecurity.propertyAddress?.isLocked || !fieldSecurity.propertyAddress?.canModify}
+                    disabled={
+                      fieldSecurity.propertyAddress?.isLocked ||
+                      !fieldSecurity.propertyAddress?.canModify
+                    }
                     placeholder="Enter property address"
                   />
                 )}
               </FormField>
             )}
 
-            {renderSecureField('propertyType',
-              <FormField name="propertyType" label="Property Type" error={errors.propertyType?.message}>
+            {renderSecureField(
+              'propertyType',
+              <FormField
+                name="propertyType"
+                label="Property Type"
+                error={errors.propertyType?.message}
+              >
                 {({ id }) => (
                   <select
                     id={id}
                     {...register('propertyType')}
-                    disabled={fieldSecurity.propertyType?.isLocked || !fieldSecurity.propertyType?.canModify}
+                    disabled={
+                      fieldSecurity.propertyType?.isLocked || !fieldSecurity.propertyType?.canModify
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select property type</option>
@@ -285,26 +460,36 @@ export default function SecurePurchaseForm({
             <h3 className="text-lg font-semibold">Seller Information</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderSecureField('sellerName',
+              {renderSecureField(
+                'sellerName',
                 <FormField name="sellerName" label="Seller Name" error={errors.sellerName?.message}>
                   {({ id }) => (
                     <TextField
                       id={id}
                       {...register('sellerName')}
-                      disabled={fieldSecurity.sellerName?.isLocked || !fieldSecurity.sellerName?.canModify}
+                      disabled={
+                        fieldSecurity.sellerName?.isLocked || !fieldSecurity.sellerName?.canModify
+                      }
                       placeholder="Enter seller name"
                     />
                   )}
                 </FormField>
               )}
 
-              {renderSecureField('sellerPhone',
-                <FormField name="sellerPhone" label="Seller Phone" error={errors.sellerPhone?.message}>
+              {renderSecureField(
+                'sellerPhone',
+                <FormField
+                  name="sellerPhone"
+                  label="Seller Phone"
+                  error={errors.sellerPhone?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       {...register('sellerPhone')}
-                      disabled={fieldSecurity.sellerPhone?.isLocked || !fieldSecurity.sellerPhone?.canModify}
+                      disabled={
+                        fieldSecurity.sellerPhone?.isLocked || !fieldSecurity.sellerPhone?.canModify
+                      }
                       placeholder="+254712345678"
                     />
                   )}
@@ -312,14 +497,21 @@ export default function SecurePurchaseForm({
               )}
             </div>
 
-            {renderSecureField('sellerEmail',
-              <FormField name="sellerEmail" label="Seller Email" error={errors.sellerEmail?.message}>
+            {renderSecureField(
+              'sellerEmail',
+              <FormField
+                name="sellerEmail"
+                label="Seller Email"
+                error={errors.sellerEmail?.message}
+              >
                 {({ id }) => (
                   <TextField
                     id={id}
                     {...register('sellerEmail')}
                     type="email"
-                    disabled={fieldSecurity.sellerEmail?.isLocked || !fieldSecurity.sellerEmail?.canModify}
+                    disabled={
+                      fieldSecurity.sellerEmail?.isLocked || !fieldSecurity.sellerEmail?.canModify
+                    }
                     placeholder="seller@example.com"
                   />
                 )}
@@ -332,28 +524,43 @@ export default function SecurePurchaseForm({
             <h3 className="text-lg font-semibold">Financial Information</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderSecureField('askingPrice',
-                <FormField name="askingPrice" label="Asking Price (KES)" error={errors.askingPrice?.message}>
+              {renderSecureField(
+                'askingPrice',
+                <FormField
+                  name="askingPrice"
+                  label="Asking Price (KES)"
+                  error={errors.askingPrice?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       type="number"
                       {...register('askingPrice', { valueAsNumber: true })}
-                      disabled={fieldSecurity.askingPrice?.isLocked || !fieldSecurity.askingPrice?.canModify}
+                      disabled={
+                        fieldSecurity.askingPrice?.isLocked || !fieldSecurity.askingPrice?.canModify
+                      }
                       placeholder="0"
                     />
                   )}
                 </FormField>
               )}
 
-              {renderSecureField('negotiatedPrice',
-                <FormField name="negotiatedPrice" label="Negotiated Price (KES)" error={errors.negotiatedPrice?.message}>
+              {renderSecureField(
+                'negotiatedPrice',
+                <FormField
+                  name="negotiatedPrice"
+                  label="Negotiated Price (KES)"
+                  error={errors.negotiatedPrice?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       type="number"
                       {...register('negotiatedPrice', { valueAsNumber: true })}
-                      disabled={fieldSecurity.negotiatedPrice?.isLocked || !fieldSecurity.negotiatedPrice?.canModify}
+                      disabled={
+                        fieldSecurity.negotiatedPrice?.isLocked ||
+                        !fieldSecurity.negotiatedPrice?.canModify
+                      }
                       placeholder="0"
                     />
                   )}
@@ -362,27 +569,42 @@ export default function SecurePurchaseForm({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderSecureField('depositPaid',
-                <FormField name="depositPaid" label="Deposit Paid (KES)" error={errors.depositPaid?.message}>
+              {renderSecureField(
+                'depositPaid',
+                <FormField
+                  name="depositPaid"
+                  label="Deposit Paid (KES)"
+                  error={errors.depositPaid?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       type="number"
                       {...register('depositPaid', { valueAsNumber: true })}
-                      disabled={fieldSecurity.depositPaid?.isLocked || !fieldSecurity.depositPaid?.canModify}
+                      disabled={
+                        fieldSecurity.depositPaid?.isLocked || !fieldSecurity.depositPaid?.canModify
+                      }
                       placeholder="0"
                     />
                   )}
                 </FormField>
               )}
 
-              {renderSecureField('financingSource',
-                <FormField name="financingSource" label="Financing Source" error={errors.financingSource?.message}>
+              {renderSecureField(
+                'financingSource',
+                <FormField
+                  name="financingSource"
+                  label="Financing Source"
+                  error={errors.financingSource?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       {...register('financingSource')}
-                      disabled={fieldSecurity.financingSource?.isLocked || !fieldSecurity.financingSource?.canModify}
+                      disabled={
+                        fieldSecurity.financingSource?.isLocked ||
+                        !fieldSecurity.financingSource?.canModify
+                      }
                       placeholder="Bank loan, cash, etc."
                     />
                   )}
@@ -391,29 +613,44 @@ export default function SecurePurchaseForm({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderSecureField('expectedRentalIncome',
-                <FormField name="expectedRentalIncome" label="Expected Rental Income (KES/month)" error={errors.expectedRentalIncome?.message}>
+              {renderSecureField(
+                'expectedRentalIncome',
+                <FormField
+                  name="expectedRentalIncome"
+                  label="Expected Rental Income (KES/month)"
+                  error={errors.expectedRentalIncome?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       type="number"
                       {...register('expectedRentalIncome', { valueAsNumber: true })}
-                      disabled={fieldSecurity.expectedRentalIncome?.isLocked || !fieldSecurity.expectedRentalIncome?.canModify}
+                      disabled={
+                        fieldSecurity.expectedRentalIncome?.isLocked ||
+                        !fieldSecurity.expectedRentalIncome?.canModify
+                      }
                       placeholder="0"
                     />
                   )}
                 </FormField>
               )}
 
-              {renderSecureField('expectedRoi',
-                <FormField name="expectedRoi" label="Expected ROI (%)" error={errors.expectedRoi?.message}>
+              {renderSecureField(
+                'expectedRoi',
+                <FormField
+                  name="expectedRoi"
+                  label="Expected ROI (%)"
+                  error={errors.expectedRoi?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       type="number"
                       step="0.1"
                       {...register('expectedRoi', { valueAsNumber: true })}
-                      disabled={fieldSecurity.expectedRoi?.isLocked || !fieldSecurity.expectedRoi?.canModify}
+                      disabled={
+                        fieldSecurity.expectedRoi?.isLocked || !fieldSecurity.expectedRoi?.canModify
+                      }
                       placeholder="0.0"
                     />
                   )}
@@ -427,27 +664,43 @@ export default function SecurePurchaseForm({
             <h3 className="text-lg font-semibold">Legal Information</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderSecureField('legalRepresentative',
-                <FormField name="legalRepresentative" label="Legal Representative" error={errors.legalRepresentative?.message}>
+              {renderSecureField(
+                'legalRepresentative',
+                <FormField
+                  name="legalRepresentative"
+                  label="Legal Representative"
+                  error={errors.legalRepresentative?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       {...register('legalRepresentative')}
-                      disabled={fieldSecurity.legalRepresentative?.isLocked || !fieldSecurity.legalRepresentative?.canModify}
+                      disabled={
+                        fieldSecurity.legalRepresentative?.isLocked ||
+                        !fieldSecurity.legalRepresentative?.canModify
+                      }
                       placeholder="Lawyer or legal firm"
                     />
                   )}
                 </FormField>
               )}
 
-              {renderSecureField('targetCompletionDate',
-                <FormField name="targetCompletionDate" label="Target Completion Date" error={errors.targetCompletionDate?.message}>
+              {renderSecureField(
+                'targetCompletionDate',
+                <FormField
+                  name="targetCompletionDate"
+                  label="Target Completion Date"
+                  error={errors.targetCompletionDate?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       type="date"
                       {...register('targetCompletionDate')}
-                      disabled={fieldSecurity.targetCompletionDate?.isLocked || !fieldSecurity.targetCompletionDate?.canModify}
+                      disabled={
+                        fieldSecurity.targetCompletionDate?.isLocked ||
+                        !fieldSecurity.targetCompletionDate?.canModify
+                      }
                     />
                   )}
                 </FormField>
@@ -460,26 +713,42 @@ export default function SecurePurchaseForm({
             <h3 className="text-lg font-semibold">Additional Information</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {renderSecureField('contractReference',
-                <FormField name="contractReference" label="Contract Reference" error={errors.contractReference?.message}>
+              {renderSecureField(
+                'contractReference',
+                <FormField
+                  name="contractReference"
+                  label="Contract Reference"
+                  error={errors.contractReference?.message}
+                >
                   {({ id }) => (
                     <TextField
                       id={id}
                       {...register('contractReference')}
-                      disabled={fieldSecurity.contractReference?.isLocked || !fieldSecurity.contractReference?.canModify}
+                      disabled={
+                        fieldSecurity.contractReference?.isLocked ||
+                        !fieldSecurity.contractReference?.canModify
+                      }
                       placeholder="Contract/Agreement number"
                     />
                   )}
                 </FormField>
               )}
 
-              {renderSecureField('titleDeedStatus',
-                <FormField name="titleDeedStatus" label="Title Deed Status" error={errors.titleDeedStatus?.message}>
+              {renderSecureField(
+                'titleDeedStatus',
+                <FormField
+                  name="titleDeedStatus"
+                  label="Title Deed Status"
+                  error={errors.titleDeedStatus?.message}
+                >
                   {({ id }) => (
                     <select
                       id={id}
                       {...register('titleDeedStatus')}
-                      disabled={fieldSecurity.titleDeedStatus?.isLocked || !fieldSecurity.titleDeedStatus?.canModify}
+                      disabled={
+                        fieldSecurity.titleDeedStatus?.isLocked ||
+                        !fieldSecurity.titleDeedStatus?.canModify
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select status</option>
@@ -492,13 +761,21 @@ export default function SecurePurchaseForm({
                 </FormField>
               )}
 
-              {renderSecureField('surveyStatus',
-                <FormField name="surveyStatus" label="Survey Status" error={errors.surveyStatus?.message}>
+              {renderSecureField(
+                'surveyStatus',
+                <FormField
+                  name="surveyStatus"
+                  label="Survey Status"
+                  error={errors.surveyStatus?.message}
+                >
                   {({ id }) => (
                     <select
                       id={id}
                       {...register('surveyStatus')}
-                      disabled={fieldSecurity.surveyStatus?.isLocked || !fieldSecurity.surveyStatus?.canModify}
+                      disabled={
+                        fieldSecurity.surveyStatus?.isLocked ||
+                        !fieldSecurity.surveyStatus?.canModify
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select status</option>
@@ -512,13 +789,21 @@ export default function SecurePurchaseForm({
               )}
             </div>
 
-            {renderSecureField('riskAssessment',
-              <FormField name="riskAssessment" label="Risk Assessment" error={errors.riskAssessment?.message}>
+            {renderSecureField(
+              'riskAssessment',
+              <FormField
+                name="riskAssessment"
+                label="Risk Assessment"
+                error={errors.riskAssessment?.message}
+              >
                 {({ id }) => (
                   <textarea
                     id={id}
                     {...register('riskAssessment')}
-                    disabled={fieldSecurity.riskAssessment?.isLocked || !fieldSecurity.riskAssessment?.canModify}
+                    disabled={
+                      fieldSecurity.riskAssessment?.isLocked ||
+                      !fieldSecurity.riskAssessment?.canModify
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={3}
                     placeholder="Identify potential risks and mitigation strategies"
@@ -527,13 +812,21 @@ export default function SecurePurchaseForm({
               </FormField>
             )}
 
-            {renderSecureField('propertyConditionNotes',
-              <FormField name="propertyConditionNotes" label="Property Condition Notes" error={errors.propertyConditionNotes?.message}>
+            {renderSecureField(
+              'propertyConditionNotes',
+              <FormField
+                name="propertyConditionNotes"
+                label="Property Condition Notes"
+                error={errors.propertyConditionNotes?.message}
+              >
                 {({ id }) => (
                   <textarea
                     id={id}
                     {...register('propertyConditionNotes')}
-                    disabled={fieldSecurity.propertyConditionNotes?.isLocked || !fieldSecurity.propertyConditionNotes?.canModify}
+                    disabled={
+                      fieldSecurity.propertyConditionNotes?.isLocked ||
+                      !fieldSecurity.propertyConditionNotes?.canModify
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={3}
                     placeholder="Current condition and any required improvements"
@@ -556,7 +849,11 @@ export default function SecurePurchaseForm({
 
       {/* Approval Request Dialog */}
       {showApprovalDialog && (
-        <Modal isOpen={showApprovalDialog} onClose={() => setShowApprovalDialog(false)} title="Approval Required">
+        <Modal
+          isOpen={showApprovalDialog}
+          onClose={() => setShowApprovalDialog(false)}
+          title="Approval Required"
+        >
           <div className="space-y-4">
             <p>The following changes require approval:</p>
             <ul className="list-disc pl-5">
@@ -566,7 +863,7 @@ export default function SecurePurchaseForm({
                 </li>
               ))}
             </ul>
-            
+
             <FormField label="Business Justification (Required)">
               <textarea
                 className="w-full border rounded px-3 py-2"
@@ -575,7 +872,7 @@ export default function SecurePurchaseForm({
                 id="businessJustification"
               />
             </FormField>
-            
+
             <FormField label="Risk Assessment (Optional)">
               <textarea
                 className="w-full border rounded px-3 py-2"
@@ -584,16 +881,19 @@ export default function SecurePurchaseForm({
                 id="riskAssessment"
               />
             </FormField>
-            
+
             <div className="flex justify-end space-x-3">
               <Button type="button" variant="outline" onClick={() => setShowApprovalDialog(false)}>
                 Cancel
               </Button>
-              <Button 
-                type="button" 
+              <Button
+                type="button"
                 onClick={() => {
-                  const justification = (document.getElementById('businessJustification') as HTMLTextAreaElement).value
-                  const risk = (document.getElementById('riskAssessment') as HTMLTextAreaElement).value
+                  const justification = (
+                    document.getElementById('businessJustification') as HTMLTextAreaElement
+                  ).value
+                  const risk = (document.getElementById('riskAssessment') as HTMLTextAreaElement)
+                    .value
                   handleApprovalRequest(justification, risk)
                 }}
               >

@@ -28,10 +28,14 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
     requiresTxRef: true,
     txRefLabel: 'M-Pesa Transaction Code',
     txRefPlaceholder: 'QA12345678',
-    txRefValidation: z.string()
+    txRefValidation: z
+      .string()
       .min(10, 'M-Pesa transaction code must be 10 characters')
       .max(10, 'M-Pesa transaction code must be 10 characters')
-      .regex(/^[A-Z0-9]{10}$/, 'M-Pesa transaction code must contain only uppercase letters and numbers'),
+      .regex(
+        /^[A-Z0-9]{10}$/,
+        'M-Pesa transaction code must contain only uppercase letters and numbers'
+      ),
     isEnabled: true,
     processingFee: 0,
     processingTime: 'Instant',
@@ -42,13 +46,13 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
       'Enter business number: 123456',
       'Enter account number: Your tenant ID',
       'Enter amount and confirm',
-      'Copy the transaction code (starts with Q)'
+      'Copy the transaction code (starts with Q)',
     ],
     supportedCurrencies: ['KES'],
     minAmount: 1,
-    maxAmount: 300000
+    maxAmount: 300000,
   },
-  
+
   AIRTEL_MONEY: {
     id: 'AIRTEL_MONEY',
     label: 'Airtel Money',
@@ -57,7 +61,8 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
     requiresTxRef: true,
     txRefLabel: 'Airtel Money Transaction ID',
     txRefPlaceholder: 'AM123456789',
-    txRefValidation: z.string()
+    txRefValidation: z
+      .string()
       .min(8, 'Airtel Money transaction ID must be at least 8 characters')
       .max(15, 'Airtel Money transaction ID cannot exceed 15 characters')
       .regex(/^[A-Z0-9]+$/, 'Transaction ID must contain only uppercase letters and numbers'),
@@ -69,11 +74,11 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
       'Select "Pay Bills"',
       'Enter business number: 123456',
       'Enter amount and confirm',
-      'Copy the transaction ID'
+      'Copy the transaction ID',
     ],
     supportedCurrencies: ['KES'],
     minAmount: 1,
-    maxAmount: 150000
+    maxAmount: 150000,
   },
 
   BANK_TRANSFER: {
@@ -84,10 +89,14 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
     requiresTxRef: true,
     txRefLabel: 'Bank Reference Number',
     txRefPlaceholder: 'FT123456789',
-    txRefValidation: z.string()
+    txRefValidation: z
+      .string()
       .min(5, 'Bank reference must be at least 5 characters')
       .max(30, 'Bank reference cannot exceed 30 characters')
-      .regex(/^[A-Z0-9\-_]+$/, 'Bank reference can only contain letters, numbers, hyphens, and underscores'),
+      .regex(
+        /^[A-Z0-9\-_]+$/,
+        'Bank reference can only contain letters, numbers, hyphens, and underscores'
+      ),
     isEnabled: true,
     processingFee: 0,
     processingTime: '1-3 business days',
@@ -97,11 +106,11 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
       'Account Number: 1234567890',
       'Bank: KCB Bank',
       'Reference: Your tenant ID',
-      'Copy the transaction reference number'
+      'Copy the transaction reference number',
     ],
     supportedCurrencies: ['KES', 'USD'],
     minAmount: 100,
-    maxAmount: 10000000
+    maxAmount: 10000000,
   },
 
   CHEQUE: {
@@ -112,7 +121,8 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
     requiresTxRef: true,
     txRefLabel: 'Cheque Number',
     txRefPlaceholder: '123456',
-    txRefValidation: z.string()
+    txRefValidation: z
+      .string()
       .min(6, 'Cheque number must be at least 6 digits')
       .max(12, 'Cheque number cannot exceed 12 digits')
       .regex(/^[0-9]+$/, 'Cheque number must contain only numbers'),
@@ -124,11 +134,11 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
       'Write the amount clearly in words and figures',
       'Sign the cheque',
       'Deliver to office or authorized agent',
-      'Keep the cheque number for reference'
+      'Keep the cheque number for reference',
     ],
     supportedCurrencies: ['KES'],
     minAmount: 1000,
-    maxAmount: 5000000
+    maxAmount: 5000000,
   },
 
   CASH: {
@@ -146,11 +156,11 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
       'Visit our office during business hours',
       'Bring exact amount or change will be provided',
       'Request for official receipt',
-      'Keep receipt for your records'
+      'Keep receipt for your records',
     ],
     supportedCurrencies: ['KES'],
     minAmount: 1,
-    maxAmount: 500000
+    maxAmount: 500000,
   },
 
   CARD_PAYMENT: {
@@ -161,7 +171,8 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
     requiresTxRef: true,
     txRefLabel: 'Authorization Code',
     txRefPlaceholder: 'AUTH123456',
-    txRefValidation: z.string()
+    txRefValidation: z
+      .string()
       .min(6, 'Authorization code must be at least 6 characters')
       .max(20, 'Authorization code cannot exceed 20 characters')
       .regex(/^[A-Z0-9]+$/, 'Authorization code must contain only uppercase letters and numbers'),
@@ -172,11 +183,11 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
       'Use our secure online payment portal',
       'Enter your card details',
       'Confirm payment amount',
-      'Copy the authorization code'
+      'Copy the authorization code',
     ],
     supportedCurrencies: ['KES', 'USD'],
     minAmount: 100,
-    maxAmount: 1000000
+    maxAmount: 1000000,
   },
 
   OTHER: {
@@ -193,17 +204,17 @@ export const PAYMENT_METHODS: Record<string, PaymentMethodConfig> = {
     instructions: [
       'Contact our office to arrange alternative payment',
       'Provide payment details in the notes section',
-      'Obtain confirmation from our staff'
+      'Obtain confirmation from our staff',
     ],
     supportedCurrencies: ['KES'],
     minAmount: 1,
-    maxAmount: 10000000
-  }
+    maxAmount: 10000000,
+  },
 }
 
 // Get enabled payment methods
 export function getEnabledPaymentMethods(): PaymentMethodConfig[] {
-  return Object.values(PAYMENT_METHODS).filter(method => method.isEnabled)
+  return Object.values(PAYMENT_METHODS).filter((method) => method.isEnabled)
 }
 
 // Get payment method by ID
@@ -212,23 +223,26 @@ export function getPaymentMethod(id: string): PaymentMethodConfig | undefined {
 }
 
 // Validate payment amount for method
-export function validatePaymentAmount(methodId: string, amount: number): { isValid: boolean; error?: string } {
+export function validatePaymentAmount(
+  methodId: string,
+  amount: number
+): { isValid: boolean; error?: string } {
   const method = getPaymentMethod(methodId)
   if (!method) {
     return { isValid: false, error: 'Invalid payment method' }
   }
 
   if (method.minAmount && amount < method.minAmount) {
-    return { 
-      isValid: false, 
-      error: `Minimum amount for ${method.label} is ${method.minAmount} KES` 
+    return {
+      isValid: false,
+      error: `Minimum amount for ${method.label} is ${method.minAmount} KES`,
     }
   }
 
   if (method.maxAmount && amount > method.maxAmount) {
-    return { 
-      isValid: false, 
-      error: `Maximum amount for ${method.label} is ${method.maxAmount.toLocaleString()} KES` 
+    return {
+      isValid: false,
+      error: `Maximum amount for ${method.label} is ${method.maxAmount.toLocaleString()} KES`,
     }
   }
 
@@ -253,15 +267,18 @@ export function calculateProcessingFee(methodId: string, amount: number): number
 
 // Get payment method options for form select
 export function getPaymentMethodOptions() {
-  return getEnabledPaymentMethods().map(method => ({
+  return getEnabledPaymentMethods().map((method) => ({
     value: method.id,
     label: `${method.icon} ${method.label}`,
-    description: method.description
+    description: method.description,
   }))
 }
 
 // Validate transaction reference for specific method
-export function validateTransactionReference(methodId: string, txRef: string): { isValid: boolean; error?: string } {
+export function validateTransactionReference(
+  methodId: string,
+  txRef: string
+): { isValid: boolean; error?: string } {
   const method = getPaymentMethod(methodId)
   if (!method) {
     return { isValid: false, error: 'Invalid payment method' }
@@ -269,9 +286,9 @@ export function validateTransactionReference(methodId: string, txRef: string): {
 
   // If transaction reference is required but not provided
   if (method.requiresTxRef && (!txRef || txRef.trim() === '')) {
-    return { 
-      isValid: false, 
-      error: `${method.txRefLabel} is required for ${method.label} payments` 
+    return {
+      isValid: false,
+      error: `${method.txRefLabel} is required for ${method.label} payments`,
     }
   }
 
@@ -282,9 +299,9 @@ export function validateTransactionReference(methodId: string, txRef: string): {
       return { isValid: true }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return { 
-          isValid: false, 
-          error: error.issues[0]?.message || 'Invalid transaction reference format'
+        return {
+          isValid: false,
+          error: error.issues[0]?.message || 'Invalid transaction reference format',
         }
       }
     }

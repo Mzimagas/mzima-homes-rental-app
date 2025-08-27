@@ -24,7 +24,9 @@ interface ComprehensiveUserManagementProps {
   className?: string
 }
 
-export default function ComprehensiveUserManagement({ className = '' }: ComprehensiveUserManagementProps) {
+export default function ComprehensiveUserManagement({
+  className = '',
+}: ComprehensiveUserManagementProps) {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,16 +46,16 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const response = await fetch('/api/admin/users')
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch users')
       }
 
       const data = await response.json()
-      
+
       // Transform API data to match User interface
       const transformedUsers: User[] = (data.users || []).map((user: any) => ({
         id: user.id,
@@ -68,7 +70,7 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
         lastLogin: user.last_login,
         profileComplete: user.profile_complete,
         deletedAt: user.deleted_at,
-        isDeleted: !!user.deleted_at
+        isDeleted: !!user.deleted_at,
       }))
 
       setUsers(transformedUsers)
@@ -108,13 +110,15 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
 
   // Filter and sort users
   const filteredAndSortedUsers = useCallback(() => {
-    let filtered = users.filter(user => {
-      const matchesSearch = !searchTerm ||
+    let filtered = users.filter((user) => {
+      const matchesSearch =
+        !searchTerm ||
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.memberNumber?.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesStatus = statusFilter === 'all' ||
+      const matchesStatus =
+        statusFilter === 'all' ||
         (statusFilter === 'active' && user.isActive) ||
         (statusFilter === 'inactive' && !user.isActive)
 
@@ -128,22 +132,22 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
           return (a.name || '').localeCompare(b.name || '')
         case 'email':
           return a.email.localeCompare(b.email)
-        case 'login':
+        case 'login': {
           const aLogin = new Date(a.lastLogin || 0).getTime()
           const bLogin = new Date(b.lastLogin || 0).getTime()
           return bLogin - aLogin
+        }
         case 'created':
-        default:
+        default: {
           const aCreated = new Date(a.createdAt || 0).getTime()
           const bCreated = new Date(b.createdAt || 0).getTime()
           return bCreated - aCreated
+        }
       }
     })
 
     return filtered
   }, [users, searchTerm, statusFilter, sortBy])
-
-
 
   const handleQuickAddUserAdded = useCallback(() => {
     setRefreshing(true)
@@ -156,49 +160,58 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
     setEditingUser(null)
   }, [fetchUsers])
 
-  const handleDeleteUser = useCallback(async (userId: string) => {
-    const userToDelete = users.find(u => u.id === userId)
-    const userName = userToDelete?.name || userToDelete?.email || 'this user'
+  const handleDeleteUser = useCallback(
+    async (userId: string) => {
+      const userToDelete = users.find((u) => u.id === userId)
+      const userName = userToDelete?.name || userToDelete?.email || 'this user'
 
-    if (!confirm(`Are you sure you want to delete ${userName}?\n\nThis will be a soft delete - the user data will be retained and can be recovered later if needed.`)) {
-      return
-    }
-
-    setDeletingUserId(userId)
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete user')
+      if (
+        !confirm(
+          `Are you sure you want to delete ${userName}?\n\nThis will be a soft delete - the user data will be retained and can be recovered later if needed.`
+        )
+      ) {
+        return
       }
 
-      // Refresh user list with animation
-      await fetchUsers()
+      setDeletingUserId(userId)
+      try {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          method: 'DELETE',
+        })
 
-      // Show success message
-      const userToDelete = users.find(u => u.id === userId)
-      const userName = userToDelete?.name || userToDelete?.email || 'User'
-      alert(`✅ ${userName} has been successfully deleted.\n\nThis was a soft delete - the user data has been retained and can be recovered from the Deleted Users section if needed.`)
-    } catch (err) {
-      console.error('Error deleting user:', err)
-      alert('❌ Failed to delete user. Please try again.')
-    } finally {
-      setDeletingUserId(null)
-    }
-  }, [fetchUsers])
+        if (!response.ok) {
+          throw new Error('Failed to delete user')
+        }
+
+        // Refresh user list with animation
+        await fetchUsers()
+
+        // Show success message
+        const userToDelete = users.find((u) => u.id === userId)
+        const userName = userToDelete?.name || userToDelete?.email || 'User'
+        alert(
+          `✅ ${userName} has been successfully deleted.\n\nThis was a soft delete - the user data has been retained and can be recovered from the Deleted Users section if needed.`
+        )
+      } catch (err) {
+        console.error('Error deleting user:', err)
+        alert('❌ Failed to delete user. Please try again.')
+      } finally {
+        setDeletingUserId(null)
+      }
+    },
+    [fetchUsers]
+  )
 
   const handleToggleStatus = useCallback(async (userId: string, newStatus: boolean) => {
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status: newStatus ? 'active' : 'inactive'
-        })
+          status: newStatus ? 'active' : 'inactive',
+        }),
       })
 
       if (!response.ok) {
@@ -206,11 +219,13 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
       }
 
       // Update local state
-      setUsers(prev => prev.map(user => 
-        user.id === userId 
-          ? { ...user, isActive: newStatus, status: newStatus ? 'active' : 'inactive' }
-          : user
-      ))
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId
+            ? { ...user, isActive: newStatus, status: newStatus ? 'active' : 'inactive' }
+            : user
+        )
+      )
     } catch (err) {
       console.error('Error updating user status:', err)
       alert('Failed to update user status. Please try again.')
@@ -221,7 +236,7 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
     if (!name) return '??'
     return name
       .split(' ')
-      .map(word => word.charAt(0))
+      .map((word) => word.charAt(0))
       .join('')
       .toUpperCase()
       .slice(0, 2)
@@ -232,11 +247,9 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
-
-
 
   return (
     <div className={className}>
@@ -264,11 +277,13 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
           <div className="mt-4 sm:mt-0 flex items-center space-x-4 text-sm">
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-gray-600">{users.filter(u => u.isActive).length} Active</span>
+              <span className="text-gray-600">{users.filter((u) => u.isActive).length} Active</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-gray-600">{users.filter(u => !u.isActive).length} Inactive</span>
+              <span className="text-gray-600">
+                {users.filter((u) => !u.isActive).length} Inactive
+              </span>
             </div>
             <span className="text-gray-500 font-medium">
               {filteredAndSortedUsers().length} of {users.length} shown
@@ -286,7 +301,12 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
               title="Quick Add User (Ctrl+Shift+A)"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
               </svg>
               Add User
             </button>
@@ -294,7 +314,12 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
 
           <div className="flex items-center space-x-2 text-xs text-gray-500">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z"
+              />
             </svg>
             <span>Filter and search users below</span>
           </div>
@@ -307,8 +332,18 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
             <div className="md:col-span-2">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="h-4 w-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
                 <input
@@ -324,7 +359,12 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 )}
@@ -369,7 +409,12 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                   title="Grid View"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                    />
                   </svg>
                 </button>
                 <button
@@ -382,7 +427,12 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                   title="List View"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                    />
                   </svg>
                 </button>
               </div>
@@ -430,19 +480,25 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
         ) : error ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <p className="text-red-700">{error}</p>
-            <Button
-              variant="outline"
-              onClick={() => fetchUsers()}
-              className="mt-4"
-            >
+            <Button variant="outline" onClick={() => fetchUsers()} className="mt-4">
               Try Again
             </Button>
           </div>
         ) : filteredAndSortedUsers().length === 0 ? (
           <div className="bg-gradient-to-br from-gray-50 to-blue-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-              <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              <svg
+                className="w-10 h-10 text-blue-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                />
               </svg>
             </div>
             <h4 className="text-lg font-medium text-gray-900 mb-2">
@@ -451,8 +507,7 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
             <p className="text-gray-600 mb-4">
               {users.length === 0
                 ? 'Get started by adding your first user below.'
-                : 'Try adjusting your search or filter criteria.'
-              }
+                : 'Try adjusting your search or filter criteria.'}
             </p>
             {users.length > 0 && (
               <Button
@@ -468,24 +523,32 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
             )}
           </div>
         ) : (
-          <div className={viewMode === 'grid'
-            ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
-            : "space-y-3"
-          }>
-            {filteredAndSortedUsers().map((user) => (
+          <div
+            className={
+              viewMode === 'grid'
+                ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                : 'space-y-3'
+            }
+          >
+            {filteredAndSortedUsers().map((user) =>
               viewMode === 'grid' ? (
                 // Optimized Horizontal Grid Card
-                <div key={user.id} className="bg-white rounded-xl border-2 border-gray-100 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 transform hover:-translate-y-1 group h-full flex flex-col min-h-[300px] max-w-[280px] mx-auto">
+                <div
+                  key={user.id}
+                  className="bg-white rounded-xl border-2 border-gray-100 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 transform hover:-translate-y-1 group h-full flex flex-col min-h-[300px] max-w-[280px] mx-auto"
+                >
                   {/* Compact Card Header */}
                   <div className="p-4 flex-1 flex flex-col">
                     {/* User Profile Section - Optimized for horizontal layout */}
                     <div className="flex flex-col items-center text-center mb-3">
                       {/* Compact Avatar */}
-                      <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white mb-2 ${
-                        user.isActive
-                          ? 'bg-gradient-to-br from-blue-400 to-blue-600'
-                          : 'bg-gradient-to-br from-gray-400 to-gray-600'
-                      }`}>
+                      <div
+                        className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white mb-2 ${
+                          user.isActive
+                            ? 'bg-gradient-to-br from-blue-400 to-blue-600'
+                            : 'bg-gradient-to-br from-gray-400 to-gray-600'
+                        }`}
+                      >
                         {getInitials(user.name)}
                       </div>
 
@@ -494,9 +557,7 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                         <h3 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors truncate">
                           {user.name || 'Unnamed User'}
                         </h3>
-                        <p className="text-xs text-gray-600 mb-2 truncate">
-                          {user.email}
-                        </p>
+                        <p className="text-xs text-gray-600 mb-2 truncate">{user.email}</p>
                         <div className="flex justify-center">
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                             #{user.memberNumber}
@@ -507,14 +568,18 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
 
                     {/* Compact Status Section */}
                     <div className="mb-3 flex justify-center">
-                      <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${
-                        user.isActive
-                          ? 'bg-green-50 text-green-700 border border-green-200'
-                          : 'bg-red-50 text-red-700 border border-red-200'
-                      }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                          user.isActive ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-                        }`}></div>
+                      <div
+                        className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${
+                          user.isActive
+                            ? 'bg-green-50 text-green-700 border border-green-200'
+                            : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}
+                      >
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                            user.isActive ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                          }`}
+                        ></div>
                         {user.isActive ? 'Active' : 'Inactive'}
                       </div>
                     </div>
@@ -525,32 +590,68 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                         {user.phoneNumber && (
                           <div className="flex items-center justify-between">
                             <span className="text-gray-500 flex items-center">
-                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                              <svg
+                                className="w-3 h-3 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                />
                               </svg>
                               Phone
                             </span>
-                            <span className="text-gray-900 font-medium truncate ml-2">{user.phoneNumber}</span>
+                            <span className="text-gray-900 font-medium truncate ml-2">
+                              {user.phoneNumber}
+                            </span>
                           </div>
                         )}
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500 flex items-center">
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a1 1 0 011 1v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8a1 1 0 011-1h3z" />
+                            <svg
+                              className="w-3 h-3 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a1 1 0 011 1v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8a1 1 0 011-1h3z"
+                              />
                             </svg>
                             Joined
                           </span>
-                          <span className="text-gray-900 font-medium">{formatDate(user.createdAt)}</span>
+                          <span className="text-gray-900 font-medium">
+                            {formatDate(user.createdAt)}
+                          </span>
                         </div>
                         {user.lastLogin && (
                           <div className="flex items-center justify-between">
                             <span className="text-gray-500 flex items-center">
-                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              <svg
+                                className="w-3 h-3 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
                               </svg>
                               Login
                             </span>
-                            <span className="text-gray-900 font-medium">{formatDate(user.lastLogin)}</span>
+                            <span className="text-gray-900 font-medium">
+                              {formatDate(user.lastLogin)}
+                            </span>
                           </div>
                         )}
                         {user.profileComplete && (
@@ -572,8 +673,18 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                           className="flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-medium transition-all duration-200 transform hover:scale-105 shadow-sm"
                           title="Edit User"
                         >
-                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          <svg
+                            className="w-3 h-3 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
                           </svg>
                           <span>Edit</span>
                         </button>
@@ -582,9 +693,24 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                           className="flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs font-medium transition-all duration-200 transform hover:scale-105 shadow-sm"
                           title="View Details"
                         >
-                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          <svg
+                            className="w-3 h-3 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
                           </svg>
                           <span>View</span>
                         </button>
@@ -608,8 +734,18 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                           </>
                         ) : (
                           <>
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <svg
+                              className="w-3 h-3 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
                             </svg>
                             <span>Remove</span>
                           </>
@@ -620,17 +756,22 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                 </div>
               ) : (
                 // Enhanced User-Friendly List View (compact)
-                <div key={user.id} className="w-full border border-gray-300 rounded-md bg-white hover:border-gray-400 transition-colors group">
+                <div
+                  key={user.id}
+                  className="w-full border border-gray-300 rounded-md bg-white hover:border-gray-400 transition-colors group"
+                >
                   <div className="px-3 py-2.5">
                     <div className="flex items-center justify-between">
                       {/* Enhanced User Info */}
                       <div className="flex items-center space-x-3 flex-1">
                         {/* Large Avatar */}
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
-                          user.isActive
-                            ? 'bg-gradient-to-br from-blue-500 to-blue-600'
-                            : 'bg-gradient-to-br from-gray-400 to-gray-500'
-                        }`}>
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
+                            user.isActive
+                              ? 'bg-gradient-to-br from-blue-500 to-blue-600'
+                              : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                          }`}
+                        >
                           {getInitials(user.name)}
                         </div>
 
@@ -640,16 +781,32 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                             <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                               {user.name || 'Unnamed User'}
                             </h3>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                user.isActive
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full mr-1.5 ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`}
+                              ></span>
                               {user.isActive ? 'Active' : 'Inactive'}
                             </span>
                             {user.profileComplete && (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                                <svg
+                                  className="w-3 h-3 mr-1"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12l2 2 4-4"
+                                  />
                                 </svg>
                                 Complete
                               </span>
@@ -659,35 +816,85 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                           {/* Contact Info (compact, wraps to 1–2 lines) */}
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                             <div className="flex items-center min-w-0">
-                              <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                              <svg
+                                className="w-3 h-3 mr-1 text-gray-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+                                />
                               </svg>
                               <span className="truncate">{user.email}</span>
                             </div>
                             <div className="flex items-center font-medium">
-                              <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                              <svg
+                                className="w-3 h-3 mr-1 text-gray-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                                />
                               </svg>
                               #{user.memberNumber}
                             </div>
                             {user.phoneNumber && (
                               <div className="flex items-center min-w-0">
-                                <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                <svg
+                                  className="w-3 h-3 mr-1 text-gray-400"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                  />
                                 </svg>
                                 <span className="truncate">{user.phoneNumber}</span>
                               </div>
                             )}
                             <div className="flex items-center">
-                              <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a1 1 0 011 1v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8a1 1 0 011-1h3z" />
+                              <svg
+                                className="w-3 h-3 mr-1 text-gray-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a1 1 0 011 1v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8a1 1 0 011-1h3z"
+                                />
                               </svg>
                               {formatDate(user.createdAt)}
                             </div>
                             {user.lastLogin && (
                               <div className="flex items-center">
-                                <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <svg
+                                  className="w-3 h-3 mr-1 text-gray-400"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
                                 </svg>
                                 {formatDate(user.lastLogin)}
                               </div>
@@ -703,8 +910,18 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                           className="flex items-center px-3 py-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors text-xs font-medium"
                           title="Edit User"
                         >
-                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          <svg
+                            className="w-3 h-3 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
                           </svg>
                           Edit
                         </button>
@@ -713,9 +930,24 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                           className="flex items-center px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors text-xs font-medium"
                           title="View Details"
                         >
-                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          <svg
+                            className="w-3 h-3 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
                           </svg>
                           View
                         </button>
@@ -736,8 +968,18 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                             </>
                           ) : (
                             <>
-                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              <svg
+                                className="w-3 h-3 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
                               </svg>
                               Delete
                             </>
@@ -748,7 +990,7 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
                   </div>
                 </div>
               )
-            ))}
+            )}
           </div>
         )}
 
@@ -757,15 +999,35 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
           <div className="mt-8 pt-6 border-t border-gray-200">
             <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
               <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-4 h-4 text-green-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 <span>All users loaded successfully</span>
               </div>
               <span>•</span>
               <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <svg
+                  className="w-4 h-4 text-blue-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
                 </svg>
                 <span>Use "Quick Add User" to add more</span>
               </div>
@@ -773,8 +1035,6 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
           </div>
         )}
       </div>
-
-
 
       {/* Modals */}
       {editingUser && (
@@ -820,7 +1080,12 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.5}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
 
           {/* Ripple Effect */}
@@ -844,25 +1109,43 @@ export default function ComprehensiveUserManagement({ className = '' }: Comprehe
         <div className="fixed inset-0 bg-gray-50 bg-opacity-95 flex items-center justify-center z-30">
           <div className="text-center max-w-md mx-auto p-8">
             <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-              <svg className="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              <svg
+                className="w-12 h-12 text-blue-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                />
               </svg>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4">Welcome to User Management!</h3>
             <p className="text-gray-600 mb-8">
-              Get started by adding your first user to the system. You can create user accounts with different roles and permissions.
+              Get started by adding your first user to the system. You can create user accounts with
+              different roles and permissions.
             </p>
             <button
               onClick={() => setShowQuickAddModal(true)}
               className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
             >
               <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
               </svg>
               Add Your First User
             </button>
             <p className="text-xs text-gray-500 mt-4">
-              💡 Tip: You can also press <kbd className="px-2 py-1 bg-gray-200 rounded text-gray-700">Ctrl+Shift+A</kbd> anytime
+              💡 Tip: You can also press{' '}
+              <kbd className="px-2 py-1 bg-gray-200 rounded text-gray-700">Ctrl+Shift+A</kbd>{' '}
+              anytime
             </p>
           </div>
         </div>

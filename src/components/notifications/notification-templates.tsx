@@ -36,10 +36,17 @@ If you have any questions, please contact us.
 
 Best regards,
 {{landlord_name}}`,
-      variables: ['tenant_name', 'property_name', 'unit_label', 'due_date', 'amount_due', 'landlord_name'],
+      variables: [
+        'tenant_name',
+        'property_name',
+        'unit_label',
+        'due_date',
+        'amount_due',
+        'landlord_name',
+      ],
       is_default: true,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     },
     {
       id: '2',
@@ -47,11 +54,19 @@ Best regards,
       type: 'rent_due',
       channel: 'sms',
       subject: '',
-      message: 'Hi {{tenant_name}}, your rent for {{property_name}} {{unit_label}} (KES {{amount_due}}) is due on {{due_date}}. Please pay on time. - {{landlord_name}}',
-      variables: ['tenant_name', 'property_name', 'unit_label', 'amount_due', 'due_date', 'landlord_name'],
+      message:
+        'Hi {{tenant_name}}, your rent for {{property_name}} {{unit_label}} (KES {{amount_due}}) is due on {{due_date}}. Please pay on time. - {{landlord_name}}',
+      variables: [
+        'tenant_name',
+        'property_name',
+        'unit_label',
+        'amount_due',
+        'due_date',
+        'landlord_name',
+      ],
       is_default: true,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     },
     {
       id: '3',
@@ -74,11 +89,21 @@ Contact us if you need to discuss payment arrangements.
 
 Regards,
 {{landlord_name}}`,
-      variables: ['tenant_name', 'property_name', 'unit_label', 'days_overdue', 'due_date', 'amount_due', 'late_fee', 'total_amount', 'landlord_name'],
+      variables: [
+        'tenant_name',
+        'property_name',
+        'unit_label',
+        'days_overdue',
+        'due_date',
+        'amount_due',
+        'late_fee',
+        'total_amount',
+        'landlord_name',
+      ],
       is_default: true,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
+      updated_at: new Date().toISOString(),
+    },
   ])
 
   const [selectedTemplate, setSelectedTemplate] = useState<NotificationTemplate | null>(null)
@@ -106,20 +131,50 @@ Regards,
     switch (channel) {
       case 'email':
         return (
-          <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          <svg
+            className="w-4 h-4 text-blue-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
           </svg>
         )
       case 'sms':
         return (
-          <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg
+            className="w-4 h-4 text-green-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
           </svg>
         )
       case 'in_app':
         return (
-          <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4 19h6v2H4v-2zM20 4H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z" />
+          <svg
+            className="w-4 h-4 text-purple-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 17h5l-5 5v-5zM4 19h6v2H4v-2zM20 4H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"
+            />
           </svg>
         )
       default:
@@ -136,7 +191,7 @@ Regards,
       return
     }
 
-    setTemplates(templates.filter(t => t.id !== template.id))
+    setTemplates(templates.filter((t) => t.id !== template.id))
   }
 
   const handlePreviewTemplate = (template: NotificationTemplate) => {
@@ -158,7 +213,12 @@ Regards,
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
           Create Template
         </button>
@@ -213,30 +273,60 @@ Regards,
                   onClick={() => handlePreviewTemplate(template)}
                   className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
                   </svg>
                   Preview
                 </button>
-                
+
                 <button
                   onClick={() => handleEditTemplate(template)}
                   className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
                   Edit
                 </button>
-                
+
                 {!template.is_default && (
                   <button
                     onClick={() => handleDeleteTemplate(template)}
                     className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                   </button>
                 )}
@@ -253,26 +343,46 @@ Regards,
           <div>
             <h5 className="font-medium text-blue-800 mb-2">Tenant Variables</h5>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li><code>{'{{tenant_name}}'}</code> - Tenant's full name</li>
-              <li><code>{'{{tenant_phone}}'}</code> - Tenant's phone number</li>
-              <li><code>{'{{tenant_email}}'}</code> - Tenant's email address</li>
+              <li>
+                <code>{'{{tenant_name}}'}</code> - Tenant's full name
+              </li>
+              <li>
+                <code>{'{{tenant_phone}}'}</code> - Tenant's phone number
+              </li>
+              <li>
+                <code>{'{{tenant_email}}'}</code> - Tenant's email address
+              </li>
             </ul>
           </div>
           <div>
             <h5 className="font-medium text-blue-800 mb-2">Property Variables</h5>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li><code>{'{{property_name}}'}</code> - Property name</li>
-              <li><code>{'{{unit_label}}'}</code> - Unit label/number</li>
-              <li><code>{'{{monthly_rent}}'}</code> - Monthly rent amount</li>
+              <li>
+                <code>{'{{property_name}}'}</code> - Property name
+              </li>
+              <li>
+                <code>{'{{unit_label}}'}</code> - Unit label/number
+              </li>
+              <li>
+                <code>{'{{monthly_rent}}'}</code> - Monthly rent amount
+              </li>
             </ul>
           </div>
           <div>
             <h5 className="font-medium text-blue-800 mb-2">Payment Variables</h5>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li><code>{'{{amount_due}}'}</code> - Amount due</li>
-              <li><code>{'{{due_date}}'}</code> - Payment due date</li>
-              <li><code>{'{{days_overdue}}'}</code> - Days overdue</li>
-              <li><code>{'{{late_fee}}'}</code> - Late fee amount</li>
+              <li>
+                <code>{'{{amount_due}}'}</code> - Amount due
+              </li>
+              <li>
+                <code>{'{{due_date}}'}</code> - Payment due date
+              </li>
+              <li>
+                <code>{'{{days_overdue}}'}</code> - Days overdue
+              </li>
+              <li>
+                <code>{'{{late_fee}}'}</code> - Late fee amount
+              </li>
             </ul>
           </div>
         </div>
@@ -290,7 +400,12 @@ Regards,
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -303,18 +418,24 @@ Regards,
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Type</label>
-                    <p className="mt-1 text-sm text-gray-900">{getTypeDisplayName(selectedTemplate.type)}</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {getTypeDisplayName(selectedTemplate.type)}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Channel</label>
                     <div className="mt-1 flex items-center space-x-2">
                       {getChannelIcon(selectedTemplate.channel)}
-                      <span className="text-sm text-gray-900 capitalize">{selectedTemplate.channel}</span>
+                      <span className="text-sm text-gray-900 capitalize">
+                        {selectedTemplate.channel}
+                      </span>
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Variables</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedTemplate.variables.length} variables</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {selectedTemplate.variables.length} variables
+                    </p>
                   </div>
                 </div>
 
@@ -330,7 +451,9 @@ Regards,
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Message</label>
                   <div className="mt-1 p-3 bg-gray-50 border rounded-md">
-                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedTemplate.message}</p>
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap">
+                      {selectedTemplate.message}
+                    </p>
                   </div>
                 </div>
 
@@ -338,7 +461,10 @@ Regards,
                   <label className="block text-sm font-medium text-gray-700">Variables Used</label>
                   <div className="mt-1 flex flex-wrap gap-2">
                     {selectedTemplate.variables.map((variable, index) => (
-                      <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
                         {`{{${variable}}}`}
                       </span>
                     ))}

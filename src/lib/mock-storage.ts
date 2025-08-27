@@ -31,17 +31,19 @@ interface HandoverCost {
 
 // Global in-memory storage that persists across API calls
 declare global {
-  var mockStorage: {
-    paymentReceipts: Map<string, PaymentReceipt[]>
-    handoverCosts: Map<string, HandoverCost[]>
-  } | undefined
+  var mockStorage:
+    | {
+        paymentReceipts: Map<string, PaymentReceipt[]>
+        handoverCosts: Map<string, HandoverCost[]>
+      }
+    | undefined
 }
 
 // Initialize global storage if it doesn't exist
 if (!global.mockStorage) {
   global.mockStorage = {
     paymentReceipts: new Map<string, PaymentReceipt[]>(),
-    handoverCosts: new Map<string, HandoverCost[]>()
+    handoverCosts: new Map<string, HandoverCost[]>(),
   }
 }
 
@@ -65,11 +67,15 @@ export class MockStorageService {
     return receipt
   }
 
-  static updatePaymentReceipt(propertyId: string, receiptId: string, updates: Partial<PaymentReceipt>): PaymentReceipt | null {
+  static updatePaymentReceipt(
+    propertyId: string,
+    receiptId: string,
+    updates: Partial<PaymentReceipt>
+  ): PaymentReceipt | null {
     const receipts = this.getPaymentReceipts(propertyId)
-    const index = receipts.findIndex(r => r.id === receiptId)
+    const index = receipts.findIndex((r) => r.id === receiptId)
     if (index === -1) return null
-    
+
     receipts[index] = { ...receipts[index], ...updates, updated_at: new Date().toISOString() }
     mockStorage.paymentReceipts.set(propertyId, receipts)
     return receipts[index]
@@ -77,9 +83,9 @@ export class MockStorageService {
 
   static deletePaymentReceipt(propertyId: string, receiptId: string): boolean {
     const receipts = this.getPaymentReceipts(propertyId)
-    const index = receipts.findIndex(r => r.id === receiptId)
+    const index = receipts.findIndex((r) => r.id === receiptId)
     if (index === -1) return false
-    
+
     receipts.splice(index, 1)
     mockStorage.paymentReceipts.set(propertyId, receipts)
     return true
@@ -97,11 +103,15 @@ export class MockStorageService {
     return cost
   }
 
-  static updateHandoverCost(propertyId: string, costId: string, updates: Partial<HandoverCost>): HandoverCost | null {
+  static updateHandoverCost(
+    propertyId: string,
+    costId: string,
+    updates: Partial<HandoverCost>
+  ): HandoverCost | null {
     const costs = this.getHandoverCosts(propertyId)
-    const index = costs.findIndex(c => c.id === costId)
+    const index = costs.findIndex((c) => c.id === costId)
     if (index === -1) return null
-    
+
     costs[index] = { ...costs[index], ...updates, updated_at: new Date().toISOString() }
     mockStorage.handoverCosts.set(propertyId, costs)
     return costs[index]
@@ -109,9 +119,9 @@ export class MockStorageService {
 
   static deleteHandoverCost(propertyId: string, costId: string): boolean {
     const costs = this.getHandoverCosts(propertyId)
-    const index = costs.findIndex(c => c.id === costId)
+    const index = costs.findIndex((c) => c.id === costId)
     if (index === -1) return false
-    
+
     costs.splice(index, 1)
     mockStorage.handoverCosts.set(propertyId, costs)
     return true
@@ -136,11 +146,11 @@ export class MockStorageService {
       SURVEY_MAPPING: 0,
       ADMINISTRATIVE: 0,
       TOTAL_ACQUISITION: 0,
-      OTHER: 0
+      OTHER: 0,
     }
 
-    costs.forEach(cost => {
-      if (breakdown.hasOwnProperty(cost.cost_category)) {
+    costs.forEach((cost) => {
+      if (Object.hasOwn(breakdown, cost.cost_category)) {
         breakdown[cost.cost_category] += cost.amount_kes
       }
     })
@@ -151,8 +161,8 @@ export class MockStorageService {
   static getNextReceiptNumber(propertyId: string): number {
     const receipts = this.getPaymentReceipts(propertyId)
     if (receipts.length === 0) return 1
-    
-    const maxReceiptNumber = Math.max(...receipts.map(r => r.receipt_number))
+
+    const maxReceiptNumber = Math.max(...receipts.map((r) => r.receipt_number))
     return maxReceiptNumber + 1
   }
 }

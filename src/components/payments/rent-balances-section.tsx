@@ -28,10 +28,12 @@ export default function RentBalancesSection() {
       setLoading(true)
       setError(null)
       try {
-        const { data: sumData, error: sumError } = await clientBusinessFunctions.getRentBalanceSummary(tenantId)
+        const { data: sumData, error: sumError } =
+          await clientBusinessFunctions.getRentBalanceSummary(tenantId)
         if (sumError) throw new Error(sumError)
         setSummary(sumData)
-        const { data: ledgerData, error: ledgerError } = await clientBusinessFunctions.getRentLedger(tenantId, 100)
+        const { data: ledgerData, error: ledgerError } =
+          await clientBusinessFunctions.getRentLedger(tenantId, 100)
         if (ledgerError) throw new Error(ledgerError)
         setLedger(ledgerData || [])
       } catch (e: any) {
@@ -46,14 +48,18 @@ export default function RentBalancesSection() {
   if (loading) return <div className="p-4">Loading rent balances...</div>
   if (error) return <div className="p-4 text-red-600">{error}</div>
 
-  const tenantOptions = tenants.map(t => (
-    <option key={t.id} value={t.id}>{t.full_name}</option>
+  const tenantOptions = tenants.map((t) => (
+    <option key={t.id} value={t.id}>
+      {t.full_name}
+    </option>
   ))
 
   const onExportPDF = async () => {
     setExporting('pdf')
     try {
-      const { createPDFHeader, addTableToPDF, savePDFFile, generateFilename } = await import('../../lib/export-utils')
+      const { createPDFHeader, addTableToPDF, savePDFFile, generateFilename } = await import(
+        '../../lib/export-utils'
+      )
       const jsPDF = (await import('jspdf')).default
       await import('jspdf-autotable')
 
@@ -61,12 +67,12 @@ export default function RentBalancesSection() {
       createPDFHeader(doc, 'Rent Balance Report')
 
       const headers = ['Date', 'Type', 'Ref', 'Amount', 'Running Balance']
-      const rows = ledger.map(row => [
+      const rows = ledger.map((row) => [
         formatDate(row.entry_date),
         row.entry_type,
         row.invoice_id ? 'Invoice' : 'Payment',
         formatCurrency(row.amount_kes),
-        formatCurrency(row.running_balance_kes)
+        formatCurrency(row.running_balance_kes),
       ])
 
       addTableToPDF(doc, { headers, rows }, 30)
@@ -79,15 +85,16 @@ export default function RentBalancesSection() {
   const onExportExcel = async () => {
     setExporting('excel')
     try {
-      const { createExcelWorkbook, addTableToExcel, saveExcelFile, generateFilename } = await import('../../lib/export-utils')
+      const { createExcelWorkbook, addTableToExcel, saveExcelFile, generateFilename } =
+        await import('../../lib/export-utils')
       const wb = createExcelWorkbook('Rent Balance')
       const headers = ['Date', 'Type', 'Ref', 'Amount', 'Running Balance']
-      const rows = ledger.map(row => [
+      const rows = ledger.map((row) => [
         formatDate(row.entry_date),
         row.entry_type,
         row.invoice_id ? 'Invoice' : 'Payment',
         row.amount_kes,
-        row.running_balance_kes
+        row.running_balance_kes,
       ])
       addTableToExcel(wb, 'Ledger', { headers, rows })
       saveExcelFile(wb, generateFilename('rent-balance'))
@@ -100,14 +107,26 @@ export default function RentBalancesSection() {
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <label className="text-sm text-gray-600">Tenant</label>
-        <select className="border rounded p-2" value={tenantId} onChange={e => setTenantId(e.target.value)}>
+        <select
+          className="border rounded p-2"
+          value={tenantId}
+          onChange={(e) => setTenantId(e.target.value)}
+        >
           {tenantOptions}
         </select>
         <div className="ml-auto flex gap-2">
-          <button onClick={onExportPDF} disabled={exporting === 'pdf'} className="px-3 py-2 bg-blue-600 text-white rounded text-sm">
+          <button
+            onClick={onExportPDF}
+            disabled={exporting === 'pdf'}
+            className="px-3 py-2 bg-blue-600 text-white rounded text-sm"
+          >
             {exporting === 'pdf' ? 'Exporting...' : 'Export PDF'}
           </button>
-          <button onClick={onExportExcel} disabled={exporting === 'excel'} className="px-3 py-2 bg-green-600 text-white rounded text-sm">
+          <button
+            onClick={onExportExcel}
+            disabled={exporting === 'excel'}
+            className="px-3 py-2 bg-green-600 text-white rounded text-sm"
+          >
             {exporting === 'excel' ? 'Exporting...' : 'Export Excel'}
           </button>
         </div>
@@ -115,11 +134,15 @@ export default function RentBalancesSection() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="border rounded p-4">
           <div className="text-sm text-gray-500">Outstanding</div>
-          <div className="text-2xl font-bold">{formatCurrency(summary?.outstanding_total_kes || 0)}</div>
+          <div className="text-2xl font-bold">
+            {formatCurrency(summary?.outstanding_total_kes || 0)}
+          </div>
         </div>
         <div className="border rounded p-4">
           <div className="text-sm text-gray-500">Overdue</div>
-          <div className="text-2xl font-bold text-red-600">{formatCurrency(summary?.overdue_total_kes || 0)}</div>
+          <div className="text-2xl font-bold text-red-600">
+            {formatCurrency(summary?.overdue_total_kes || 0)}
+          </div>
         </div>
         <div className="border rounded p-4">
           <div className="text-sm text-gray-500">Open Invoices</div>
@@ -127,7 +150,9 @@ export default function RentBalancesSection() {
         </div>
         <div className="border rounded p-4">
           <div className="text-sm text-gray-500">Last Payment</div>
-          <div className="text-xl">{summary?.last_payment_date ? formatDate(summary.last_payment_date) : 'N/A'}</div>
+          <div className="text-xl">
+            {summary?.last_payment_date ? formatDate(summary.last_payment_date) : 'N/A'}
+          </div>
         </div>
       </div>
 
@@ -146,7 +171,10 @@ export default function RentBalancesSection() {
             </thead>
             <tbody>
               {ledger.map((row: any) => (
-                <tr key={`${row.entry_date}-${row.invoice_id || row.payment_id}`} className="border-t">
+                <tr
+                  key={`${row.entry_date}-${row.invoice_id || row.payment_id}`}
+                  className="border-t"
+                >
                   <td className="p-2">{formatDate(row.entry_date)}</td>
                   <td className="p-2">{row.entry_type}</td>
                   <td className="p-2">{row.invoice_id ? 'Invoice' : 'Payment'}</td>
@@ -156,7 +184,9 @@ export default function RentBalancesSection() {
               ))}
               {ledger.length === 0 && (
                 <tr>
-                  <td className="p-4 text-gray-500" colSpan={5}>No ledger entries</td>
+                  <td className="p-4 text-gray-500" colSpan={5}>
+                    No ledger entries
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -166,4 +196,3 @@ export default function RentBalancesSection() {
     </div>
   )
 }
-

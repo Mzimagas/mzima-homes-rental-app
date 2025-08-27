@@ -27,13 +27,13 @@ export default function LandPropertyCleanup({ onCleanupComplete }: LandPropertyC
       setError(null)
 
       const result = await PropertyCleanupService.getLandPropertiesCount(user.id)
-      
+
       if (result.success) {
         setLandPropertiesCount(result.count)
       } else {
         setError(result.error || 'Failed to check land properties')
       }
-      
+
       setChecking(false)
     }
 
@@ -48,16 +48,18 @@ export default function LandPropertyCleanup({ onCleanupComplete }: LandPropertyC
     setSuccess(null)
 
     const result = await PropertyCleanupService.softDeleteLandProperties(user.id)
-    
+
     if (result.success) {
-      setSuccess(`Successfully removed ${result.deletedCount} land properties from Rentals Overview`)
+      setSuccess(
+        `Successfully removed ${result.deletedCount} land properties from Rentals Overview`
+      )
       setLandPropertiesCount(0)
       setShowConfirmation(false)
       onCleanupComplete?.()
     } else {
       setError(result.error || 'Failed to remove land properties')
     }
-    
+
     setLoading(false)
   }
 
@@ -82,7 +84,11 @@ export default function LandPropertyCleanup({ onCleanupComplete }: LandPropertyC
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
           <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
           </svg>
         </div>
         <div className="flex-1">
@@ -95,11 +101,14 @@ export default function LandPropertyCleanup({ onCleanupComplete }: LandPropertyC
             ) : (
               <>
                 <p>
-                  We found {landPropertiesCount} land {landPropertiesCount === 1 ? 'property' : 'properties'} in your Rentals Overview. 
-                  Since this tab is designed for rental properties only, you can safely remove {landPropertiesCount === 1 ? 'it' : 'them'} from this view.
+                  We found {landPropertiesCount} land{' '}
+                  {landPropertiesCount === 1 ? 'property' : 'properties'} in your Rentals Overview.
+                  Since this tab is designed for rental properties only, you can safely remove{' '}
+                  {landPropertiesCount === 1 ? 'it' : 'them'} from this view.
                 </p>
                 <p className="mt-1 text-xs">
-                  <strong>Note:</strong> This will not delete your land properties permanently. They will be preserved in the database and can be restored if needed.
+                  <strong>Note:</strong> This will not delete your land properties permanently. They
+                  will be preserved in the database and can be restored if needed.
                 </p>
               </>
             )}

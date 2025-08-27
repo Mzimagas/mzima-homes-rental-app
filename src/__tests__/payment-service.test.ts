@@ -16,13 +16,13 @@ describe('PaymentService', () => {
     paymentDate: '2024-01-15',
     method: 'MPESA',
     txRef: 'QA12345678',
-    notes: 'Monthly rent payment'
+    notes: 'Monthly rent payment',
   }
 
   const mockUserContext = {
     userId: 'user-123',
     ipAddress: '192.168.1.1',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
   }
 
   beforeEach(() => {
@@ -37,16 +37,18 @@ describe('PaymentService', () => {
         riskLevel: 'low' as const,
         warnings: [],
         blockers: [],
-        recommendations: []
+        recommendations: [],
       }
-      jest.spyOn(PaymentSecurityService, 'performSecurityCheck').mockResolvedValue(mockSecurityCheck)
+      jest
+        .spyOn(PaymentSecurityService, 'performSecurityCheck')
+        .mockResolvedValue(mockSecurityCheck)
 
       // Mock fraud detection to pass
       const mockFraudCheck = {
         isFraudulent: false,
         riskScore: 10,
         reasons: [],
-        requiresManualReview: false
+        requiresManualReview: false,
       }
       jest.spyOn(PaymentSecurityService, 'detectFraud').mockResolvedValue(mockFraudCheck)
 
@@ -64,7 +66,7 @@ describe('PaymentService', () => {
         processingTime: 'Instant',
         supportedCurrencies: ['KES'],
         minAmount: 1,
-        maxAmount: 300000
+        maxAmount: 300000,
       })
 
       // Mock successful payment processing
@@ -76,8 +78,14 @@ describe('PaymentService', () => {
       expect(result.success).toBe(true)
       expect(result.paymentId).toBe(mockPaymentId)
       expect(result.status).toBe(PaymentStatus.COMPLETED)
-      expect(PaymentSecurityService.performSecurityCheck).toHaveBeenCalledWith(mockPaymentData, mockUserContext)
-      expect(PaymentSecurityService.detectFraud).toHaveBeenCalledWith(mockPaymentData, mockUserContext)
+      expect(PaymentSecurityService.performSecurityCheck).toHaveBeenCalledWith(
+        mockPaymentData,
+        mockUserContext
+      )
+      expect(PaymentSecurityService.detectFraud).toHaveBeenCalledWith(
+        mockPaymentData,
+        mockUserContext
+      )
     })
 
     it('should reject payment if security check fails', async () => {
@@ -86,9 +94,11 @@ describe('PaymentService', () => {
         riskLevel: 'high' as const,
         warnings: ['Suspicious payment pattern'],
         blockers: ['Rate limit exceeded'],
-        recommendations: ['Manual review required']
+        recommendations: ['Manual review required'],
       }
-      jest.spyOn(PaymentSecurityService, 'performSecurityCheck').mockResolvedValue(mockSecurityCheck)
+      jest
+        .spyOn(PaymentSecurityService, 'performSecurityCheck')
+        .mockResolvedValue(mockSecurityCheck)
 
       const result = await PaymentService.processPayment(mockPaymentData, mockUserContext)
 
@@ -104,15 +114,17 @@ describe('PaymentService', () => {
         riskLevel: 'low' as const,
         warnings: [],
         blockers: [],
-        recommendations: []
+        recommendations: [],
       }
-      jest.spyOn(PaymentSecurityService, 'performSecurityCheck').mockResolvedValue(mockSecurityCheck)
+      jest
+        .spyOn(PaymentSecurityService, 'performSecurityCheck')
+        .mockResolvedValue(mockSecurityCheck)
 
       const mockFraudCheck = {
         isFraudulent: true,
         riskScore: 85,
         reasons: ['Velocity fraud detected', 'Unusual amount pattern'],
-        requiresManualReview: true
+        requiresManualReview: true,
       }
       jest.spyOn(PaymentSecurityService, 'detectFraud').mockResolvedValue(mockFraudCheck)
 
@@ -137,12 +149,12 @@ describe('PaymentService', () => {
     it('should validate payment amount limits', async () => {
       const invalidPaymentData = {
         ...mockPaymentData,
-        amount: 500000 // Exceeds M-Pesa limit
+        amount: 500000, // Exceeds M-Pesa limit
       }
 
       jest.spyOn(PaymentService, 'validatePaymentAmount').mockReturnValue({
         isValid: false,
-        error: 'Maximum amount for M-Pesa is 300,000 KES'
+        error: 'Maximum amount for M-Pesa is 300,000 KES',
       })
 
       const result = await PaymentService.processPayment(invalidPaymentData, mockUserContext)
@@ -154,12 +166,12 @@ describe('PaymentService', () => {
     it('should validate transaction reference format', async () => {
       const invalidPaymentData = {
         ...mockPaymentData,
-        txRef: 'INVALID'
+        txRef: 'INVALID',
       }
 
       jest.spyOn(PaymentService, 'validateTransactionReference').mockReturnValue({
         isValid: false,
-        error: 'M-Pesa transaction code must be 10 characters'
+        error: 'M-Pesa transaction code must be 10 characters',
       })
 
       const result = await PaymentService.processPayment(invalidPaymentData, mockUserContext)
@@ -184,9 +196,9 @@ describe('PaymentService', () => {
             invoiceId: 'invoice-123',
             amount: 25000,
             periodStart: '2024-01-01',
-            periodEnd: '2024-01-31'
-          }
-        ]
+            periodEnd: '2024-01-31',
+          },
+        ],
       }
 
       // Mock the database query
@@ -267,7 +279,9 @@ describe('PaymentService', () => {
   describe('error handling', () => {
     it('should handle database connection errors gracefully', async () => {
       // Mock database error
-      jest.spyOn(PaymentSecurityService, 'performSecurityCheck').mockRejectedValue(new Error('Database connection failed'))
+      jest
+        .spyOn(PaymentSecurityService, 'performSecurityCheck')
+        .mockRejectedValue(new Error('Database connection failed'))
 
       const result = await PaymentService.processPayment(mockPaymentData, mockUserContext)
 
@@ -278,7 +292,9 @@ describe('PaymentService', () => {
 
     it('should handle network timeouts', async () => {
       // Mock timeout error
-      jest.spyOn(PaymentSecurityService, 'performSecurityCheck').mockRejectedValue(new Error('Request timeout'))
+      jest
+        .spyOn(PaymentSecurityService, 'performSecurityCheck')
+        .mockRejectedValue(new Error('Request timeout'))
 
       const result = await PaymentService.processPayment(mockPaymentData, mockUserContext)
 
@@ -295,30 +311,36 @@ describe('PaymentService', () => {
         riskLevel: 'low' as const,
         warnings: [],
         blockers: [],
-        recommendations: []
+        recommendations: [],
       }
-      jest.spyOn(PaymentSecurityService, 'performSecurityCheck').mockResolvedValue(mockSecurityCheck)
+      jest
+        .spyOn(PaymentSecurityService, 'performSecurityCheck')
+        .mockResolvedValue(mockSecurityCheck)
 
       const mockFraudCheck = {
         isFraudulent: false,
         riskScore: 10,
         reasons: [],
-        requiresManualReview: false
+        requiresManualReview: false,
       }
       jest.spyOn(PaymentSecurityService, 'detectFraud').mockResolvedValue(mockFraudCheck)
 
-      const mockSendNotification = jest.spyOn(PaymentNotificationService, 'sendPaymentConfirmation').mockResolvedValue()
+      const mockSendNotification = jest
+        .spyOn(PaymentNotificationService, 'sendPaymentConfirmation')
+        .mockResolvedValue()
 
       // Mock other dependencies...
 
       await PaymentService.processPayment(mockPaymentData, mockUserContext)
 
-      expect(mockSendNotification).toHaveBeenCalledWith(expect.objectContaining({
-        tenantId: mockPaymentData.tenantId,
-        amount: mockPaymentData.amount,
-        method: mockPaymentData.method,
-        txRef: mockPaymentData.txRef
-      }))
+      expect(mockSendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenantId: mockPaymentData.tenantId,
+          amount: mockPaymentData.amount,
+          method: mockPaymentData.method,
+          txRef: mockPaymentData.txRef,
+        })
+      )
     })
 
     it('should not send notification if payment fails', async () => {
@@ -327,11 +349,15 @@ describe('PaymentService', () => {
         riskLevel: 'high' as const,
         warnings: [],
         blockers: ['Security check failed'],
-        recommendations: []
+        recommendations: [],
       }
-      jest.spyOn(PaymentSecurityService, 'performSecurityCheck').mockResolvedValue(mockSecurityCheck)
+      jest
+        .spyOn(PaymentSecurityService, 'performSecurityCheck')
+        .mockResolvedValue(mockSecurityCheck)
 
-      const mockSendNotification = jest.spyOn(PaymentNotificationService, 'sendPaymentConfirmation').mockResolvedValue()
+      const mockSendNotification = jest
+        .spyOn(PaymentNotificationService, 'sendPaymentConfirmation')
+        .mockResolvedValue()
 
       await PaymentService.processPayment(mockPaymentData, mockUserContext)
 

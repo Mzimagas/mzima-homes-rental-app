@@ -4,7 +4,9 @@ import { Suspense, lazy } from 'react'
 import ErrorBoundary from '../../../components/ui/ErrorBoundary'
 
 // Lazy load the AccountingManagementTabs component
-const AccountingManagementTabs = lazy(() => import('../../../components/accounting/AccountingManagementTabs'))
+const AccountingManagementTabs = lazy(
+  () => import('../../../components/accounting/AccountingManagementTabs')
+)
 
 // Loading component for the accounting tabs
 function AccountingTabsLoading() {
@@ -36,4 +38,3 @@ export default function AccountingPage() {
     </div>
   )
 }
-

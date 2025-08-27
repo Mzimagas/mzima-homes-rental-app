@@ -13,7 +13,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -36,7 +38,7 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     const { data, error } = await admin
       .from('properties')
       .select('landlord_id')
@@ -58,19 +60,24 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
 // Validation schema for handover price update
 const handoverPriceUpdateSchema = z.object({
   handover_price_agreement_kes: z.number().positive('Handover price must be positive'),
-  change_reason: z.string().min(1, 'Change reason is required')
+  change_reason: z.string().min(1, 'Change reason is required'),
 })
 
 // PATCH /api/properties/[id]/handover-price - Update handover price
-export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const PATCH = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id from path /api/properties/[id]/handover-price
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
@@ -102,7 +109,7 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
       .from('properties')
       .update({
         handover_price_agreement_kes: parsed.data.handover_price_agreement_kes,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', propertyId)
 
@@ -119,17 +126,17 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
       newPrice: parsed.data.handover_price_agreement_kes,
       changeReason: parsed.data.change_reason,
       changedBy: userId,
-      changeDate: new Date().toISOString()
+      changeDate: new Date().toISOString(),
     })
 
-    return NextResponse.json({ 
-      ok: true, 
+    return NextResponse.json({
+      ok: true,
       message: 'Handover price updated successfully',
       data: {
         property_id: propertyId,
         new_price: parsed.data.handover_price_agreement_kes,
-        change_reason: parsed.data.change_reason
-      }
+        change_reason: parsed.data.change_reason,
+      },
     })
   } catch (e: any) {
     console.error('PATCH /api/properties/[id]/handover-price error:', e)

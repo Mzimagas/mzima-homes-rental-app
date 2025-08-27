@@ -11,7 +11,7 @@ Since the Edge Functions are not deployed, here's how to deploy them manually us
 
 This function processes automated notifications for rent reminders, overdue payments, and lease expiry.
 
-### 2. cron-scheduler  
+### 2. cron-scheduler
 
 **Function Name**: `cron-scheduler`
 **File**: `supabase/functions/cron-scheduler/index.ts`
@@ -77,6 +77,7 @@ supabase functions deploy send-sms
 ## Verification
 
 After deployment, run the test script:
+
 ```bash
 node test-database-functions.js
 ```

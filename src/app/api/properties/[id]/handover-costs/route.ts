@@ -14,7 +14,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -37,7 +39,7 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     const { data, error } = await admin
       .from('properties')
       .select('landlord_id')
@@ -59,11 +61,18 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
 // Validation schema for handover cost entry
 const handoverCostSchema = z.object({
   cost_type_id: z.string().min(1, 'Cost type is required'),
-  cost_category: z.enum(['CLIENT_ENGAGEMENT', 'REGULATORY_LEGAL', 'SURVEY_MAPPING', 'ADMINISTRATIVE', 'TOTAL_ACQUISITION', 'OTHER']),
+  cost_category: z.enum([
+    'CLIENT_ENGAGEMENT',
+    'REGULATORY_LEGAL',
+    'SURVEY_MAPPING',
+    'ADMINISTRATIVE',
+    'TOTAL_ACQUISITION',
+    'OTHER',
+  ]),
   amount_kes: z.number().positive('Amount must be positive'),
   payment_reference: z.string().optional(),
   payment_date: z.string().optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 })
 
 // GET /api/properties/[id]/handover-costs - Fetch all cost entries for a property
@@ -74,8 +83,9 @@ export async function GET(req: NextRequest) {
 
     // Extract property id from path /api/properties/[id]/handover-costs
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
@@ -93,15 +103,20 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/properties/[id]/handover-costs - Add new cost entry
-export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const POST = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id from path /api/properties/[id]/handover-costs
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
@@ -126,7 +141,7 @@ export const POST = compose(withRateLimit, withCsrf, withAuth)(async (req: NextR
       notes: parsed.data.notes,
       created_by: userId,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     }
 
     // Store in memory

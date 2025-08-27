@@ -39,7 +39,7 @@ type TenantManagementView = 'list' | 'create' | 'detail' | 'edit' | 'move' | 'de
 export default function InlineTenantManagement({
   isVisible,
   onClose,
-  scopedPropertyId
+  scopedPropertyId,
 }: InlineTenantManagementProps) {
   const { properties: userProperties } = usePropertyAccess()
   const [currentView, setCurrentView] = useState<TenantManagementView>('list')
@@ -49,14 +49,14 @@ export default function InlineTenantManagement({
   const [componentKey, setComponentKey] = useState(0)
 
   // Check if user has admin permissions
-  const hasAdminAccess = userProperties.some(p =>
+  const hasAdminAccess = userProperties.some((p) =>
     ['OWNER', 'PROPERTY_MANAGER'].includes(p.user_role)
   )
 
   // Reset component state when visibility changes
   useEffect(() => {
     if (isVisible) {
-      setComponentKey(prev => prev + 1)
+      setComponentKey((prev) => prev + 1)
       setCurrentView('list')
       setSelectedTenantId(null)
       // Use scopedPropertyId if provided to limit tenant management to specific property
@@ -129,7 +129,7 @@ export default function InlineTenantManagement({
 
   const renderBreadcrumb = () => {
     const breadcrumbs = ['Tenant Management']
-    
+
     if (currentView === 'create') breadcrumbs.push('New Tenant')
     else if (currentView === 'detail') breadcrumbs.push('Tenant Details')
     else if (currentView === 'edit') breadcrumbs.push('Edit Tenant')
@@ -235,11 +235,16 @@ export default function InlineTenantManagement({
           title="Close tenant management"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
-      
+
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         {renderBreadcrumb()}
         {renderCurrentView()}

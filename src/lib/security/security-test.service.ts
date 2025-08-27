@@ -42,7 +42,7 @@ export class SecurityTestService {
     // Test 8: Field Locking
     results.push(await this.testFieldLocking())
 
-    const passedTests = results.filter(r => r.passed).length
+    const passedTests = results.filter((r) => r.passed).length
     const totalTests = results.length
 
     console.log(`🔒 Security Test Suite Complete: ${passedTests}/${totalTests} tests passed`)
@@ -56,23 +56,20 @@ export class SecurityTestService {
       const tables = [
         'purchase_pipeline_audit_log',
         'purchase_pipeline_field_security',
-        'purchase_pipeline_change_approvals'
+        'purchase_pipeline_change_approvals',
         // Temporarily skip security_user_roles due to RLS recursion issue
         // 'security_user_roles'
       ]
 
       for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .limit(1)
+        const { data, error } = await supabase.from(table).select('*').limit(1)
 
         if (error) {
           return {
             testName: 'Database Tables Exist',
             passed: false,
             message: `Table ${table} does not exist or is not accessible`,
-            details: error
+            details: error,
           }
         }
       }
@@ -80,14 +77,14 @@ export class SecurityTestService {
       return {
         testName: 'Database Tables Exist',
         passed: true,
-        message: 'All required security tables exist and are accessible'
+        message: 'All required security tables exist and are accessible',
       }
     } catch (error) {
       return {
         testName: 'Database Tables Exist',
         passed: false,
         message: 'Failed to check database tables',
-        details: error
+        details: error,
       }
     }
   }
@@ -95,39 +92,39 @@ export class SecurityTestService {
   private static async testFieldSecurityConfiguration(): Promise<SecurityTestResult> {
     try {
       const config = await FieldSecurityService.getFieldSecurityConfig()
-      
+
       if (config.length === 0) {
         return {
           testName: 'Field Security Configuration',
           passed: false,
-          message: 'No field security configurations found'
+          message: 'No field security configurations found',
         }
       }
 
       // Check for critical fields
       const criticalFields = ['asking_price_kes', 'negotiated_price_kes', 'purchase_status']
-      const configuredFields = config.map(c => c.field_name)
-      const missingFields = criticalFields.filter(field => !configuredFields.includes(field))
+      const configuredFields = config.map((c) => c.field_name)
+      const missingFields = criticalFields.filter((field) => !configuredFields.includes(field))
 
       if (missingFields.length > 0) {
         return {
           testName: 'Field Security Configuration',
           passed: false,
-          message: `Missing security configuration for critical fields: ${missingFields.join(', ')}`
+          message: `Missing security configuration for critical fields: ${missingFields.join(', ')}`,
         }
       }
 
       return {
         testName: 'Field Security Configuration',
         passed: true,
-        message: `Field security configured for ${config.length} fields including all critical fields`
+        message: `Field security configured for ${config.length} fields including all critical fields`,
       }
     } catch (error) {
       return {
         testName: 'Field Security Configuration',
         passed: false,
         message: 'Failed to load field security configuration',
-        details: error
+        details: error,
       }
     }
   }
@@ -135,49 +132,49 @@ export class SecurityTestService {
   private static async testRoleManagement(): Promise<SecurityTestResult> {
     try {
       const roles = RoleManagementService.getAllRoles()
-      
+
       if (roles.length === 0) {
         return {
           testName: 'Role Management',
           passed: false,
-          message: 'No roles defined in the system'
+          message: 'No roles defined in the system',
         }
       }
 
       // Check for essential roles
       const essentialRoles = ['admin', 'property_manager', 'finance_manager']
-      const definedRoles = roles.map(r => r.role)
-      const missingRoles = essentialRoles.filter(role => !definedRoles.includes(role))
+      const definedRoles = roles.map((r) => r.role)
+      const missingRoles = essentialRoles.filter((role) => !definedRoles.includes(role))
 
       if (missingRoles.length > 0) {
         return {
           testName: 'Role Management',
           passed: false,
-          message: `Missing essential roles: ${missingRoles.join(', ')}`
+          message: `Missing essential roles: ${missingRoles.join(', ')}`,
         }
       }
 
       // Test role hierarchy
-      const adminRole = roles.find(r => r.role === 'admin')
+      const adminRole = roles.find((r) => r.role === 'admin')
       if (!adminRole || adminRole.hierarchy_level !== 100) {
         return {
           testName: 'Role Management',
           passed: false,
-          message: 'Admin role not properly configured with highest hierarchy level'
+          message: 'Admin role not properly configured with highest hierarchy level',
         }
       }
 
       return {
         testName: 'Role Management',
         passed: true,
-        message: `Role management configured with ${roles.length} roles including all essential roles`
+        message: `Role management configured with ${roles.length} roles including all essential roles`,
       }
     } catch (error) {
       return {
         testName: 'Role Management',
         passed: false,
         message: 'Failed to test role management',
-        details: error
+        details: error,
       }
     }
   }
@@ -204,20 +201,22 @@ export class SecurityTestService {
         return {
           testName: 'Audit Trail Creation',
           passed: true,
-          message: `Audit trail system operational. Found ${recentLogs?.length || 0} recent audit entries. Service can handle UUID queries correctly.`
+          message: `Audit trail system operational. Found ${recentLogs?.length || 0} recent audit entries. Service can handle UUID queries correctly.`,
         }
       } catch (error) {
         // If it's just a "no data" error or permission issue, that's acceptable for testing
-        if (error instanceof Error && (
-          error.message.includes('No rows') ||
-          error.message.includes('no data') ||
-          error.message.includes('permission denied') ||
-          error.message.includes('RLS')
-        )) {
+        if (
+          error instanceof Error &&
+          (error.message.includes('No rows') ||
+            error.message.includes('no data') ||
+            error.message.includes('permission denied') ||
+            error.message.includes('RLS'))
+        ) {
           return {
             testName: 'Audit Trail Creation',
             passed: true,
-            message: 'Audit trail service is functional (limited by permissions - this is expected)'
+            message:
+              'Audit trail service is functional (limited by permissions - this is expected)',
           }
         }
         throw error
@@ -227,7 +226,7 @@ export class SecurityTestService {
         testName: 'Audit Trail Creation',
         passed: false,
         message: 'Audit trail service has issues',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -239,7 +238,7 @@ export class SecurityTestService {
         { role: 'admin', permission: 'edit_financial_data', expected: true },
         { role: 'finance_manager', permission: 'edit_financial_data', expected: true },
         { role: 'property_manager', permission: 'edit_financial_data', expected: false },
-        { role: 'viewer', permission: 'edit_financial_data', expected: false }
+        { role: 'viewer', permission: 'edit_financial_data', expected: false },
       ]
 
       for (const testCase of testCases) {
@@ -248,17 +247,18 @@ export class SecurityTestService {
           return {
             testName: 'Permission Validation',
             passed: false,
-            message: `Role definition not found for ${testCase.role}`
+            message: `Role definition not found for ${testCase.role}`,
           }
         }
 
-        const hasPermission = roleDef.permissions.includes('*') || roleDef.permissions.includes(testCase.permission)
-        
+        const hasPermission =
+          roleDef.permissions.includes('*') || roleDef.permissions.includes(testCase.permission)
+
         if (hasPermission !== testCase.expected) {
           return {
             testName: 'Permission Validation',
             passed: false,
-            message: `Permission validation failed for ${testCase.role} - ${testCase.permission}`
+            message: `Permission validation failed for ${testCase.role} - ${testCase.permission}`,
           }
         }
       }
@@ -266,63 +266,52 @@ export class SecurityTestService {
       return {
         testName: 'Permission Validation',
         passed: true,
-        message: 'Permission validation working correctly for all test cases'
+        message: 'Permission validation working correctly for all test cases',
       }
     } catch (error) {
       return {
         testName: 'Permission Validation',
         passed: false,
         message: 'Failed to test permission validation',
-        details: error
+        details: error,
       }
     }
   }
 
   private static async testChangeRequestValidation(): Promise<SecurityTestResult> {
-    try {
-      // Test change request validation logic
-      const testChanges = [
-        {
-          field_name: 'asking_price_kes',
-          old_value: 1000000,
-          new_value: 1200000,
-          reason: 'Market adjustment'
-        }
-      ]
+    // Test change request validation logic
+    const testChanges = [
+      {
+        field_name: 'asking_price_kes',
+        old_value: 1000000,
+        new_value: 1200000,
+        reason: 'Market adjustment',
+      },
+    ]
 
-      // This would normally require a real purchase ID and user context
-      // For testing, we'll just verify the validation logic structure
-      
-      return {
-        testName: 'Change Request Validation',
-        passed: true,
-        message: 'Change request validation structure is in place'
-      }
-    } catch (error) {
-      return {
-        testName: 'Change Request Validation',
-        passed: false,
-        message: 'Failed to test change request validation',
-        details: error
-      }
+    // This would normally require a real purchase ID and user context
+    // For testing, we'll just verify the validation logic structure
+
+    return {
+      testName: 'Change Request Validation',
+      passed: true,
+      message: 'Change request validation structure is in place',
     }
   }
 
   private static async testApprovalWorkflow(): Promise<SecurityTestResult> {
     try {
       // Test approval workflow methods exist and are callable
-      const methods = [
-        'createChangeApprovalRequest',
-        'getPendingApprovals',
-        'processApproval'
-      ]
+      const methods = ['createChangeApprovalRequest', 'getPendingApprovals', 'processApproval']
 
       for (const method of methods) {
-        if (typeof FieldSecurityService[method as keyof typeof FieldSecurityService] !== 'function') {
+        if (
+          typeof FieldSecurityService[method as keyof typeof FieldSecurityService] !== 'function'
+        ) {
           return {
             testName: 'Approval Workflow',
             passed: false,
-            message: `Approval workflow method ${method} is not defined`
+            message: `Approval workflow method ${method} is not defined`,
           }
         }
       }
@@ -330,14 +319,14 @@ export class SecurityTestService {
       return {
         testName: 'Approval Workflow',
         passed: true,
-        message: 'All approval workflow methods are defined and accessible'
+        message: 'All approval workflow methods are defined and accessible',
       }
     } catch (error) {
       return {
         testName: 'Approval Workflow',
         passed: false,
         message: 'Failed to test approval workflow',
-        details: error
+        details: error,
       }
     }
   }
@@ -348,17 +337,20 @@ export class SecurityTestService {
       const testCases = [
         { fieldName: 'purchase_status', stage: 8, expectedLocked: false }, // LOCKED fields are always editable by authorized users
         { fieldName: 'property_name', stage: 6, expectedLocked: true }, // Should be locked after stage 5
-        { fieldName: 'property_condition_notes', stage: 8, expectedLocked: false } // PUBLIC field, never locked
+        { fieldName: 'property_condition_notes', stage: 8, expectedLocked: false }, // PUBLIC field, never locked
       ]
 
       for (const testCase of testCases) {
-        const isLocked = await FieldSecurityService.isFieldLocked(testCase.fieldName, testCase.stage)
-        
+        const isLocked = await FieldSecurityService.isFieldLocked(
+          testCase.fieldName,
+          testCase.stage
+        )
+
         if (isLocked !== testCase.expectedLocked) {
           return {
             testName: 'Field Locking',
             passed: false,
-            message: `Field locking test failed for ${testCase.fieldName} at stage ${testCase.stage}`
+            message: `Field locking test failed for ${testCase.fieldName} at stage ${testCase.stage}`,
           }
         }
       }
@@ -366,14 +358,14 @@ export class SecurityTestService {
       return {
         testName: 'Field Locking',
         passed: true,
-        message: 'Field locking logic working correctly for all test cases'
+        message: 'Field locking logic working correctly for all test cases',
       }
     } catch (error) {
       return {
         testName: 'Field Locking',
         passed: false,
         message: 'Failed to test field locking',
-        details: error
+        details: error,
       }
     }
   }
@@ -381,10 +373,10 @@ export class SecurityTestService {
   // Helper method to run tests and display results
   static async runTestsWithConsoleOutput(): Promise<void> {
     const results = await this.runAllTests()
-    
+
     console.log('\n🔒 SECURITY TEST RESULTS:')
-    console.log('=' .repeat(50))
-    
+    console.log('='.repeat(50))
+
     results.forEach((result, index) => {
       const status = result.passed ? '✅ PASS' : '❌ FAIL'
       console.log(`${index + 1}. ${result.testName}: ${status}`)
@@ -394,29 +386,33 @@ export class SecurityTestService {
       }
       console.log('')
     })
-    
-    const passedCount = results.filter(r => r.passed).length
+
+    const passedCount = results.filter((r) => r.passed).length
     const totalCount = results.length
     const passRate = Math.round((passedCount / totalCount) * 100)
-    
+
     console.log(`SUMMARY: ${passedCount}/${totalCount} tests passed (${passRate}%)`)
-    
+
     if (passedCount === totalCount) {
       console.log('🎉 All security tests passed! The system is ready for production.')
     } else {
-      console.log('⚠️  Some security tests failed. Please review and fix the issues before deploying.')
+      console.log(
+        '⚠️  Some security tests failed. Please review and fix the issues before deploying.'
+      )
     }
   }
 
   private static async testSystemStatus(): Promise<SecurityTestResult> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
       if (!user) {
         return {
           testName: 'System Status Check',
           passed: false,
-          message: 'User not authenticated'
+          message: 'User not authenticated',
         }
       }
 
@@ -435,14 +431,14 @@ export class SecurityTestService {
       return {
         testName: 'System Status Check',
         passed: true,
-        message: `✅ System Operational\n• User: ${user.email}\n• Role: ${userRole || 'None'}\n• Permissions: ${permissions.length}\n• Database: ${dbStatus}\n• Auth: Active`
+        message: `✅ System Operational\n• User: ${user.email}\n• Role: ${userRole || 'None'}\n• Permissions: ${permissions.length}\n• Database: ${dbStatus}\n• Auth: Active`,
       }
     } catch (error) {
       return {
         testName: 'System Status Check',
         passed: false,
         message: 'System status check failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }

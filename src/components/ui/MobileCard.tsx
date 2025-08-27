@@ -22,24 +22,24 @@ export default function MobileCard({
   shadow = 'md',
   rounded = 'md',
   onClick,
-  touchOptimized = true
+  touchOptimized = true,
 }: MobileCardProps) {
   const paddingClasses = {
     sm: 'p-3 sm:p-4',
     md: 'p-4 sm:p-6',
-    lg: 'p-6 sm:p-8'
+    lg: 'p-6 sm:p-8',
   }
 
   const shadowClasses = {
     sm: 'shadow-sm',
     md: 'shadow-md',
-    lg: 'shadow-lg'
+    lg: 'shadow-lg',
   }
 
   const roundedClasses = {
     sm: 'rounded-md',
     md: 'rounded-lg',
-    lg: 'rounded-xl'
+    lg: 'rounded-xl',
   }
 
   const baseClasses = `
@@ -50,7 +50,9 @@ export default function MobileCard({
     ${touchOptimized ? 'touch-manipulation' : ''}
     ${onClick ? 'cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]' : ''}
     ${className}
-  `.trim().replace(/\s+/g, ' ')
+  `
+    .trim()
+    .replace(/\s+/g, ' ')
 
   if (onClick) {
     return (
@@ -64,9 +66,5 @@ export default function MobileCard({
     )
   }
 
-  return (
-    <div className={baseClasses}>
-      {children}
-    </div>
-  )
+  return <div className={baseClasses}>{children}</div>
 }

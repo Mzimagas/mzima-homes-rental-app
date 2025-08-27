@@ -12,7 +12,7 @@ All financial APIs are currently **disabled** to prevent 403 errors:
 // In: src/components/properties/services/acquisition-financials.service.ts
 private static readonly FEATURE_FLAGS = {
   PURCHASE_PIPELINE_API: false,      // ❌ Not implemented
-  ACQUISITION_COSTS_API: false,      // ❌ Not implemented  
+  ACQUISITION_COSTS_API: false,      // ❌ Not implemented
   PAYMENT_INSTALLMENTS_API: false    // ❌ Not implemented
 }
 ```
@@ -22,23 +22,29 @@ private static readonly FEATURE_FLAGS = {
 When the backend APIs are implemented, enable them by changing the flags to `true`:
 
 #### 1. Purchase Pipeline API
+
 ```typescript
 PURCHASE_PIPELINE_API: true
 ```
+
 **Endpoint**: `GET /api/purchase-pipeline/{propertyId}/financial`
 **Returns**: `{ costs: AcquisitionCostEntry[], payments: PaymentInstallment[] }`
 
 #### 2. Acquisition Costs API
+
 ```typescript
 ACQUISITION_COSTS_API: true
 ```
+
 **Endpoint**: `GET /api/properties/{propertyId}/acquisition-costs`
 **Returns**: `{ data: AcquisitionCostEntry[] }`
 
 #### 3. Payment Installments API
+
 ```typescript
 PAYMENT_INSTALLMENTS_API: true
 ```
+
 **Endpoint**: `GET /api/properties/{propertyId}/payment-installments`
 **Returns**: `{ data: PaymentInstallment[] }`
 
@@ -59,12 +65,14 @@ PAYMENT_INSTALLMENTS_API: true
 ### User Experience
 
 When APIs are disabled:
+
 - ✅ Clean, fast loading
 - ✅ Informative messages about development status
 - ✅ No confusing error messages
 - ✅ Professional presentation
 
 When APIs are enabled:
+
 - ✅ Real financial data display
 - ✅ Automatic data aggregation
 - ✅ Property-specific breakdowns

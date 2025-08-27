@@ -13,7 +13,8 @@ const errors = {
   forbidden: () => NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
   badRequest: (message: string) => NextResponse.json({ error: message }, { status: 400 }),
   internal: (message: string) => NextResponse.json({ error: message }, { status: 500 }),
-  validation: (errors: any) => NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 })
+  validation: (errors: any) =>
+    NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 }),
 }
 
 // Helper function to resolve user ID from request
@@ -22,7 +23,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   try {
     const { createServerSupabaseClient } = await import('../../../../../../lib/supabase-server')
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -68,8 +71,7 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin
-      .rpc('get_user_accessible_properties', { user_uuid: userId })
+    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       // Fallback: Check if user owns the property directly
@@ -135,14 +137,22 @@ const updateSubdivisionCostSchema = z.object({
   payment_status: z.enum(['PENDING', 'PAID', 'PARTIALLY_PAID']).optional(),
   payment_reference: z.string().optional(),
   payment_date: z.string().optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 })
 
 // PATCH /api/properties/[id]/subdivision-costs/[costId] - Update subdivision cost entry
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string, costId: string }> }) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; costId: string }> }
+) {
   try {
     const resolvedParams = await params
-    console.log('Subdivision costs PATCH API called for property:', resolvedParams.id, 'cost:', resolvedParams.costId)
+    console.log(
+      'Subdivision costs PATCH API called for property:',
+      resolvedParams.id,
+      'cost:',
+      resolvedParams.costId
+    )
 
     const userId = await resolveUserId(req)
     console.log('Resolved user ID:', userId)
@@ -179,9 +189,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     return NextResponse.json({
       success: true,
-      data: cost
+      data: cost,
     })
-
   } catch (error) {
     console.error('Error in subdivision costs PATCH API:', error)
     return errors.internal('Internal server error')
@@ -189,10 +198,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 // DELETE /api/properties/[id]/subdivision-costs/[costId] - Delete subdivision cost entry
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string, costId: string }> }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; costId: string }> }
+) {
   try {
     const resolvedParams = await params
-    console.log('Subdivision costs DELETE API called for property:', resolvedParams.id, 'cost:', resolvedParams.costId)
+    console.log(
+      'Subdivision costs DELETE API called for property:',
+      resolvedParams.id,
+      'cost:',
+      resolvedParams.costId
+    )
 
     const userId = await resolveUserId(req)
     console.log('Resolved user ID:', userId)
@@ -220,9 +237,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     return NextResponse.json({
       success: true,
-      message: 'Subdivision cost entry deleted successfully'
+      message: 'Subdivision cost entry deleted successfully',
     })
-
   } catch (error) {
     console.error('Error in subdivision costs DELETE API:', error)
     return errors.internal('Internal server error')

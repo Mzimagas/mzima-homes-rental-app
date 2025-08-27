@@ -31,7 +31,8 @@ export async function createServerSupabaseClient() {
 
 export async function getServerUser() {
   const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   return user
 }
-

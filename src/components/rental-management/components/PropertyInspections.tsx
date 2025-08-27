@@ -26,7 +26,10 @@ const inspectionSchema = z.object({
   notes: z.string().optional(),
 })
 
-export default function PropertyInspections({ onDataChange, propertyId }: PropertyInspectionsProps) {
+export default function PropertyInspections({
+  onDataChange,
+  propertyId,
+}: PropertyInspectionsProps) {
   const [inspections, setInspections] = useState<PropertyInspection[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -43,9 +46,9 @@ export default function PropertyInspections({ onDataChange, propertyId }: Proper
     handleSubmit,
     reset,
     watch,
-    formState: { errors }
+    formState: { errors },
   } = useForm<InspectionFormData>({
-    resolver: zodResolver(inspectionSchema)
+    resolver: zodResolver(inspectionSchema),
   })
 
   const selectedPropertyId = watch('property_id')
@@ -212,12 +215,17 @@ export default function PropertyInspections({ onDataChange, propertyId }: Proper
                         {inspection.inspector_name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          inspection.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                          inspection.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                          inspection.status === 'SCHEDULED' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            inspection.status === 'COMPLETED'
+                              ? 'bg-green-100 text-green-800'
+                              : inspection.status === 'IN_PROGRESS'
+                                ? 'bg-blue-100 text-blue-800'
+                                : inspection.status === 'SCHEDULED'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
                           {inspection.status}
                         </span>
                       </td>
@@ -258,9 +266,7 @@ export default function PropertyInspections({ onDataChange, propertyId }: Proper
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Property Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Property *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Property *</label>
             <select
               {...register('property_id')}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -289,7 +295,8 @@ export default function PropertyInspections({ onDataChange, propertyId }: Proper
               >
                 <option value="">All units / Common areas</option>
                 {properties
-                  .find(p => p.id === selectedPropertyId)?.units?.map((unit: any) => (
+                  .find((p) => p.id === selectedPropertyId)
+                  ?.units?.map((unit: any) => (
                     <option key={unit.id} value={unit.id}>
                       {unit.unit_label}
                     </option>
@@ -321,9 +328,7 @@ export default function PropertyInspections({ onDataChange, propertyId }: Proper
 
           {/* Scheduled Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Scheduled Date *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled Date *</label>
             <input
               type="datetime-local"
               {...register('scheduled_date')}
@@ -336,9 +341,7 @@ export default function PropertyInspections({ onDataChange, propertyId }: Proper
 
           {/* Inspector Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Inspector Name *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Inspector Name *</label>
             <input
               type="text"
               {...register('inspector_name')}
@@ -370,9 +373,7 @@ export default function PropertyInspections({ onDataChange, propertyId }: Proper
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
             <textarea
               {...register('notes')}
               rows={3}
@@ -394,12 +395,7 @@ export default function PropertyInspections({ onDataChange, propertyId }: Proper
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={submitting}
-              className="flex-1"
-            >
+            <Button type="submit" variant="primary" disabled={submitting} className="flex-1">
               {submitting ? 'Scheduling...' : 'Schedule Inspection'}
             </Button>
           </div>

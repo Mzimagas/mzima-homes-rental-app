@@ -34,12 +34,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getInitialSession = async () => {
       try {
         if (shouldLogAuth()) logger.info('AuthProvider: Getting initial session')
-        const { data: { session }, error } = await supabase.auth.getSession()
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
 
         if (error) {
           logger.error('AuthProvider: Error getting session', error)
         } else {
-          if (shouldLogAuth()) logger.debug('AuthProvider: Initial session', redactEmail(session?.user?.email || ''))
+          if (shouldLogAuth())
+            logger.debug('AuthProvider: Initial session', redactEmail(session?.user?.email || ''))
           setSession(session)
           setUser(session?.user ?? null)
         }
@@ -53,26 +57,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getInitialSession()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: string, session: Session | null) => {
-        if (shouldLogAuth()) logger.info('AuthProvider: Auth state change', event, redactEmail(session?.user?.email || ''))
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event: string, session: Session | null) => {
+      if (shouldLogAuth())
+        logger.info(
+          'AuthProvider: Auth state change',
+          event,
+          redactEmail(session?.user?.email || '')
+        )
 
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
 
-        // Handle different auth events - only if component is mounted
-        if (isMounted) {
-          if (event === 'SIGNED_IN') {
-            if (shouldLogAuth()) logger.info('AuthProvider: User signed in, redirecting to dashboard')
-            router.push('/dashboard')
-          } else if (event === 'SIGNED_OUT') {
-            if (shouldLogAuth()) logger.info('AuthProvider: User signed out, redirecting to login')
-            router.push('/auth/login')
-          }
+      // Handle different auth events - only if component is mounted
+      if (isMounted) {
+        if (event === 'SIGNED_IN') {
+          if (shouldLogAuth()) logger.info('AuthProvider: User signed in, redirecting to dashboard')
+          router.push('/dashboard')
+        } else if (event === 'SIGNED_OUT') {
+          if (shouldLogAuth()) logger.info('AuthProvider: User signed out, redirecting to login')
+          router.push('/auth/login')
         }
       }
-    )
+    })
 
     return () => {
       subscription.unsubscribe()
@@ -87,21 +96,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-      if (shouldLogAuth()) logger.debug('AuthContext signIn result', { user: redactEmail(data?.user?.email || '') })
+      if (shouldLogAuth())
+        logger.debug('AuthContext signIn result', { user: redactEmail(data?.user?.email || '') })
 
       if (error) {
         logger.warn('AuthContext signIn error', { message: error.message })
 
         // Handle MFA required (surface as generic error; login page will prompt for OTP)
-        if (error.name === 'AuthApiError' && (error as any).status === 400 && error.message?.includes('mfa')) {
+        if (
+          error.name === 'AuthApiError' &&
+          (error as any).status === 400 &&
+          error.message?.includes('mfa')
+        ) {
           return { error: 'MFA_REQUIRED' }
         }
 
-        if (error.message.includes('email_not_confirmed') || error.message.includes('Email not confirmed')) {
-          return { error: 'If the email or password is incorrect or your email is not confirmed, please try again or check your inbox.' }
+        if (
+          error.message.includes('email_not_confirmed') ||
+          error.message.includes('Email not confirmed')
+        ) {
+          return {
+            error:
+              'If the email or password is incorrect or your email is not confirmed, please try again or check your inbox.',
+          }
         }
         if (error.message.includes('Invalid login credentials')) {
-          return { error: 'If the email or password is incorrect or your email is not confirmed, please try again or check your inbox.' }
+          return {
+            error:
+              'If the email or password is incorrect or your email is not confirmed, please try again or check your inbox.',
+          }
         }
         if (error.message.includes('Network error')) {
           return { error: 'Network error. Please check your internet connection and try again.' }
@@ -110,7 +133,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { error: 'Request timeout. Please check your internet connection and try again.' }
         }
 
-        return { error: 'If the email or password is incorrect or your email is not confirmed, please try again or check your inbox.' }
+        return {
+          error:
+            'If the email or password is incorrect or your email is not confirmed, please try again or check your inbox.',
+        }
       }
 
       if (shouldLogAuth()) logger.info('AuthContext signIn successful')
@@ -131,7 +157,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Validate email before attempting signup
       const emailError = validateEmailSimple(email)
       if (emailError) {
-        logger.warn('AuthContext email validation failed', { email: redactEmail(email), error: emailError })
+        logger.warn('AuthContext email validation failed', {
+          email: redactEmail(email),
+          error: emailError,
+        })
         return { error: emailError }
       }
 
@@ -139,11 +168,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         options: {
-          data: { full_name: fullName }
-        }
+          data: { full_name: fullName },
+        },
       })
 
-      if (shouldLogAuth()) logger.debug('AuthContext signUp result', { user: redactEmail(data?.user?.email || '') })
+      if (shouldLogAuth())
+        logger.debug('AuthContext signUp result', { user: redactEmail(data?.user?.email || '') })
 
       if (error) {
         logger.warn('AuthContext signUp error', { message: error.message })
@@ -158,7 +188,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { error: 'Please enter a valid, deliverable email address.' }
         }
         if (error.message.includes('rate limit') || error.message.includes('too many')) {
-          return { error: 'Too many signup attempts. Please wait a few minutes before trying again.' }
+          return {
+            error: 'Too many signup attempts. Please wait a few minutes before trying again.',
+          }
         }
         if (error.message.includes('email') && error.message.includes('bounce')) {
           return { error: 'Email delivery failed. Please verify your email address and try again.' }
@@ -201,7 +233,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     try {
-      if (shouldLogAuth()) logger.info('AuthContext resetPassword called', { email: redactEmail(email) })
+      if (shouldLogAuth())
+        logger.info('AuthContext resetPassword called', { email: redactEmail(email) })
       setLoading(true)
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -259,17 +292,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Prevent hydration issues by not rendering until mounted
   if (!isMounted) {
     return (
-      <AuthContext.Provider value={{ ...value, loading: true }}>
-        {children}
-      </AuthContext.Provider>
+      <AuthContext.Provider value={{ ...value, loading: true }}>{children}</AuthContext.Provider>
     )
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

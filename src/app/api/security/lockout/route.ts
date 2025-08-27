@@ -8,24 +8,30 @@ const FAIL_THRESHOLD = 5
 async function sha256Hex(input: string) {
   const buf = new TextEncoder().encode(input)
   const hash = await crypto.subtle.digest('SHA-256', buf)
-  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('')
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
 }
 
 export async function POST(request: NextRequest) {
   const redis = getRedis()
-  const body = await request.json().catch(()=>({}))
+  const body = await request.json().catch(() => ({}))
   const action = (body?.action || 'login').toString()
   const identifierRaw = (body?.identifier || '').toString().toLowerCase()
   const success = !!body?.success
 
-  if (!identifierRaw) return NextResponse.json({ ok: false, error: 'identifier required' }, { status: 400 })
+  if (!identifierRaw)
+    return NextResponse.json({ ok: false, error: 'identifier required' }, { status: 400 })
 
   const idHash = (await sha256Hex(identifierRaw)).slice(0, 12)
   const failKey = `lock:fail:${action}:${idHash}`
   const lockKey = `lock:active:${action}:${idHash}`
 
   if (success) {
-    try { await redis.del(failKey); await redis.del(lockKey) } catch {}
+    try {
+      await redis.del(failKey)
+      await redis.del(lockKey)
+    } catch {}
     return NextResponse.json({ ok: true, cleared: true })
   }
 
@@ -50,4 +56,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ ok: true, fails, remaining: Math.max(0, FAIL_THRESHOLD - fails) })
 }
-

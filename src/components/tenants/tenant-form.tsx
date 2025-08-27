@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -18,15 +18,24 @@ type Props = {
   onCancel?: () => void
 }
 
-export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess, onCancel }: Props) {
+export default function TenantForm({
+  defaultPropertyId,
+  defaultUnitId,
+  onSuccess,
+  onCancel,
+}: Props) {
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([])
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>(defaultPropertyId || '')
-  const [units, setUnits] = useState<{ id: string; label: string; monthly_rent_kes: number | null }[]>([])
+  const [units, setUnits] = useState<
+    { id: string; label: string; monthly_rent_kes: number | null }[]
+  >([])
   const [loadingUnits, setLoadingUnits] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [propertyDefaults, setPropertyDefaults] = useState<{ default_align_billing_to_start?: boolean, default_billing_day?: number | null } | null>(null)
+  const [propertyDefaults, setPropertyDefaults] = useState<{
+    default_align_billing_to_start?: boolean
+    default_billing_day?: number | null
+  } | null>(null)
   const { show } = useToast()
-
 
   const form = useForm<TenantCreateInput>({
     resolver: zodResolver(tenantCreateSchema),
@@ -44,7 +53,7 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
       current_unit_id: defaultUnitId || undefined,
       align_billing_to_start: true,
       billing_day: null as any,
-    }
+    },
   })
 
   const unitId = form.watch('current_unit_id')
@@ -56,9 +65,18 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
       try {
         const { data: accessible, error: rpcErr } = await supabase.rpc('get_user_properties_simple')
         if (rpcErr) throw rpcErr
-        const ids = (accessible || []).map((p: any) => (typeof p === 'string' ? p : p?.property_id)).filter(Boolean)
-        if (ids.length === 0) { setProperties([]); return }
-        const { data, error } = await supabase.from('properties').select('id, name').in('id', ids).order('name')
+        const ids = (accessible || [])
+          .map((p: any) => (typeof p === 'string' ? p : p?.property_id))
+          .filter(Boolean)
+        if (ids.length === 0) {
+          setProperties([])
+          return
+        }
+        const { data, error } = await supabase
+          .from('properties')
+          .select('id, name')
+          .in('id', ids)
+          .order('name')
         if (error) throw error
         setProperties(data || [])
       } catch (e: any) {
@@ -75,7 +93,11 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
       setLoadingUnits(true)
       try {
         const propId = selectedPropertyId || defaultPropertyId
-        if (!propId) { setUnits([]); setPropertyDefaults(null); return }
+        if (!propId) {
+          setUnits([])
+          setPropertyDefaults(null)
+          return
+        }
 
         // Load property defaults
         const { data: prop, error: propErr } = await supabase
@@ -88,7 +110,10 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
           default_align_billing_to_start: (prop as any)?.default_align_billing_to_start ?? true,
           default_billing_day: (prop as any)?.default_billing_day ?? null,
         })
-        ;(form as any).setValue('align_billing_to_start' as any, (prop as any)?.default_align_billing_to_start ?? true)
+        ;(form as any).setValue(
+          'align_billing_to_start' as any,
+          (prop as any)?.default_align_billing_to_start ?? true
+        )
         ;(form as any).setValue('billing_day' as any, (prop as any)?.default_billing_day ?? null)
 
         // Load units
@@ -98,13 +123,17 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
           .eq('property_id', propId)
           .order('unit_label')
         if (error) throw error
-        const mapped = (data || []).map((u: any) => ({ id: u.id, label: u.unit_label || 'Unit', monthly_rent_kes: u.monthly_rent_kes }))
+        const mapped = (data || []).map((u: any) => ({
+          id: u.id,
+          label: u.unit_label || 'Unit',
+          monthly_rent_kes: u.monthly_rent_kes,
+        }))
         setUnits(mapped)
         // If unit is preselected, suggest monthly_rent_kes as default (overridable)
         if (defaultUnitId) {
           const sel = mapped.find((u: any) => u.id === defaultUnitId)
           if (sel?.monthly_rent_kes) {
-            (form as any).setValue('monthly_rent_kes' as any, sel.monthly_rent_kes)
+            ;(form as any).setValue('monthly_rent_kes' as any, sel.monthly_rent_kes)
           }
         }
       } catch (e: any) {
@@ -119,9 +148,9 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
   // When user changes the selected unit, update the suggested monthly_rent_kes (user can override)
   useEffect(() => {
     if (!unitId) return
-    const sel = units.find(u => u.id === unitId)
+    const sel = units.find((u) => u.id === unitId)
     if (sel?.monthly_rent_kes) {
-      (form as any).setValue('monthly_rent_kes' as any, sel.monthly_rent_kes)
+      ;(form as any).setValue('monthly_rent_kes' as any, sel.monthly_rent_kes)
     }
   }, [unitId, units, form])
 
@@ -133,7 +162,9 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
       if ((normalized.current_unit_id as any) === '') normalized.current_unit_id = null
 
       // Include CSRF and (if available) an auth token so API can authenticate the user
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'x-csrf-token': getCsrf(),
@@ -162,40 +193,62 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium">Full Name <span className="text-red-600">*</span></label>
+          <label className="block text-sm font-medium">
+            Full Name <span className="text-red-600">*</span>
+          </label>
           <input className="border rounded px-3 py-2 w-full" {...form.register('full_name')} />
           {form.formState.errors.full_name && (
-            <p className="text-xs text-red-600 mt-1">{form.formState.errors.full_name.message as any}</p>
+            <p className="text-xs text-red-600 mt-1">
+              {form.formState.errors.full_name.message as any}
+            </p>
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium">Phone <span className="text-red-600">*</span></label>
+          <label className="block text-sm font-medium">
+            Phone <span className="text-red-600">*</span>
+          </label>
           <input className="border rounded px-3 py-2 w-full" {...form.register('phone')} />
           {form.formState.errors.phone && (
-            <p className="text-xs text-red-600 mt-1">{form.formState.errors.phone.message as any}</p>
+            <p className="text-xs text-red-600 mt-1">
+              {form.formState.errors.phone.message as any}
+            </p>
           )}
         </div>
         <div>
           <label className="block text-sm font-medium">Alternate Phone (optional)</label>
-          <input className="border rounded px-3 py-2 w-full" {...form.register('alternate_phone' as any)} />
+          <input
+            className="border rounded px-3 py-2 w-full"
+            {...form.register('alternate_phone' as any)}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium">Email</label>
           <input className="border rounded px-3 py-2 w-full" {...form.register('email')} />
           {form.formState.errors.email && (
-            <p className="text-xs text-red-600 mt-1">{form.formState.errors.email.message as any}</p>
+            <p className="text-xs text-red-600 mt-1">
+              {form.formState.errors.email.message as any}
+            </p>
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium">National ID <span className="text-red-600">*</span></label>
+          <label className="block text-sm font-medium">
+            National ID <span className="text-red-600">*</span>
+          </label>
           <input className="border rounded px-3 py-2 w-full" {...form.register('national_id')} />
           {form.formState.errors.national_id && (
-            <p className="text-xs text-red-600 mt-1">{form.formState.errors.national_id.message as any}</p>
+            <p className="text-xs text-red-600 mt-1">
+              {form.formState.errors.national_id.message as any}
+            </p>
           )}
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium">Notes</label>
-          <textarea className="border rounded px-3 py-2 w-full" rows={3} placeholder="e.g., employer information, special requirements, etc." {...form.register('notes')} />
+          <textarea
+            className="border rounded px-3 py-2 w-full"
+            rows={3}
+            placeholder="e.g., employer information, special requirements, etc."
+            {...form.register('notes')}
+          />
         </div>
       </div>
 
@@ -204,19 +257,31 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium">Emergency Contact Name</label>
-            <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_name')} />
+            <input
+              className="border rounded px-3 py-2 w-full"
+              {...form.register('emergency_contact_name')}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium">Emergency Contact Phone</label>
-            <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_phone')} />
+            <input
+              className="border rounded px-3 py-2 w-full"
+              {...form.register('emergency_contact_phone')}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium">Emergency Contact Relationship</label>
-            <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_relationship')} />
+            <input
+              className="border rounded px-3 py-2 w-full"
+              {...form.register('emergency_contact_relationship')}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium">Emergency Contact Email (optional)</label>
-            <input className="border rounded px-3 py-2 w-full" {...form.register('emergency_contact_email')} />
+            <input
+              className="border rounded px-3 py-2 w-full"
+              {...form.register('emergency_contact_email')}
+            />
           </div>
         </div>
       </div>
@@ -235,8 +300,10 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
               }}
             >
               <option value="">Select property</option>
-              {properties.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
           </div>
@@ -249,15 +316,24 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
             {...form.register('current_unit_id')}
           >
             <option value="">Unassigned</option>
-            {units.map(u => (
-              <option key={u.id} value={u.id}>{u.label}</option>
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.label}
+              </option>
             ))}
           </select>
         </div>
         <div>
           <label className="block text-sm font-medium">Monthly Rent (suggested)</label>
-          <input className="border rounded px-3 py-2 w-full" type="number" step="0.01" {...(form.register as any)('monthly_rent_kes' as any)} />
-          <small className="text-gray-500">Defaults to the selected unit's monthly_rent_kes; you can override.</small>
+          <input
+            className="border rounded px-3 py-2 w-full"
+            type="number"
+            step="0.01"
+            {...(form.register as any)('monthly_rent_kes' as any)}
+          />
+          <small className="text-gray-500">
+            Defaults to the selected unit's monthly_rent_kes; you can override.
+          </small>
         </div>
       </div>
 
@@ -270,9 +346,7 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             defaultChecked
           />
-          <label className="text-sm text-gray-700">
-            Align rent due date to tenancy start date
-          </label>
+          <label className="text-sm text-gray-700">Align rent due date to tenancy start date</label>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -287,12 +361,16 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
             disabled={form.watch('align_billing_to_start')}
             placeholder="e.g., 15"
           />
-          <p className="text-gray-500 text-xs mt-1">If the month has fewer days, the due date is set to the last day of the month.</p>
+          <p className="text-gray-500 text-xs mt-1">
+            If the month has fewer days, the due date is set to the last day of the month.
+          </p>
         </div>
       </div>
 
       <div className="flex gap-2">
-        <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Create Tenant</button>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">
+          Create Tenant
+        </button>
         {onCancel && (
           <button
             type="button"
@@ -306,4 +384,3 @@ export default function TenantForm({ defaultPropertyId, defaultUnitId, onSuccess
     </form>
   )
 }
-

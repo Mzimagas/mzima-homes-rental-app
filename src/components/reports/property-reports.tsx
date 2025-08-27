@@ -4,7 +4,10 @@ import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
-import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
+import DateRangeSelector, {
+  getDefaultDateRange,
+  getPredefinedDateRanges,
+} from '../ui/date-range-selector'
 import {
   createPDFHeader,
   addTableToPDF,
@@ -18,7 +21,7 @@ import {
   formatDate,
   formatPercentage,
   type ExportOptions,
-  type TableData
+  type TableData,
 } from '../../lib/export-utils'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
@@ -69,7 +72,9 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
   const [selectedProperty, setSelectedProperty] = useState<string>('all')
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([])
   const [propertiesLoaded, setPropertiesLoaded] = useState(false)
-  const [selectedPeriod, setSelectedPeriod] = useState<'3months' | '6months' | '1year' | 'custom'>('6months')
+  const [selectedPeriod, setSelectedPeriod] = useState<'3months' | '6months' | '1year' | 'custom'>(
+    '6months'
+  )
   const [customDateRange, setCustomDateRange] = useState(getDefaultDateRange())
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
@@ -138,7 +143,7 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
         propertiesCount: properties.length,
         propertiesLoaded,
         loading,
-        isGeneratingReport
+        isGeneratingReport,
       })
 
       // For now, using mock landlord ID - in real app, this would come from user profile
@@ -168,27 +173,39 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       }
 
       // Get property performance with date range
-      const propertyPerformance = await calculatePropertyPerformance(mockLandlordId, selectedProperty, startDate, endDate)
+      const propertyPerformance = await calculatePropertyPerformance(
+        mockLandlordId,
+        selectedProperty,
+        startDate,
+        endDate
+      )
 
       // Get unit analysis
       const unitAnalysis = await calculateUnitAnalysis(mockLandlordId, selectedProperty)
 
       // Get revenue comparison with date range
-      const revenueComparison = await calculateRevenueComparison(mockLandlordId, selectedProperty, startDate, endDate)
+      const revenueComparison = await calculateRevenueComparison(
+        mockLandlordId,
+        selectedProperty,
+        startDate,
+        endDate
+      )
 
       // Get maintenance overview (placeholder - would need maintenance table)
-      const maintenanceOverview = await calculateMaintenanceOverview(mockLandlordId, selectedProperty)
+      const maintenanceOverview = await calculateMaintenanceOverview(
+        mockLandlordId,
+        selectedProperty
+      )
 
       const reportData = {
         propertyPerformance,
         unitAnalysis,
         revenueComparison,
-        maintenanceOverview
+        maintenanceOverview,
       }
 
       console.warn('Property reports data loaded successfully:', reportData)
       setData(reportData)
-
     } catch (err) {
       console.error('Property reports loading error:', err)
 
@@ -197,7 +214,7 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
         propertyPerformance: [],
         unitAnalysis: [],
         revenueComparison: [],
-        maintenanceOverview: []
+        maintenanceOverview: [],
       }
 
       console.warn('Setting fallback data due to error')
@@ -238,7 +255,6 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
     isExporting: () => isExporting,
   }))
 
-
   // Handle custom date range change
   const handleCustomDateRangeChange = (newDateRange: { startDate: string; endDate: string }) => {
     setCustomDateRange(newDateRange)
@@ -246,8 +262,6 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       setSelectedPeriod('custom')
     }
   }
-
-
 
   // Export to PDF
   const handleExportPDF = async () => {
@@ -257,28 +271,38 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       setIsExporting(true)
       const doc = new jsPDF()
 
-      const selectedPropertyName = selectedProperty === 'all'
-        ? 'All Properties'
-        : properties.find(p => p.id === selectedProperty)?.name || 'Unknown Property'
+      const selectedPropertyName =
+        selectedProperty === 'all'
+          ? 'All Properties'
+          : properties.find((p) => p.id === selectedProperty)?.name || 'Unknown Property'
 
       const exportOptions: ExportOptions = {
         title: 'Property Reports',
         subtitle: `Performance Analysis for ${selectedPropertyName}`,
         dateRange: customDateRange,
         filters: {
-          'Property': selectedPropertyName,
-          'Period': selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod
+          Property: selectedPropertyName,
+          Period: selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod,
         },
         data,
-        filename: generateFilename('property-report', customDateRange)
+        filename: generateFilename('property-report', customDateRange),
       }
 
       let yPosition = createPDFHeader(doc, exportOptions)
 
       // Property Performance table
       const performanceTable: TableData = {
-        headers: ['Property', 'Units', 'Occupancy', 'Rent Potential', 'Rent Actual', 'Collection Rate', 'Avg Rent', 'Revenue'],
-        rows: data.propertyPerformance.map(prop => [
+        headers: [
+          'Property',
+          'Units',
+          'Occupancy',
+          'Rent Potential',
+          'Rent Actual',
+          'Collection Rate',
+          'Avg Rent',
+          'Revenue',
+        ],
+        rows: data.propertyPerformance.map((prop) => [
           prop.propertyName,
           prop.totalUnits.toString(),
           formatPercentage(prop.occupancyRate),
@@ -286,8 +310,8 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
           formatCurrency(prop.monthlyRentActual),
           formatPercentage(prop.collectionRate),
           formatCurrency(prop.averageRent),
-          formatCurrency(prop.totalRevenue)
-        ])
+          formatCurrency(prop.totalRevenue),
+        ]),
       }
       yPosition = addTableToPDF(doc, performanceTable, yPosition, 'Property Performance')
 
@@ -300,17 +324,16 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       // Unit Analysis table
       const unitTable: TableData = {
         headers: ['Property', 'Unit', 'Status', 'Tenant', 'Rent', 'Last Payment', 'Balance'],
-        rows: data.unitAnalysis.map(unit => [
+        rows: data.unitAnalysis.map((unit) => [
           unit.propertyName,
           unit.unitLabel,
           unit.status,
           unit.tenantName || 'Vacant',
           formatCurrency(unit.monthlyRent),
 
-
           unit.lastPayment ? formatDate(unit.lastPayment) : 'N/A',
-          formatCurrency(unit.balance)
-        ])
+          formatCurrency(unit.balance),
+        ]),
       }
       yPosition = addTableToPDF(doc, unitTable, yPosition, 'Unit Analysis')
 
@@ -323,13 +346,13 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
 
         const revenueTable: TableData = {
           headers: ['Property', 'Current Month', 'Previous Month', 'Growth %', 'Year to Date'],
-          rows: data.revenueComparison.map(rev => [
+          rows: data.revenueComparison.map((rev) => [
             rev.propertyName,
             formatCurrency(rev.currentMonth),
             formatCurrency(rev.previousMonth),
             formatPercentage(rev.growth),
-            formatCurrency(rev.yearToDate)
-          ])
+            formatCurrency(rev.yearToDate),
+          ]),
         }
         addTableToPDF(doc, revenueTable, yPosition, 'Revenue Comparison')
       }
@@ -350,28 +373,39 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
     try {
       setIsExporting(true)
 
-      const selectedPropertyName = selectedProperty === 'all'
-        ? 'All Properties'
-        : properties.find(p => p.id === selectedProperty)?.name || 'Unknown Property'
+      const selectedPropertyName =
+        selectedProperty === 'all'
+          ? 'All Properties'
+          : properties.find((p) => p.id === selectedProperty)?.name || 'Unknown Property'
 
       const exportOptions: ExportOptions = {
         title: 'Property Reports',
         subtitle: `Performance Analysis for ${selectedPropertyName}`,
         dateRange: customDateRange,
         filters: {
-          'Property': selectedPropertyName,
-          'Period': selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod
+          Property: selectedPropertyName,
+          Period: selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod,
         },
         data,
-        filename: generateFilename('property-report', customDateRange)
+        filename: generateFilename('property-report', customDateRange),
       }
 
       const workbook = createExcelWorkbook(exportOptions)
 
       // Property Performance sheet
       const performanceTable: TableData = {
-        headers: ['Property', 'Total Units', 'Occupied Units', 'Occupancy Rate', 'Monthly Rent Potential', 'Monthly Rent Actual', 'Collection Rate', 'Average Rent', 'Total Revenue'],
-        rows: data.propertyPerformance.map(prop => [
+        headers: [
+          'Property',
+          'Total Units',
+          'Occupied Units',
+          'Occupancy Rate',
+          'Monthly Rent Potential',
+          'Monthly Rent Actual',
+          'Collection Rate',
+          'Average Rent',
+          'Total Revenue',
+        ],
+        rows: data.propertyPerformance.map((prop) => [
           prop.propertyName,
           prop.totalUnits,
           prop.occupiedUnits,
@@ -380,23 +414,31 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
           prop.monthlyRentActual,
           prop.collectionRate,
           prop.averageRent,
-          prop.totalRevenue
-        ])
+          prop.totalRevenue,
+        ]),
       }
       addTableToExcel(workbook, performanceTable, 'Property Performance')
 
       // Unit Analysis sheet
       const unitTable: TableData = {
-        headers: ['Property', 'Unit', 'Status', 'Tenant', 'Monthly Rent', 'Last Payment', 'Balance'],
-        rows: data.unitAnalysis.map(unit => [
+        headers: [
+          'Property',
+          'Unit',
+          'Status',
+          'Tenant',
+          'Monthly Rent',
+          'Last Payment',
+          'Balance',
+        ],
+        rows: data.unitAnalysis.map((unit) => [
           unit.propertyName,
           unit.unitLabel,
           unit.status,
           unit.tenantName || 'Vacant',
           unit.monthlyRent,
           unit.lastPayment || 'N/A',
-          unit.balance
-        ])
+          unit.balance,
+        ]),
       }
       addTableToExcel(workbook, unitTable, 'Unit Analysis')
 
@@ -404,13 +446,13 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       if (data.revenueComparison.length > 0) {
         const revenueTable: TableData = {
           headers: ['Property', 'Current Month', 'Previous Month', 'Growth %', 'Year to Date'],
-          rows: data.revenueComparison.map(rev => [
+          rows: data.revenueComparison.map((rev) => [
             rev.propertyName,
             rev.currentMonth,
             rev.previousMonth,
             rev.growth,
-            rev.yearToDate
-          ])
+            rev.yearToDate,
+          ]),
         }
         addTableToExcel(workbook, revenueTable, 'Revenue Comparison')
       }
@@ -421,17 +463,24 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       alert('Failed to export Excel file. Please try again.')
     } finally {
       setIsExporting(false)
-
-
     }
   }
 
-  const calculatePropertyPerformance = async (landlordId: string, propertyFilter: string, startDate: Date, endDate: Date) => {
-    console.warn('calculatePropertyPerformance called with:', { landlordId, propertyFilter, startDate, endDate })
+  const calculatePropertyPerformance = async (
+    landlordId: string,
+    propertyFilter: string,
+    startDate: Date,
+    endDate: Date
+  ) => {
+    console.warn('calculatePropertyPerformance called with:', {
+      landlordId,
+      propertyFilter,
+      startDate,
+      endDate,
+    })
 
-    const propertiesToAnalyze = propertyFilter === 'all'
-      ? properties
-      : properties.filter(p => p.id === propertyFilter)
+    const propertiesToAnalyze =
+      propertyFilter === 'all' ? properties : properties.filter((p) => p.id === propertyFilter)
 
     console.log('Properties to analyze:', propertiesToAnalyze)
 
@@ -447,7 +496,9 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       console.log('Processing property:', property)
 
       // Get property stats
-      const { data: stats, error: statsError } = await clientBusinessFunctions.getPropertyStats(property.id)
+      const { data: stats, error: statsError } = await clientBusinessFunctions.getPropertyStats(
+        property.id
+      )
 
       if (statsError) {
         console.error('Error getting property stats for', property.id, ':', statsError)
@@ -460,7 +511,8 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
         // Get revenue for this property
         const { data: payments } = await supabase
           .from('payments')
-          .select(`
+          .select(
+            `
             amount_kes,
             payment_date,
             tenants (
@@ -470,16 +522,22 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
                 )
               )
             )
-          `)
+          `
+          )
           .eq('tenants.units.properties.id', property.id)
-          .gte('payment_date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0])
+          .gte(
+            'payment_date',
+            new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
+          )
 
-        const totalRevenue = payments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
+        const totalRevenue =
+          payments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
         // Calculate collection rate
         const { data: invoices } = await supabase
           .from('rent_invoices')
-          .select(`
+          .select(
+            `
             amount_due_kes,
             amount_paid_kes,
             units (
@@ -487,15 +545,28 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
                 id
               )
             )
-          `)
+          `
+          )
           .eq('units.properties.id', property.id)
-          .gte('period_start', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0])
+          .gte(
+            'period_start',
+            new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
+          )
 
-        const totalDue = invoices?.reduce((sum: number, inv: { amount_due_kes: number }) => sum + inv.amount_due_kes, 0) || 0
-        const totalPaid = invoices?.reduce((sum: number, inv: { amount_paid_kes: number }) => sum + inv.amount_paid_kes, 0) || 0
+        const totalDue =
+          invoices?.reduce(
+            (sum: number, inv: { amount_due_kes: number }) => sum + inv.amount_due_kes,
+            0
+          ) || 0
+        const totalPaid =
+          invoices?.reduce(
+            (sum: number, inv: { amount_paid_kes: number }) => sum + inv.amount_paid_kes,
+            0
+          ) || 0
         const collectionRate = totalDue > 0 ? (totalPaid / totalDue) * 100 : 0
 
-        const averageRent = stat.total_units > 0 ? stat.monthly_rent_potential / stat.total_units : 0
+        const averageRent =
+          stat.total_units > 0 ? stat.monthly_rent_potential / stat.total_units : 0
 
         performance.push({
           propertyName: property.name,
@@ -506,7 +577,7 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
           monthlyRentActual: stat.monthly_rent_actual,
           collectionRate,
           averageRent,
-          totalRevenue
+          totalRevenue,
         })
       }
     }
@@ -517,9 +588,8 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
   const calculateUnitAnalysis = async (landlordId: string, propertyFilter: string) => {
     console.log('calculateUnitAnalysis called with:', { landlordId, propertyFilter })
 
-    const propertiesToAnalyze = propertyFilter === 'all'
-      ? properties
-      : properties.filter(p => p.id === propertyFilter)
+    const propertiesToAnalyze =
+      propertyFilter === 'all' ? properties : properties.filter((p) => p.id === propertyFilter)
 
     // If no properties to analyze, return empty array
     if (propertiesToAnalyze.length === 0) {
@@ -532,7 +602,8 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
     for (const property of propertiesToAnalyze) {
       const { data: propertyData } = await supabase
         .from('properties')
-        .select(`
+        .select(
+          `
           name,
           units (
             id,
@@ -545,7 +616,8 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
               end_date
             )
           )
-        `)
+        `
+        )
         .eq('id', property.id)
         .single()
 
@@ -574,9 +646,12 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
               .eq('tenant_id', activeTenant.id)
               .in('status', ['PENDING', 'PARTIAL', 'OVERDUE'])
 
-            balance = invoices?.reduce(
-              (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0
-            ) || 0
+            balance =
+              invoices?.reduce(
+                (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) =>
+                  sum + (inv.amount_due_kes - inv.amount_paid_kes),
+                0
+              ) || 0
           }
 
           // Calculate days vacant
@@ -584,11 +659,15 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
           if (!activeTenant) {
             const lastTenant = unit.tenants
               ?.filter((t: any) => t.end_date)
-              .sort((a: any, b: any) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime())[0]
+              .sort(
+                (a: any, b: any) =>
+                  new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime()
+              )[0]
 
             if (lastTenant?.end_date) {
               daysVacant = Math.floor(
-                (new Date().getTime() - new Date(lastTenant.end_date).getTime()) / (1000 * 60 * 60 * 24)
+                (new Date().getTime() - new Date(lastTenant.end_date).getTime()) /
+                  (1000 * 60 * 60 * 24)
               )
             }
           }
@@ -601,7 +680,7 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
             tenantName: activeTenant?.full_name || null,
             lastPayment,
             balance,
-            daysVacant
+            daysVacant,
           })
         }
       }
@@ -610,12 +689,21 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
     return units
   }
 
-  const calculateRevenueComparison = async (landlordId: string, propertyFilter: string, startDate: Date, endDate: Date) => {
-    console.log('calculateRevenueComparison called with:', { landlordId, propertyFilter, startDate, endDate })
+  const calculateRevenueComparison = async (
+    landlordId: string,
+    propertyFilter: string,
+    startDate: Date,
+    endDate: Date
+  ) => {
+    console.log('calculateRevenueComparison called with:', {
+      landlordId,
+      propertyFilter,
+      startDate,
+      endDate,
+    })
 
-    const propertiesToAnalyze = propertyFilter === 'all'
-      ? properties
-      : properties.filter(p => p.id === propertyFilter)
+    const propertiesToAnalyze =
+      propertyFilter === 'all' ? properties : properties.filter((p) => p.id === propertyFilter)
 
     // If no properties to analyze, return empty array
     if (propertiesToAnalyze.length === 0) {
@@ -640,7 +728,8 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       // Get current month revenue
       const { data: currentPayments } = await supabase
         .from('payments')
-        .select(`
+        .select(
+          `
           amount_kes,
           tenants (
             units (
@@ -649,17 +738,23 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
               )
             )
           )
-        `)
+        `
+        )
         .eq('tenants.units.properties.id', property.id)
         .gte('payment_date', currentMonthStart.toISOString().split('T')[0])
         .lte('payment_date', currentMonthEnd.toISOString().split('T')[0])
 
-      const currentMonth = currentPayments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
+      const currentMonth =
+        currentPayments?.reduce(
+          (sum: number, p: { amount_kes: number }) => sum + p.amount_kes,
+          0
+        ) || 0
 
       // Get previous month revenue
       const { data: previousPayments } = await supabase
         .from('payments')
-        .select(`
+        .select(
+          `
           amount_kes,
           tenants (
             units (
@@ -668,12 +763,17 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
               )
             )
           )
-        `)
+        `
+        )
         .eq('tenants.units.properties.id', property.id)
         .gte('payment_date', previousMonthStart.toISOString().split('T')[0])
         .lte('payment_date', previousMonthEnd.toISOString().split('T')[0])
 
-      const previousMonth = previousPayments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
+      const previousMonth =
+        previousPayments?.reduce(
+          (sum: number, p: { amount_kes: number }) => sum + p.amount_kes,
+          0
+        ) || 0
 
       // Get units for this property
       const { data: propertyUnits } = await supabase
@@ -694,7 +794,8 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       // Get year to date revenue
       const { data: ytdPayments } = await supabase
         .from('payments')
-        .select(`
+        .select(
+          `
           amount_kes,
           tenants (
             full_name,
@@ -705,11 +806,13 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
               )
             )
           )
-        `)
+        `
+        )
         .in('tenant_id', propertyTenantIds)
         .gte('payment_date', yearStart.toISOString().split('T')[0])
 
-      const yearToDate = ytdPayments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
+      const yearToDate =
+        ytdPayments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
       // Calculate growth
       const growth = previousMonth > 0 ? ((currentMonth - previousMonth) / previousMonth) * 100 : 0
@@ -719,7 +822,7 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
         currentMonth,
         previousMonth,
         growth,
-        yearToDate
+        yearToDate,
       })
     }
 
@@ -730,9 +833,8 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
     console.log('calculateMaintenanceOverview called with:', { landlordId, propertyFilter })
 
     // Placeholder for maintenance data - would need maintenance requests table
-    const propertiesToAnalyze = propertyFilter === 'all'
-      ? properties
-      : properties.filter(p => p.id === propertyFilter)
+    const propertiesToAnalyze =
+      propertyFilter === 'all' ? properties : properties.filter((p) => p.id === propertyFilter)
 
     // If no properties to analyze, return empty array
     if (propertiesToAnalyze.length === 0) {
@@ -740,13 +842,13 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       return []
     }
 
-    return propertiesToAnalyze.map(property => ({
+    return propertiesToAnalyze.map((property) => ({
       propertyName: property.name,
       totalRequests: Math.floor(Math.random() * 20),
       pendingRequests: Math.floor(Math.random() * 5),
       completedRequests: Math.floor(Math.random() * 15),
       averageResolutionTime: Math.floor(Math.random() * 7) + 1,
-      maintenanceCosts: Math.floor(Math.random() * 50000) + 10000
+      maintenanceCosts: Math.floor(Math.random() * 50000) + 10000,
     }))
   }
 
@@ -763,7 +865,7 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
     return new Date(dateString).toLocaleDateString('en-KE', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -772,12 +874,17 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
   }
 
   if (error) {
-    return <ErrorCard title="Failed to load property reports" message={error} onRetry={loadPropertyReports} />
+    return (
+      <ErrorCard
+        title="Failed to load property reports"
+        message={error}
+        onRetry={loadPropertyReports}
+      />
+    )
   }
 
   if (!data) {
-
-	// Expose export handlers to parent via ref, after handlers are defined
+    // Expose export handlers to parent via ref, after handlers are defined
 
     return <div>No property reports data available</div>
   }
@@ -799,7 +906,11 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
                     className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {isExporting ? 'Exporting...' : 'Export PDF'}
                   </button>
@@ -810,7 +921,11 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
                     className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {isExporting ? 'Exporting...' : 'Export Excel'}
                   </button>
@@ -818,14 +933,30 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
               )}
 
               {isGeneratingReport && (
-              <div className="flex items-center text-sm text-blue-600">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating report...
-              </div>
-            )}
+                <div className="flex items-center text-sm text-blue-600">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Generating report...
+                </div>
+              )}
             </div>
           </div>
 
@@ -839,8 +970,10 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
                 className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
               >
                 <option value="all">All Properties</option>
-                {properties.map(property => (
-                  <option key={property.id} value={property.id}>{property.name}</option>
+                {properties.map((property) => (
+                  <option key={property.id} value={property.id}>
+                    {property.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -862,7 +995,9 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
 
             {selectedPeriod === 'custom' && (
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Custom Date Range</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Date Range
+                </label>
                 <DateRangeSelector
                   value={customDateRange}
                   onChange={handleCustomDateRangeChange}
@@ -909,7 +1044,9 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
 
           {selectedPeriod === 'custom' && (
             <div className="text-sm text-gray-600">
-              <strong>Selected Range:</strong> {new Date(customDateRange.startDate).toLocaleDateString()} - {new Date(customDateRange.endDate).toLocaleDateString()}
+              <strong>Selected Range:</strong>{' '}
+              {new Date(customDateRange.startDate).toLocaleDateString()} -{' '}
+              {new Date(customDateRange.endDate).toLocaleDateString()}
               {(() => {
                 const start = new Date(customDateRange.startDate)
                 const end = new Date(customDateRange.endDate)
@@ -931,13 +1068,27 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Units</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Occupancy</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rent Potential</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rent Actual</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collection Rate</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Rent</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Property
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Units
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Occupancy
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rent Potential
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rent Actual
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Collection Rate
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Avg Rent
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -950,11 +1101,15 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
                     {property.occupiedUnits}/{property.totalUnits}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`font-medium ${
-                      property.occupancyRate >= 90 ? 'text-green-600' :
-                      property.occupancyRate >= 70 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
+                    <span
+                      className={`font-medium ${
+                        property.occupancyRate >= 90
+                          ? 'text-green-600'
+                          : property.occupancyRate >= 70
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                      }`}
+                    >
                       {property.occupancyRate.toFixed(1)}%
                     </span>
                   </td>
@@ -965,11 +1120,15 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
                     {formatCurrency(property.monthlyRentActual)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`font-medium ${
-                      property.collectionRate >= 95 ? 'text-green-600' :
-                      property.collectionRate >= 80 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
+                    <span
+                      className={`font-medium ${
+                        property.collectionRate >= 95
+                          ? 'text-green-600'
+                          : property.collectionRate >= 80
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                      }`}
+                    >
                       {property.collectionRate.toFixed(1)}%
                     </span>
                   </td>
@@ -988,21 +1147,29 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
         <h4 className="text-lg font-medium text-gray-900 mb-4">Revenue Comparison</h4>
         <div className="space-y-4">
           {data.revenueComparison.map((property, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div
+              key={index}
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+            >
               <div>
                 <div className="font-medium text-gray-900">{property.propertyName}</div>
                 <div className="text-sm text-gray-500">
-                  Current: {formatCurrency(property.currentMonth)} |
-                  Previous: {formatCurrency(property.previousMonth)}
+                  Current: {formatCurrency(property.currentMonth)} | Previous:{' '}
+                  {formatCurrency(property.previousMonth)}
                 </div>
               </div>
               <div className="text-right">
-                <div className={`font-medium ${
-                  property.growth > 0 ? 'text-green-600' :
-                  property.growth < 0 ? 'text-red-600' :
-                  'text-gray-600'
-                }`}>
-                  {property.growth > 0 ? '+' : ''}{property.growth.toFixed(1)}%
+                <div
+                  className={`font-medium ${
+                    property.growth > 0
+                      ? 'text-green-600'
+                      : property.growth < 0
+                        ? 'text-red-600'
+                        : 'text-gray-600'
+                  }`}
+                >
+                  {property.growth > 0 ? '+' : ''}
+                  {property.growth.toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-500">
                   YTD: {formatCurrency(property.yearToDate)}
@@ -1022,12 +1189,24 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property/Unit</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monthly Rent</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Payment</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Property/Unit
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Monthly Rent
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tenant
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Payment
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Balance
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -1041,9 +1220,13 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
                     {formatCurrency(unit.monthlyRent)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      unit.status === 'OCCUPIED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        unit.status === 'OCCUPIED'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
                       {unit.status}
                       {unit.status === 'VACANT' && unit.daysVacant > 0 && ` (${unit.daysVacant}d)`}
                     </span>
@@ -1055,7 +1238,9 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
                     {formatDate(unit.lastPayment)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={unit.balance > 0 ? 'text-red-600 font-medium' : 'text-gray-900'}>
+                    <span
+                      className={unit.balance > 0 ? 'text-red-600 font-medium' : 'text-gray-900'}
+                    >
                       {formatCurrency(unit.balance)}
                     </span>
                   </td>

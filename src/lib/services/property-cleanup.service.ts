@@ -16,15 +16,16 @@ export class PropertyCleanupService {
   }> {
     try {
       // First, get all accessible properties for the user
-      const { data: accessibleProperties, error: accessError } = 
-        await supabase.rpc('get_user_properties_simple')
+      const { data: accessibleProperties, error: accessError } = await supabase.rpc(
+        'get_user_properties_simple'
+      )
 
       if (accessError) {
         console.error('Error getting accessible properties:', accessError)
         return {
           success: false,
           deletedCount: 0,
-          error: `Failed to get accessible properties: ${accessError.message}`
+          error: `Failed to get accessible properties: ${accessError.message}`,
         }
       }
 
@@ -32,19 +33,19 @@ export class PropertyCleanupService {
         return {
           success: true,
           deletedCount: 0,
-          error: 'No accessible properties found'
+          error: 'No accessible properties found',
         }
       }
 
       const propertyIds = accessibleProperties
-        .map(p => p.property_id)
+        .map((p) => p.property_id)
         .filter((id): id is string => typeof id === 'string' && id.length > 0)
 
       if (propertyIds.length === 0) {
         return {
           success: true,
           deletedCount: 0,
-          error: 'No valid property IDs found'
+          error: 'No valid property IDs found',
         }
       }
 
@@ -60,7 +61,7 @@ export class PropertyCleanupService {
         return {
           success: false,
           deletedCount: 0,
-          error: `Failed to fetch properties: ${propertiesError.message}`
+          error: `Failed to fetch properties: ${propertiesError.message}`,
         }
       }
 
@@ -68,12 +69,12 @@ export class PropertyCleanupService {
         return {
           success: true,
           deletedCount: 0,
-          error: 'No active properties found'
+          error: 'No active properties found',
         }
       }
 
       // Filter to only land properties
-      const landProperties = properties.filter(property => 
+      const landProperties = properties.filter((property) =>
         isLandProperty(property.property_type as PropertyType)
       )
 
@@ -81,18 +82,18 @@ export class PropertyCleanupService {
         return {
           success: true,
           deletedCount: 0,
-          error: 'No land properties found to delete'
+          error: 'No land properties found to delete',
         }
       }
 
-      const landPropertyIds = landProperties.map(p => p.id)
+      const landPropertyIds = landProperties.map((p) => p.id)
 
       // Soft delete the land properties by setting disabled_at
       const { error: updateError } = await supabase
         .from('properties')
-        .update({ 
+        .update({
           disabled_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .in('id', landPropertyIds)
 
@@ -101,23 +102,22 @@ export class PropertyCleanupService {
         return {
           success: false,
           deletedCount: 0,
-          error: `Failed to soft delete properties: ${updateError.message}`
+          error: `Failed to soft delete properties: ${updateError.message}`,
         }
       }
 
       console.log(`Successfully soft deleted ${landProperties.length} land properties`)
-      
+
       return {
         success: true,
-        deletedCount: landProperties.length
+        deletedCount: landProperties.length,
       }
-
     } catch (error) {
       console.error('Unexpected error in softDeleteLandProperties:', error)
       return {
         success: false,
         deletedCount: 0,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       }
     }
   }
@@ -132,32 +132,33 @@ export class PropertyCleanupService {
   }> {
     try {
       // Get accessible properties for the user
-      const { data: accessibleProperties, error: accessError } = 
-        await supabase.rpc('get_user_properties_simple')
+      const { data: accessibleProperties, error: accessError } = await supabase.rpc(
+        'get_user_properties_simple'
+      )
 
       if (accessError) {
         return {
           success: false,
           count: 0,
-          error: `Failed to get accessible properties: ${accessError.message}`
+          error: `Failed to get accessible properties: ${accessError.message}`,
         }
       }
 
       if (!accessibleProperties || accessibleProperties.length === 0) {
         return {
           success: true,
-          count: 0
+          count: 0,
         }
       }
 
       const propertyIds = accessibleProperties
-        .map(p => p.property_id)
+        .map((p) => p.property_id)
         .filter((id): id is string => typeof id === 'string' && id.length > 0)
 
       if (propertyIds.length === 0) {
         return {
           success: true,
-          count: 0
+          count: 0,
         }
       }
 
@@ -172,32 +173,31 @@ export class PropertyCleanupService {
         return {
           success: false,
           count: 0,
-          error: `Failed to fetch properties: ${propertiesError.message}`
+          error: `Failed to fetch properties: ${propertiesError.message}`,
         }
       }
 
       if (!properties) {
         return {
           success: true,
-          count: 0
+          count: 0,
         }
       }
 
       // Count land properties
-      const landPropertiesCount = properties.filter(property => 
+      const landPropertiesCount = properties.filter((property) =>
         isLandProperty(property.property_type as PropertyType)
       ).length
 
       return {
         success: true,
-        count: landPropertiesCount
+        count: landPropertiesCount,
       }
-
     } catch (error) {
       return {
         success: false,
         count: 0,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       }
     }
   }

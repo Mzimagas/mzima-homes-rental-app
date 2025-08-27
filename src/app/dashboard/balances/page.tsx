@@ -26,10 +26,14 @@ export default function BalancesPage() {
       setLoading(true)
       setError(null)
       try {
-        const { data: sumData, error: sumError } = await clientBusinessFunctions.getRentBalanceSummary(tenantId)
+        const { data: sumData, error: sumError } =
+          await clientBusinessFunctions.getRentBalanceSummary(tenantId)
         if (sumError) throw new Error(sumError)
         setSummary(sumData)
-        const { data: ledgerData, error: ledgerError } = await supabase.rpc('get_rent_ledger', { p_tenant_id: tenantId, p_limit: 100 })
+        const { data: ledgerData, error: ledgerError } = await supabase.rpc('get_rent_ledger', {
+          p_tenant_id: tenantId,
+          p_limit: 100,
+        })
         if (ledgerError) throw new Error(ledgerError.message || 'Failed to load ledger')
         setLedger(ledgerData || [])
       } catch (e: any) {
@@ -50,11 +54,15 @@ export default function BalancesPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="border rounded p-4">
               <div className="text-sm text-gray-500">Outstanding</div>
-              <div className="text-2xl font-bold">{formatCurrency(summary?.outstanding_total_kes || 0)}</div>
+              <div className="text-2xl font-bold">
+                {formatCurrency(summary?.outstanding_total_kes || 0)}
+              </div>
             </div>
             <div className="border rounded p-4">
               <div className="text-sm text-gray-500">Overdue</div>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(summary?.overdue_total_kes || 0)}</div>
+              <div className="text-2xl font-bold text-red-600">
+                {formatCurrency(summary?.overdue_total_kes || 0)}
+              </div>
             </div>
             <div className="border rounded p-4">
               <div className="text-sm text-gray-500">Open Invoices</div>
@@ -62,7 +70,9 @@ export default function BalancesPage() {
             </div>
             <div className="border rounded p-4">
               <div className="text-sm text-gray-500">Last Payment</div>
-              <div className="text-xl">{summary?.last_payment_date ? formatDate(summary.last_payment_date) : 'N/A'}</div>
+              <div className="text-xl">
+                {summary?.last_payment_date ? formatDate(summary.last_payment_date) : 'N/A'}
+              </div>
             </div>
           </div>
 
@@ -81,7 +91,10 @@ export default function BalancesPage() {
                 </thead>
                 <tbody>
                   {ledger.map((row: any) => (
-                    <tr key={`${row.entry_date}-${row.invoice_id || row.payment_id}`} className="border-t">
+                    <tr
+                      key={`${row.entry_date}-${row.invoice_id || row.payment_id}`}
+                      className="border-t"
+                    >
                       <td className="p-2">{formatDate(row.entry_date)}</td>
                       <td className="p-2">{row.entry_type}</td>
                       <td className="p-2">{row.invoice_id ? 'Invoice' : 'Payment'}</td>
@@ -91,7 +104,9 @@ export default function BalancesPage() {
                   ))}
                   {ledger.length === 0 && (
                     <tr>
-                      <td className="p-4 text-gray-500" colSpan={5}>No ledger entries</td>
+                      <td className="p-4 text-gray-500" colSpan={5}>
+                        No ledger entries
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -103,4 +118,3 @@ export default function BalancesPage() {
     </div>
   )
 }
-

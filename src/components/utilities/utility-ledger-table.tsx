@@ -23,7 +23,9 @@ export default function UtilityLedgerTable({ accountId }: { accountId: string })
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [accountId])
+  useEffect(() => {
+    load()
+  }, [accountId])
 
   if (loading) return <div className="p-4">Loading ledger...</div>
   if (error) return <div className="p-4 text-red-600">{error}</div>
@@ -41,7 +43,7 @@ export default function UtilityLedgerTable({ accountId }: { accountId: string })
           </tr>
         </thead>
         <tbody>
-          {rows.map(r => (
+          {rows.map((r) => (
             <tr key={r.id} className="border-t">
               <td className="p-2">{formatDate(r.created_at)}</td>
               <td className="p-2">{r.txn_type}</td>
@@ -51,11 +53,14 @@ export default function UtilityLedgerTable({ accountId }: { accountId: string })
             </tr>
           ))}
           {rows.length === 0 && (
-            <tr><td className="p-4 text-gray-500" colSpan={5}>No transactions</td></tr>
+            <tr>
+              <td className="p-4 text-gray-500" colSpan={5}>
+                No transactions
+              </td>
+            </tr>
           )}
         </tbody>
       </table>
     </div>
   )
 }
-

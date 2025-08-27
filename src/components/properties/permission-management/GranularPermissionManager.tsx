@@ -41,7 +41,7 @@ export default function GranularPermissionManager() {
     openAssignModal,
     closeAssignModal,
     setFeedback,
-    setAssignmentState
+    setAssignmentState,
   } = usePermissionManagement()
 
   // Local state for selections
@@ -58,11 +58,11 @@ export default function GranularPermissionManager() {
 
   // Handle permission assignment
   const handleAssignPermissions = async (permissions: UserPermissions[]) => {
-    setAssignmentState(prev => ({ ...prev, isAssigning: true }))
+    setAssignmentState((prev) => ({ ...prev, isAssigning: true }))
 
     try {
       // Add each permission
-      permissions.forEach(permission => {
+      permissions.forEach((permission) => {
         addPermission(
           permission.userId,
           permission.email,
@@ -73,7 +73,7 @@ export default function GranularPermissionManager() {
 
       setFeedback({
         type: 'success',
-        message: `Successfully assigned permissions to ${permissions.length} user(s)`
+        message: `Successfully assigned permissions to ${permissions.length} user(s)`,
       })
 
       // Clear selections and close modal after a delay
@@ -81,15 +81,14 @@ export default function GranularPermissionManager() {
         setSelectedUsers([])
         closeAssignModal()
       }, 1500)
-
     } catch (error) {
       console.error('Error assigning permissions:', error)
       setFeedback({
         type: 'error',
-        message: 'Failed to assign permissions. Please try again.'
+        message: 'Failed to assign permissions. Please try again.',
       })
     } finally {
-      setAssignmentState(prev => ({ ...prev, isAssigning: false }))
+      setAssignmentState((prev) => ({ ...prev, isAssigning: false }))
     }
   }
 
@@ -98,7 +97,7 @@ export default function GranularPermissionManager() {
     if (selectedUsers.length === 0) {
       setFeedback({
         type: 'warning',
-        message: 'Please select users to duplicate permissions to'
+        message: 'Please select users to duplicate permissions to',
       })
       return
     }
@@ -106,7 +105,7 @@ export default function GranularPermissionManager() {
     duplicatePermissions(sourcePermission, selectedUsers)
     setFeedback({
       type: 'success',
-      message: `Duplicated permissions to ${selectedUsers.length} user(s)`
+      message: `Duplicated permissions to ${selectedUsers.length} user(s)`,
     })
   }
 
@@ -120,11 +119,14 @@ export default function GranularPermissionManager() {
         <div className="flex-1">
           <h2 className="text-2xl font-bold text-gray-900">Permission Management</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Follow the steps below to assign permissions: 1) Select scope → 2) Choose users → 3) Assign permissions
+            Follow the steps below to assign permissions: 1) Select scope → 2) Choose users → 3)
+            Assign permissions
           </p>
         </div>
         <div className="flex items-center justify-between sm:justify-end space-x-3">
-          <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-sm font-medium">3</span>
+          <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-sm font-medium">
+            3
+          </span>
           <Button
             onClick={openAssignModal}
             disabled={!canAssignPermissions}
@@ -134,14 +136,10 @@ export default function GranularPermissionManager() {
             <span className="hidden sm:inline">
               {canAssignPermissions
                 ? `Assign Permissions (${selectedUsers.length} users)`
-                : 'Select Users to Assign Permissions'
-              }
+                : 'Select Users to Assign Permissions'}
             </span>
             <span className="sm:hidden">
-              {canAssignPermissions
-                ? `Assign (${selectedUsers.length})`
-                : 'Select Users'
-              }
+              {canAssignPermissions ? `Assign (${selectedUsers.length})` : 'Select Users'}
             </span>
           </Button>
         </div>
@@ -149,16 +147,24 @@ export default function GranularPermissionManager() {
 
       {/* Feedback Messages */}
       {assignmentState.feedback && (
-        <div className={`p-4 rounded-md ${
-          assignmentState.feedback.type === 'success' ? 'bg-green-50 border border-green-200' :
-          assignmentState.feedback.type === 'error' ? 'bg-red-50 border border-red-200' :
-          'bg-yellow-50 border border-yellow-200'
-        }`}>
-          <div className={`text-sm ${
-            assignmentState.feedback.type === 'success' ? 'text-green-800' :
-            assignmentState.feedback.type === 'error' ? 'text-red-800' :
-            'text-yellow-800'
-          }`}>
+        <div
+          className={`p-4 rounded-md ${
+            assignmentState.feedback.type === 'success'
+              ? 'bg-green-50 border border-green-200'
+              : assignmentState.feedback.type === 'error'
+                ? 'bg-red-50 border border-red-200'
+                : 'bg-yellow-50 border border-yellow-200'
+          }`}
+        >
+          <div
+            className={`text-sm ${
+              assignmentState.feedback.type === 'success'
+                ? 'text-green-800'
+                : assignmentState.feedback.type === 'error'
+                  ? 'text-red-800'
+                  : 'text-yellow-800'
+            }`}
+          >
             {assignmentState.feedback.message}
           </div>
         </div>
@@ -167,19 +173,20 @@ export default function GranularPermissionManager() {
       {/* Step 1: Permission Scope Selection */}
       <div className="space-y-2">
         <div className="flex items-center space-x-2">
-          <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-sm font-medium">1</span>
+          <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-sm font-medium">
+            1
+          </span>
           <h3 className="text-lg font-medium text-gray-900">Select Permission Scope</h3>
         </div>
-        <PropertySelector
-          onPropertySelect={setSelectedProperty}
-          className="w-full"
-        />
+        <PropertySelector onPropertySelect={setSelectedProperty} className="w-full" />
       </div>
 
       {/* Step 2: User Selection */}
       <div className="space-y-2">
         <div className="flex items-center space-x-2">
-          <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-sm font-medium">2</span>
+          <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-sm font-medium">
+            2
+          </span>
           <h3 className="text-lg font-medium text-gray-900">Select Users</h3>
         </div>
         <UserSelector

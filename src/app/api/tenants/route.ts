@@ -32,14 +32,16 @@ export const GET = compose(withRateLimit)(async (req: NextRequest) => {
   try {
     // TEMPORARY: Use service role to bypass RLS while fixing Next.js 15 cookies issue
     const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
+      auth: { autoRefreshToken: false, persistSession: false },
     })
 
     const url = new URL(req.url)
     const search = url.searchParams.get('q')?.trim() || ''
     const propertyId = url.searchParams.get('propertyId') || ''
     const unitId = url.searchParams.get('unitId') || ''
-    const includeDeleted = ['1', 'true', 'yes'].includes((url.searchParams.get('includeDeleted') || '').toLowerCase())
+    const includeDeleted = ['1', 'true', 'yes'].includes(
+      (url.searchParams.get('includeDeleted') || '').toLowerCase()
+    )
 
     console.info('[GET /api/tenants] params', { search, propertyId, unitId, includeDeleted })
     console.info('[GET /api/tenants] TEMPORARY: Using service role to bypass RLS')
@@ -58,7 +60,7 @@ export const GET = compose(withRateLimit)(async (req: NextRequest) => {
         .select('id')
         .eq('property_id', propertyId)
       if (unitsErr) return errors.badRequest('Failed to fetch units for property', unitsErr)
-      const unitIds = (unitRows || []).map(u => u.id)
+      const unitIds = (unitRows || []).map((u) => u.id)
       console.info('[GET /api/tenants] property units', unitIds.length)
       if (unitIds.length === 0) return NextResponse.json({ ok: true, data: [] })
       query = query.in('current_unit_id', unitIds)
@@ -82,7 +84,10 @@ export const GET = compose(withRateLimit)(async (req: NextRequest) => {
   }
 })
 
-export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) => {
+export const POST = compose(
+  withRateLimit,
+  withCsrf
+)(async (req: NextRequest) => {
   try {
     console.info('[POST /api/tenants] start')
 
@@ -93,7 +98,7 @@ export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) =>
 
     // Use service role to bypass RLS for write while auth is verified separately
     const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
+      auth: { autoRefreshToken: false, persistSession: false },
     })
 
     // Resolve userId from Authorization bearer token or server session
@@ -110,7 +115,9 @@ export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) =>
     if (!userId) {
       try {
         const supa = await createServerSupabaseClient()
-        const { data: { user } } = await supa.auth.getUser()
+        const {
+          data: { user },
+        } = await supa.auth.getUser()
         userId = user?.id || ''
       } catch (e) {
         console.warn('[POST /api/tenants] failed to read server user', (e as any)?.message || e)
@@ -125,7 +132,10 @@ export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) =>
     console.info('[POST /api/tenants] raw payload keys', Object.keys(json || {}))
     const parse = tenantCreateSchema.safeParse(json)
     if (!parse.success) {
-      console.warn('[POST /api/tenants] validation failed', parse.error?.issues?.map((e: any)=>e.path.join('.')+':'+e.message).join(', '))
+      console.warn(
+        '[POST /api/tenants] validation failed',
+        parse.error?.issues?.map((e: any) => e.path.join('.') + ':' + e.message).join(', ')
+      )
       return errors.validation(parse.error.flatten())
     }
     // Ensure status is ACTIVE upon creation to make occupancy consistent across views
@@ -135,18 +145,30 @@ export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) =>
     let propertyId: string | null = null
     if (payload.current_unit_id) {
       const admin = createClient(supabaseUrl, serviceKey)
-      const { data: unit, error: unitErr } = await admin.from('units').select('property_id').eq('id', payload.current_unit_id).maybeSingle()
-      console.info('[POST /api/tenants] unit lookup', { property_id: unit?.property_id, unitErr: unitErr?.message })
+      const { data: unit, error: unitErr } = await admin
+        .from('units')
+        .select('property_id')
+        .eq('id', payload.current_unit_id)
+        .maybeSingle()
+      console.info('[POST /api/tenants] unit lookup', {
+        property_id: unit?.property_id,
+        unitErr: unitErr?.message,
+      })
       propertyId = unit?.property_id || null
     }
 
     // Check role
     if (propertyId) {
       const membership = await getRoleForProperty(userId, propertyId)
-      console.info('[POST /api/tenants] membership', { status: (membership as any)?.status, role: (membership as any)?.role })
-      if (!membership || (membership as any).status !== 'ACTIVE') return errors.forbidden('No access to target property')
+      console.info('[POST /api/tenants] membership', {
+        status: (membership as any)?.status,
+        role: (membership as any)?.role,
+      })
+      if (!membership || (membership as any).status !== 'ACTIVE')
+        return errors.forbidden('No access to target property')
       const role = (membership as any).role
-      if (!['OWNER', 'PROPERTY_MANAGER', 'LEASING_AGENT'].includes(role)) return errors.forbidden('Insufficient role')
+      if (!['OWNER', 'PROPERTY_MANAGER', 'LEASING_AGENT'].includes(role))
+        return errors.forbidden('Insufficient role')
     }
 
     // Insert via service role (whitelist tenant columns only)
@@ -166,7 +188,11 @@ export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) =>
       current_unit_id: payload.current_unit_id ?? null,
       status: 'ACTIVE' as const,
     }
-    const { data: tenant, error } = await admin.from('tenants').insert(tenantInsert as any).select('*').single()
+    const { data: tenant, error } = await admin
+      .from('tenants')
+      .insert(tenantInsert as any)
+      .select('*')
+      .single()
     if (error) {
       console.error('[POST /api/tenants] insert error', error)
       return errors.badRequest('Failed to create tenant', error)
@@ -181,24 +207,29 @@ export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) =>
         .eq('id', propertyId)
         .maybeSingle()
 
-      const alignBilling = (json.align_billing_to_start ?? prop?.default_align_billing_to_start ?? true)
+      const alignBilling =
+        json.align_billing_to_start ?? prop?.default_align_billing_to_start ?? true
       // If align is true, default billing_day to start day during move/start; here we don’t know start date, but first invoice run will clamp correctly
       // We store a best-effort: if align=true and user didn’t pass a custom day, leave null; else use custom or property default
       const resolvedBillingDay = alignBilling
-        ? (json.billing_day || null)
-        : (json.billing_day || prop?.default_billing_day || null)
+        ? json.billing_day || null
+        : json.billing_day || prop?.default_billing_day || null
 
       const { error: agErr } = await admin.from('tenancy_agreements').insert({
         tenant_id: tenant.id,
         unit_id: payload.current_unit_id,
-        start_date: new Date().toISOString().slice(0,10),
+        start_date: new Date().toISOString().slice(0, 10),
         status: 'ACTIVE',
         monthly_rent_kes: payload.monthly_rent_kes || null,
         billing_day: resolvedBillingDay,
         align_billing_to_start: alignBilling,
         notes: payload.notes || null,
       })
-      if (agErr) console.warn('[POST /api/tenants] failed to create initial tenancy_agreement', agErr.message)
+      if (agErr)
+        console.warn(
+          '[POST /api/tenants] failed to create initial tenancy_agreement',
+          agErr.message
+        )
     }
 
     console.info('[POST /api/tenants] success', tenant?.id)
@@ -208,4 +239,3 @@ export const POST = compose(withRateLimit, withCsrf)(async (req: NextRequest) =>
     return errors.internal()
   }
 })
-

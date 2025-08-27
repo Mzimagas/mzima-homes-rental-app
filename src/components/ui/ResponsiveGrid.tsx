@@ -22,27 +22,23 @@ export default function ResponsiveGrid({
   className = '',
   cols = { mobile: 1, tablet: 2, desktop: 3 },
   gap = 'md',
-  minItemWidth
+  minItemWidth,
 }: ResponsiveGridProps) {
   const gapClasses = {
     sm: 'gap-3',
     md: 'gap-4 sm:gap-6',
-    lg: 'gap-6 sm:gap-8'
+    lg: 'gap-6 sm:gap-8',
   }
 
   const getGridCols = () => {
     const { mobile = 1, tablet = 2, desktop = 3 } = cols
-    
+
     if (minItemWidth) {
       return `grid-cols-[repeat(auto-fit,minmax(${minItemWidth},1fr))]`
     }
-    
+
     return `grid-cols-${mobile} sm:grid-cols-${tablet} lg:grid-cols-${desktop}`
   }
 
-  return (
-    <div className={`grid ${getGridCols()} ${gapClasses[gap]} ${className}`}>
-      {children}
-    </div>
-  )
+  return <div className={`grid ${getGridCols()} ${gapClasses[gap]} ${className}`}>{children}</div>
 }

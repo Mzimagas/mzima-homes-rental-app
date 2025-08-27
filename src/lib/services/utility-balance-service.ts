@@ -23,7 +23,12 @@ export class UtilityBalanceService {
     return clientBusinessFunctions.getRentBalanceSummary(tenantId)
   }
 
-  static async recordTopup(accountId: string, amountKes: number, paymentId?: string, description?: string) {
+  static async recordTopup(
+    accountId: string,
+    amountKes: number,
+    paymentId?: string,
+    description?: string
+  ) {
     return clientBusinessFunctions.recordUtilityTopup(accountId, amountKes, paymentId, description)
   }
 
@@ -38,11 +43,7 @@ export class UtilityBalanceService {
   }
 
   static async listAccountsForUnit(unitId: string) {
-    return supabase
-      .from('utility_accounts')
-      .select('*')
-      .eq('unit_id', unitId)
-      .eq('is_active', true)
+    return supabase.from('utility_accounts').select('*').eq('unit_id', unitId).eq('is_active', true)
   }
 
   static async getLedger(accountId: string, limit = 100) {
@@ -54,4 +55,3 @@ export class UtilityBalanceService {
       .limit(limit)
   }
 }
-

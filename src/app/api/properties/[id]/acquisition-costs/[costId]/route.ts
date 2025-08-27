@@ -12,7 +12,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -36,8 +38,7 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin
-      .rpc('get_user_accessible_properties', { user_uuid: userId })
+    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       // Fallback: Check if user owns the property directly
@@ -78,16 +79,21 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
 }
 
 // DELETE /api/properties/[id]/acquisition-costs/[costId] - Delete cost entry
-export const DELETE = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const DELETE = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id and cost id from path /api/properties/[id]/acquisition-costs/[costId]
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
-    const costsIdx = segments.findIndex(s => s === 'acquisition-costs')
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const costsIdx = segments.findIndex((s) => s === 'acquisition-costs')
     const costId = costsIdx >= 0 && segments[costsIdx + 1] ? segments[costsIdx + 1] : undefined
 
     if (!propertyId || !costId) return errors.badRequest('Missing property id or cost id in path')

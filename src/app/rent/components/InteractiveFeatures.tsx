@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useState, useEffect } from 'react'
 
 // Unit Comparison Feature
@@ -24,8 +24,8 @@ export function UnitComparison() {
 
   const addToCompare = (unit: Unit) => {
     if (compareList.length >= 3) return false
-    if (compareList.some(u => u.unit_id === unit.unit_id)) return false
-    
+    if (compareList.some((u) => u.unit_id === unit.unit_id)) return false
+
     const newList = [...compareList, unit]
     setCompareList(newList)
     localStorage.setItem('compareUnits', JSON.stringify(newList))
@@ -33,7 +33,7 @@ export function UnitComparison() {
   }
 
   const removeFromCompare = (unitId: string) => {
-    const newList = compareList.filter(u => u.unit_id !== unitId)
+    const newList = compareList.filter((u) => u.unit_id !== unitId)
     setCompareList(newList)
     localStorage.setItem('compareUnits', JSON.stringify(newList))
   }
@@ -54,7 +54,12 @@ export function UnitComparison() {
           className="bg-primary-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
           </svg>
           <span>Compare ({compareList.length})</span>
         </button>
@@ -71,31 +76,47 @@ export function UnitComparison() {
                 className="text-gray-400 hover:text-gray-600"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
-            
+
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {compareList.map((unit) => (
                   <div key={unit.unit_id} className="border rounded-lg overflow-hidden">
                     <div className="aspect-video bg-gray-100">
                       {unit.thumbnail_url && (
-                        <img src={unit.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={unit.thumbnail_url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
                       )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold">{unit.unit_label}</h3>
                       <p className="text-sm text-gray-600">{unit.property_name}</p>
                       <div className="mt-2">
-                        <div className="font-semibold">KES {unit.monthly_rent_kes?.toLocaleString() || '-'}</div>
+                        <div className="font-semibold">
+                          KES {unit.monthly_rent_kes?.toLocaleString() || '-'}
+                        </div>
                         {unit.deposit_kes && (
-                          <div className="text-sm text-gray-600">Deposit: KES {unit.deposit_kes.toLocaleString()}</div>
+                          <div className="text-sm text-gray-600">
+                            Deposit: KES {unit.deposit_kes.toLocaleString()}
+                          </div>
                         )}
                       </div>
                       <div className="mt-4 space-y-2">
-                        <a href={`/rent/${unit.unit_id}`} className="btn btn-primary w-full text-center">
+                        <a
+                          href={`/rent/${unit.unit_id}`}
+                          className="btn btn-primary w-full text-center"
+                        >
                           View Details
                         </a>
                         <button
@@ -109,7 +130,7 @@ export function UnitComparison() {
                   </div>
                 ))}
               </div>
-              
+
               <div className="mt-6 flex justify-center">
                 <button onClick={clearAll} className="btn btn-secondary">
                   Clear All
@@ -136,9 +157,9 @@ export function FavoritesManager() {
 
   const toggleFavorite = (unitId: string) => {
     const newFavorites = favorites.includes(unitId)
-      ? favorites.filter(id => id !== unitId)
+      ? favorites.filter((id) => id !== unitId)
       : [...favorites, unitId]
-    
+
     setFavorites(newFavorites)
     localStorage.setItem('favoriteUnits', JSON.stringify(newFavorites))
   }
@@ -161,21 +182,35 @@ export function FavoriteButton({ unitId }: { unitId: string }) {
         toggleFavorite(unitId)
       }}
       className={`p-2 rounded-full transition-colors ${
-        favorite 
-          ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+        favorite
+          ? 'bg-red-100 text-red-600 hover:bg-red-200'
           : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-red-500'
       }`}
       title={favorite ? 'Remove from favorites' : 'Add to favorites'}
     >
-      <svg className="w-5 h-5" fill={favorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      <svg
+        className="w-5 h-5"
+        fill={favorite ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+        />
       </svg>
     </button>
   )
 }
 
 // Share Feature
-export function ShareButton({ unit }: { unit: { unit_id: string; unit_label: string; property_name: string } }) {
+export function ShareButton({
+  unit,
+}: {
+  unit: { unit_id: string; unit_label: string; property_name: string }
+}) {
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -195,14 +230,14 @@ export function ShareButton({ unit }: { unit: { unit_id: string; unit_label: str
   const shareVia = (platform: string) => {
     const encodedUrl = encodeURIComponent(shareUrl)
     const encodedText = encodeURIComponent(shareText)
-    
+
     const urls = {
       whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
       telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
       email: `mailto:?subject=${encodedText}&body=${encodedUrl}`,
-      sms: `sms:?body=${encodedText}%20${encodedUrl}`
+      sms: `sms:?body=${encodedText}%20${encodedUrl}`,
     }
-    
+
     window.open(urls[platform as keyof typeof urls], '_blank')
     setIsOpen(false)
   }
@@ -215,25 +250,40 @@ export function ShareButton({ unit }: { unit: { unit_id: string; unit_label: str
         title="Share this unit"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+          />
         </svg>
       </button>
 
       {isOpen && (
         <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-4 w-64 z-10">
           <h3 className="font-medium mb-3">Share this unit</h3>
-          
+
           <div className="space-y-2">
             <button
               onClick={copyToClipboard}
               className="w-full flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
             >
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
               </svg>
               <span>{copied ? 'Copied!' : 'Copy Link'}</span>
             </button>
-            
+
             <button
               onClick={() => shareVia('whatsapp')}
               className="w-full flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
@@ -241,7 +291,7 @@ export function ShareButton({ unit }: { unit: { unit_id: string; unit_label: str
               <div className="w-5 h-5 bg-green-500 rounded"></div>
               <span>WhatsApp</span>
             </button>
-            
+
             <button
               onClick={() => shareVia('telegram')}
               className="w-full flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
@@ -249,13 +299,23 @@ export function ShareButton({ unit }: { unit: { unit_id: string; unit_label: str
               <div className="w-5 h-5 bg-blue-500 rounded"></div>
               <span>Telegram</span>
             </button>
-            
+
             <button
               onClick={() => shareVia('email')}
               className="w-full flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
             >
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
               <span>Email</span>
             </button>
@@ -274,11 +334,11 @@ export function AvailabilityNotifier({ unitId }: { unitId: string }) {
 
   const subscribe = async () => {
     if (!email) return
-    
+
     setIsLoading(true)
     try {
       // In a real app, this would call an API
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       setIsSubscribed(true)
       setEmail('')
     } catch (error) {
@@ -292,10 +352,17 @@ export function AvailabilityNotifier({ unitId }: { unitId: string }) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <div className="flex items-center">
-          <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-5 h-5 text-green-600 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span className="text-green-800 font-medium">You'll be notified when this unit becomes available!</span>
+          <span className="text-green-800 font-medium">
+            You'll be notified when this unit becomes available!
+          </span>
         </div>
       </div>
     )

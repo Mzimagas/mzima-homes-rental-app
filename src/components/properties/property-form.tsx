@@ -6,7 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, TextField, FormField, Select } from '../ui'
 import Modal from '../ui/Modal'
 import AddressAutocomplete from '../location/AddressAutocomplete'
-import { PropertyTypeEnum, propertySchema, type PropertyFormValues } from '../../lib/validation/property'
+import {
+  PropertyTypeEnum,
+  propertySchema,
+  type PropertyFormValues,
+} from '../../lib/validation/property'
 import { useToast } from '../ui/Toast'
 
 interface PropertyFormProps {
@@ -26,7 +30,7 @@ export default function PropertyForm({
   onClose,
   property,
   onSuccess,
-  onCancel
+  onCancel,
 }: PropertyFormProps) {
   const { showToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -37,22 +41,24 @@ export default function PropertyForm({
     reset,
     setValue,
     watch,
-    formState: { errors }
+    formState: { errors },
   } = useForm<PropertyFormValues>({
     resolver: zodResolver(propertySchema),
-    defaultValues: property ? {
-      name: property.name || '',
-      physical_address: property.physical_address || '',
-      property_type: property.property_type || 'HOME',
-      lat: property.lat || undefined,
-      lng: property.lng || undefined,
-      notes: property.notes || '',
-      default_billing_day: property.default_billing_day || undefined,
-      default_align_billing_to_start: property.default_align_billing_to_start ?? true
-    } : {
-      property_type: 'HOME',
-      default_align_billing_to_start: true
-    }
+    defaultValues: property
+      ? {
+          name: property.name || '',
+          physical_address: property.physical_address || '',
+          property_type: property.property_type || 'HOME',
+          lat: property.lat || undefined,
+          lng: property.lng || undefined,
+          notes: property.notes || '',
+          default_billing_day: property.default_billing_day || undefined,
+          default_align_billing_to_start: property.default_align_billing_to_start ?? true,
+        }
+      : {
+          property_type: 'HOME',
+          default_align_billing_to_start: true,
+        },
   })
 
   const propertyType = watch('property_type')
@@ -69,12 +75,12 @@ export default function PropertyForm({
           lng: property.lng || undefined,
           notes: property.notes || '',
           default_billing_day: property.default_billing_day || undefined,
-          default_align_billing_to_start: property.default_align_billing_to_start ?? true
+          default_align_billing_to_start: property.default_align_billing_to_start ?? true,
         })
       } else {
         reset({
           property_type: 'HOME',
-          default_align_billing_to_start: true
+          default_align_billing_to_start: true,
         })
       }
     }
@@ -91,9 +97,9 @@ export default function PropertyForm({
         method,
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': getCsrfToken()
+          'X-CSRF-Token': getCsrfToken(),
         },
-        body: JSON.stringify(values)
+        body: JSON.stringify(values),
       })
 
       const result = await response.json()
@@ -104,7 +110,7 @@ export default function PropertyForm({
 
       showToast({
         type: 'success',
-        message: property ? 'Property updated successfully' : 'Property created successfully'
+        message: property ? 'Property updated successfully' : 'Property created successfully',
       })
 
       reset()
@@ -114,7 +120,7 @@ export default function PropertyForm({
       console.error('Error saving property:', error)
       showToast({
         type: 'error',
-        message: error.message || 'Failed to save property'
+        message: error.message || 'Failed to save property',
       })
     } finally {
       setIsSubmitting(false)
@@ -133,8 +139,6 @@ export default function PropertyForm({
     if (result.lng !== undefined) setValue('lng', result.lng)
   }
 
-
-
   return (
     <Modal
       isOpen={isOpen}
@@ -145,11 +149,7 @@ export default function PropertyForm({
         {/* Property Name */}
         <FormField name="name" label="Property Name" error={errors.name?.message}>
           {({ id }) => (
-            <TextField
-              id={id}
-              {...register('name')}
-              placeholder="Enter property name"
-            />
+            <TextField id={id} {...register('name')} placeholder="Enter property name" />
           )}
         </FormField>
 
@@ -159,7 +159,7 @@ export default function PropertyForm({
             <Select id={id} {...register('property_type')}>
               {PropertyTypeEnum.options.map((type) => (
                 <option key={type} value={type}>
-                  {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  {type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                 </option>
               ))}
             </Select>
@@ -167,7 +167,11 @@ export default function PropertyForm({
         </FormField>
 
         {/* Address with Autocomplete */}
-        <FormField name="physical_address" label="Physical Address" error={errors.physical_address?.message}>
+        <FormField
+          name="physical_address"
+          label="Physical Address"
+          error={errors.physical_address?.message}
+        >
           {({ id }) => (
             <AddressAutocomplete
               value={watch('physical_address') || ''}
@@ -211,8 +215,12 @@ export default function PropertyForm({
         {/* Billing Defaults */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Billing Defaults</h3>
-          
-          <FormField name="default_billing_day" label="Default Billing Day (1-31)" error={errors.default_billing_day?.message}>
+
+          <FormField
+            name="default_billing_day"
+            label="Default Billing Day (1-31)"
+            error={errors.default_billing_day?.message}
+          >
             {({ id }) => (
               <TextField
                 id={id}
@@ -257,19 +265,10 @@ export default function PropertyForm({
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-3">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
+          <Button type="button" variant="secondary" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={isSubmitting}
-          >
+          <Button type="submit" variant="primary" disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : property ? 'Update Property' : 'Create Property'}
           </Button>
         </div>

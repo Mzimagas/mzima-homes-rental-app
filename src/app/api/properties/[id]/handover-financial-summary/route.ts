@@ -13,7 +13,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -36,7 +38,7 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     const { data, error } = await admin
       .from('properties')
       .select('landlord_id')
@@ -56,15 +58,20 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
 }
 
 // GET /api/properties/[id]/handover-financial-summary - Get comprehensive handover financial summary
-export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const GET = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id from path /api/properties/[id]/handover-financial-summary
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
@@ -93,19 +100,19 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
       handoverPrice,
       costEntriesCount: costEntries.length,
       paymentReceiptsCount: paymentReceipts.length,
-      costEntries: costEntries.map(c => ({
+      costEntries: costEntries.map((c) => ({
         id: c.id,
         amount: c.amount_kes,
         category: c.cost_category,
         type: c.cost_type_id,
-        date: c.payment_date
+        date: c.payment_date,
       })),
-      paymentReceipts: paymentReceipts.map(p => ({
+      paymentReceipts: paymentReceipts.map((p) => ({
         id: p.id,
         amount: p.amount_kes,
         receipt_number: p.receipt_number,
-        date: p.payment_date
-      }))
+        date: p.payment_date,
+      })),
     })
 
     // Calculate totals
@@ -119,7 +126,7 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
       totalCosts,
       totalReceipts,
       remainingBalance,
-      totalIncome
+      totalIncome,
     })
 
     const summary = {
@@ -129,7 +136,7 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
       total_receipts_kes: totalReceipts,
       remaining_balance_kes: remainingBalance,
       total_income_kes: totalIncome,
-      payment_progress_percentage: handoverPrice > 0 ? (totalReceipts / handoverPrice) * 100 : 0
+      payment_progress_percentage: handoverPrice > 0 ? (totalReceipts / handoverPrice) * 100 : 0,
     }
 
     // Calculate cost breakdown by category from real data
@@ -139,7 +146,7 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
       property: {
         id: property.id,
         name: property.name,
-        handover_price_agreement_kes: handoverPrice
+        handover_price_agreement_kes: handoverPrice,
       },
       financial_summary: {
         handover_price_agreement_kes: handoverPrice,
@@ -147,18 +154,18 @@ export const GET = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRe
         total_receipts_kes: totalReceipts,
         remaining_balance_kes: remainingBalance,
         total_income_kes: totalIncome,
-        payment_progress_percentage: summary.payment_progress_percentage
+        payment_progress_percentage: summary.payment_progress_percentage,
       },
       cost_breakdown: {
         by_category: costsByCategory,
-        total_costs: totalCosts
+        total_costs: totalCosts,
       },
       cost_entries: costEntries || [],
       payment_receipts: paymentReceipts || [],
       counts: {
         total_cost_entries: costEntries?.length || 0,
-        total_payment_receipts: paymentReceipts?.length || 0
-      }
+        total_payment_receipts: paymentReceipts?.length || 0,
+      },
     }
 
     return NextResponse.json({ ok: true, data: response })

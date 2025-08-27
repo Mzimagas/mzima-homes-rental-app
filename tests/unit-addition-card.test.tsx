@@ -12,7 +12,7 @@ vi.mock('../src/hooks/usePropertyAccess', () => ({
         physical_address: '123 Test Street',
         property_type: 'HOME',
         notes: 'Test notes',
-        acquisition_notes: 'Test acquisition notes'
+        acquisition_notes: 'Test acquisition notes',
       },
       {
         property_id: '2',
@@ -20,10 +20,10 @@ vi.mock('../src/hooks/usePropertyAccess', () => ({
         physical_address: '456 Another Street',
         property_type: 'HOSTEL',
         notes: null,
-        acquisition_notes: null
-      }
-    ]
-  })
+        acquisition_notes: null,
+      },
+    ],
+  }),
 }))
 
 // Mock the PropertySearch component
@@ -40,7 +40,7 @@ vi.mock('../src/components/properties/components/PropertySearch', () => ({
         />
       </div>
     )
-  }
+  },
 }))
 
 // UnitForm removed - using workflow-based unit creation
@@ -51,7 +51,7 @@ vi.mock('../src/components/ui', () => ({
     <button onClick={onClick} data-variant={variant} data-size={size} {...props}>
       {children}
     </button>
-  )
+  ),
 }))
 
 describe('UnitAdditionCard', () => {
@@ -64,7 +64,7 @@ describe('UnitAdditionCard', () => {
 
   it('renders the component with header and search', () => {
     render(<UnitAdditionCard onUnitCreated={mockOnUnitCreated} />)
-    
+
     expect(screen.getByText('Add Units to Property')).toBeInTheDocument()
     expect(screen.getByText('Search for a property and add new units to it')).toBeInTheDocument()
     expect(screen.getByTestId('property-search')).toBeInTheDocument()
@@ -72,27 +72,31 @@ describe('UnitAdditionCard', () => {
 
   it('renders close button when onClose prop is provided', () => {
     render(<UnitAdditionCard onUnitCreated={mockOnUnitCreated} onClose={mockOnClose} />)
-    
+
     const closeButton = screen.getByTitle('Close')
     expect(closeButton).toBeInTheDocument()
-    
+
     fireEvent.click(closeButton)
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
 
   it('shows empty state when no search term is entered', () => {
     render(<UnitAdditionCard onUnitCreated={mockOnUnitCreated} />)
-    
+
     expect(screen.getByText('Search for Properties')).toBeInTheDocument()
-    expect(screen.getByText('Use the search bar above to find properties where you want to add new units')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Use the search bar above to find properties where you want to add new units'
+      )
+    ).toBeInTheDocument()
   })
 
   it('filters and displays properties based on search term', async () => {
     render(<UnitAdditionCard onUnitCreated={mockOnUnitCreated} />)
-    
+
     const searchInput = screen.getByTestId('search-input')
     fireEvent.change(searchInput, { target: { value: 'Test Property 1' } })
-    
+
     await waitFor(() => {
       expect(screen.getByText('Test Property 1')).toBeInTheDocument()
       expect(screen.getByText('123 Test Street')).toBeInTheDocument()
@@ -102,12 +106,14 @@ describe('UnitAdditionCard', () => {
 
   it('shows no results message when search yields no matches', async () => {
     render(<UnitAdditionCard onUnitCreated={mockOnUnitCreated} />)
-    
+
     const searchInput = screen.getByTestId('search-input')
     fireEvent.change(searchInput, { target: { value: 'Nonexistent Property' } })
-    
+
     await waitFor(() => {
-      expect(screen.getByText('No properties found matching "Nonexistent Property"')).toBeInTheDocument()
+      expect(
+        screen.getByText('No properties found matching "Nonexistent Property"')
+      ).toBeInTheDocument()
       expect(screen.getByText('Try adjusting your search terms')).toBeInTheDocument()
     })
   })
@@ -146,10 +152,10 @@ describe('UnitAdditionCard', () => {
 
   it('uses compact mode for PropertySearch', () => {
     render(<UnitAdditionCard onUnitCreated={mockOnUnitCreated} />)
-    
+
     const searchComponent = screen.getByTestId('property-search')
     const searchInput = screen.getByTestId('search-input')
-    
+
     expect(searchInput).toHaveAttribute('data-compact', 'true')
   })
 })

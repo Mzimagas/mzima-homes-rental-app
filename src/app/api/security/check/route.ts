@@ -11,7 +11,7 @@ async function handler(request: NextRequest) {
   // Validate body with Zod
   const schema = z.object({
     action: z.string().min(1).default('generic'),
-    email: z.string().email().optional()
+    email: z.string().email().optional(),
   })
   const parsed = schema.safeParse(body)
   if (!parsed.success) {
@@ -26,25 +26,34 @@ async function handler(request: NextRequest) {
   async function sha256Hex(input: string) {
     const buf = new TextEncoder().encode(input)
     const hash = await crypto.subtle.digest('SHA-256', buf)
-    return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('')
+    return Array.from(new Uint8Array(hash))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
   }
   const idHash = (await sha256Hex(identifier)).slice(0, 12)
   const lockKey = `lock:active:${action}:${idHash}`
   const lockedTtl = await redis.ttl(lockKey)
   if (lockedTtl && lockedTtl > 0) {
-    return NextResponse.json({ ok: false, reason: 'lock', retryAfterSec: lockedTtl }, { status: 429 })
+    return NextResponse.json(
+      { ok: false, reason: 'lock', retryAfterSec: lockedTtl },
+      { status: 429 }
+    )
   }
 
   return NextResponse.json({ ok: true, rateKey: `${ip}:${idPrefix}` })
 }
 
 const wrapped = compose(
-  (h) => withRateLimit(h, (req) => {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    return `security-check:${ip}`
-  }, 'security-check'),
-  withCsrf,
+  (h) =>
+    withRateLimit(
+      h,
+      (req) => {
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+        return `security-check:${ip}`
+      },
+      'security-check'
+    ),
+  withCsrf
 )
 
 export const POST = wrapped(handler)
-

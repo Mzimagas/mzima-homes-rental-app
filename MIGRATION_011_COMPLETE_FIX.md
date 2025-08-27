@@ -3,24 +3,30 @@
 ## 🚨 **Problems Identified & Resolved**
 
 ### **Problem 1: PostgreSQL ENUM Constraint Error**
+
 ```
 ERROR: 22P02: invalid input value for enum meter_type: "PREPAID"
 QUERY: UPDATE units SET meter_type = 'PREPAID' WHERE meter_type = 'TOKEN'
 ```
+
 **Root Cause**: `meter_type` is a PostgreSQL ENUM type, not TEXT with CHECK constraint
 
 ### **Problem 2: Default Value Casting Error**
+
 ```
 ERROR: 42804: default for column "meter_type" cannot be cast automatically to type meter_type_new
 ```
+
 **Root Cause**: Existing default value couldn't be automatically cast to new ENUM type
 
 ## ✅ **Complete Solution Implemented**
 
 ### **ENUM Migration Strategy**
+
 The migration now uses a **3-stage ENUM approach** with **default value handling**:
 
 #### **Stage 1: Preparation**
+
 ```sql
 -- Detect existing ENUM and default values
 -- Create temporary ENUM with old + new values
@@ -28,6 +34,7 @@ CREATE TYPE meter_type_new AS ENUM ('TOKEN', 'POSTPAID', 'ANALOG', 'NONE', 'PREP
 ```
 
 #### **Stage 2: Transition**
+
 ```sql
 -- Drop default value before type change
 ALTER TABLE units ALTER COLUMN meter_type DROP DEFAULT;
@@ -38,6 +45,7 @@ ALTER TABLE units ALTER COLUMN meter_type SET DEFAULT 'PREPAID'::meter_type_new;
 ```
 
 #### **Stage 3: Data Migration**
+
 ```sql
 -- Safely update values (no constraint violations)
 UPDATE units SET meter_type = 'PREPAID'::meter_type_new WHERE meter_type = 'TOKEN'::meter_type_new;
@@ -46,6 +54,7 @@ UPDATE units SET meter_type = 'POSTPAID_ANALOGUE'::meter_type_new WHERE meter_ty
 ```
 
 #### **Stage 4: Finalization**
+
 ```sql
 -- Create final ENUM with only new values
 CREATE TYPE meter_type_final AS ENUM ('PREPAID', 'POSTPAID_ANALOGUE');
@@ -62,6 +71,7 @@ DROP TYPE meter_type_new;
 ## 🔧 **Key Technical Improvements**
 
 ### **Default Value Handling**
+
 - ✅ **Automatic Detection** - Identifies existing default values
 - ✅ **Safe Removal** - Drops defaults before ENUM type changes
 - ✅ **Proper Restoration** - Sets appropriate defaults for new ENUM types
@@ -69,6 +79,7 @@ DROP TYPE meter_type_new;
 - ✅ **Error Prevention** - Prevents "cannot be cast automatically" errors
 
 ### **ENUM Migration Safety**
+
 - ✅ **No Constraint Violations** - Temporary ENUM includes all values
 - ✅ **Data Integrity** - All existing data preserved throughout migration
 - ✅ **Automatic Cleanup** - Temporary types removed after successful migration
@@ -76,12 +87,14 @@ DROP TYPE meter_type_new;
 - ✅ **Rollback Capability** - Transaction safety for error recovery
 
 ### **Water Meter Management**
+
 - ✅ **Conditional Fields** - Water meter options only when water not included
 - ✅ **Two Meter Types** - Direct Tavevo and Internal Submeter options
 - ✅ **Meter Tracking** - Optional meter number field for identification
 - ✅ **Smart Validation** - Ensures proper water meter configuration
 
 ### **Shared Meter Infrastructure**
+
 - ✅ **Multi-Unit Support** - Meters shared between multiple units
 - ✅ **Cost Allocation** - Percentage-based cost distribution system
 - ✅ **ENUM Integration** - Proper ENUM support for shared meter types
@@ -90,6 +103,7 @@ DROP TYPE meter_type_new;
 ## 📊 **Migration Process Overview**
 
 ### **Complete Migration Steps**
+
 1. **Investigation** - Detect ENUM type and existing default values
 2. **Preparation** - Create temporary ENUM with all values
 3. **Default Handling** - Remove defaults before type changes
@@ -105,15 +119,17 @@ DROP TYPE meter_type_new;
 13. **Optimization** - Add indexes and helper functions
 
 ### **Value Mapping**
+
 ```
 TOKEN → PREPAID
-ANALOG → POSTPAID_ANALOGUE  
+ANALOG → POSTPAID_ANALOGUE
 POSTPAID → POSTPAID_ANALOGUE
 NONE → PREPAID (default)
 Unexpected values → PREPAID (fallback)
 ```
 
 ### **Default Value Evolution**
+
 ```
 Original: 'TOKEN'::meter_type (or similar)
 Temporary: 'PREPAID'::meter_type_new
@@ -123,6 +139,7 @@ Final: 'PREPAID'::meter_type_final
 ## 🧪 **Comprehensive Testing Results**
 
 ### **ENUM Migration Testing**
+
 - ✅ **1 unit** with TOKEN meter type successfully migrated
 - ✅ **All ENUM operations** completed without constraint violations
 - ✅ **Default values** handled correctly throughout migration
@@ -130,12 +147,14 @@ Final: 'PREPAID'::meter_type_final
 - ✅ **Temporary types** cleaned up successfully
 
 ### **Water Meter Testing**
+
 - ✅ **1 unit** requires water meter configuration (water not included)
 - ✅ **Conditional fields** work correctly in frontend
 - ✅ **Validation logic** ensures proper meter type selection
 - ✅ **Database schema** supports all water meter scenarios
 
 ### **Shared Meter Testing**
+
 - ✅ **Infrastructure created** for multi-unit meter sharing
 - ✅ **Cost allocation system** ready for percentage-based billing
 - ✅ **RLS policies** provide secure access control
@@ -144,6 +163,7 @@ Final: 'PREPAID'::meter_type_final
 ## 🚀 **Production Readiness**
 
 ### **Migration Safety Checklist**
+
 - ✅ **ENUM constraint handling** - No more enum value errors
 - ✅ **Default value handling** - No more casting errors
 - ✅ **Data integrity maintained** - All existing data preserved
@@ -153,6 +173,7 @@ Final: 'PREPAID'::meter_type_final
 - ✅ **Frontend compatibility** - UI components ready for new schema
 
 ### **New Features Ready**
+
 - ✅ **Simplified KPLC Meter Types** - Prepaid and Postpaid (Analogue)
 - ✅ **Smart Water Meter Management** - Conditional configuration system
 - ✅ **Shared Meter Infrastructure** - Multi-unit meter support
@@ -162,6 +183,7 @@ Final: 'PREPAID'::meter_type_final
 ## 📝 **Deployment Instructions**
 
 ### **Step-by-Step Deployment**
+
 1. **Apply Migration** - Run fixed `011_update_meter_types.sql`
 2. **Monitor Logs** - Watch for successful ENUM and default operations
 3. **Verify Schema** - Ensure final ENUM type and default value are correct
@@ -170,6 +192,7 @@ Final: 'PREPAID'::meter_type_final
 6. **Deploy Application** - Release enhanced meter management system
 
 ### **Expected Log Output**
+
 ```
 NOTICE: Found ENUM type for meter_type: [enum_name]
 NOTICE: Created temporary ENUM type: meter_type_new

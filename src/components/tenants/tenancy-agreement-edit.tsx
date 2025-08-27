@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from 'react'
 import supabase from '../../lib/supabase-client'
@@ -36,7 +36,7 @@ export default function TenancyAgreementEdit({ agreementId, onSaved }: Props) {
     setError(null)
     try {
       const body: any = {
-        align_billing_to_start: alignToStart
+        align_billing_to_start: alignToStart,
       }
       if (!alignToStart && billingDay) body.billing_day = Number(billingDay)
 
@@ -44,7 +44,7 @@ export default function TenancyAgreementEdit({ agreementId, onSaved }: Props) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       })
       const j = await res.json()
       if (!res.ok || !j.ok) throw new Error(j?.message || 'Save failed')
@@ -60,19 +60,35 @@ export default function TenancyAgreementEdit({ agreementId, onSaved }: Props) {
     <div className="border rounded p-3 space-y-3">
       {error && <div className="text-red-600 text-sm">{error}</div>}
       <div className="flex items-center gap-2">
-        <input type="checkbox" checked={alignToStart} onChange={e=>setAlignToStart(e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={alignToStart}
+          onChange={(e) => setAlignToStart(e.target.checked)}
+        />
         <label>Align rent due date to tenancy start date</label>
       </div>
       <div>
         <label className="block text-sm">Custom Due Day (1–31)</label>
-        <input type="number" min={1} max={31} value={billingDay as any} onChange={e=>setBillingDay((e.target.value as any))} disabled={alignToStart}
-          className="border rounded px-2 py-1 disabled:bg-gray-100" />
-        <p className="text-xs text-gray-500">If the month has fewer days, the due date clamps to the last day.</p>
+        <input
+          type="number"
+          min={1}
+          max={31}
+          value={billingDay as any}
+          onChange={(e) => setBillingDay(e.target.value as any)}
+          disabled={alignToStart}
+          className="border rounded px-2 py-1 disabled:bg-gray-100"
+        />
+        <p className="text-xs text-gray-500">
+          If the month has fewer days, the due date clamps to the last day.
+        </p>
       </div>
-      <button onClick={onSave} disabled={saving} className="bg-blue-600 text-white px-3 py-1 rounded">
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="bg-blue-600 text-white px-3 py-1 rounded"
+      >
         {saving ? 'Saving…' : 'Save'}
       </button>
     </div>
   )
 }
-

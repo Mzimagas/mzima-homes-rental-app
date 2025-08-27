@@ -51,23 +51,27 @@ export default function AdvancedRoleManager() {
     setLoading(true)
     try {
       // Get current user first
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
       if (authError) {
         console.error('Auth error:', authError)
         return
       }
 
       if (user) {
-        setUsers([{
-          id: user.id,
-          email: user.email || 'Unknown',
-          created_at: user.created_at,
-          last_sign_in_at: user.last_sign_in_at
-        }])
+        setUsers([
+          {
+            id: user.id,
+            email: user.email || 'Unknown',
+            created_at: user.created_at,
+            last_sign_in_at: user.last_sign_in_at,
+          },
+        ])
 
         // Load user roles using the database function
-        const { data: roleResult, error: rolesError } = await supabase
-          .rpc('get_current_user_roles')
+        const { data: roleResult, error: rolesError } = await supabase.rpc('get_current_user_roles')
 
         if (rolesError) {
           console.error('Error loading user roles:', rolesError)
@@ -148,13 +152,20 @@ export default function AdvancedRoleManager() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800 border-red-200'
-      case 'finance_manager': return 'bg-green-100 text-green-800 border-green-200'
-      case 'property_manager': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'legal': return 'bg-purple-100 text-purple-800 border-purple-200'
-      case 'workflow_manager': return 'bg-orange-100 text-orange-800 border-orange-200'
-      case 'risk_manager': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'admin':
+        return 'bg-red-100 text-red-800 border-red-200'
+      case 'finance_manager':
+        return 'bg-green-100 text-green-800 border-green-200'
+      case 'property_manager':
+        return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'legal':
+        return 'bg-purple-100 text-purple-800 border-purple-200'
+      case 'workflow_manager':
+        return 'bg-orange-100 text-orange-800 border-orange-200'
+      case 'risk_manager':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
@@ -176,7 +187,9 @@ export default function AdvancedRoleManager() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Advanced Role Management</h3>
-          <p className="text-sm text-gray-600">Manage user roles and permissions across the system</p>
+          <p className="text-sm text-gray-600">
+            Manage user roles and permissions across the system
+          </p>
         </div>
         <div className="flex space-x-3">
           <Button
@@ -205,7 +218,9 @@ export default function AdvancedRoleManager() {
       {/* Demo Mode Indicator */}
       {demoMode && (
         <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-          <p className="text-sm text-purple-700">🎭 Demo Mode Active - Showing sample data for demonstration</p>
+          <p className="text-sm text-purple-700">
+            🎭 Demo Mode Active - Showing sample data for demonstration
+          </p>
         </div>
       )}
 
@@ -227,7 +242,7 @@ export default function AdvancedRoleManager() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
             <h4 className="text-lg font-semibold mb-4">Assign Role</h4>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">User</label>
@@ -237,7 +252,7 @@ export default function AdvancedRoleManager() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Select user...</option>
-                  {displayUsers.map(user => (
+                  {displayUsers.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.email} {demoMode ? '(Demo)' : ''}
                     </option>
@@ -253,7 +268,7 @@ export default function AdvancedRoleManager() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Select role...</option>
-                  {availableRoles.map(role => (
+                  {availableRoles.map((role) => (
                     <option key={role.role} value={role.role}>
                       {role.display_name} - {role.description}
                     </option>
@@ -263,15 +278,10 @@ export default function AdvancedRoleManager() {
             </div>
 
             <div className="flex justify-end space-x-3 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => setShowAssignModal(false)}
-              >
+              <Button variant="outline" onClick={() => setShowAssignModal(false)}>
                 Cancel
               </Button>
-              <Button onClick={assignRole}>
-                Assign Role
-              </Button>
+              <Button onClick={assignRole}>Assign Role</Button>
             </div>
           </div>
         </div>
@@ -280,39 +290,40 @@ export default function AdvancedRoleManager() {
       {/* Current Role Assignments */}
       <div className="space-y-4">
         <h4 className="font-medium text-gray-900">Current Role Assignments</h4>
-        
+
         {displayUserRoles.length === 0 ? (
           <div className="text-center py-8">
             {error ? (
               <div className="text-gray-500">
                 <p>Unable to load role assignments due to permissions.</p>
-                <p className="text-sm mt-2">This feature requires admin access to view all user roles.</p>
-                <Button
-                  onClick={loadData}
-                  variant="outline"
-                  className="mt-3"
-                >
+                <p className="text-sm mt-2">
+                  This feature requires admin access to view all user roles.
+                </p>
+                <Button onClick={loadData} variant="outline" className="mt-3">
                   Try Again
                 </Button>
               </div>
             ) : (
-              <div className="text-gray-500">
-                No role assignments found
-              </div>
+              <div className="text-gray-500">No role assignments found</div>
             )}
           </div>
         ) : (
           <div className="space-y-3">
-            {displayUserRoles.map(userRole => {
-              const user = displayUsers.find(u => u.id === userRole.user_id)
-              const roleDefinition = availableRoles.find(r => r.role === userRole.role)
-              
+            {displayUserRoles.map((userRole) => {
+              const user = displayUsers.find((u) => u.id === userRole.user_id)
+              const roleDefinition = availableRoles.find((r) => r.role === userRole.role)
+
               return (
-                <div key={userRole.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={userRole.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
                       <div className="font-medium">{user?.email || 'Unknown User'}</div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(userRole.role)}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(userRole.role)}`}
+                      >
                         {roleDefinition?.display_name || userRole.role}
                       </span>
                       {!userRole.is_active && (
@@ -325,12 +336,10 @@ export default function AdvancedRoleManager() {
                       Assigned: {new Date(userRole.assigned_at).toLocaleDateString()}
                     </div>
                     {roleDefinition && (
-                      <div className="text-xs text-gray-400 mt-1">
-                        {roleDefinition.description}
-                      </div>
+                      <div className="text-xs text-gray-400 mt-1">{roleDefinition.description}</div>
                     )}
                   </div>
-                  
+
                   {userRole.is_active && (
                     <Button
                       size="sm"
@@ -350,9 +359,11 @@ export default function AdvancedRoleManager() {
 
       {/* Role Definitions Reference - Compact with Expandable Permissions */}
       <div className="mt-6 pt-4 border-t">
-        <h4 className="font-medium text-gray-900 mb-3 text-base sm:text-lg">Available Roles & Permissions</h4>
+        <h4 className="font-medium text-gray-900 mb-3 text-base sm:text-lg">
+          Available Roles & Permissions
+        </h4>
         <div className="space-y-2">
-          {availableRoles.slice(0, 6).map(role => {
+          {availableRoles.slice(0, 6).map((role) => {
             const isExpanded = expandedRoles.has(role.role)
 
             return (
@@ -365,7 +376,9 @@ export default function AdvancedRoleManager() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(role.role)}`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(role.role)}`}
+                        >
                           {role.display_name}
                         </span>
                         <span className="text-xs text-gray-500">L{role.hierarchy_level}</span>
@@ -376,7 +389,9 @@ export default function AdvancedRoleManager() {
                       <p className="text-xs text-gray-600 leading-relaxed">{role.description}</p>
                     </div>
                     <div className="ml-2 flex-shrink-0">
-                      <span className={`text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                      <span
+                        className={`text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                      >
                         ▼
                       </span>
                     </div>
@@ -392,24 +407,29 @@ export default function AdvancedRoleManager() {
                       </h5>
                       {/* Mobile: Vertical list */}
                       <div className="block sm:hidden space-y-1">
-                        {role.permissions.map(permission => (
+                        {role.permissions.map((permission) => (
                           <div
                             key={permission}
                             className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded border-l-2 border-blue-300"
                           >
-                            • {permission === '*' ? '🔓 ALL PERMISSIONS' : permission.replace(/_/g, ' ')}
+                            •{' '}
+                            {permission === '*'
+                              ? '🔓 ALL PERMISSIONS'
+                              : permission.replace(/_/g, ' ')}
                           </div>
                         ))}
                       </div>
                       {/* Desktop: Badge layout */}
                       <div className="hidden sm:flex flex-wrap gap-1">
-                        {role.permissions.map(permission => (
+                        {role.permissions.map((permission) => (
                           <span
                             key={permission}
                             className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-mono"
                             title={permission}
                           >
-                            {permission === '*' ? '🔓 ALL PERMISSIONS' : permission.replace(/_/g, ' ')}
+                            {permission === '*'
+                              ? '🔓 ALL PERMISSIONS'
+                              : permission.replace(/_/g, ' ')}
                           </span>
                         ))}
                       </div>

@@ -1,25 +1,25 @@
-import { 
-  HandoverCostType, 
-  HandoverCostCategory, 
-  HANDOVER_COST_TYPES, 
-  HANDOVER_COST_CATEGORY_LABELS 
+import {
+  HandoverCostType,
+  HandoverCostCategory,
+  HANDOVER_COST_TYPES,
+  HANDOVER_COST_CATEGORY_LABELS,
 } from '../types/property-management.types'
 import { HandoverCostEntry, PaymentReceipt } from '../services/handover-financials.service'
 
 // Get handover cost type label by ID
 export function getHandoverCostTypeLabel(costTypeId: string): string {
-  const costType = HANDOVER_COST_TYPES.find(type => type.id === costTypeId)
+  const costType = HANDOVER_COST_TYPES.find((type) => type.id === costTypeId)
   return costType?.label || costTypeId
 }
 
 // Get handover cost type by ID
 export function getHandoverCostType(costTypeId: string): HandoverCostType | undefined {
-  return HANDOVER_COST_TYPES.find(type => type.id === costTypeId)
+  return HANDOVER_COST_TYPES.find((type) => type.id === costTypeId)
 }
 
 // Get handover cost types by category
 export function getHandoverCostTypesByCategory(category: HandoverCostCategory): HandoverCostType[] {
-  return HANDOVER_COST_TYPES.filter(type => type.category === category)
+  return HANDOVER_COST_TYPES.filter((type) => type.category === category)
 }
 
 // Get category label
@@ -28,18 +28,20 @@ export function getHandoverCostCategoryLabel(category: HandoverCostCategory): st
 }
 
 // Calculate total costs by category
-export function calculateHandoverCostsByCategory(costs: HandoverCostEntry[]): Record<HandoverCostCategory, number> {
-  const totals: Record<HandoverCostCategory, number> = {
-    PRE_HANDOVER: 0,
-    AGREEMENT_LEGAL: 0,
-    LCB_PROCESS: 0,
-    PAYMENT_TRACKING: 0,
-    TRANSFER_REGISTRATION: 0,
-    OTHER: 0
+export function calculateHandoverCostsByCategory(
+  costs: HandoverCostEntry[]
+): Record<string, number> {
+  const totals: Record<string, number> = {
+    CLIENT_ENGAGEMENT: 0,
+    REGULATORY_LEGAL: 0,
+    SURVEY_MAPPING: 0,
+    ADMINISTRATIVE: 0,
+    TOTAL_ACQUISITION: 0,
+    OTHER: 0,
   }
 
-  costs.forEach(cost => {
-    if (totals.hasOwnProperty(cost.cost_category)) {
+  costs.forEach((cost) => {
+    if (Object.hasOwn(totals, cost.cost_category)) {
       totals[cost.cost_category] += cost.amount_kes || 0
     }
   })
@@ -101,7 +103,7 @@ export function validateHandoverCostEntry(cost: Partial<HandoverCostEntry>): str
   }
 
   // Validate category
-  if (cost.cost_category && !HANDOVER_COST_CATEGORY_LABELS.hasOwnProperty(cost.cost_category)) {
+  if (cost.cost_category && !Object.hasOwn(HANDOVER_COST_CATEGORY_LABELS, cost.cost_category)) {
     errors.push('Invalid cost category')
   }
 
@@ -132,29 +134,29 @@ export function validatePaymentReceiptEntry(receipt: Partial<PaymentReceipt>): s
 // Get next receipt number
 export function getNextReceiptNumber(existingReceipts: PaymentReceipt[]): number {
   if (existingReceipts.length === 0) return 1
-  const maxReceiptNumber = Math.max(...existingReceipts.map(r => r.receipt_number))
+  const maxReceiptNumber = Math.max(...existingReceipts.map((r) => r.receipt_number))
   return maxReceiptNumber + 1
 }
 
 // Sort costs by category and creation date
 export function sortHandoverCostsByCategory(costs: HandoverCostEntry[]): HandoverCostEntry[] {
-  const categoryOrder: HandoverCostCategory[] = [
-    'PRE_HANDOVER',
-    'AGREEMENT_LEGAL', 
-    'LCB_PROCESS',
-    'PAYMENT_TRACKING',
-    'TRANSFER_REGISTRATION',
-    'OTHER'
+  const categoryOrder: string[] = [
+    'CLIENT_ENGAGEMENT',
+    'REGULATORY_LEGAL',
+    'SURVEY_MAPPING',
+    'ADMINISTRATIVE',
+    'TOTAL_ACQUISITION',
+    'OTHER',
   ]
 
   return costs.sort((a, b) => {
     const categoryIndexA = categoryOrder.indexOf(a.cost_category)
     const categoryIndexB = categoryOrder.indexOf(b.cost_category)
-    
+
     if (categoryIndexA !== categoryIndexB) {
       return categoryIndexA - categoryIndexB
     }
-    
+
     // If same category, sort by creation date
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   })
@@ -176,22 +178,24 @@ export function getHandoverCostSummaryByCategory(costs: HandoverCostEntry[]): Ar
   const categories: HandoverCostCategory[] = [
     'PRE_HANDOVER',
     'AGREEMENT_LEGAL',
-    'LCB_PROCESS', 
+    'LCB_PROCESS',
     'PAYMENT_TRACKING',
     'TRANSFER_REGISTRATION',
-    'OTHER'
+    'OTHER',
   ]
 
-  return categories.map(category => {
-    const categoryCosts = costs.filter(cost => cost.cost_category === category)
-    return {
-      category,
-      label: getHandoverCostCategoryLabel(category),
-      total: categoryCosts.reduce((sum, cost) => sum + (cost.amount_kes || 0), 0),
-      count: categoryCosts.length,
-      costs: categoryCosts
-    }
-  }).filter(summary => summary.count > 0) // Only return categories with costs
+  return categories
+    .map((category) => {
+      const categoryCosts = costs.filter((cost) => cost.cost_category === category)
+      return {
+        category,
+        label: getHandoverCostCategoryLabel(category),
+        total: categoryCosts.reduce((sum, cost) => sum + (cost.amount_kes || 0), 0),
+        count: categoryCosts.length,
+        costs: categoryCosts,
+      }
+    })
+    .filter((summary) => summary.count > 0) // Only return categories with costs
 }
 
 // Calculate financial metrics
@@ -214,6 +218,6 @@ export function calculateHandoverFinancialMetrics(
     netIncome,
     remainingBalance,
     paymentProgress,
-    profitMargin: Math.round(profitMargin * 100) / 100 // Round to 2 decimal places
+    profitMargin: Math.round(profitMargin * 100) / 100, // Round to 2 decimal places
   }
 }

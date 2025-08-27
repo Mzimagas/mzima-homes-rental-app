@@ -121,9 +121,9 @@ export class PaymentSecurityService {
           warningsCount: warnings.length,
           blockersCount: blockers.length,
           amount: paymentData.amount,
-          method: paymentData.method
+          method: paymentData.method,
         },
-        risk_level: riskLevel
+        risk_level: riskLevel,
       })
 
       return {
@@ -131,19 +131,18 @@ export class PaymentSecurityService {
         riskLevel,
         warnings,
         blockers,
-        recommendations
+        recommendations,
       }
-
     } catch (error) {
       console.error('Security check failed:', error)
-      
+
       // Fail secure - if security check fails, treat as high risk
       return {
         isSecure: false,
         riskLevel: 'high',
         warnings: ['Security check failed'],
         blockers: ['Unable to verify payment security'],
-        recommendations: ['Manual review required']
+        recommendations: ['Manual review required'],
       }
     }
   }
@@ -186,7 +185,10 @@ export class PaymentSecurityService {
 
       // 4. Check for IP/location anomalies (if available)
       if (userContext.ipAddress) {
-        const locationCheck = await this.checkLocationAnomaly(paymentData.tenantId, userContext.ipAddress)
+        const locationCheck = await this.checkLocationAnomaly(
+          paymentData.tenantId,
+          userContext.ipAddress
+        )
         riskScore += locationCheck.riskScore
         if (locationCheck.reasons.length > 0) {
           reasons.push(...locationCheck.reasons)
@@ -220,27 +222,26 @@ export class PaymentSecurityService {
           requiresManualReview,
           reasons,
           amount: paymentData.amount,
-          method: paymentData.method
+          method: paymentData.method,
         },
-        risk_level: isFraudulent ? 'high' : requiresManualReview ? 'medium' : 'low'
+        risk_level: isFraudulent ? 'high' : requiresManualReview ? 'medium' : 'low',
       })
 
       return {
         isFraudulent,
         riskScore,
         reasons,
-        requiresManualReview
+        requiresManualReview,
       }
-
     } catch (error) {
       console.error('Fraud detection failed:', error)
-      
+
       // Fail secure - if fraud detection fails, require manual review
       return {
         isFraudulent: false,
         riskScore: 60,
         reasons: ['Fraud detection system unavailable'],
-        requiresManualReview: true
+        requiresManualReview: true,
       }
     }
   }
@@ -252,11 +253,11 @@ export class PaymentSecurityService {
     try {
       // In a real implementation, this would go to a dedicated audit log table
       // For now, we'll use console logging and could extend to external services
-      
+
       const logEntry = {
         ...event,
         created_at: new Date().toISOString(),
-        id: crypto.randomUUID()
+        id: crypto.randomUUID(),
       }
 
       console.log('Security Event Logged:', logEntry)
@@ -266,7 +267,6 @@ export class PaymentSecurityService {
       // - Database audit table
       // - External SIEM system
       // - Cloud logging service (AWS CloudTrail, Google Cloud Audit Logs)
-      
     } catch (error) {
       console.error('Failed to log security event:', error)
       // Don't fail the main operation if logging fails
@@ -306,7 +306,7 @@ export class PaymentSecurityService {
     return {
       isSuspicious: warnings.length > 0,
       warnings,
-      riskLevel
+      riskLevel,
     }
   }
 
@@ -329,23 +329,23 @@ export class PaymentSecurityService {
         return {
           isUnusual: false,
           warning: '',
-          riskLevel: 'low'
+          riskLevel: 'low',
         }
       }
 
-      const amounts = recentPayments.map(p => p.amount_kes)
+      const amounts = recentPayments.map((p) => p.amount_kes)
       const avgAmount = amounts.reduce((sum, amount) => sum + amount, 0) / amounts.length
       const maxAmount = Math.max(...amounts)
       const minAmount = Math.min(...amounts)
 
       // Check if current payment is significantly different
       const currentAmount = paymentData.amount
-      
+
       if (currentAmount > maxAmount * 2) {
         return {
           isUnusual: true,
           warning: 'Payment amount is significantly higher than usual',
-          riskLevel: 'high'
+          riskLevel: 'high',
         }
       }
 
@@ -353,7 +353,7 @@ export class PaymentSecurityService {
         return {
           isUnusual: true,
           warning: 'Payment amount is higher than average',
-          riskLevel: 'medium'
+          riskLevel: 'medium',
         }
       }
 
@@ -361,22 +361,21 @@ export class PaymentSecurityService {
         return {
           isUnusual: true,
           warning: 'Payment amount is significantly lower than usual',
-          riskLevel: 'medium'
+          riskLevel: 'medium',
         }
       }
 
       return {
         isUnusual: false,
         warning: '',
-        riskLevel: 'low'
+        riskLevel: 'low',
       }
-
     } catch (error) {
       console.error('Error validating payment amount:', error)
       return {
         isUnusual: false,
         warning: '',
-        riskLevel: 'low'
+        riskLevel: 'low',
       }
     }
   }
@@ -400,9 +399,8 @@ export class PaymentSecurityService {
         .limit(1)
 
       return {
-        isDuplicate: existingPayments && existingPayments.length > 0
+        isDuplicate: existingPayments && existingPayments.length > 0,
       }
-
     } catch (error) {
       console.error('Error checking duplicate transactions:', error)
       return { isDuplicate: false }
@@ -426,17 +424,17 @@ export class PaymentSecurityService {
           return {
             isValid: false,
             warning: 'M-Pesa transaction code format is invalid',
-            riskLevel: 'medium'
+            riskLevel: 'medium',
           }
         }
         break
-      
+
       case 'BANK_TRANSFER':
         if (paymentData.txRef.length < 5) {
           return {
             isValid: false,
             warning: 'Bank reference number appears too short',
-            riskLevel: 'medium'
+            riskLevel: 'medium',
           }
         }
         break
@@ -448,20 +446,24 @@ export class PaymentSecurityService {
   /**
    * Check payment timing for anomalies
    */
-  private static checkPaymentTiming(
-    paymentData: PaymentFormValues
-  ): { isUnusual: boolean; warning: string; riskLevel: 'low' | 'medium' | 'high' } {
+  private static checkPaymentTiming(paymentData: PaymentFormValues): {
+    isUnusual: boolean
+    warning: string
+    riskLevel: 'low' | 'medium' | 'high'
+  } {
     const paymentDate = new Date(paymentData.paymentDate)
     const now = new Date()
-    
+
     // Check if payment date is in the future (beyond reasonable limits)
-    const daysDifference = Math.ceil((paymentDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    
+    const daysDifference = Math.ceil(
+      (paymentDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    )
+
     if (daysDifference > 7) {
       return {
         isUnusual: true,
         warning: 'Payment date is too far in the future',
-        riskLevel: 'medium'
+        riskLevel: 'medium',
       }
     }
 
@@ -470,7 +472,7 @@ export class PaymentSecurityService {
       return {
         isUnusual: true,
         warning: 'Payment date is more than a year old',
-        riskLevel: 'medium'
+        riskLevel: 'medium',
       }
     }
 
@@ -487,7 +489,7 @@ export class PaymentSecurityService {
     try {
       // Check for too many payments in the last hour
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-      
+
       const { data: recentPayments } = await supabase
         .from('payments')
         .select('id')
@@ -496,9 +498,8 @@ export class PaymentSecurityService {
 
       // Allow maximum 5 payments per hour per tenant
       return {
-        isExceeded: recentPayments && recentPayments.length >= 5
+        isExceeded: recentPayments && recentPayments.length >= 5,
       }
-
     } catch (error) {
       console.error('Error checking rate limit:', error)
       return { isExceeded: false }

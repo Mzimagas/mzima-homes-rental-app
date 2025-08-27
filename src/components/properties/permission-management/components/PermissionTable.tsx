@@ -20,7 +20,7 @@ interface PermissionTableProps {
   totalPages: number
   onPageChange: (page: number) => void
   className?: string
-  availableUsers?: Array<{id: string, email: string, name?: string}>
+  availableUsers?: Array<{ id: string; email: string; name?: string }>
 }
 
 export default function PermissionTable({
@@ -38,17 +38,16 @@ export default function PermissionTable({
   totalPages,
   onPageChange,
   className = '',
-  availableUsers = []
+  availableUsers = [],
 }: PermissionTableProps) {
-
   const getUserDisplayName = (permission: UserPermissions) => {
-    const user = availableUsers.find(u => u.id === permission.userId)
+    const user = availableUsers.find((u) => u.id === permission.userId)
     console.log('Getting display name for permission:', {
       permissionUserId: permission.userId,
       permissionEmail: permission.email,
       foundUser: user,
       userName: user?.name,
-      availableUsersCount: availableUsers.length
+      availableUsersCount: availableUsers.length,
     })
 
     if (user?.name) return user.name
@@ -65,7 +64,7 @@ export default function PermissionTable({
   }
 
   const getUserEmail = (permission: UserPermissions) => {
-    const user = availableUsers.find(u => u.id === permission.userId)
+    const user = availableUsers.find((u) => u.id === permission.userId)
     const finalEmail = user?.email || permission.email
     console.log('Getting email for permission:', {
       permissionUserId: permission.userId,
@@ -73,7 +72,7 @@ export default function PermissionTable({
       foundUser: !!user,
       userEmail: user?.email,
       finalEmail,
-      availableUsersCount: availableUsers.length
+      availableUsersCount: availableUsers.length,
     })
     return finalEmail
   }
@@ -86,7 +85,7 @@ export default function PermissionTable({
   }>({
     show: false,
     index: null,
-    userName: ''
+    userName: '',
   })
 
   // Handle delete with confirmation
@@ -95,7 +94,7 @@ export default function PermissionTable({
     setDeleteConfirmation({
       show: true,
       index,
-      userName
+      userName,
     })
   }
 
@@ -146,12 +145,17 @@ export default function PermissionTable({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-blue-900">
-              {selectedPermissions.length} permission{selectedPermissions.length === 1 ? '' : 's'} selected
+              {selectedPermissions.length} permission{selectedPermissions.length === 1 ? '' : 's'}{' '}
+              selected
             </span>
             <div className="flex gap-2">
               <Button
                 onClick={() => {
-                  if (window.confirm(`Are you sure you want to remove ${selectedPermissions.length} permission${selectedPermissions.length === 1 ? '' : 's'}? This action cannot be undone.`)) {
+                  if (
+                    window.confirm(
+                      `Are you sure you want to remove ${selectedPermissions.length} permission${selectedPermissions.length === 1 ? '' : 's'}? This action cannot be undone.`
+                    )
+                  ) {
                     onBulkRemove()
                   }
                 }}
@@ -160,11 +164,7 @@ export default function PermissionTable({
               >
                 🗑️ Remove Selected
               </Button>
-              <Button
-                onClick={onClearSelection}
-                variant="secondary"
-                className="text-sm"
-              >
+              <Button onClick={onClearSelection} variant="secondary" className="text-sm">
                 Clear Selection
               </Button>
             </div>
@@ -181,7 +181,9 @@ export default function PermissionTable({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <input
                     type="checkbox"
-                    checked={selectedPermissions.length === permissions.length && permissions.length > 0}
+                    checked={
+                      selectedPermissions.length === permissions.length && permissions.length > 0
+                    }
                     onChange={() => {
                       if (selectedPermissions.length === permissions.length) {
                         onClearSelection()
@@ -218,9 +220,11 @@ export default function PermissionTable({
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {permissions.map((permission, index) => (
-                <tr 
+                <tr
                   key={`${permission.userId}-${index}`}
-                  className={selectedPermissions.includes(index) ? 'bg-blue-50' : 'hover:bg-gray-50'}
+                  className={
+                    selectedPermissions.includes(index) ? 'bg-blue-50' : 'hover:bg-gray-50'
+                  }
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
@@ -236,9 +240,7 @@ export default function PermissionTable({
                         <div className="text-sm font-medium text-gray-900">
                           {getUserDisplayName(permission)}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {getUserEmail(permission)}
-                        </div>
+                        <div className="text-sm text-gray-500">{getUserEmail(permission)}</div>
                       </div>
                     </div>
                   </td>
@@ -261,18 +263,18 @@ export default function PermissionTable({
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {getPermissionSummary(permission)}
-                    </div>
+                    <div className="text-sm text-gray-900">{getPermissionSummary(permission)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      permission.status === 'active' 
-                        ? 'bg-green-100 text-green-800'
-                        : permission.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        permission.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : permission.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                      }`}
+                    >
                       {permission.status || 'active'}
                     </span>
                   </td>
@@ -348,14 +350,22 @@ export default function PermissionTable({
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <svg
+                  className="w-6 h-6 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Confirm Permission Deletion
-                </h3>
+                <h3 className="text-lg font-medium text-gray-900">Confirm Permission Deletion</h3>
               </div>
             </div>
 
@@ -364,24 +374,14 @@ export default function PermissionTable({
                 Are you sure you want to delete permissions for{' '}
                 <span className="font-semibold text-gray-900">{deleteConfirmation.userName}</span>?
               </p>
-              <p className="text-sm text-red-600 mt-2">
-                This action cannot be undone.
-              </p>
+              <p className="text-sm text-red-600 mt-2">This action cannot be undone.</p>
             </div>
 
             <div className="flex justify-end space-x-3">
-              <Button
-                onClick={cancelDelete}
-                variant="secondary"
-                className="text-sm"
-              >
+              <Button onClick={cancelDelete} variant="secondary" className="text-sm">
                 Cancel
               </Button>
-              <Button
-                onClick={confirmDelete}
-                variant="danger"
-                className="text-sm"
-              >
+              <Button onClick={confirmDelete} variant="danger" className="text-sm">
                 Delete Permission
               </Button>
             </div>

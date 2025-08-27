@@ -11,7 +11,12 @@ interface HandoverStageModalProps {
   stageId: number
   handoverId: string
   stageData: any
-  onStageUpdate: (handoverId: string, stageId: number, newStatus: string, notes?: string) => Promise<void>
+  onStageUpdate: (
+    handoverId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string
+  ) => Promise<void>
 }
 
 export default function HandoverStageModal({
@@ -20,13 +25,13 @@ export default function HandoverStageModal({
   stageId,
   handoverId,
   stageData,
-  onStageUpdate
+  onStageUpdate,
 }: HandoverStageModalProps) {
   const [selectedStatus, setSelectedStatus] = useState(stageData?.status || 'Not Started')
   const [notes, setNotes] = useState(stageData?.notes || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const stage = HANDOVER_PIPELINE_STAGES.find(s => s.id === stageId)
+  const stage = HANDOVER_PIPELINE_STAGES.find((s) => s.id === stageId)
   if (!stage) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,11 +50,7 @@ export default function HandoverStageModal({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Stage ${stage.id}: ${stage.name}`}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={`Stage ${stage.id}: ${stage.name}`}>
       <div className="space-y-6">
         {/* Stage Description */}
         <div className="bg-gray-50 rounded-lg p-4">
@@ -67,13 +68,17 @@ export default function HandoverStageModal({
             <div className="space-y-2">
               <div>
                 <span className="font-medium text-gray-700">Status:</span>{' '}
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  stageData.status === 'Completed' || stageData.status === 'Verified' || stageData.status === 'Finalized'
-                    ? 'bg-green-100 text-green-800'
-                    : stageData.status === 'In Progress'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    stageData.status === 'Completed' ||
+                    stageData.status === 'Verified' ||
+                    stageData.status === 'Finalized'
+                      ? 'bg-green-100 text-green-800'
+                      : stageData.status === 'In Progress'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
                   {stageData.status}
                 </span>
               </div>
@@ -97,9 +102,7 @@ export default function HandoverStageModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Status Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Update Status
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Update Status</label>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
@@ -116,9 +119,7 @@ export default function HandoverStageModal({
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -137,7 +138,7 @@ export default function HandoverStageModal({
                 {stage.requiredFields.map((field) => (
                   <li key={field} className="flex items-center">
                     <span className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></span>
-                    {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                    {field.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
                   </li>
                 ))}
               </ul>
@@ -146,19 +147,10 @@ export default function HandoverStageModal({
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" variant="primary" disabled={isSubmitting}>
               {isSubmitting ? 'Updating...' : 'Update Stage'}
             </Button>
           </div>

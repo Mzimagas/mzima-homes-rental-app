@@ -51,7 +51,7 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -59,7 +59,7 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
     if (!name) return '??'
     return name
       .split(' ')
-      .map(word => word.charAt(0))
+      .map((word) => word.charAt(0))
       .join('')
       .toUpperCase()
       .slice(0, 2)
@@ -100,10 +100,14 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
               </h2>
               <p className="text-gray-600">{user.email}</p>
               <div className="flex items-center space-x-2 mt-1">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(user.isActive)}`}>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(user.isActive)}`}
+                >
                   {user.isActive ? 'Active' : 'Inactive'}
                 </span>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(user.role)}`}>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(user.role)}`}
+                >
                   {user.role}
                 </span>
               </div>
@@ -118,7 +122,12 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -130,7 +139,7 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
             {[
               { id: 'details', label: 'Details' },
               { id: 'permissions', label: 'Permissions' },
-              { id: 'activity', label: 'Activity' }
+              { id: 'activity', label: 'Activity' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -165,11 +174,15 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Member Number</label>
-                    <p className="mt-1 text-sm text-gray-900">#{user.memberNumber || 'Not assigned'}</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      #{user.memberNumber || 'Not assigned'}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-                    <p className="mt-1 text-sm text-gray-900">{user.phoneNumber || 'Not provided'}</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {user.phoneNumber || 'Not provided'}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Role</label>
@@ -177,7 +190,9 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Status</label>
-                    <p className="mt-1 text-sm text-gray-900">{user.isActive ? 'Active' : 'Inactive'}</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {user.isActive ? 'Active' : 'Inactive'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -195,7 +210,9 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
                     <p className="mt-1 text-sm text-gray-900">{formatDate(user.lastLogin)}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Profile Status</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Profile Status
+                    </label>
                     <p className="mt-1 text-sm text-gray-900">
                       {user.profileComplete ? (
                         <span className="text-green-600">Complete</span>
@@ -242,7 +259,9 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
                           <h4 className="font-medium text-gray-900">{activity.action}</h4>
                           <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
                         </div>
-                        <span className="text-xs text-gray-500">{formatDate(activity.timestamp)}</span>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(activity.timestamp)}
+                        </span>
                       </div>
                       {activity.ipAddress && (
                         <p className="text-xs text-gray-500 mt-2">IP: {activity.ipAddress}</p>

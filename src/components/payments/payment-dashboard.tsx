@@ -50,7 +50,8 @@ export default function PaymentDashboard() {
       // Get payment statistics
       const { data: payments, error: paymentsError } = await supabase
         .from('payments')
-        .select(`
+        .select(
+          `
           amount_kes,
           method,
           payment_date,
@@ -61,7 +62,8 @@ export default function PaymentDashboard() {
               )
             )
           )
-        `)
+        `
+        )
         .eq('tenants.units.properties.landlord_id', mockLandlordId)
 
       if (paymentsError) {
@@ -84,35 +86,38 @@ export default function PaymentDashboard() {
       const totalAmount = payments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0
       const averagePayment = totalPayments > 0 ? totalAmount / totalPayments : 0
 
-      const overdueAmount = overdueInvoices?.reduce(
-        (sum, inv) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 
-        0
-      ) || 0
+      const overdueAmount =
+        overdueInvoices?.reduce(
+          (sum, inv) => sum + (inv.amount_due_kes - inv.amount_paid_kes),
+          0
+        ) || 0
 
       // This month's payments
       const thisMonth = new Date()
       thisMonth.setDate(1)
-      const thisMonthPayments = payments?.filter(p => 
-        new Date(p.payment_date) >= thisMonth
-      ) || []
-      
+      const thisMonthPayments = payments?.filter((p) => new Date(p.payment_date) >= thisMonth) || []
+
       const thisMonthAmount = thisMonthPayments.reduce((sum, p) => sum + p.amount_kes, 0)
 
       // Payment methods breakdown
-      const methodStats = payments?.reduce((acc, payment) => {
-        const method = payment.method || 'UNKNOWN'
-        if (!acc[method]) {
-          acc[method] = { count: 0, amount: 0 }
-        }
-        acc[method].count++
-        acc[method].amount += payment.amount_kes
-        return acc
-      }, {} as Record<string, { count: number; amount: number }>) || {}
+      const methodStats =
+        payments?.reduce(
+          (acc, payment) => {
+            const method = payment.method || 'UNKNOWN'
+            if (!acc[method]) {
+              acc[method] = { count: 0, amount: 0 }
+            }
+            acc[method].count++
+            acc[method].amount += payment.amount_kes
+            return acc
+          },
+          {} as Record<string, { count: number; amount: number }>
+        ) || {}
 
       const paymentMethods = Object.entries(methodStats).map(([method, stats]) => ({
         method,
         count: stats.count,
-        amount: stats.amount
+        amount: stats.amount,
       }))
 
       setStats({
@@ -123,9 +128,8 @@ export default function PaymentDashboard() {
         overdueAmount,
         thisMonthPayments: thisMonthPayments.length,
         thisMonthAmount,
-        paymentMethods
+        paymentMethods,
       })
-
     } catch (err) {
       setError('Failed to load payment statistics')
       console.error('Payment stats loading error:', err)
@@ -136,7 +140,7 @@ export default function PaymentDashboard() {
 
   const handlePaymentSuccess = () => {
     setShowPaymentForm(false)
-    setRefreshKey(prev => prev + 1) // Trigger refresh
+    setRefreshKey((prev) => prev + 1) // Trigger refresh
   }
 
   const formatCurrency = (amount: number) => {
@@ -148,7 +152,8 @@ export default function PaymentDashboard() {
   }
 
   if (loading) return <LoadingStats />
-  if (error) return <ErrorCard title="Error Loading Dashboard" message={error} onRetry={loadPaymentStats} />
+  if (error)
+    return <ErrorCard title="Error Loading Dashboard" message={error} onRetry={loadPaymentStats} />
 
   return (
     <div className="space-y-6">
@@ -164,7 +169,12 @@ export default function PaymentDashboard() {
             className="relative p-2 text-gray-400 hover:text-gray-600 focus:outline-none"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM9 7H4l5-5v5zm6 10V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 17h5l-5 5v-5zM9 7H4l5-5v5zm6 10V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z"
+              />
             </svg>
             {/* Notification badge would go here */}
           </button>
@@ -173,7 +183,12 @@ export default function PaymentDashboard() {
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
           >
             <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
             </svg>
             Record Payment
           </button>
@@ -188,15 +203,27 @@ export default function PaymentDashboard() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    <svg
+                      className="w-5 h-5 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                      />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Total Collected</dt>
-                    <dd className="text-lg font-medium text-gray-900">{formatCurrency(stats.totalAmount)}</dd>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {formatCurrency(stats.totalAmount)}
+                    </dd>
                   </dl>
                 </div>
               </div>
@@ -208,15 +235,27 @@ export default function PaymentDashboard() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-5 h-5 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">This Month</dt>
-                    <dd className="text-lg font-medium text-gray-900">{formatCurrency(stats.thisMonthAmount)}</dd>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {formatCurrency(stats.thisMonthAmount)}
+                    </dd>
                   </dl>
                 </div>
               </div>
@@ -228,15 +267,27 @@ export default function PaymentDashboard() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    <svg
+                      className="w-5 h-5 text-purple-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+                      />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Average Payment</dt>
-                    <dd className="text-lg font-medium text-gray-900">{formatCurrency(stats.averagePayment)}</dd>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {formatCurrency(stats.averagePayment)}
+                    </dd>
                   </dl>
                 </div>
               </div>
@@ -248,15 +299,27 @@ export default function PaymentDashboard() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    <svg
+                      className="w-5 h-5 text-red-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Overdue Amount</dt>
-                    <dd className="text-lg font-medium text-gray-900">{formatCurrency(stats.overdueAmount)}</dd>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {formatCurrency(stats.overdueAmount)}
+                    </dd>
                   </dl>
                 </div>
               </div>
@@ -302,9 +365,7 @@ export default function PaymentDashboard() {
         />
       )}
 
-      {activeTab === 'analytics' && (
-        <PaymentAnalytics />
-      )}
+      {activeTab === 'analytics' && <PaymentAnalytics />}
 
       {/* Payment Form Modal */}
       <EnhancedPaymentForm

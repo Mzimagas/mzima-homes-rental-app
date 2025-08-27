@@ -7,16 +7,19 @@ The tenant onboarding process had a critical issue where **available units were 
 ## 🔍 **Root Cause Analysis**
 
 ### **Primary Issue: Incorrect Mock Landlord ID**
+
 - **Problem**: The tenant form was using a hardcoded mock landlord ID `'11111111-1111-1111-1111-111111111111'` that didn't exist in the database
 - **Impact**: No properties were found for this non-existent landlord, resulting in zero available units
 - **Evidence**: Database contained actual landlord ID `'78664634-fa3c-4b1e-990e-513f5b184fa6'` with 1 property and 1 available unit
 
 ### **Secondary Issue: Problematic Database Query**
+
 - **Problem**: The units query included a nested `properties` join that was causing query failures
 - **Impact**: Even with correct landlord ID, the nested join structure was unreliable
 - **Evidence**: Query worked when simplified to separate unit and property queries
 
 ### **Tertiary Issue: Schema Mismatch**
+
 - **Problem**: Form fields didn't match actual database schema
 - **Impact**: Tenant creation and tenancy agreement creation were failing
 - **Evidence**: Database used `national_id` not `id_number`, `rent_kes` not `monthly_rent_kes`
@@ -24,12 +27,15 @@ The tenant onboarding process had a critical issue where **available units were 
 ## ✅ **Complete Solution Implemented**
 
 ### **1. Fixed Landlord ID Reference**
-**Files Updated**: 
+
+**Files Updated**:
+
 - `src/components/tenants/tenant-form.tsx`
 - `src/app/dashboard/tenants/page.tsx`
 - `src/components/maintenance/maintenance-form.tsx`
 
 **Changes**:
+
 ```typescript
 // OLD (non-existent)
 const mockLandlordId = '11111111-1111-1111-1111-111111111111'
@@ -39,9 +45,11 @@ const mockLandlordId = '78664634-fa3c-4b1e-990e-513f5b184fa6'
 ```
 
 ### **2. Fixed Database Query Structure**
+
 **File**: `src/components/tenants/tenant-form.tsx`
 
 **OLD (problematic nested join)**:
+
 ```typescript
 .select(`
   id,
@@ -55,6 +63,7 @@ const mockLandlordId = '78664634-fa3c-4b1e-990e-513f5b184fa6'
 ```
 
 **NEW (simplified with separate property mapping)**:
+
 ```typescript
 .select(`
   id,
@@ -66,22 +75,25 @@ const mockLandlordId = '78664634-fa3c-4b1e-990e-513f5b184fa6'
 ```
 
 ### **3. Fixed Schema Field Mapping**
+
 **File**: `src/components/tenants/tenant-form.tsx`
 
 **Form Data Interface**:
+
 ```typescript
 // Removed non-existent fields
 interface TenantFormData {
   fullName: string
   phone: string
   email?: string
-  nationalId?: string  // Changed from idNumber
+  nationalId?: string // Changed from idNumber
   unitId?: string
   // Removed: emergencyContactName, emergencyContactPhone
 }
 ```
 
 **Database Insert**:
+
 ```typescript
 // Tenant creation
 .insert({
@@ -106,6 +118,7 @@ interface TenantFormData {
 ## 🧪 **Comprehensive Testing Results**
 
 ### **Unit Availability Query Test**
+
 ```
 ✅ Found 1 properties for landlord
 ✅ Fixed query returned 1 units
@@ -114,6 +127,7 @@ interface TenantFormData {
 ```
 
 ### **Complete Workflow Test**
+
 ```
 ✅ Unit dropdown loading: WORKING
 ✅ Available units detection: WORKING
@@ -126,6 +140,7 @@ interface TenantFormData {
 ```
 
 ### **Real-Time Frontend Test**
+
 - ✅ Tenants page loads successfully (`GET /dashboard/tenants 200`)
 - ✅ No compilation errors or runtime errors
 - ✅ All components render correctly
@@ -134,12 +149,14 @@ interface TenantFormData {
 ## 📊 **Impact Assessment**
 
 ### **Before Fix**
+
 - ❌ **0 units** appeared in dropdown
 - ❌ **Tenant onboarding completely broken**
 - ❌ **No way to assign units to tenants**
 - ❌ **Form submission failures due to schema mismatch**
 
 ### **After Fix**
+
 - ✅ **1 available unit** appears in dropdown correctly
 - ✅ **Complete tenant onboarding workflow functional**
 - ✅ **Successful unit assignment to tenants**
@@ -149,16 +166,19 @@ interface TenantFormData {
 ## 🔧 **Technical Improvements**
 
 ### **Query Optimization**
+
 - **Simplified database queries** - Removed problematic nested joins
 - **Separate property mapping** - More reliable data fetching
 - **Proper error handling** - Better debugging and user feedback
 
 ### **Schema Compliance**
+
 - **Correct field mapping** - All form fields match database schema
 - **Required field handling** - All mandatory database fields included
 - **Data type consistency** - Proper data types for all fields
 
 ### **Code Maintainability**
+
 - **Consistent landlord ID usage** - Same ID across all components
 - **Clear field naming** - Form fields match database column names
 - **Comprehensive validation** - Proper form and data validation
@@ -166,6 +186,7 @@ interface TenantFormData {
 ## 🚀 **Production Readiness**
 
 ### **Verified Functionality**
+
 - ✅ **Unit dropdown population** - Available units display correctly
 - ✅ **Tenant creation** - New tenants created successfully
 - ✅ **Unit assignment** - Units properly assigned to tenants
@@ -173,12 +194,14 @@ interface TenantFormData {
 - ✅ **Data persistence** - All data saved correctly to database
 
 ### **User Experience**
+
 - ✅ **Intuitive workflow** - Clear step-by-step tenant onboarding
 - ✅ **Proper validation** - Form prevents invalid submissions
 - ✅ **Real-time feedback** - Users see immediate results
 - ✅ **Error handling** - Graceful error messages and recovery
 
 ### **System Integration**
+
 - ✅ **Database consistency** - All operations maintain data integrity
 - ✅ **Component integration** - All related components work together
 - ✅ **Authentication compatibility** - Works with existing auth system
@@ -187,6 +210,7 @@ interface TenantFormData {
 ## 📋 **Verification Steps for Users**
 
 ### **To Test the Fix**:
+
 1. **Navigate to Tenants page** (`/dashboard/tenants`)
 2. **Click "Add Tenant" button**
 3. **Fill in tenant details** (name, phone, email, national ID)
@@ -195,6 +219,7 @@ interface TenantFormData {
 6. **Verify in dashboard** - Tenant should appear in tenants list
 
 ### **Expected Behavior**:
+
 - ✅ Unit dropdown shows available units immediately
 - ✅ Form submission succeeds without errors
 - ✅ Tenant appears in dashboard after creation
@@ -206,6 +231,7 @@ interface TenantFormData {
 **The tenant onboarding unit assignment dropdown issue has been completely resolved!**
 
 Users can now successfully:
+
 - **View available units** in the assignment dropdown
 - **Create new tenants** with proper form validation
 - **Assign units to tenants** during onboarding

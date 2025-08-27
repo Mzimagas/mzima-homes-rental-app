@@ -1,26 +1,32 @@
-import { 
-  PropertyWithLifecycle, 
-  HandoverPipelineStageData, 
+import {
+  PropertyWithLifecycle,
+  HandoverPipelineStageData,
   HANDOVER_PIPELINE_STAGES,
-  PendingChanges 
+  PendingChanges,
 } from '../types/property-management.types'
 
 // Property source and lifecycle utilities
 export const getSourceIcon = (source?: string): string => {
   switch (source) {
-    case 'PURCHASE_PIPELINE': return '🏢'
-    case 'SUBDIVISION_PROCESS': return '🏗️'
+    case 'PURCHASE_PIPELINE':
+      return '🏢'
+    case 'SUBDIVISION_PROCESS':
+      return '🏗️'
     case 'DIRECT_ADDITION':
-    default: return '🏠'
+    default:
+      return '🏠'
   }
 }
 
 export const getSourceLabel = (source?: string): string => {
   switch (source) {
-    case 'PURCHASE_PIPELINE': return 'Purchased'
-    case 'SUBDIVISION_PROCESS': return 'From Subdivision'
+    case 'PURCHASE_PIPELINE':
+      return 'Purchased'
+    case 'SUBDIVISION_PROCESS':
+      return 'From Subdivision'
     case 'DIRECT_ADDITION':
-    default: return 'Direct Addition'
+    default:
+      return 'Direct Addition'
   }
 }
 
@@ -38,7 +44,7 @@ export const getLifecycleStatusColor = (status?: string): string => {
 
 // Handover pipeline utilities
 export const initializeHandoverPipelineStages = (): HandoverPipelineStageData[] => {
-  return HANDOVER_PIPELINE_STAGES.map(stage => ({
+  return HANDOVER_PIPELINE_STAGES.map((stage) => ({
     stage_id: stage.id,
     status: stage.id === 1 ? 'In Progress' : 'Not Started',
     started_date: stage.id === 1 ? new Date().toISOString() : undefined,
@@ -48,8 +54,16 @@ export const initializeHandoverPipelineStages = (): HandoverPipelineStageData[] 
 }
 
 export const calculateHandoverProgress = (stageData: HandoverPipelineStageData[]): number => {
-  const completedStages = stageData.filter(stage =>
-    ['Completed', 'Verified', 'Finalized', 'Processed', 'Approved', 'Signed', 'Registered'].includes(stage.status)
+  const completedStages = stageData.filter((stage) =>
+    [
+      'Completed',
+      'Verified',
+      'Finalized',
+      'Processed',
+      'Approved',
+      'Signed',
+      'Registered',
+    ].includes(stage.status)
   ).length
   return Math.round((completedStages / HANDOVER_PIPELINE_STAGES.length) * 100)
 }
@@ -57,7 +71,17 @@ export const calculateHandoverProgress = (stageData: HandoverPipelineStageData[]
 export const getCurrentHandoverStage = (stageData: HandoverPipelineStageData[]): number => {
   for (let i = 0; i < stageData.length; i++) {
     const stage = stageData[i]
-    if (!['Completed', 'Verified', 'Finalized', 'Processed', 'Approved', 'Signed', 'Registered'].includes(stage.status)) {
+    if (
+      ![
+        'Completed',
+        'Verified',
+        'Finalized',
+        'Processed',
+        'Approved',
+        'Signed',
+        'Registered',
+      ].includes(stage.status)
+    ) {
       return stage.stage_id
     }
   }
@@ -80,7 +104,10 @@ export const hasPendingChanges = (propertyId: string, pendingChanges: PendingCha
   return !!(changes && (changes.subdivision !== undefined || changes.handover !== undefined))
 }
 
-export const getPendingSubdivisionValue = (property: PropertyWithLifecycle, pendingChanges: PendingChanges): string => {
+export const getPendingSubdivisionValue = (
+  property: PropertyWithLifecycle,
+  pendingChanges: PendingChanges
+): string => {
   const pending = pendingChanges[property.id]?.subdivision
   if (pending !== undefined) return pending
   switch (property.subdivision_status) {
@@ -94,21 +121,26 @@ export const getPendingSubdivisionValue = (property: PropertyWithLifecycle, pend
   }
 }
 
-export const getPendingHandoverValue = (property: PropertyWithLifecycle, pendingChanges: PendingChanges): string => {
+export const getPendingHandoverValue = (
+  property: PropertyWithLifecycle,
+  pendingChanges: PendingChanges
+): string => {
   const pending = pendingChanges[property.id]?.handover
   if (pending !== undefined) return pending
   return property.handover_status === 'COMPLETED'
     ? 'Handed Over'
     : property.handover_status === 'IN_PROGRESS'
-    ? 'In Progress'
-    : 'Not Started'
+      ? 'In Progress'
+      : 'Not Started'
 }
 
 // Authentication error handling
 export const isAuthError = (error: any): boolean => {
-  return error?.message?.includes('Invalid Refresh Token') ||
-         error?.message?.includes('Auth session missing') ||
-         error?.message?.includes('JWT')
+  return (
+    error?.message?.includes('Invalid Refresh Token') ||
+    error?.message?.includes('Auth session missing') ||
+    error?.message?.includes('JWT')
+  )
 }
 
 export const redirectToLogin = (context: string): void => {

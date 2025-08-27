@@ -12,12 +12,17 @@ interface UserSelectorProps {
   className?: string
 }
 
-export default function UserSelector({ onSelectionChange, onFeedback, selectedProperty = 'global', className = '' }: UserSelectorProps) {
+export default function UserSelector({
+  onSelectionChange,
+  onFeedback,
+  selectedProperty = 'global',
+  className = '',
+}: UserSelectorProps) {
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null)
   const [focusedChipIndex, setFocusedChipIndex] = useState<number>(-1)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  
+
   const {
     selectedUsers,
     showDropdown,
@@ -31,7 +36,7 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
     toggleDropdown,
     handleKeyPress,
     getSelectedUserDetails,
-    isUserSelected
+    isUserSelected,
   } = useUserSelection()
 
   // Notify parent of selection changes
@@ -99,7 +104,7 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
 
   // Enhanced user selection with validation and auto-close
   const handleEnhancedUserSelection = (userId: string) => {
-    const user = availableUsers.find(u => u.id === userId)
+    const user = availableUsers.find((u) => u.id === userId)
     if (!user) return
 
     // Check if user is already selected
@@ -107,14 +112,14 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
       toggleUserSelection(userId)
       setFeedback({
         type: 'success',
-        message: `Removed ${user.email} from selection`
+        message: `Removed ${user.email} from selection`,
       })
     } else {
       // Check for maximum selection limit
       if (selectedUsers.length >= 10) {
         setFeedback({
           type: 'warning',
-          message: 'Maximum 10 users can be selected at once'
+          message: 'Maximum 10 users can be selected at once',
         })
         return
       }
@@ -123,14 +128,14 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
       if (!user.isActive) {
         setFeedback({
           type: 'warning',
-          message: `${user.email} is inactive. Are you sure you want to select them?`
+          message: `${user.email} is inactive. Are you sure you want to select them?`,
         })
       }
 
       toggleUserSelection(userId)
       setFeedback({
         type: 'success',
-        message: `Added ${user.email} to selection`
+        message: `Added ${user.email} to selection`,
       })
     }
 
@@ -167,7 +172,7 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
         setFocusedChipIndex(-1)
         setFeedback({
           type: 'success',
-          message: `Removed ${userToRemove.email} from selection`
+          message: `Removed ${userToRemove.email} from selection`,
         })
       }
       e.preventDefault()
@@ -209,15 +214,15 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
 
   // Enhanced select all with validation
   const handleEnhancedSelectAll = () => {
-    const activeUsers = availableUsers.filter(user => user.isActive)
+    const activeUsers = availableUsers.filter((user) => user.isActive)
     if (activeUsers.length > 10) {
       setFeedback({
         type: 'warning',
-        message: `Only selecting first 10 active users (${activeUsers.length} available)`
+        message: `Only selecting first 10 active users (${activeUsers.length} available)`,
       })
       // Select only first 10 active users
       const limitedUsers = activeUsers.slice(0, 10)
-      limitedUsers.forEach(user => {
+      limitedUsers.forEach((user) => {
         if (!selectedUsers.includes(user.id)) {
           toggleUserSelection(user.id)
         }
@@ -226,7 +231,7 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
       selectAllUsers()
       setFeedback({
         type: 'success',
-        message: `Selected all ${activeUsers.length} active users`
+        message: `Selected all ${activeUsers.length} active users`,
       })
     }
   }
@@ -237,13 +242,12 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
         <div>
           <h4 className="font-medium text-gray-900">User Selection</h4>
           <p className="text-xs text-gray-600 mt-1">
-            Assigning permissions for: <span className="font-medium">{getPropertyScopeDisplay()}</span>
+            Assigning permissions for:{' '}
+            <span className="font-medium">{getPropertyScopeDisplay()}</span>
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="text-xs text-gray-500">
-            {selectedUsers.length}/10 selected
-          </span>
+          <span className="text-xs text-gray-500">{selectedUsers.length}/10 selected</span>
           {selectedUsers.length > 0 && (
             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
               {selectedUsers.length}
@@ -254,22 +258,28 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
 
       {/* Feedback Messages */}
       {feedback && (
-        <div className={`mb-3 px-3 py-2 rounded-md text-xs border ${
-          feedback.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
-          feedback.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
-          'bg-yellow-50 border-yellow-200 text-yellow-800'
-        }`}>
+        <div
+          className={`mb-3 px-3 py-2 rounded-md text-xs border ${
+            feedback.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : feedback.type === 'error'
+                ? 'bg-red-50 border-red-200 text-red-800'
+                : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+          }`}
+        >
           {feedback.message}
         </div>
       )}
-      
+
       {/* Gmail-Style Multi-Select Input */}
       <div className="relative" ref={dropdownRef}>
-        <div className={`min-h-[48px] w-full px-3 py-2 border rounded-lg bg-white transition-all ${
-          selectedUsers.length >= 10
-            ? 'border-orange-300 bg-orange-50'
-            : 'border-gray-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500'
-        }`}>
+        <div
+          className={`min-h-[48px] w-full px-3 py-2 border rounded-lg bg-white transition-all ${
+            selectedUsers.length >= 10
+              ? 'border-orange-300 bg-orange-50'
+              : 'border-gray-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500'
+          }`}
+        >
           <div className="flex flex-wrap items-center gap-1">
             {/* Selected User Chips */}
             {getSelectedUserDetails().map((user, index) => (
@@ -290,9 +300,7 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
                   </span>
                 )}
                 {!user.isActive && (
-                  <span className="px-1 py-0.5 bg-red-200 text-red-700 rounded text-xs">
-                    !
-                  </span>
+                  <span className="px-1 py-0.5 bg-red-200 text-red-700 rounded text-xs">!</span>
                 )}
                 <button
                   onClick={(e) => {
@@ -300,7 +308,7 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
                     toggleUserSelection(user.id)
                     setFeedback({
                       type: 'success',
-                      message: `Removed ${user.email} from selection`
+                      message: `Removed ${user.email} from selection`,
                     })
                     setFocusedChipIndex(-1)
                   }}
@@ -318,10 +326,10 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
               type="text"
               placeholder={
                 selectedUsers.length >= 10
-                  ? "Maximum 10 users selected"
+                  ? 'Maximum 10 users selected'
                   : getSelectedUserDetails().length === 0
-                    ? "Search users or add new email..."
-                    : "Add more users..."
+                    ? 'Search users or add new email...'
+                    : 'Add more users...'
               }
               value={searchTerm}
               onChange={(e) => {
@@ -375,15 +383,18 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
                 </div>
               </div>
             ) : availableUsers.length > 0 ? (
-              availableUsers.map(user => (
+              availableUsers.map((user) => (
                 <button
                   key={user.id}
                   type="button"
                   onClick={() => handleEnhancedUserSelection(user.id)}
                   disabled={!user.isActive && !isUserSelected(user.id)}
                   className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
-                    isUserSelected(user.id) ? 'bg-blue-50 text-blue-900' : 
-                    !user.isActive ? 'text-gray-400 bg-gray-50' : 'text-gray-900'
+                    isUserSelected(user.id)
+                      ? 'bg-blue-50 text-blue-900'
+                      : !user.isActive
+                        ? 'text-gray-400 bg-gray-50'
+                        : 'text-gray-900'
                   } ${!user.isActive && !isUserSelected(user.id) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   <div className="flex items-center justify-between">
@@ -405,9 +416,7 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
                         <p className="text-xs text-gray-500 mt-1">{user.name}</p>
                       )}
                     </div>
-                    {isUserSelected(user.id) && (
-                      <span className="text-blue-600 text-sm">✓</span>
-                    )}
+                    {isUserSelected(user.id) && <span className="text-blue-600 text-sm">✓</span>}
                   </div>
                 </button>
               ))
@@ -431,23 +440,24 @@ export default function UserSelector({ onSelectionChange, onFeedback, selectedPr
       {getSelectedUserDetails().length > 0 && (
         <div className="mt-3 flex items-center justify-between">
           <span className="text-xs text-gray-600">
-            {getSelectedUserDetails().length} user{getSelectedUserDetails().length === 1 ? '' : 's'} selected
+            {getSelectedUserDetails().length} user{getSelectedUserDetails().length === 1 ? '' : 's'}{' '}
+            selected
           </span>
           <div className="flex gap-2">
             <Button
               onClick={handleEnhancedSelectAll}
-              disabled={availableUsers.filter(u => u.isActive).length === 0}
+              disabled={availableUsers.filter((u) => u.isActive).length === 0}
               variant="secondary"
               className="text-green-700 border-green-300 hover:bg-green-50 hover:text-green-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400"
             >
-              ✓ Select All Active ({availableUsers.filter(u => u.isActive).length})
+              ✓ Select All Active ({availableUsers.filter((u) => u.isActive).length})
             </Button>
             <Button
               onClick={() => {
                 clearAllUsers()
                 setFeedback({
                   type: 'success',
-                  message: 'Cleared all user selections'
+                  message: 'Cleared all user selections',
                 })
                 setFocusedChipIndex(-1)
               }}

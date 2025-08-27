@@ -33,4 +33,3 @@ Auth & Security Guidelines
 - Testing:
   - Unit tests for validators and context
   - E2E tests for login/signup/reset/MFA
-

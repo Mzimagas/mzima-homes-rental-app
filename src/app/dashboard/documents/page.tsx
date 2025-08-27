@@ -81,7 +81,7 @@ export default function DocumentsPage() {
         .from('documents')
         .list('', {
           limit: 1000,
-          sortBy: { column: 'created_at', order: 'desc' }
+          sortBy: { column: 'created_at', order: 'desc' },
         })
 
       if (storageError) {
@@ -92,7 +92,7 @@ export default function DocumentsPage() {
           totalDocuments: 0,
           totalSize: 0,
           documentsByType: [],
-          recentUploads: 0
+          recentUploads: 0,
         })
         return
       }
@@ -114,7 +114,7 @@ export default function DocumentsPage() {
           related_type: null,
           uploaded_by: null,
           created_at: file.created_at || new Date().toISOString(),
-          metadata: {}
+          metadata: {},
         }
       })
 
@@ -123,17 +123,20 @@ export default function DocumentsPage() {
       // Calculate stats
       const totalDocuments = documentsData.length
       const totalSize = documentsData.reduce((sum, doc) => sum + doc.file_size, 0)
-      
+
       const documentsByType = Object.entries(
-        documentsData.reduce((acc, doc) => {
-          acc[doc.type] = acc[doc.type] || { count: 0, size: 0 }
-          acc[doc.type].count++
-          acc[doc.type].size += doc.file_size
-          return acc
-        }, {} as Record<string, { count: number; size: number }>)
+        documentsData.reduce(
+          (acc, doc) => {
+            acc[doc.type] = acc[doc.type] || { count: 0, size: 0 }
+            acc[doc.type].count++
+            acc[doc.type].size += doc.file_size
+            return acc
+          },
+          {} as Record<string, { count: number; size: number }>
+        )
       ).map(([type, data]) => ({ type, ...data }))
 
-      const recentUploads = documentsData.filter(doc => {
+      const recentUploads = documentsData.filter((doc) => {
         const uploadDate = new Date(doc.created_at)
         const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
         return uploadDate >= weekAgo
@@ -143,9 +146,8 @@ export default function DocumentsPage() {
         totalDocuments,
         totalSize,
         documentsByType,
-        recentUploads
+        recentUploads,
       })
-
     } catch (err) {
       setError('Failed to load documents')
       console.error('Documents loading error:', err)
@@ -163,9 +165,10 @@ export default function DocumentsPage() {
     loadDocuments() // Reload documents
   }
 
-  const filteredDocuments = documents.filter(doc => {
+  const filteredDocuments = documents.filter((doc) => {
     const matchesType = filterType === 'all' || doc.type === filterType
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch =
+      searchTerm === '' ||
       doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       doc.type.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesType && matchesSearch
@@ -189,11 +192,7 @@ export default function DocumentsPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold text-gray-900">Document Management</h1>
         </div>
-        <ErrorCard 
-          title="Failed to load documents" 
-          message={error} 
-          onRetry={loadDocuments}
-        />
+        <ErrorCard title="Failed to load documents" message={error} onRetry={loadDocuments} />
       </div>
     )
   }
@@ -213,7 +212,12 @@ export default function DocumentsPage() {
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+            />
           </svg>
           Upload Document
         </button>

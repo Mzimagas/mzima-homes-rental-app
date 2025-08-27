@@ -15,11 +15,11 @@ export function generateSEOMetadata({
   keywords,
   image,
   url,
-  type = 'website'
+  type = 'website',
 }: SEOHeadProps): Metadata {
   const siteName = 'Mzima Homes'
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`
-  
+
   return {
     title: fullTitle,
     description,
@@ -44,14 +44,16 @@ export function generateSEOMetadata({
       description,
       siteName,
       url,
-      images: image ? [
-        {
-          url: image,
-          width: 1200,
-          height: 630,
-          alt: title,
-        }
-      ] : undefined,
+      images: image
+        ? [
+            {
+              url: image,
+              width: 1200,
+              height: 630,
+              alt: title,
+            },
+          ]
+        : undefined,
     },
     twitter: {
       card: 'summary_large_image',
@@ -82,34 +84,38 @@ export function generatePropertyStructuredData(unit: {
       '@type': 'Accommodation',
       name: `${unit.property_name} - ${unit.unit_label}`,
       description: `Rental unit ${unit.unit_label} at ${unit.property_name}`,
-      address: unit.physical_address ? {
-        '@type': 'PostalAddress',
-        addressLocality: unit.physical_address,
-        addressCountry: 'KE'
-      } : undefined,
+      address: unit.physical_address
+        ? {
+            '@type': 'PostalAddress',
+            addressLocality: unit.physical_address,
+            addressCountry: 'KE',
+          }
+        : undefined,
       offers: {
         '@type': 'Offer',
         price: unit.monthly_rent_kes?.toString(),
         priceCurrency: 'KES',
         availability: 'https://schema.org/InStock',
         validFrom: unit.available_from || new Date().toISOString(),
-      }
+      },
     },
     agent: {
       '@type': 'RealEstateAgent',
       name: 'Mzima Homes',
-      url: 'https://mzimahomes.com'
-    }
+      url: 'https://mzimahomes.com',
+    },
   }
 }
 
 // Structured data for property search results
-export function generateSearchResultsStructuredData(units: Array<{
-  unit_id: string
-  unit_label: string
-  property_name: string
-  monthly_rent_kes?: number
-}>) {
+export function generateSearchResultsStructuredData(
+  units: Array<{
+    unit_id: string
+    unit_label: string
+    property_name: string
+    monthly_rent_kes?: number
+  }>
+) {
   return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -124,19 +130,16 @@ export function generateSearchResultsStructuredData(units: Array<{
         offers: {
           '@type': 'Offer',
           price: unit.monthly_rent_kes?.toString(),
-          priceCurrency: 'KES'
-        }
-      }
-    }))
+          priceCurrency: 'KES',
+        },
+      },
+    })),
   }
 }
 
 // Component for injecting structured data
 export function StructuredData({ data }: { data: object }) {
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   )
 }

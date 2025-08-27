@@ -7,8 +7,6 @@ import { ErrorCard } from '../../../components/ui/error'
 import PropertyManagementTabs from '../../../components/properties/PropertyManagementTabs'
 import { useDashboardActions } from '../../../hooks/useDashboardActions'
 
-
-
 export default function PropertiesPage() {
   const { user, loading: authLoading } = useAuth()
   const { setCurrentTab } = useDashboardActions()
@@ -25,8 +23,6 @@ export default function PropertiesPage() {
     // Property creation is handled within the workflow components
     console.log('Property created successfully')
   }
-
-
 
   if (authLoading) {
     return (
@@ -48,7 +44,9 @@ export default function PropertiesPage() {
         <ErrorCard
           title="Authentication Required"
           message="Please log in to view your properties"
-          onRetry={() => { window.location.href = '/auth/login' }}
+          onRetry={() => {
+            window.location.href = '/auth/login'
+          }}
         />
       </div>
     )
@@ -60,9 +58,7 @@ export default function PropertiesPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Properties</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Property creation and management workflows
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Property creation and management workflows</p>
         </div>
       </div>
 

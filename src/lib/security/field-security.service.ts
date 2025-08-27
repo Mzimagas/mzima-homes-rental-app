@@ -47,8 +47,8 @@ export class FieldSecurityService {
 
   // Check if user can modify a specific field
   static async canModifyField(
-    fieldName: string, 
-    userRole: string, 
+    fieldName: string,
+    userRole: string,
     currentStage?: number
   ): Promise<{ canModify: boolean; reason?: string }> {
     const { data: config } = await supabase
@@ -63,17 +63,17 @@ export class FieldSecurityService {
 
     // Check role permissions
     if (config.allowed_roles.length > 0 && !config.allowed_roles.includes(userRole)) {
-      return { 
-        canModify: false, 
-        reason: `Insufficient permissions. Required roles: ${config.allowed_roles.join(', ')}` 
+      return {
+        canModify: false,
+        reason: `Insufficient permissions. Required roles: ${config.allowed_roles.join(', ')}`,
       }
     }
 
     // Check stage-based locking
     if (config.lock_after_stage && currentStage && currentStage > config.lock_after_stage) {
-      return { 
-        canModify: false, 
-        reason: `Field is locked after stage ${config.lock_after_stage}. Current stage: ${currentStage}` 
+      return {
+        canModify: false,
+        reason: `Field is locked after stage ${config.lock_after_stage}. Current stage: ${currentStage}`,
       }
     }
 
@@ -88,9 +88,9 @@ export class FieldSecurityService {
         .eq('changed_by', (await supabase.auth.getUser()).data.user?.id)
 
       if (count && count >= config.max_changes_per_day) {
-        return { 
-          canModify: false, 
-          reason: `Daily change limit exceeded (${config.max_changes_per_day} changes per day)` 
+        return {
+          canModify: false,
+          reason: `Daily change limit exceeded (${config.max_changes_per_day} changes per day)`,
         }
       }
     }
@@ -110,7 +110,7 @@ export class FieldSecurityService {
 
     for (const change of changes) {
       const canModify = await this.canModifyField(change.field_name, userRole, currentStage)
-      
+
       if (!canModify.canModify) {
         errors.push(`${change.field_name}: ${canModify.reason}`)
         continue
@@ -135,7 +135,7 @@ export class FieldSecurityService {
     return {
       valid: errors.length === 0,
       errors,
-      requiresApproval
+      requiresApproval,
     }
   }
 
@@ -146,12 +146,14 @@ export class FieldSecurityService {
     businessJustification: string,
     riskAssessment?: string
   ): Promise<string> {
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
-    const changeSummary = changes.map(c => 
-      `${c.field_name}: ${c.old_value} → ${c.new_value}`
-    ).join('; ')
+    const changeSummary = changes
+      .map((c) => `${c.field_name}: ${c.old_value} → ${c.new_value}`)
+      .join('; ')
 
     const { data, error } = await supabase
       .from('purchase_pipeline_change_approvals')
@@ -161,7 +163,7 @@ export class FieldSecurityService {
         approver_role: 'finance_manager', // Determine based on field types
         change_summary: changeSummary,
         business_justification: businessJustification,
-        risk_assessment: riskAssessment
+        risk_assessment: riskAssessment,
       })
       .select('id')
       .single()
@@ -210,7 +212,9 @@ export class FieldSecurityService {
   // Get pending approvals for user
   static async getPendingApprovals(userRole: string): Promise<any[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         console.log('User not authenticated for pending approvals')
         return []
@@ -225,7 +229,9 @@ export class FieldSecurityService {
 
       if (error) {
         console.error('Error fetching pending approvals:', error)
-        throw new Error(`Failed to fetch pending approvals: ${error.message || 'Unknown database error'}`)
+        throw new Error(
+          `Failed to fetch pending approvals: ${error.message || 'Unknown database error'}`
+        )
       }
 
       return data || []
@@ -246,7 +252,9 @@ export class FieldSecurityService {
     notes?: string
   ): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
 
       const { error } = await supabase
@@ -255,7 +263,7 @@ export class FieldSecurityService {
           status: action,
           approved_by: user.id,
           approved_at: new Date().toISOString(),
-          approval_notes: notes
+          approval_notes: notes,
         })
         .eq('id', approvalId)
 
@@ -280,7 +288,7 @@ export class FieldSecurityService {
             .from('purchase_pipeline_audit_log')
             .update({
               approved_by: user.id,
-              approved_at: new Date().toISOString()
+              approved_at: new Date().toISOString(),
             })
             .eq('id', approval.audit_log_id)
 
@@ -301,10 +309,7 @@ export class FieldSecurityService {
   }
 
   // Check if field is currently locked
-  static async isFieldLocked(
-    fieldName: string,
-    currentStage?: number
-  ): Promise<boolean> {
+  static async isFieldLocked(fieldName: string, currentStage?: number): Promise<boolean> {
     try {
       const { data: config, error } = await supabase
         .from('purchase_pipeline_field_security')
@@ -343,13 +348,18 @@ export class FieldSecurityService {
     fieldNames: string[],
     userRole: string,
     currentStage?: number
-  ): Promise<Record<string, { canModify: boolean; requiresReason: boolean; requiresApproval: boolean; isLocked: boolean }>> {
+  ): Promise<
+    Record<
+      string,
+      { canModify: boolean; requiresReason: boolean; requiresApproval: boolean; isLocked: boolean }
+    >
+  > {
     const summary: Record<string, any> = {}
 
     for (const fieldName of fieldNames) {
       const canModify = await this.canModifyField(fieldName, userRole, currentStage)
       const isLocked = await this.isFieldLocked(fieldName, currentStage)
-      
+
       const { data: config } = await supabase
         .from('purchase_pipeline_field_security')
         .select('requires_reason, requires_approval')
@@ -360,7 +370,7 @@ export class FieldSecurityService {
         canModify: canModify.canModify,
         requiresReason: config?.requires_reason || false,
         requiresApproval: config?.requires_approval || false,
-        isLocked
+        isLocked,
       }
     }
 

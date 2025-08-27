@@ -16,7 +16,13 @@ export interface HandoverCostEntry {
   id: string
   property_id: string
   cost_type_id: string
-  cost_category: 'PRE_HANDOVER' | 'AGREEMENT_LEGAL' | 'LCB_PROCESS' | 'PAYMENT_TRACKING' | 'TRANSFER_REGISTRATION' | 'OTHER'
+  cost_category:
+    | 'PRE_HANDOVER'
+    | 'AGREEMENT_LEGAL'
+    | 'LCB_PROCESS'
+    | 'PAYMENT_TRACKING'
+    | 'TRANSFER_REGISTRATION'
+    | 'OTHER'
   amount_kes: number
   payment_reference?: string
   payment_date?: string
@@ -68,9 +74,14 @@ export interface HandoverFinancialSummary {
 
 // API service for property handover financials
 export class HandoverFinancialsService {
-  private static async makeRequest(url: string, options: RequestInit = {}) {
+  private static async makeRequest(
+    url: string,
+    options: import('../../../lib/types/fetch').FetchOptions = {}
+  ) {
     // Get the auth token and CSRF token
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     const token = session?.access_token
     const csrfToken = getCsrfToken()
 
@@ -123,7 +134,10 @@ export class HandoverFinancialsService {
     }
   }
 
-  static async createHandoverCost(propertyId: string, cost: Omit<HandoverCostEntry, 'id' | 'property_id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<HandoverCostEntry> {
+  static async createHandoverCost(
+    propertyId: string,
+    cost: Omit<HandoverCostEntry, 'id' | 'property_id' | 'created_at' | 'updated_at' | 'created_by'>
+  ): Promise<HandoverCostEntry> {
     try {
       const data = await this.makeRequest(`/api/properties/${propertyId}/handover-costs`, {
         method: 'POST',
@@ -137,12 +151,21 @@ export class HandoverFinancialsService {
     }
   }
 
-  static async updateHandoverCost(propertyId: string, costId: string, updates: Partial<Omit<HandoverCostEntry, 'id' | 'property_id' | 'created_at' | 'updated_at' | 'created_by'>>): Promise<HandoverCostEntry> {
+  static async updateHandoverCost(
+    propertyId: string,
+    costId: string,
+    updates: Partial<
+      Omit<HandoverCostEntry, 'id' | 'property_id' | 'created_at' | 'updated_at' | 'created_by'>
+    >
+  ): Promise<HandoverCostEntry> {
     try {
-      const data = await this.makeRequest(`/api/properties/${propertyId}/handover-costs/${costId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates),
-      })
+      const data = await this.makeRequest(
+        `/api/properties/${propertyId}/handover-costs/${costId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(updates),
+        }
+      )
       console.log('Successfully updated handover cost:', data)
       return data.data
     } catch (error) {
@@ -174,7 +197,10 @@ export class HandoverFinancialsService {
     }
   }
 
-  static async createPaymentReceipt(propertyId: string, receipt: Omit<PaymentReceipt, 'id' | 'property_id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<PaymentReceipt> {
+  static async createPaymentReceipt(
+    propertyId: string,
+    receipt: Omit<PaymentReceipt, 'id' | 'property_id' | 'created_at' | 'updated_at' | 'created_by'>
+  ): Promise<PaymentReceipt> {
     try {
       const data = await this.makeRequest(`/api/properties/${propertyId}/payment-receipts`, {
         method: 'POST',
@@ -188,12 +214,21 @@ export class HandoverFinancialsService {
     }
   }
 
-  static async updatePaymentReceipt(propertyId: string, receiptId: string, updates: Partial<Omit<PaymentReceipt, 'id' | 'property_id' | 'created_at' | 'updated_at' | 'created_by'>>): Promise<PaymentReceipt> {
+  static async updatePaymentReceipt(
+    propertyId: string,
+    receiptId: string,
+    updates: Partial<
+      Omit<PaymentReceipt, 'id' | 'property_id' | 'created_at' | 'updated_at' | 'created_by'>
+    >
+  ): Promise<PaymentReceipt> {
     try {
-      const data = await this.makeRequest(`/api/properties/${propertyId}/payment-receipts/${receiptId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates),
-      })
+      const data = await this.makeRequest(
+        `/api/properties/${propertyId}/payment-receipts/${receiptId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(updates),
+        }
+      )
       console.log('Successfully updated payment receipt:', data)
       return data.data
     } catch (error) {
@@ -217,7 +252,9 @@ export class HandoverFinancialsService {
   // Financial Summary API call
   static async getHandoverFinancialSummary(propertyId: string): Promise<HandoverFinancialSummary> {
     try {
-      const data = await this.makeRequest(`/api/properties/${propertyId}/handover-financial-summary`)
+      const data = await this.makeRequest(
+        `/api/properties/${propertyId}/handover-financial-summary`
+      )
       return data.data
     } catch (error) {
       console.error('Error fetching handover financial summary:', error)
@@ -226,7 +263,11 @@ export class HandoverFinancialsService {
   }
 
   // Handover Price API calls
-  static async updateHandoverPrice(propertyId: string, handoverPrice: number, changeReason?: string): Promise<void> {
+  static async updateHandoverPrice(
+    propertyId: string,
+    handoverPrice: number,
+    changeReason?: string
+  ): Promise<void> {
     try {
       const body: any = { handover_price_agreement_kes: handoverPrice }
       if (changeReason) {
@@ -266,7 +307,7 @@ export class HandoverFinancialsService {
       const results = await Promise.allSettled([
         this.getHandoverCosts(propertyId),
         this.getPaymentReceipts(propertyId),
-        this.getHandoverFinancialSummary(propertyId)
+        this.getHandoverFinancialSummary(propertyId),
       ])
 
       // Extract successful results and handle failures gracefully
@@ -278,7 +319,10 @@ export class HandoverFinancialsService {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
           const operationNames = ['Handover Costs', 'Payment Receipts', 'Financial Summary']
-          console.warn(`Failed to load ${operationNames[index]} for property ${propertyId}:`, result.reason)
+          console.warn(
+            `Failed to load ${operationNames[index]} for property ${propertyId}:`,
+            result.reason
+          )
         }
       })
 

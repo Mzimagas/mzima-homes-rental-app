@@ -4,11 +4,16 @@ export function mapAuthErrorToMessage(raw?: string): string {
   const msg = (raw || '').toLowerCase()
 
   // Non-enumerating generic messages for sign-in
-  if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('not confirmed')) {
+  if (
+    msg.includes('invalid login') ||
+    msg.includes('invalid credentials') ||
+    msg.includes('not confirmed')
+  ) {
     return 'Invalid email or password. Please try again.'
   }
 
-  if (msg.includes('network')) return 'Network error. Please check your internet connection and try again.'
+  if (msg.includes('network'))
+    return 'Network error. Please check your internet connection and try again.'
   if (msg.includes('timeout')) return 'Request timed out. Please try again.'
 
   // Default generic
@@ -35,7 +40,8 @@ export function passwordStrength(pw: string): PasswordStrength {
   if (classes >= 3) score = (score + 1) as typeof score
   if (len >= 14 && classes === 4) score = (score + 1) as typeof score
 
-  const label = ['Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'][score] as PasswordStrength['label']
+  const label = ['Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'][
+    score
+  ] as PasswordStrength['label']
   return { score, label }
 }
-

@@ -11,14 +11,14 @@ import { FieldSecurityService, ChangeRequest } from '../../lib/security/field-se
 import {
   PurchasePipelineManagerProps,
   PurchaseItem,
-  PurchasePipelineFormValues
+  PurchasePipelineFormValues,
 } from './types/purchase-pipeline.types'
 
 export default function PurchasePipelineManager({
   onPropertyTransferred,
   searchTerm = '',
   onSearchChange,
-  userRole = 'property_manager'
+  userRole = 'property_manager',
 }: PurchasePipelineManagerProps) {
   // State management
   const [purchases, setPurchases] = useState<PurchaseItem[]>([])
@@ -35,7 +35,7 @@ export default function PurchasePipelineManager({
     if (!searchTerm.trim()) return purchases
 
     const lower = searchTerm.toLowerCase()
-    return purchases.filter(purchase => {
+    return purchases.filter((purchase) => {
       return (
         purchase.property_name.toLowerCase().includes(lower) ||
         (purchase.property_address?.toLowerCase().includes(lower) ?? false) ||
@@ -81,7 +81,10 @@ export default function PurchasePipelineManager({
   }
 
   // Handle secure form submission with change tracking
-  const handleSecureFormSubmit = async (values: PurchasePipelineFormValues, changeRequests: ChangeRequest[]) => {
+  const handleSecureFormSubmit = async (
+    values: PurchasePipelineFormValues,
+    changeRequests: ChangeRequest[]
+  ) => {
     try {
       if (editingPurchase) {
         // For updates, validate changes first
@@ -129,7 +132,13 @@ export default function PurchasePipelineManager({
     stageData?: any
   ) => {
     try {
-      await PurchasePipelineService.updateStageStatus(purchaseId, stageId, newStatus, notes, stageData)
+      await PurchasePipelineService.updateStageStatus(
+        purchaseId,
+        stageId,
+        newStatus,
+        notes,
+        stageData
+      )
       await loadPurchases()
       setShowStageModal(false)
     } catch (error) {
@@ -168,10 +177,10 @@ export default function PurchasePipelineManager({
   const getCurrentStageData = () => {
     if (!selectedPurchaseId || !selectedStageId) return undefined
 
-    const purchase = purchases.find(p => p.id === selectedPurchaseId)
+    const purchase = purchases.find((p) => p.id === selectedPurchaseId)
     if (!purchase?.pipeline_stages) return undefined
 
-    return purchase.pipeline_stages.find(stage => stage.stage_id === selectedStageId)
+    return purchase.pipeline_stages.find((stage) => stage.stage_id === selectedStageId)
   }
 
   return (

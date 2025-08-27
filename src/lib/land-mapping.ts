@@ -109,4 +109,3 @@ export function toDbFromForm(form: LandForm): LandDb {
     easements: form.easements,
   }
 }
-

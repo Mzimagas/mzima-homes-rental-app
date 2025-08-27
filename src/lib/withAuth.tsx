@@ -21,4 +21,3 @@ export function withAuth<T extends object>(Component: React.ComponentType<T>) {
     return <Component {...props} />
   }
 }
-

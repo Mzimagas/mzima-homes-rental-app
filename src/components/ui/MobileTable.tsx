@@ -30,7 +30,7 @@ export default function MobileTable({
   onRowClick,
   loading = false,
   emptyMessage = 'No data available',
-  mobileCardView = true
+  mobileCardView = true,
 }: MobileTableProps) {
   if (loading) {
     return (
@@ -79,7 +79,10 @@ export default function MobileTable({
                   className={onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''}
                 >
                   {columns.map((column) => (
-                    <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td
+                      key={column.key}
+                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                    >
                       {column.render ? column.render(row[column.key], row) : row[column.key]}
                     </td>
                   ))}
@@ -92,15 +95,19 @@ export default function MobileTable({
         {/* Mobile card view */}
         <div className="md:hidden space-y-3">
           {data.map((row, index) => {
-            const highPriorityColumns = columns.filter(col => col.priority === 'high' || !col.priority)
-            const mediumPriorityColumns = columns.filter(col => col.priority === 'medium')
-            
+            const highPriorityColumns = columns.filter(
+              (col) => col.priority === 'high' || !col.priority
+            )
+            const mediumPriorityColumns = columns.filter((col) => col.priority === 'medium')
+
             return (
               <div
                 key={index}
                 onClick={() => onRowClick?.(row)}
                 className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 ${
-                  onRowClick ? 'cursor-pointer active:scale-[0.98] transition-transform duration-150' : ''
+                  onRowClick
+                    ? 'cursor-pointer active:scale-[0.98] transition-transform duration-150'
+                    : ''
                 }`}
                 style={{ minHeight: onRowClick ? '44px' : 'auto' }}
               >
@@ -132,8 +139,18 @@ export default function MobileTable({
                 {/* Tap indicator for clickable rows */}
                 {onRowClick && (
                   <div className="mt-3 flex justify-end">
-                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="h-4 w-4 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </div>
                 )}

@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, ReactNode } from 'react'
 import { Transition } from '@headlessui/react'
@@ -10,7 +10,12 @@ interface TooltipProps {
   position?: 'top' | 'bottom' | 'left' | 'right'
 }
 
-export default function Tooltip({ content, children, className = '', position = 'top' }: TooltipProps) {
+export default function Tooltip({
+  content,
+  children,
+  className = '',
+  position = 'top',
+}: TooltipProps) {
   const [open, setOpen] = useState(false)
 
   const posClasses = {
@@ -48,4 +53,3 @@ export default function Tooltip({ content, children, className = '', position = 
     </span>
   )
 }
-

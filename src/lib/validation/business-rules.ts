@@ -49,7 +49,7 @@ export class BusinessRulesValidator {
           field: 'lr_number',
           code: 'DUPLICATE_LR_NUMBER',
           message: 'LR number already exists in the system',
-          severity: 'error'
+          severity: 'error',
         })
       }
     }
@@ -61,7 +61,7 @@ export class BusinessRulesValidator {
           field: 'acreage_ha',
           code: 'MINIMUM_ACREAGE',
           message: 'Parcel must be at least 0.01 hectares',
-          severity: 'error'
+          severity: 'error',
         })
       }
 
@@ -70,7 +70,7 @@ export class BusinessRulesValidator {
           field: 'acreage_ha',
           code: 'LARGE_PARCEL',
           message: 'Parcel is unusually large (>10,000 hectares)',
-          suggestion: 'Verify the acreage is correct'
+          suggestion: 'Verify the acreage is correct',
         })
       }
     }
@@ -81,7 +81,7 @@ export class BusinessRulesValidator {
         field: 'acquisition_cost_total',
         code: 'NEGATIVE_COST',
         message: 'Acquisition cost cannot be negative',
-        severity: 'error'
+        severity: 'error',
       })
     }
 
@@ -89,13 +89,13 @@ export class BusinessRulesValidator {
     if (parcelData.acquisition_date) {
       const acquisitionDate = new Date(parcelData.acquisition_date)
       const today = new Date()
-      
+
       if (acquisitionDate > today) {
         errors.push({
           field: 'acquisition_date',
           code: 'FUTURE_DATE',
           message: 'Acquisition date cannot be in the future',
-          severity: 'error'
+          severity: 'error',
         })
       }
 
@@ -104,7 +104,7 @@ export class BusinessRulesValidator {
           field: 'acquisition_date',
           code: 'OLD_DATE',
           message: 'Acquisition date is very old',
-          suggestion: 'Verify the date is correct'
+          suggestion: 'Verify the date is correct',
         })
       }
     }
@@ -112,7 +112,7 @@ export class BusinessRulesValidator {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     }
   }
 
@@ -134,7 +134,7 @@ export class BusinessRulesValidator {
           field: 'parcel_id',
           code: 'PARCEL_NOT_FOUND',
           message: 'Referenced parcel does not exist',
-          severity: 'error'
+          severity: 'error',
         })
       } else {
         // Check if parcel is already subdivided
@@ -150,20 +150,20 @@ export class BusinessRulesValidator {
             field: 'parcel_id',
             code: 'PARCEL_ALREADY_SUBDIVIDED',
             message: 'Parcel is already subdivided',
-            severity: 'error'
+            severity: 'error',
           })
         }
 
         // Validate plot density
         if (subdivisionData.total_plots_planned && parcel.acreage_ha) {
           const plotsPerHectare = subdivisionData.total_plots_planned / parcel.acreage_ha
-          
+
           if (plotsPerHectare > 50) {
             warnings.push({
               field: 'total_plots_planned',
               code: 'HIGH_DENSITY',
               message: 'Plot density is very high (>50 plots per hectare)',
-              suggestion: 'Consider reducing the number of plots or increasing plot sizes'
+              suggestion: 'Consider reducing the number of plots or increasing plot sizes',
             })
           }
 
@@ -172,7 +172,7 @@ export class BusinessRulesValidator {
               field: 'total_plots_planned',
               code: 'LOW_DENSITY',
               message: 'Plot density is very low (<1 plot per hectare)',
-              suggestion: 'Consider increasing the number of plots to maximize land use'
+              suggestion: 'Consider increasing the number of plots to maximize land use',
             })
           }
         }
@@ -185,7 +185,7 @@ export class BusinessRulesValidator {
         field: 'budget_estimate',
         code: 'NEGATIVE_BUDGET',
         message: 'Budget estimate cannot be negative',
-        severity: 'error'
+        severity: 'error',
       })
     }
 
@@ -202,7 +202,7 @@ export class BusinessRulesValidator {
           field: 'public_utility_area_ha',
           code: 'HIGH_UTILITY_AREA',
           message: 'Utility area exceeds 30% of total parcel area',
-          suggestion: 'Consider reducing utility area to maximize saleable plots'
+          suggestion: 'Consider reducing utility area to maximize saleable plots',
         })
       }
     }
@@ -210,7 +210,7 @@ export class BusinessRulesValidator {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     }
   }
 
@@ -234,7 +234,7 @@ export class BusinessRulesValidator {
           field: 'plot_no',
           code: 'DUPLICATE_PLOT_NUMBER',
           message: 'Plot number already exists in this subdivision',
-          severity: 'error'
+          severity: 'error',
         })
       }
     }
@@ -246,7 +246,7 @@ export class BusinessRulesValidator {
           field: 'size_sqm',
           code: 'MINIMUM_PLOT_SIZE',
           message: 'Plot must be at least 100 square meters',
-          severity: 'error'
+          severity: 'error',
         })
       }
 
@@ -255,7 +255,7 @@ export class BusinessRulesValidator {
           field: 'size_sqm',
           code: 'LARGE_PLOT',
           message: 'Plot is unusually large (>5 hectares)',
-          suggestion: 'Consider subdividing into smaller plots'
+          suggestion: 'Consider subdividing into smaller plots',
         })
       }
     }
@@ -266,7 +266,7 @@ export class BusinessRulesValidator {
         field: 'frontage_meters',
         code: 'SMALL_FRONTAGE',
         message: 'Corner plot has small frontage (<10m)',
-        suggestion: 'Ensure adequate access for corner plot'
+        suggestion: 'Ensure adequate access for corner plot',
       })
     }
 
@@ -276,14 +276,14 @@ export class BusinessRulesValidator {
         field: 'utility_level',
         code: 'PREMIUM_NO_UTILITIES',
         message: 'Premium location plot has no utilities',
-        suggestion: 'Consider adding utilities to justify premium pricing'
+        suggestion: 'Consider adding utilities to justify premium pricing',
       })
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     }
   }
 
@@ -306,7 +306,7 @@ export class BusinessRulesValidator {
           field: 'id_number',
           code: 'DUPLICATE_ID_NUMBER',
           message: 'ID number already exists in the system',
-          severity: 'error'
+          severity: 'error',
         })
       }
     }
@@ -319,7 +319,7 @@ export class BusinessRulesValidator {
           field: 'phone',
           code: 'INVALID_PHONE_FORMAT',
           message: 'Invalid Kenyan phone number format',
-          severity: 'error'
+          severity: 'error',
         })
       }
     }
@@ -332,7 +332,7 @@ export class BusinessRulesValidator {
           field: 'email',
           code: 'INVALID_EMAIL_FORMAT',
           message: 'Invalid email format',
-          severity: 'error'
+          severity: 'error',
         })
       }
     }
@@ -345,7 +345,7 @@ export class BusinessRulesValidator {
           field: 'kra_pin',
           code: 'INVALID_KRA_PIN_FORMAT',
           message: 'KRA PIN format may be incorrect',
-          suggestion: 'Verify KRA PIN follows format: A123456789B'
+          suggestion: 'Verify KRA PIN follows format: A123456789B',
         })
       }
     }
@@ -357,7 +357,7 @@ export class BusinessRulesValidator {
           field: 'credit_score',
           code: 'INVALID_CREDIT_SCORE',
           message: 'Credit score must be between 300 and 850',
-          severity: 'error'
+          severity: 'error',
         })
       }
 
@@ -366,7 +366,7 @@ export class BusinessRulesValidator {
           field: 'credit_score',
           code: 'LOW_CREDIT_SCORE',
           message: 'Client has low credit score',
-          suggestion: 'Consider requiring higher deposit or guarantor'
+          suggestion: 'Consider requiring higher deposit or guarantor',
         })
       }
     }
@@ -374,7 +374,7 @@ export class BusinessRulesValidator {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     }
   }
 
@@ -396,21 +396,21 @@ export class BusinessRulesValidator {
           field: 'plot_id',
           code: 'PLOT_NOT_FOUND',
           message: 'Referenced plot does not exist',
-          severity: 'error'
+          severity: 'error',
         })
       } else if (plot.stage === 'sold') {
         errors.push({
           field: 'plot_id',
           code: 'PLOT_ALREADY_SOLD',
           message: 'Plot is already sold',
-          severity: 'error'
+          severity: 'error',
         })
       } else if (plot.stage !== 'ready_for_sale') {
         warnings.push({
           field: 'plot_id',
           code: 'PLOT_NOT_READY',
           message: 'Plot may not be ready for sale',
-          suggestion: 'Verify plot development status'
+          suggestion: 'Verify plot development status',
         })
       }
 
@@ -428,7 +428,7 @@ export class BusinessRulesValidator {
           field: 'plot_id',
           code: 'PLOT_ALREADY_RESERVED',
           message: 'Plot already has an active sale agreement',
-          severity: 'error'
+          severity: 'error',
         })
       }
     }
@@ -439,7 +439,7 @@ export class BusinessRulesValidator {
         field: 'price',
         code: 'INVALID_PRICE',
         message: 'Sale price must be positive',
-        severity: 'error'
+        severity: 'error',
       })
     }
 
@@ -452,7 +452,7 @@ export class BusinessRulesValidator {
           field: 'deposit_required',
           code: 'LOW_DEPOSIT',
           message: 'Deposit is less than 10% of sale price',
-          suggestion: 'Consider requiring higher deposit for security'
+          suggestion: 'Consider requiring higher deposit for security',
         })
       }
 
@@ -461,7 +461,7 @@ export class BusinessRulesValidator {
           field: 'deposit_required',
           code: 'HIGH_DEPOSIT',
           message: 'Deposit exceeds 50% of sale price',
-          suggestion: 'Consider reducing deposit requirement'
+          suggestion: 'Consider reducing deposit requirement',
         })
       }
     }
@@ -473,7 +473,7 @@ export class BusinessRulesValidator {
           field: 'deposit_paid',
           code: 'EXCESS_DEPOSIT',
           message: 'Deposit paid exceeds required amount',
-          suggestion: 'Apply excess to future payments'
+          suggestion: 'Apply excess to future payments',
         })
       }
     }
@@ -482,13 +482,13 @@ export class BusinessRulesValidator {
     if (agreementData.agreement_date) {
       const agreementDate = new Date(agreementData.agreement_date)
       const today = new Date()
-      
+
       if (agreementDate > today) {
         errors.push({
           field: 'agreement_date',
           code: 'FUTURE_AGREEMENT_DATE',
           message: 'Agreement date cannot be in the future',
-          severity: 'error'
+          severity: 'error',
         })
       }
     }
@@ -496,7 +496,7 @@ export class BusinessRulesValidator {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     }
   }
 
@@ -511,7 +511,7 @@ export class BusinessRulesValidator {
         field: 'amount',
         code: 'INVALID_AMOUNT',
         message: 'Payment amount must be positive',
-        severity: 'error'
+        severity: 'error',
       })
     }
 
@@ -528,7 +528,7 @@ export class BusinessRulesValidator {
           field: 'amount',
           code: 'EXCESS_PAYMENT',
           message: 'Payment exceeds outstanding balance',
-          suggestion: 'Confirm overpayment is intentional'
+          suggestion: 'Confirm overpayment is intentional',
         })
       }
     }
@@ -537,44 +537,47 @@ export class BusinessRulesValidator {
     if (paymentData.paid_date) {
       const paymentDate = new Date(paymentData.paid_date)
       const today = new Date()
-      
+
       if (paymentDate > today) {
         errors.push({
           field: 'paid_date',
           code: 'FUTURE_PAYMENT_DATE',
           message: 'Payment date cannot be in the future',
-          severity: 'error'
+          severity: 'error',
         })
       }
 
       // Check for very old payments
       const oneYearAgo = new Date()
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-      
+
       if (paymentDate < oneYearAgo) {
         warnings.push({
           field: 'paid_date',
           code: 'OLD_PAYMENT',
           message: 'Payment date is more than one year old',
-          suggestion: 'Verify the payment date is correct'
+          suggestion: 'Verify the payment date is correct',
         })
       }
     }
 
     // Validate transaction reference for electronic payments
-    if (['mpesa', 'bank_eft'].includes(paymentData.payment_method) && !paymentData.transaction_ref) {
+    if (
+      ['mpesa', 'bank_eft'].includes(paymentData.payment_method) &&
+      !paymentData.transaction_ref
+    ) {
       warnings.push({
         field: 'transaction_ref',
         code: 'MISSING_TRANSACTION_REF',
         message: 'Electronic payment should have transaction reference',
-        suggestion: 'Add transaction reference for audit trail'
+        suggestion: 'Add transaction reference for audit trail',
       })
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     }
   }
 
@@ -593,8 +596,7 @@ export class BusinessRulesValidator {
 
     try {
       // Check for orphaned plots
-      const { data: orphanedPlots } = await supabase
-        .rpc('find_orphaned_plots')
+      const { data: orphanedPlots } = await supabase.rpc('find_orphaned_plots')
 
       if (orphanedPlots && orphanedPlots.length > 0) {
         issues.push({
@@ -602,13 +604,12 @@ export class BusinessRulesValidator {
           severity: 'warning' as const,
           description: 'Plots without valid subdivision references',
           count: orphanedPlots.length,
-          affectedRecords: orphanedPlots.map((p: any) => p.plot_id)
+          affectedRecords: orphanedPlots.map((p: any) => p.plot_id),
         })
       }
 
       // Check for duplicate LR numbers
-      const { data: duplicateLRNumbers } = await supabase
-        .rpc('find_duplicate_lr_numbers')
+      const { data: duplicateLRNumbers } = await supabase.rpc('find_duplicate_lr_numbers')
 
       if (duplicateLRNumbers && duplicateLRNumbers.length > 0) {
         issues.push({
@@ -616,7 +617,7 @@ export class BusinessRulesValidator {
           severity: 'critical' as const,
           description: 'Parcels with duplicate LR numbers',
           count: duplicateLRNumbers.length,
-          affectedRecords: duplicateLRNumbers.map((p: any) => p.lr_number)
+          affectedRecords: duplicateLRNumbers.map((p: any) => p.lr_number),
         })
       }
 
@@ -632,7 +633,7 @@ export class BusinessRulesValidator {
           severity: 'warning' as const,
           description: 'Sale agreements with negative balances',
           count: negativeBalances.length,
-          affectedRecords: negativeBalances.map(a => a.agreement_no)
+          affectedRecords: negativeBalances.map((a) => a.agreement_no),
         })
       }
 
@@ -647,7 +648,7 @@ export class BusinessRulesValidator {
           type: 'unmatched_payments',
           severity: 'warning' as const,
           description: 'High number of unmatched payment transactions',
-          count: unmatchedPayments.length
+          count: unmatchedPayments.length,
         })
       }
 
@@ -662,27 +663,28 @@ export class BusinessRulesValidator {
           type: 'overdue_invoices',
           severity: 'warning' as const,
           description: 'High number of overdue invoices',
-          count: overdueInvoices.length
+          count: overdueInvoices.length,
         })
       }
 
-      const criticalIssues = issues.filter(i => i.severity === 'critical').length
-      
+      const criticalIssues = issues.filter((i) => i.severity === 'critical').length
+
       return {
         isHealthy: criticalIssues === 0,
-        issues
+        issues,
       }
-
     } catch (error) {
       console.error('Error performing integrity check:', error)
       return {
         isHealthy: false,
-        issues: [{
-          type: 'integrity_check_failed',
-          severity: 'critical' as const,
-          description: 'Failed to perform data integrity check',
-          count: 1
-        }]
+        issues: [
+          {
+            type: 'integrity_check_failed',
+            severity: 'critical' as const,
+            description: 'Failed to perform data integrity check',
+            count: 1,
+          },
+        ],
       }
     }
   }

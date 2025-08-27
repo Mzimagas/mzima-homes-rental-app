@@ -7,7 +7,8 @@ export interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputEleme
 }
 
 export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
-  { label, hint, error, id, className = '', ...props }, ref
+  { label, hint, error, id, className = '', ...props },
+  ref
 ) {
   const inputId = React.useId()
   const fieldId = id || inputId
@@ -22,7 +23,12 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(func
     <div className="space-y-1">
       {label && (
         <label htmlFor={fieldId} className="text-sm font-medium text-gray-700">
-          {label} {showAsterisk && <span className="text-red-600" aria-hidden>*</span>}
+          {label}{' '}
+          {showAsterisk && (
+            <span className="text-red-600" aria-hidden>
+              *
+            </span>
+          )}
         </label>
       )}
       <input
@@ -33,11 +39,18 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(func
         aria-describedby={describedBy.length ? describedBy.join(' ') : undefined}
         {...props}
       />
-      {hint && <p id={`${fieldId}-hint`} className="text-xs text-gray-500">{hint}</p>}
-      {error && <p id={`${fieldId}-error`} className="text-xs text-red-600">{error}</p>}
+      {hint && (
+        <p id={`${fieldId}-hint`} className="text-xs text-gray-500">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={`${fieldId}-error`} className="text-xs text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   )
 })
 
 export default TextField
-

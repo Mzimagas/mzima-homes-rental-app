@@ -22,7 +22,10 @@ function SecuritySettings() {
   const startEnroll = async () => {
     setMessage('')
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
-    if (error) { setMessage('Failed to start enrollment'); return }
+    if (error) {
+      setMessage('Failed to start enrollment')
+      return
+    }
     setUri(data.totp?.uri || null)
     setTicket(data.id)
   }
@@ -31,7 +34,10 @@ function SecuritySettings() {
     setMessage('')
     if (!ticket) return
     const { error } = await supabase.auth.mfa.verify({ factorId: ticket, code: otp })
-    if (error) { setMessage('Invalid code. Please try again.'); return }
+    if (error) {
+      setMessage('Invalid code. Please try again.')
+      return
+    }
     setEnrolled(true)
     setUri(null)
     setTicket(null)
@@ -55,22 +61,35 @@ function SecuritySettings() {
       {message && <div className="text-green-600 mb-4">{message}</div>}
       {!enrolled ? (
         <div>
-          <p className="mb-4 text-gray-700">Enable two-factor authentication (TOTP) for extra security.</p>
+          <p className="mb-4 text-gray-700">
+            Enable two-factor authentication (TOTP) for extra security.
+          </p>
           {!uri ? (
-            <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={startEnroll}>Start Enrollment</button>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={startEnroll}>
+              Start Enrollment
+            </button>
           ) : (
             <div className="space-y-4">
               <p className="text-sm">Scan this URI with your authenticator app:</p>
               <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{uri}</pre>
-              <input className="border rounded px-3 py-2 w-full" placeholder="Enter 6-digit code" value={otp} onChange={(e)=>setOtp(e.target.value)} />
-              <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={verifyEnroll}>Verify</button>
+              <input
+                className="border rounded px-3 py-2 w-full"
+                placeholder="Enter 6-digit code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+              />
+              <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={verifyEnroll}>
+                Verify
+              </button>
             </div>
           )}
         </div>
       ) : (
         <div className="space-y-4">
           <p className="text-gray-700">MFA is currently enabled for your account.</p>
-          <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={disableMfa}>Disable MFA</button>
+          <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={disableMfa}>
+            Disable MFA
+          </button>
         </div>
       )}
     </div>
@@ -78,4 +97,3 @@ function SecuritySettings() {
 }
 
 export default withAuth(SecuritySettings)
-

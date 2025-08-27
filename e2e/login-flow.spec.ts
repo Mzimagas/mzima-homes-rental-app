@@ -5,4 +5,3 @@ test('login page has form elements', async ({ page }) => {
   await expect(page.getByPlaceholder('Email address')).toBeVisible()
   await expect(page.getByPlaceholder('Password')).toBeVisible()
 })
-

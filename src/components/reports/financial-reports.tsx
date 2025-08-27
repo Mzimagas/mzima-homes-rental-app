@@ -4,13 +4,17 @@ import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import supabase from '../../lib/supabase-client'
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
-import DateRangeSelector, { getDefaultDateRange, getPredefinedDateRanges } from '../ui/date-range-selector'
+import DateRangeSelector, {
+  getDefaultDateRange,
+  getPredefinedDateRanges,
+} from '../ui/date-range-selector'
 import {
   createPDFHeader,
   addTableToPDF,
   addSummaryCardsToPDF,
   createExcelWorkbook,
   addTableToExcel,
+  addSummaryDashboardToExcel,
   saveExcelFile,
   savePDFFile,
   generateFilename,
@@ -18,7 +22,7 @@ import {
   formatDate,
   formatPercentage,
   type ExportOptions,
-  type TableData
+  type TableData,
 } from '../../lib/export-utils'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
@@ -59,7 +63,9 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
   const [data, setData] = useState<FinancialData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedPeriod, setSelectedPeriod] = useState<'3months' | '6months' | '1year' | 'custom'>('6months')
+  const [selectedPeriod, setSelectedPeriod] = useState<'3months' | '6months' | '1year' | 'custom'>(
+    '6months'
+  )
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [customDateRange, setCustomDateRange] = useState(getDefaultDateRange())
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
@@ -117,9 +123,8 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
         monthlyRevenue,
         yearToDate,
         rentRoll,
-        profitLoss
+        profitLoss,
       })
-
     } catch (err) {
       setError('Failed to load financial data')
       console.error('Financial data loading error:', err)
@@ -165,7 +170,8 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
       return
     }
 
-    if (diffDays > 1825) { // 5 years
+    if (diffDays > 1825) {
+      // 5 years
       setError('Date range cannot exceed 5 years')
       return
     }
@@ -178,8 +184,6 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
       setSelectedPeriod('custom')
     }
   }
-
-
 
   // Export to PDF
   const handleExportPDF = async () => {
@@ -200,11 +204,11 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
         subtitle: 'Revenue, Expenses, and Profitability Analysis',
         dateRange: customDateRange,
         filters: {
-          'Period': selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod,
-          'Year': selectedYear.toString()
+          Period: selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod,
+          Year: selectedYear.toString(),
         },
         data,
-        filename: generateFilename('financial-report', customDateRange)
+        filename: generateFilename('financial-report', customDateRange),
       }
 
       let yPosition = createPDFHeader(doc, exportOptions)
@@ -215,21 +219,21 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
         { title: 'Total Expenses', value: formatCurrency(data.yearToDate.totalExpenses) },
         { title: 'Net Income', value: formatCurrency(data.yearToDate.netIncome) },
         { title: 'Collection Rate', value: formatPercentage(data.yearToDate.collectionRate) },
-        { title: 'Outstanding Amount', value: formatCurrency(data.yearToDate.outstandingAmount) }
+        { title: 'Outstanding Amount', value: formatCurrency(data.yearToDate.outstandingAmount) },
       ]
       yPosition = addSummaryCardsToPDF(doc, summaryCards, yPosition, 'Year to Date Summary')
 
       // Monthly trends table
       const monthlyTrendsTable: TableData = {
         headers: ['Month', 'Revenue', 'Expenses', 'Net Income', 'Collections', 'Outstanding'],
-        rows: (Array.isArray(data.monthlyRevenue) ? data.monthlyRevenue : []).map(month => [
+        rows: (Array.isArray(data.monthlyRevenue) ? data.monthlyRevenue : []).map((month) => [
           month.month,
           formatCurrency(month.revenue),
           formatCurrency(month.expenses),
           formatCurrency(month.netIncome),
           formatCurrency(month.collections),
-          formatCurrency(month.outstanding)
-        ])
+          formatCurrency(month.outstanding),
+        ]),
       }
       yPosition = addTableToPDF(doc, monthlyTrendsTable, yPosition, 'Monthly Financial Trends')
 
@@ -241,27 +245,35 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
 
       // Rent Roll table
       const rentRollTable: TableData = {
-        headers: ['Property', 'Unit', 'Tenant', 'Monthly Rent', 'Status', 'Last Payment', 'Balance'],
-        rows: data.rentRoll.map(item => [
+        headers: [
+          'Property',
+          'Unit',
+          'Tenant',
+          'Monthly Rent',
+          'Status',
+          'Last Payment',
+          'Balance',
+        ],
+        rows: data.rentRoll.map((item) => [
           item.propertyName,
           item.unitLabel,
           item.tenantName,
           formatCurrency(item.monthlyRent),
           item.status,
           item.lastPayment ? formatDate(item.lastPayment) : 'N/A',
-          formatCurrency(item.balance)
-        ])
+          formatCurrency(item.balance),
+        ]),
       }
       yPosition = addTableToPDF(doc, rentRollTable, yPosition, 'Rent Roll')
 
       // Profit & Loss table
       const profitLossTable: TableData = {
         headers: ['Category', 'Amount', 'Percentage'],
-        rows: data.profitLoss.map(item => [
+        rows: data.profitLoss.map((item) => [
           item.category,
           formatCurrency(item.amount),
-          formatPercentage(item.percentage)
-        ])
+          formatPercentage(item.percentage),
+        ]),
       }
       addTableToPDF(doc, profitLossTable, yPosition, 'Profit & Loss Breakdown')
 
@@ -293,11 +305,11 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
         subtitle: 'Revenue, Expenses, and Profitability Analysis',
         dateRange: customDateRange,
         filters: {
-          'Period': selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod,
-          'Year': selectedYear.toString()
+          Period: selectedPeriod === 'custom' ? 'Custom Range' : selectedPeriod,
+          Year: selectedYear.toString(),
         },
         data,
-        filename: generateFilename('financial-report', customDateRange)
+        filename: generateFilename('financial-report', customDateRange),
       }
 
       const workbook = createExcelWorkbook(exportOptions)
@@ -308,47 +320,51 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
         { title: 'Total Expenses', value: formatCurrency(data.yearToDate.totalExpenses) },
         { title: 'Net Income', value: formatCurrency(data.yearToDate.netIncome) },
         { title: 'Collection Rate', value: formatPercentage(data.yearToDate.collectionRate) },
-        { title: 'Outstanding Amount', value: formatCurrency(data.yearToDate.outstandingAmount) }
+        { title: 'Outstanding Amount', value: formatCurrency(data.yearToDate.outstandingAmount) },
       ]
       addSummaryDashboardToExcel(workbook, summaryCards, exportOptions)
 
       // Monthly trends sheet
       const monthlyTrendsTable: TableData = {
         headers: ['Month', 'Revenue', 'Expenses', 'Net Income', 'Collections', 'Outstanding'],
-        rows: (Array.isArray(data.monthlyRevenue) ? data.monthlyRevenue : []).map(month => [
+        rows: (Array.isArray(data.monthlyRevenue) ? data.monthlyRevenue : []).map((month) => [
           month.month,
           month.revenue,
           month.expenses,
           month.netIncome,
           month.collections,
-          month.outstanding
-        ])
+          month.outstanding,
+        ]),
       }
       addTableToExcel(workbook, monthlyTrendsTable, 'Monthly Revenue')
 
       // Rent Roll sheet
       const rentRollTable: TableData = {
-        headers: ['Property', 'Unit', 'Tenant', 'Monthly Rent', 'Status', 'Last Payment', 'Balance'],
-        rows: data.rentRoll.map(item => [
+        headers: [
+          'Property',
+          'Unit',
+          'Tenant',
+          'Monthly Rent',
+          'Status',
+          'Last Payment',
+          'Balance',
+        ],
+        rows: data.rentRoll.map((item) => [
           item.propertyName,
           item.unitLabel,
           item.tenantName,
           item.monthlyRent,
           item.status,
           item.lastPayment || 'N/A',
-          item.balance
-        ])
+          item.balance,
+        ]),
       }
       addTableToExcel(workbook, rentRollTable, 'Rent Roll')
 
       // Profit & Loss sheet
       const profitLossTable: TableData = {
         headers: ['Category', 'Amount', 'Percentage'],
-        rows: data.profitLoss.map(item => [
-          item.category,
-          item.amount,
-          item.percentage
-        ])
+        rows: data.profitLoss.map((item) => [item.category, item.amount, item.percentage]),
       }
       addTableToExcel(workbook, profitLossTable, 'Profit & Loss')
 
@@ -368,8 +384,8 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
     const { data: payments } = await supabase
       .from('payments')
 
-
-      .select(`
+      .select(
+        `
         payment_date,
         amount_kes,
         tenants (
@@ -379,7 +395,8 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             )
           )
         )
-      `)
+      `
+      )
       .eq('tenants.units.properties.landlord_id', landlordId)
       .gte('payment_date', startDate.toISOString().split('T')[0])
       .lte('payment_date', endDate.toISOString().split('T')[0])
@@ -401,7 +418,7 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             expenses: 0,
             netIncome: 0,
             collections: 0,
-            outstanding: 0
+            outstanding: 0,
           })
           current.setMonth(current.getMonth() + 1)
         }
@@ -412,10 +429,7 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
     const propertyIds = properties.map((p: { id: string }) => p.id)
 
     // Get units for these properties
-    const { data: units } = await supabase
-      .from('units')
-      .select('id')
-      .in('property_id', propertyIds)
+    const { data: units } = await supabase.from('units').select('id').in('property_id', propertyIds)
 
     if (!units || units.length === 0) {
       const months: any[] = []
@@ -428,7 +442,7 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             expenses: 0,
             netIncome: 0,
             collections: 0,
-            outstanding: 0
+            outstanding: 0,
           })
           current.setMonth(current.getMonth() + 1)
         }
@@ -441,7 +455,8 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
     // Get invoices data for outstanding amounts
     const { data: invoices } = await supabase
       .from('rent_invoices')
-      .select(`
+      .select(
+        `
         period_start,
         amount_due_kes,
         amount_paid_kes,
@@ -452,7 +467,8 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             name
           )
         )
-      `)
+      `
+      )
       .in('unit_id', unitIds)
       .gte('period_start', startDate.toISOString().split('T')[0])
       .lte('period_start', endDate.toISOString().split('T')[0])
@@ -469,7 +485,7 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
         revenue: 0,
         expenses: 0, // TODO: Add expenses tracking
         collections: 0,
-        outstanding: 0
+        outstanding: 0,
       }
       current.setMonth(current.getMonth() + 1)
     }
@@ -513,19 +529,28 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
       .eq('landlord_id', landlordId)
 
     if (!properties || properties.length === 0) {
-      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, collectionRate: 0, outstandingAmount: 0 }
+      return {
+        totalRevenue: 0,
+        totalExpenses: 0,
+        netIncome: 0,
+        collectionRate: 0,
+        outstandingAmount: 0,
+      }
     }
 
     const propertyIds = properties.map((p: { id: string }) => p.id)
 
     // Get units for these properties
-    const { data: units } = await supabase
-      .from('units')
-      .select('id')
-      .in('property_id', propertyIds)
+    const { data: units } = await supabase.from('units').select('id').in('property_id', propertyIds)
 
     if (!units || units.length === 0) {
-      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, collectionRate: 0, outstandingAmount: 0 }
+      return {
+        totalRevenue: 0,
+        totalExpenses: 0,
+        netIncome: 0,
+        collectionRate: 0,
+        outstandingAmount: 0,
+      }
     }
 
     const unitIds = units.map((u: { id: string }) => u.id)
@@ -537,7 +562,13 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
       .in('current_unit_id', unitIds)
 
     if (!tenants || tenants.length === 0) {
-      return { totalRevenue: 0, totalExpenses: 0, netIncome: 0, collectionRate: 0, outstandingAmount: 0 }
+      return {
+        totalRevenue: 0,
+        totalExpenses: 0,
+        netIncome: 0,
+        collectionRate: 0,
+        outstandingAmount: 0,
+      }
     }
 
     const tenantIds = tenants.map((t: { id: string }) => t.id)
@@ -545,7 +576,8 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
     // Get total payments for the year
     const { data: payments } = await supabase
       .from('payments')
-      .select(`
+      .select(
+        `
         amount_kes,
         tenants (
           full_name,
@@ -556,17 +588,20 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             )
           )
         )
-      `)
+      `
+      )
       .in('tenant_id', tenantIds)
       .gte('payment_date', startOfYear)
       .lte('payment_date', endOfYear)
 
-    const totalRevenue = payments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
+    const totalRevenue =
+      payments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
     // Get outstanding invoices
     const { data: outstandingInvoices } = await supabase
       .from('rent_invoices')
-      .select(`
+      .select(
+        `
         amount_due_kes,
         amount_paid_kes,
         units (
@@ -574,18 +609,23 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             landlord_id
           )
         )
-      `)
+      `
+      )
       .eq('units.properties.landlord_id', landlordId)
       .in('status', ['PENDING', 'PARTIAL', 'OVERDUE'])
 
-    const outstandingAmount = outstandingInvoices?.reduce(
-      (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0
-    ) || 0
+    const outstandingAmount =
+      outstandingInvoices?.reduce(
+        (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) =>
+          sum + (inv.amount_due_kes - inv.amount_paid_kes),
+        0
+      ) || 0
 
     // Get total invoiced amount for collection rate
     const { data: allInvoices } = await supabase
       .from('rent_invoices')
-      .select(`
+      .select(
+        `
         amount_due_kes,
         amount_paid_kes,
         units (
@@ -594,13 +634,22 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             name
           )
         )
-      `)
+      `
+      )
       .in('unit_id', unitIds)
       .gte('period_start', startOfYear)
       .lte('period_start', endOfYear)
 
-    const totalInvoiced = allInvoices?.reduce((sum: number, inv: { amount_due_kes: number }) => sum + inv.amount_due_kes, 0) || 0
-    const totalCollected = allInvoices?.reduce((sum: number, inv: { amount_paid_kes: number }) => sum + inv.amount_paid_kes, 0) || 0
+    const totalInvoiced =
+      allInvoices?.reduce(
+        (sum: number, inv: { amount_due_kes: number }) => sum + inv.amount_due_kes,
+        0
+      ) || 0
+    const totalCollected =
+      allInvoices?.reduce(
+        (sum: number, inv: { amount_paid_kes: number }) => sum + inv.amount_paid_kes,
+        0
+      ) || 0
     const collectionRate = totalInvoiced > 0 ? (totalCollected / totalInvoiced) * 100 : 0
 
     return {
@@ -608,14 +657,15 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
       totalExpenses: 0, // TODO: Add expenses tracking
       netIncome: totalRevenue,
       collectionRate,
-      outstandingAmount
+      outstandingAmount,
     }
   }
 
   const getCurrentRentRoll = async (landlordId: string) => {
     const { data: properties } = await supabase
       .from('properties')
-      .select(`
+      .select(
+        `
         name,
         units (
           id,
@@ -627,7 +677,8 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             status
           )
         )
-      `)
+      `
+      )
       .eq('landlord_id', landlordId)
 
     const rentRoll: any[] = []
@@ -657,9 +708,12 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             .eq('tenant_id', tenant.id)
             .in('status', ['PENDING', 'PARTIAL', 'OVERDUE'])
 
-          balance = invoices?.reduce(
-            (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) => sum + (inv.amount_due_kes - inv.amount_paid_kes), 0
-          ) || 0
+          balance =
+            invoices?.reduce(
+              (sum: number, inv: { amount_due_kes: number; amount_paid_kes: number }) =>
+                sum + (inv.amount_due_kes - inv.amount_paid_kes),
+              0
+            ) || 0
         }
 
         rentRoll.push({
@@ -669,7 +723,7 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
           monthlyRent: unit.monthly_rent_kes,
           status: tenant?.status || 'VACANT',
           lastPayment,
-          balance
+          balance,
         })
       }
     }
@@ -684,7 +738,8 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
 
     const { data: payments } = await supabase
       .from('payments')
-      .select(`
+      .select(
+        `
         amount_kes,
         tenants (
           units (
@@ -693,12 +748,14 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
             )
           )
         )
-      `)
+      `
+      )
       .eq('tenants.units.properties.landlord_id', landlordId)
       .gte('payment_date', startOfYear)
       .lte('payment_date', endOfYear)
 
-    const totalRevenue = payments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
+    const totalRevenue =
+      payments?.reduce((sum: number, p: { amount_kes: number }) => sum + p.amount_kes, 0) || 0
 
     return [
       { category: 'Rental Income', amount: totalRevenue, percentage: 100 },
@@ -706,7 +763,7 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
       { category: 'Utilities', amount: 0, percentage: 0 },
       { category: 'Insurance', amount: 0, percentage: 0 },
       { category: 'Property Tax', amount: 0, percentage: 0 },
-      { category: 'Management Fees', amount: 0, percentage: 0 }
+      { category: 'Management Fees', amount: 0, percentage: 0 },
     ]
   }
 
@@ -725,13 +782,12 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
     isExporting: () => isExporting,
   }))
 
-
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never'
     return new Date(dateString).toLocaleDateString('en-KE', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -740,12 +796,14 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
   }
 
   if (error) {
-    return <ErrorCard title="Failed to load financial data" message={error} onRetry={loadFinancialData} />
-
-
+    return (
+      <ErrorCard
+        title="Failed to load financial data"
+        message={error}
+        onRetry={loadFinancialData}
+      />
+    )
   }
-
-
 
   if (!data) {
     return <div>No financial data available</div>
@@ -768,7 +826,11 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
                     className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {isExporting ? 'Exporting...' : 'Export PDF'}
                   </button>
@@ -779,7 +841,11 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
                     className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {isExporting ? 'Exporting...' : 'Export Excel'}
                   </button>
@@ -788,9 +854,25 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
 
               {isGeneratingReport && (
                 <div className="flex items-center text-sm text-blue-600">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Generating report...
                 </div>
@@ -801,15 +883,19 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Year (for YTD Summary)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Year (for YTD Summary)
+                </label>
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                   disabled={isGeneratingReport}
                   className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                 >
-                  {[2024, 2023, 2022].map(year => (
-                    <option key={year} value={year}>{year}</option>
+                  {[2024, 2023, 2022].map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -832,7 +918,9 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
 
             {selectedPeriod === 'custom' && (
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Custom Date Range</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Date Range
+                </label>
                 <DateRangeSelector
                   value={customDateRange}
                   onChange={handleCustomDateRangeChange}
@@ -879,7 +967,9 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
 
           {selectedPeriod === 'custom' && (
             <div className="text-sm text-gray-600">
-              <strong>Selected Range:</strong> {new Date(customDateRange.startDate).toLocaleDateString()} - {new Date(customDateRange.endDate).toLocaleDateString()}
+              <strong>Selected Range:</strong>{' '}
+              {new Date(customDateRange.startDate).toLocaleDateString()} -{' '}
+              {new Date(customDateRange.endDate).toLocaleDateString()}
               {(() => {
                 const start = new Date(customDateRange.startDate)
                 const end = new Date(customDateRange.endDate)
@@ -897,15 +987,33 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
         {isGeneratingReport && (
           <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
             <div className="flex items-center text-gray-600">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin -ml-1 mr-3 h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Updating data...
             </div>
           </div>
         )}
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Year-to-Date Summary ({selectedYear})</h4>
+        <h4 className="text-lg font-medium text-gray-900 mb-4">
+          Year-to-Date Summary ({selectedYear})
+        </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
@@ -945,9 +1053,25 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
         {isGeneratingReport && (
           <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
             <div className="flex items-center text-gray-600">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin -ml-1 mr-3 h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Updating data...
             </div>
@@ -957,25 +1081,27 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
           Monthly Revenue Trend
           {selectedPeriod === 'custom' && (
             <span className="text-sm font-normal text-gray-500 ml-2">
-              ({new Date(customDateRange.startDate).toLocaleDateString()} - {new Date(customDateRange.endDate).toLocaleDateString()})
+              ({new Date(customDateRange.startDate).toLocaleDateString()} -{' '}
+              {new Date(customDateRange.endDate).toLocaleDateString()})
             </span>
           )}
         </h4>
         <div className="space-y-4">
           {(Array.isArray(data.monthlyRevenue) ? data.monthlyRevenue : []).map((month, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div
+              key={index}
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+            >
               <div>
                 <div className="font-medium text-gray-900">{month.month}</div>
                 <div className="text-sm text-gray-500">
-                  Collections: {formatCurrency(month.collections)} |
-                  Outstanding: {formatCurrency(month.outstanding)}
+                  Collections: {formatCurrency(month.collections)} | Outstanding:{' '}
+                  {formatCurrency(month.outstanding)}
                 </div>
               </div>
               <div className="text-right">
                 <div className="font-medium text-gray-900">{formatCurrency(month.revenue)}</div>
-                <div className="text-sm text-green-600">
-                  Net: {formatCurrency(month.netIncome)}
-                </div>
+                <div className="text-sm text-green-600">Net: {formatCurrency(month.netIncome)}</div>
               </div>
             </div>
           ))}
@@ -991,12 +1117,24 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property/Unit</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monthly Rent</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Payment</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Property/Unit
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tenant
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Monthly Rent
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Payment
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Balance
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -1013,11 +1151,15 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
                     {formatCurrency(row.monthlyRent)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      row.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                      row.status === 'VACANT' ? 'bg-gray-100 text-gray-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        row.status === 'ACTIVE'
+                          ? 'bg-green-100 text-green-800'
+                          : row.status === 'VACANT'
+                            ? 'bg-gray-100 text-gray-800'
+                            : 'bg-red-100 text-red-800'
+                      }`}
+                    >
                       {row.status}
                     </span>
                   </td>
@@ -1025,7 +1167,9 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
                     {formatDate(row.lastPayment)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={row.balance > 0 ? 'text-red-600 font-medium' : 'text-gray-900'}>
+                    <span
+                      className={row.balance > 0 ? 'text-red-600 font-medium' : 'text-gray-900'}
+                    >
                       {formatCurrency(row.balance)}
                     </span>
                   </td>

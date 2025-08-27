@@ -2,7 +2,8 @@
 import '@testing-library/jest-dom'
 
 // Mock environment variables for testing
-process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co'
+process.env.NEXT_PUBLIC_SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co'
 process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-key'
 process.env.MPESA_CONSUMER_KEY = 'test-consumer-key'
 process.env.MPESA_CONSUMER_SECRET = 'test-consumer-secret'
@@ -17,9 +18,9 @@ global.fetch = jest.fn()
 Object.defineProperty(global, 'crypto', {
   value: {
     subtle: {
-      digest: jest.fn().mockResolvedValue(new ArrayBuffer(32))
-    }
-  }
+      digest: jest.fn().mockResolvedValue(new ArrayBuffer(32)),
+    },
+  },
 })
 
 // Mock window.location
@@ -29,23 +30,23 @@ Object.defineProperty(window, 'location', {
     origin: 'http://localhost:3000',
     pathname: '/',
     search: '',
-    hash: ''
+    hash: '',
   },
-  writable: true
+  writable: true,
 })
 
 // Mock IntersectionObserver
 global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
-  disconnect: jest.fn()
+  disconnect: jest.fn(),
 }))
 
 // Mock ResizeObserver
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
-  disconnect: jest.fn()
+  disconnect: jest.fn(),
 }))
 
 // Clean up after each test
@@ -64,20 +65,20 @@ global.testUtils = {
   generateTestId: () => `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 
   // Wait for async operations
-  waitFor: (ms = 100) => new Promise(resolve => setTimeout(resolve, ms)),
+  waitFor: (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms)),
 
   // Mock successful API response
   mockApiSuccess: (data) => ({
     ok: true,
     status: 200,
-    json: async () => ({ data, error: null })
+    json: async () => ({ data, error: null }),
   }),
 
   // Mock API error response
   mockApiError: (error) => ({
     ok: false,
     status: 400,
-    json: async () => ({ data: null, error })
+    json: async () => ({ data: null, error }),
   }),
 
   // Create test client data
@@ -86,7 +87,7 @@ global.testUtils = {
     id_number: `TEST${Date.now()}`,
     phone: '+254701234567',
     email: 'test@example.com',
-    source: 'walk_in'
+    source: 'walk_in',
   }),
 
   // Create test plot data
@@ -96,7 +97,7 @@ global.testUtils = {
     size_sqm: 1000,
     access_type: 'public_road',
     utility_level: 'water_power',
-    stage: 'ready_for_sale'
+    stage: 'ready_for_sale',
   }),
 
   // Create test coordinates
@@ -105,8 +106,8 @@ global.testUtils = {
     [36.8229, -1.2921],
     [36.8229, -1.2931],
     [36.8219, -1.2931],
-    [36.8219, -1.2921]
-  ]
+    [36.8219, -1.2921],
+  ],
 }
 
 // Mock Next.js router
@@ -163,7 +164,7 @@ jest.mock('./src/lib/supabase-client', () => ({
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
+  value: jest.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -206,7 +207,7 @@ global.ResizeObserver = class ResizeObserver {
 // Mock crypto.randomUUID for Node.js environments
 if (typeof crypto === 'undefined') {
   global.crypto = {
-    randomUUID: () => 'test-uuid-' + Math.random().toString(36).substr(2, 9)
+    randomUUID: () => 'test-uuid-' + Math.random().toString(36).substr(2, 9),
   }
 } else if (!crypto.randomUUID) {
   crypto.randomUUID = () => 'test-uuid-' + Math.random().toString(36).substr(2, 9)

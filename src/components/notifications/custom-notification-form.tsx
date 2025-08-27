@@ -17,12 +17,15 @@ interface CustomNotificationFormProps {
   onSuccess: () => void
 }
 
-export default function CustomNotificationForm({ onClose, onSuccess }: CustomNotificationFormProps) {
+export default function CustomNotificationForm({
+  onClose,
+  onSuccess,
+}: CustomNotificationFormProps) {
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingTenants, setLoadingTenants] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   const [formData, setFormData] = useState({
     recipients: [] as string[], // tenant IDs
     recipientType: 'selected' as 'all' | 'selected' | 'property',
@@ -31,7 +34,7 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
     message: '',
     channels: ['email'] as ('email' | 'sms' | 'in_app')[],
     sendImmediately: true,
-    scheduledFor: ''
+    scheduledFor: '',
   })
 
   useEffect(() => {
@@ -74,7 +77,7 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
             email: 'john.demo@example.com',
             phone: '+254700000001',
             property_name: 'Demo Property',
-            unit_label: 'A1'
+            unit_label: 'A1',
           },
           {
             id: 'mock-2',
@@ -82,8 +85,8 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
             email: 'jane.demo@example.com',
             phone: '+254700000002',
             property_name: 'Demo Property',
-            unit_label: 'B2'
-          }
+            unit_label: 'B2',
+          },
         ]
         setTenants(mockTenants)
       } else {
@@ -98,7 +101,9 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
 
         // Show a brief success message if no tenants found but no error occurred
         if (!data || data.length === 0) {
-          console.log('No tenants returned from database - this may be normal if no active tenants exist')
+          console.log(
+            'No tenants returned from database - this may be normal if no active tenants exist'
+          )
         }
       }
     } catch (err) {
@@ -139,7 +144,7 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
         recipientType: formData.recipientType,
         propertyId: formData.propertyId,
         sendImmediately: formData.sendImmediately,
-        scheduledFor: formData.scheduledFor || null
+        scheduledFor: formData.scheduledFor || null,
       }
 
       // Send the custom notification
@@ -149,7 +154,9 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
         throw new Error(result.error)
       }
 
-      alert(`Custom notification sent successfully! ${result.data?.length || 0} notifications created.`)
+      alert(
+        `Custom notification sent successfully! ${result.data?.length || 0} notifications created.`
+      )
       onSuccess()
       onClose()
     } catch (err) {
@@ -164,12 +171,12 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
     if (currentRecipients.includes(tenantId)) {
       setFormData({
         ...formData,
-        recipients: currentRecipients.filter(id => id !== tenantId)
+        recipients: currentRecipients.filter((id) => id !== tenantId),
       })
     } else {
       setFormData({
         ...formData,
-        recipients: [...currentRecipients, tenantId]
+        recipients: [...currentRecipients, tenantId],
       })
     }
   }
@@ -179,12 +186,12 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
     if (checked) {
       setFormData({
         ...formData,
-        channels: [...currentChannels, channel]
+        channels: [...currentChannels, channel],
       })
     } else {
       setFormData({
         ...formData,
-        channels: currentChannels.filter((c: string) => c !== channel)
+        channels: currentChannels.filter((c: string) => c !== channel),
       })
     }
   }
@@ -192,14 +199,14 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
   const selectAllTenants = () => {
     setFormData({
       ...formData,
-      recipients: tenants.map(t => t.id)
+      recipients: tenants.map((t) => t.id),
     })
   }
 
   const clearAllTenants = () => {
     setFormData({
       ...formData,
-      recipients: []
+      recipients: [],
     })
   }
 
@@ -215,7 +222,12 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
               disabled={loading}
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -231,9 +243,7 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
               {/* Left Column - Message Content */}
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
                   <input
                     type="text"
                     value={formData.subject}
@@ -246,9 +256,7 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Message *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Message *</label>
                   <textarea
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -259,7 +267,8 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
                     required
                   />
                   <p className="mt-1 text-sm text-gray-500">
-                    You can use variables like {'{'}tenant_name{'}'}, {'{'}property_name{'}'}, {'{'}unit_label{'}'}
+                    You can use variables like {'{'}tenant_name{'}'}, {'{'}property_name{'}'}, {'{'}
+                    unit_label{'}'}
                   </p>
                 </div>
 
@@ -271,13 +280,15 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
                     {[
                       { value: 'email', label: 'Email', icon: '📧' },
                       { value: 'sms', label: 'SMS', icon: '📱' },
-                      { value: 'in_app', label: 'In-App', icon: '🔔' }
+                      { value: 'in_app', label: 'In-App', icon: '🔔' },
                     ].map((channel) => (
                       <label key={channel.value} className="flex items-center">
                         <input
                           type="checkbox"
                           checked={formData.channels.includes(channel.value as any)}
-                          onChange={(e) => handleChannelChange(channel.value as any, e.target.checked)}
+                          onChange={(e) =>
+                            handleChannelChange(channel.value as any, e.target.checked)
+                          }
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           disabled={loading}
                         />
@@ -304,7 +315,9 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
                           name="recipientType"
                           value="selected"
                           checked={formData.recipientType === 'selected'}
-                          onChange={(e) => setFormData({ ...formData, recipientType: e.target.value as any })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, recipientType: e.target.value as any })
+                          }
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                           disabled={loading}
                         />
@@ -316,7 +329,9 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
                           name="recipientType"
                           value="all"
                           checked={formData.recipientType === 'all'}
-                          onChange={(e) => setFormData({ ...formData, recipientType: e.target.value as any })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, recipientType: e.target.value as any })
+                          }
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                           disabled={loading}
                         />
@@ -367,12 +382,16 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
                             </div>
                           ) : tenants.length === 0 ? (
                             <div className="p-4 text-center text-gray-500">
-                              No active tenants found. Make sure tenants are assigned to units and have active status.
+                              No active tenants found. Make sure tenants are assigned to units and
+                              have active status.
                             </div>
                           ) : (
                             <div className="divide-y divide-gray-200">
                               {tenants.map((tenant) => (
-                                <label key={tenant.id} className="flex items-center p-3 hover:bg-gray-50 cursor-pointer">
+                                <label
+                                  key={tenant.id}
+                                  className="flex items-center p-3 hover:bg-gray-50 cursor-pointer"
+                                >
                                   <input
                                     type="checkbox"
                                     checked={formData.recipients.includes(tenant.id)}
@@ -381,7 +400,9 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
                                     disabled={loading}
                                   />
                                   <div className="ml-3 flex-1">
-                                    <div className="text-sm font-medium text-gray-900">{tenant.name}</div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {tenant.name}
+                                    </div>
                                     <div className="text-sm text-gray-500">
                                       {tenant.property_name} - {tenant.unit_label}
                                     </div>
@@ -409,7 +430,9 @@ export default function CustomNotificationForm({ onClose, onSuccess }: CustomNot
                         type="radio"
                         name="deliveryTiming"
                         checked={formData.sendImmediately}
-                        onChange={() => setFormData({ ...formData, sendImmediately: true, scheduledFor: '' })}
+                        onChange={() =>
+                          setFormData({ ...formData, sendImmediately: true, scheduledFor: '' })
+                        }
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         disabled={loading}
                       />

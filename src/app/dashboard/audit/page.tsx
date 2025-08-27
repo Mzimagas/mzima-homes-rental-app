@@ -25,7 +25,9 @@ export default function AuditTrailPage() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Security & Audit Trail</h2>
-          <p className="text-gray-600">Monitor changes, manage approvals, and ensure data integrity</p>
+          <p className="text-gray-600">
+            Monitor changes, manage approvals, and ensure data integrity
+          </p>
         </div>
       </div>
 
@@ -37,4 +39,3 @@ export default function AuditTrailPage() {
     </div>
   )
 }
-

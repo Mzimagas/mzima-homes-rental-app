@@ -14,7 +14,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -37,7 +39,7 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     const { data, error } = await admin
       .from('properties')
       .select('landlord_id')
@@ -59,24 +61,38 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
 // Validation schema for handover cost update
 const handoverCostUpdateSchema = z.object({
   cost_type_id: z.string().min(1, 'Cost type is required').optional(),
-  cost_category: z.enum(['PRE_HANDOVER', 'AGREEMENT_LEGAL', 'LCB_PROCESS', 'PAYMENT_TRACKING', 'TRANSFER_REGISTRATION', 'OTHER']).optional(),
+  cost_category: z
+    .enum([
+      'PRE_HANDOVER',
+      'AGREEMENT_LEGAL',
+      'LCB_PROCESS',
+      'PAYMENT_TRACKING',
+      'TRANSFER_REGISTRATION',
+      'OTHER',
+    ])
+    .optional(),
   amount_kes: z.number().positive('Amount must be positive').optional(),
   payment_reference: z.string().optional(),
   payment_date: z.string().optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 })
 
 // PATCH /api/properties/[id]/handover-costs/[costId] - Update cost entry
-export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const PATCH = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id and cost id from path /api/properties/[id]/handover-costs/[costId]
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
-    const costsIdx = segments.findIndex(s => s === 'handover-costs')
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const costsIdx = segments.findIndex((s) => s === 'handover-costs')
     const costId = costsIdx >= 0 && segments[costsIdx + 1] ? segments[costsIdx + 1] : undefined
 
     if (!propertyId || !costId) return errors.badRequest('Missing property id or cost id in path')
@@ -127,16 +143,21 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
 })
 
 // DELETE /api/properties/[id]/handover-costs/[costId] - Delete cost entry
-export const DELETE = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const DELETE = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id and cost id from path /api/properties/[id]/handover-costs/[costId]
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
-    const costsIdx = segments.findIndex(s => s === 'handover-costs')
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const costsIdx = segments.findIndex((s) => s === 'handover-costs')
     const costId = costsIdx >= 0 && segments[costsIdx + 1] ? segments[costsIdx + 1] : undefined
 
     if (!propertyId || !costId) return errors.badRequest('Missing property id or cost id in path')

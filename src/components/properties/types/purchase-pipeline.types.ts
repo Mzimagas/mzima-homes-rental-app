@@ -17,72 +17,89 @@ export interface PipelineStage {
 export const PIPELINE_STAGES: PipelineStage[] = [
   {
     id: 1,
-    name: "Initial Search & Evaluation",
-    description: "Property identification and initial assessment",
-    statusOptions: ["Not Started", "In Progress", "Completed", "On Hold"],
-    requiredFields: ["propertyName", "propertyAddress", "propertyType"],
-    estimatedDays: 7
+    name: 'Initial Search & Evaluation',
+    description: 'Property identification and initial assessment',
+    statusOptions: ['Not Started', 'In Progress', 'Completed', 'On Hold'],
+    requiredFields: ['propertyName', 'propertyAddress', 'propertyType'],
+    estimatedDays: 7,
   },
   {
     id: 2,
-    name: "Survey & Mapping",
-    description: "Beacons placement and site visit documentation",
-    statusOptions: ["Not Started", "Scheduled", "In Progress", "Completed", "Issues Found"],
-    estimatedDays: 14
+    name: 'Survey & Mapping',
+    description: 'Beacons placement and site visit documentation',
+    statusOptions: ['Not Started', 'Scheduled', 'In Progress', 'Completed', 'Issues Found'],
+    estimatedDays: 14,
   },
   {
     id: 3,
-    name: "Legal Verification",
-    description: "Witness verification and stakeholder meetings",
-    statusOptions: ["Not Started", "Documents Requested", "Under Review", "Verified", "Issues Found"],
-    estimatedDays: 21
+    name: 'Legal Verification',
+    description: 'Witness verification and stakeholder meetings',
+    statusOptions: [
+      'Not Started',
+      'Documents Requested',
+      'Under Review',
+      'Verified',
+      'Issues Found',
+    ],
+    estimatedDays: 21,
   },
   {
     id: 4,
-    name: "Agreement & Documentation",
-    description: "Contract preparation and legal documentation",
-    statusOptions: ["Not Started", "Drafting", "Under Review", "Finalized", "Amendments Needed"],
-    estimatedDays: 10
+    name: 'Agreement & Documentation',
+    description: 'Contract preparation and legal documentation',
+    statusOptions: ['Not Started', 'Drafting', 'Under Review', 'Finalized', 'Amendments Needed'],
+    estimatedDays: 10,
   },
   {
     id: 5,
-    name: "Financial Processing (Down Payment)",
-    description: "Initial payment processing and confirmation",
-    statusOptions: ["Not Started", "Pending", "Processed", "Failed", "Partial"],
-    estimatedDays: 5
+    name: 'Financial Processing (Down Payment)',
+    description: 'Initial payment processing and confirmation',
+    statusOptions: ['Not Started', 'Pending', 'Processed', 'Failed', 'Partial'],
+    estimatedDays: 5,
   },
   {
     id: 6,
-    name: "Financial Processing (Subsequent Payments)",
-    description: "Remaining payment installments processing",
-    statusOptions: ["Not Started", "Pending", "In Progress", "Completed", "Overdue"],
-    estimatedDays: 30
+    name: 'Financial Processing (Subsequent Payments)',
+    description: 'Remaining payment installments processing',
+    statusOptions: ['Not Started', 'Pending', 'In Progress', 'Completed', 'Overdue'],
+    estimatedDays: 30,
   },
   {
     id: 7,
-    name: "Land Control Board Meeting & Transfer Forms",
-    description: "LCB approval and seller signed transfer forms",
-    statusOptions: ["Not Started", "Submitted", "Under Review", "LCB Approved & Forms Signed", "Issues Found"],
-    estimatedDays: 45
+    name: 'Land Control Board Meeting & Transfer Forms',
+    description: 'LCB approval and seller signed transfer forms',
+    statusOptions: [
+      'Not Started',
+      'Submitted',
+      'Under Review',
+      'LCB Approved & Forms Signed',
+      'Issues Found',
+    ],
+    estimatedDays: 45,
   },
   {
     id: 8,
-    name: "Title Registration",
-    description: "Final title transfer and registration completion",
-    statusOptions: ["Not Started", "In Progress", "Registered", "Completed"],
-    estimatedDays: 14
-  }
+    name: 'Title Registration',
+    description: 'Final title transfer and registration completion',
+    statusOptions: ['Not Started', 'In Progress', 'Registered', 'Completed'],
+    estimatedDays: 14,
+  },
 ]
 
 // Purchase pipeline schema
 export const purchasePipelineSchema = z.object({
+  propertyId: z.string().optional(), // Optional link to existing property
   propertyName: z.string().min(1, 'Property name is required'),
   propertyAddress: z.string().min(1, 'Property address is required'),
   propertyType: PropertyTypeEnum.refine((val) => val !== undefined, {
-    message: 'Please select a property type'
+    message: 'Please select a property type',
   }),
   sellerName: z.string().min(1, 'Seller name is required'),
-  sellerPhone: z.string().regex(phoneRegex, 'Enter a valid phone number').optional().or(z.literal('')),
+  sellerPhone: z
+    .string()
+    .regex(phoneRegex, 'Enter a valid phone number')
+    .optional()
+    .or(z.literal('')),
   sellerEmail: z.string().email('Enter a valid email').optional().or(z.literal('')),
   askingPrice: z.number().positive('Asking price must be positive').optional(),
   negotiatedPrice: z.number().positive('Negotiated price must be positive').optional(),
@@ -114,6 +131,7 @@ export interface PipelineStageData {
 // Purchase Item Interface
 export interface PurchaseItem {
   id: string
+  property_id?: string // Link to the actual property record
   property_name: string
   property_address: string
   property_type: string
@@ -128,6 +146,10 @@ export interface PurchaseItem {
   legal_representative?: string
   financing_source?: string
   contract_reference?: string
+  // Enhanced location data from joined property table
+  property_lat?: number | null
+  property_lng?: number | null
+  property_physical_address?: string
   title_deed_status?: string
   survey_status?: string
   expected_rental_income_kes?: number
@@ -156,7 +178,13 @@ export interface ProgressTrackerProps {
   onStageClick: (stageId: number) => void
   overallProgress: number
   purchaseId: string
-  onStageUpdate: (purchaseId: string, stageId: number, newStatus: string, notes?: string, stageData?: any) => Promise<void>
+  onStageUpdate: (
+    purchaseId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string,
+    stageData?: any
+  ) => Promise<void>
 }
 
 export interface StageModalProps {
@@ -165,7 +193,13 @@ export interface StageModalProps {
   stageId: number
   purchaseId: string
   stageData: PipelineStageData | undefined
-  onStageUpdate: (purchaseId: string, stageId: number, newStatus: string, notes?: string, stageData?: any) => Promise<void>
+  onStageUpdate: (
+    purchaseId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string,
+    stageData?: any
+  ) => Promise<void>
 }
 
 export interface PurchaseListProps {
@@ -175,7 +209,13 @@ export interface PurchaseListProps {
   onEditPurchase: (purchase: PurchaseItem) => void
   onTransferProperty: (purchase: PurchaseItem) => void
   onStageClick: (stageId: number, purchaseId: string) => void
-  onStageUpdate: (purchaseId: string, stageId: number, newStatus: string, notes?: string, stageData?: any) => Promise<void>
+  onStageUpdate: (
+    purchaseId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string,
+    stageData?: any
+  ) => Promise<void>
   transferringId: string | null
 }
 

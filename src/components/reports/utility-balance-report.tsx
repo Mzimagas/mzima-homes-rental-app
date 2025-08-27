@@ -14,14 +14,18 @@ export default function UtilityBalanceReport() {
     setError(null)
     const { data, error } = await supabase
       .from('utility_accounts')
-      .select('id, unit_id, tenant_id, type, balance_kes, low_balance_threshold_kes, credit_limit_kes, units!inner(unit_label, properties(name))')
+      .select(
+        'id, unit_id, tenant_id, type, balance_kes, low_balance_threshold_kes, credit_limit_kes, units!inner(unit_label, properties(name))'
+      )
       .eq('is_active', true)
     if (error) setError(error.message)
     setRows(data || [])
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+  }, [])
 
   if (loading) return <div className="p-4">Loading utility balances...</div>
   if (error) return <div className="p-4 text-red-600">{error}</div>
@@ -41,24 +45,34 @@ export default function UtilityBalanceReport() {
             </tr>
           </thead>
           <tbody>
-            {rows.map(r => (
+            {rows.map((r) => (
               <tr key={r.id} className="border-t">
                 <td className="p-2">{r.units?.properties?.name}</td>
                 <td className="p-2">{r.units?.unit_label}</td>
                 <td className="p-2">{r.type.replace(/_/g, ' ')}</td>
                 <td className="p-2 text-right">{formatCurrency(r.balance_kes)}</td>
                 <td className="p-2">
-                  {r.type === 'ELECTRICITY_PREPAID' && r.low_balance_threshold_kes != null && r.balance_kes <= r.low_balance_threshold_kes && (
-                    <span className="text-yellow-700 bg-yellow-100 px-2 py-1 rounded text-xs">Low</span>
-                  )}
+                  {r.type === 'ELECTRICITY_PREPAID' &&
+                    r.low_balance_threshold_kes != null &&
+                    r.balance_kes <= r.low_balance_threshold_kes && (
+                      <span className="text-yellow-700 bg-yellow-100 px-2 py-1 rounded text-xs">
+                        Low
+                      </span>
+                    )}
                   {r.type !== 'ELECTRICITY_PREPAID' && r.balance_kes < 0 && (
-                    <span className="text-red-700 bg-red-100 px-2 py-1 rounded text-xs">Outstanding</span>
+                    <span className="text-red-700 bg-red-100 px-2 py-1 rounded text-xs">
+                      Outstanding
+                    </span>
                   )}
                 </td>
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td className="p-4 text-gray-500" colSpan={5}>No utility accounts</td></tr>
+              <tr>
+                <td className="p-4 text-gray-500" colSpan={5}>
+                  No utility accounts
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -66,4 +80,3 @@ export default function UtilityBalanceReport() {
     </div>
   )
 }
-

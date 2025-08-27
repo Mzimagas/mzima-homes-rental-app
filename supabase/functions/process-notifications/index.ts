@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -74,7 +74,7 @@ serve(async (req) => {
     for (const rule of rules as NotificationRule[]) {
       try {
         console.log(`Processing rule: ${rule.name} (${rule.type})`)
-        
+
         // Get notification settings for this landlord
         const { data: settings, error: settingsError } = await supabaseClient
           .from('notification_settings')
@@ -111,22 +111,18 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        message: 'Notifications processed successfully', 
-        processed: processedCount 
+      JSON.stringify({
+        message: 'Notifications processed successfully',
+        processed: processedCount,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-
   } catch (error) {
     console.error('Error in process-notifications function:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 })
 
@@ -136,7 +132,7 @@ async function processRentDueNotifications(
   settings: NotificationSettings
 ) {
   console.log(`Processing rent due notifications for rule: ${rule.name}`)
-  
+
   // Calculate target date (trigger_days before due date)
   const targetDate = new Date()
   targetDate.setDate(targetDate.getDate() + rule.trigger_days)
@@ -145,12 +141,14 @@ async function processRentDueNotifications(
   // Find rent invoices due on the target date
   const { data: invoices, error: invoicesError } = await supabaseClient
     .from('rent_invoices')
-    .select(`
+    .select(
+      `
       *,
       tenants (id, name, email, phone),
       units (label, property_id),
       properties (name)
-    `)
+    `
+    )
     .eq('due_date', targetDateStr)
     .in('status', ['PENDING', 'PARTIAL'])
 
@@ -175,8 +173,8 @@ async function processRentDueNotifications(
       metadata: {
         invoice_id: invoice.id,
         amount_due: invoice.amount_due_kes,
-        due_date: invoice.due_date
-      }
+        due_date: invoice.due_date,
+      },
     })
   }
 }
@@ -187,7 +185,7 @@ async function processOverdueNotifications(
   settings: NotificationSettings
 ) {
   console.log(`Processing overdue notifications for rule: ${rule.name}`)
-  
+
   // Calculate target date (trigger_days after due date)
   const targetDate = new Date()
   targetDate.setDate(targetDate.getDate() - rule.trigger_days)
@@ -196,12 +194,14 @@ async function processOverdueNotifications(
   // Find overdue invoices
   const { data: invoices, error: invoicesError } = await supabaseClient
     .from('rent_invoices')
-    .select(`
+    .select(
+      `
       *,
       tenants (id, name, email, phone),
       units (label, property_id),
       properties (name)
-    `)
+    `
+    )
     .eq('due_date', targetDateStr)
     .in('status', ['OVERDUE', 'PARTIAL'])
 
@@ -217,7 +217,7 @@ async function processOverdueNotifications(
   // Send notifications for each overdue invoice
   for (const invoice of invoices) {
     const outstandingAmount = invoice.amount_due_kes - invoice.amount_paid_kes
-    
+
     await sendNotification(supabaseClient, {
       rule,
       settings,
@@ -228,8 +228,8 @@ async function processOverdueNotifications(
       metadata: {
         invoice_id: invoice.id,
         outstanding_amount: outstandingAmount,
-        days_overdue: rule.trigger_days
-      }
+        days_overdue: rule.trigger_days,
+      },
     })
   }
 }
@@ -240,7 +240,7 @@ async function processLeaseExpiryNotifications(
   settings: NotificationSettings
 ) {
   console.log(`Processing lease expiry notifications for rule: ${rule.name}`)
-  
+
   // Calculate target date (trigger_days before expiry)
   const targetDate = new Date()
   targetDate.setDate(targetDate.getDate() + rule.trigger_days)
@@ -249,12 +249,14 @@ async function processLeaseExpiryNotifications(
   // Find tenancy agreements expiring on the target date
   const { data: agreements, error: agreementsError } = await supabaseClient
     .from('tenancy_agreements')
-    .select(`
+    .select(
+      `
       *,
       tenants (id, name, email, phone),
       units (label, property_id),
       properties (name)
-    `)
+    `
+    )
     .eq('end_date', targetDateStr)
     .eq('status', 'ACTIVE')
 
@@ -279,8 +281,8 @@ async function processLeaseExpiryNotifications(
       metadata: {
         agreement_id: agreement.id,
         expiry_date: agreement.end_date,
-        days_until_expiry: rule.trigger_days
-      }
+        days_until_expiry: rule.trigger_days,
+      },
     })
   }
 }
@@ -305,7 +307,7 @@ async function sendNotification(
     const currentHour = now.getHours()
     const startHour = parseInt(settings.business_hours_start.split(':')[0])
     const endHour = parseInt(settings.business_hours_end.split(':')[0])
-    
+
     if (currentHour < startHour || currentHour >= endHour) {
       console.log('Outside business hours, skipping notification')
       return
@@ -323,26 +325,29 @@ async function sendNotification(
           if (settings.email_enabled && recipient.email) {
             contact = recipient.email
             try {
-              const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  to: contact,
-                  subject: subject,
-                  message: message,
-                  settings: {
-                    smtp_host: settings.email_smtp_host,
-                    smtp_port: settings.email_smtp_port,
-                    smtp_username: settings.email_smtp_username,
-                    smtp_password: settings.email_smtp_password,
-                    from_email: settings.email_from_email,
-                    from_name: settings.email_from_name,
-                  }
-                })
-              })
+              const emailResponse = await fetch(
+                `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`,
+                {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    to: contact,
+                    subject: subject,
+                    message: message,
+                    settings: {
+                      smtp_host: settings.email_smtp_host,
+                      smtp_port: settings.email_smtp_port,
+                      smtp_username: settings.email_smtp_username,
+                      smtp_password: settings.email_smtp_password,
+                      from_email: settings.email_from_email,
+                      from_name: settings.email_from_name,
+                    },
+                  }),
+                }
+              )
 
               if (emailResponse.ok) {
                 status = 'sent'
@@ -361,23 +366,26 @@ async function sendNotification(
           if (settings.sms_enabled && recipient.phone) {
             contact = recipient.phone
             try {
-              const smsResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-sms`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  to: contact,
-                  message: message,
-                  settings: {
-                    provider: settings.sms_provider,
-                    api_key: settings.sms_api_key,
-                    api_secret: settings.sms_api_secret,
-                    sender_id: settings.sms_sender_id,
-                  }
-                })
-              })
+              const smsResponse = await fetch(
+                `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-sms`,
+                {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    to: contact,
+                    message: message,
+                    settings: {
+                      provider: settings.sms_provider,
+                      api_key: settings.sms_api_key,
+                      api_secret: settings.sms_api_secret,
+                      sender_id: settings.sms_sender_id,
+                    },
+                  }),
+                }
+              )
 
               if (smsResponse.ok) {
                 status = 'sent'
@@ -395,45 +403,20 @@ async function sendNotification(
         case 'in_app':
           contact = recipient.id
           // Create in-app notification
-          await supabaseClient
-            .from('in_app_notifications')
-            .insert({
-              user_id: recipient.id,
-              title: subject,
-              message: message,
-              type: 'info',
-              metadata: metadata
-            })
+          await supabaseClient.from('in_app_notifications').insert({
+            user_id: recipient.id,
+            title: subject,
+            message: message,
+            type: 'info',
+            metadata: metadata,
+          })
           status = 'sent'
           break
       }
 
       // Record notification in history
       if (contact) {
-        await supabaseClient
-          .from('notification_history')
-          .insert({
-            rule_id: rule.id,
-            landlord_id: rule.landlord_id,
-            type: type,
-            recipient_type: 'tenant',
-            recipient_id: recipient.id,
-            recipient_contact: contact,
-            channel: channel,
-            subject: subject,
-            message: message,
-            status: status,
-            sent_at: status === 'sent' ? new Date().toISOString() : null,
-            metadata: metadata
-          })
-      }
-    } catch (error) {
-      console.error(`Failed to send ${channel} notification:`, error)
-      
-      // Record failed notification
-      await supabaseClient
-        .from('notification_history')
-        .insert({
+        await supabaseClient.from('notification_history').insert({
           rule_id: rule.id,
           landlord_id: rule.landlord_id,
           type: type,
@@ -443,10 +426,29 @@ async function sendNotification(
           channel: channel,
           subject: subject,
           message: message,
-          status: 'failed',
-          error_message: error.message,
-          metadata: metadata
+          status: status,
+          sent_at: status === 'sent' ? new Date().toISOString() : null,
+          metadata: metadata,
         })
+      }
+    } catch (error) {
+      console.error(`Failed to send ${channel} notification:`, error)
+
+      // Record failed notification
+      await supabaseClient.from('notification_history').insert({
+        rule_id: rule.id,
+        landlord_id: rule.landlord_id,
+        type: type,
+        recipient_type: 'tenant',
+        recipient_id: recipient.id,
+        recipient_contact: contact,
+        channel: channel,
+        subject: subject,
+        message: message,
+        status: 'failed',
+        error_message: error.message,
+        metadata: metadata,
+      })
     }
   }
 }

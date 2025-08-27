@@ -16,20 +16,15 @@ interface PropertySelectorProps {
 /**
  * Reusable property selector that integrates with dashboard context
  */
-export default function PropertySelector({ 
+export default function PropertySelector({
   className = '',
   placeholder = 'Select a property...',
   showClearOption = true,
-  onPropertyChange
+  onPropertyChange,
 }: PropertySelectorProps) {
-  const { 
-    state, 
-    selectProperty, 
-    updatePropertiesCache, 
-    getCachedData, 
-    isCacheExpired 
-  } = useDashboardActions()
-  
+  const { state, selectProperty, updatePropertiesCache, getCachedData, isCacheExpired } =
+    useDashboardActions()
+
   const [loading, setLoading] = useState(false)
   const [properties, setProperties] = useState<Property[]>([])
 
@@ -66,7 +61,7 @@ export default function PropertySelector({
       return
     }
 
-    const property = properties.find(p => p.id === propertyId)
+    const property = properties.find((p) => p.id === propertyId)
     if (property) {
       selectProperty(property)
       onPropertyChange?.(property)
@@ -75,10 +70,10 @@ export default function PropertySelector({
 
   const options = [
     ...(showClearOption ? [{ value: '', label: 'All Properties' }] : []),
-    ...properties.map(property => ({
+    ...properties.map((property) => ({
       value: property.id,
-      label: property.name
-    }))
+      label: property.name,
+    })),
   ]
 
   return (

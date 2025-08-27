@@ -18,14 +18,14 @@ export default function SubdivisionPlanConfirmationModal({
   onClose,
   onConfirm,
   property,
-  isSubmitting = false
+  isSubmitting = false,
 }: SubdivisionPlanConfirmationModalProps) {
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = () => {
     setError(null)
-    
+
     if (reason.length < 10) {
       setError('Reason must be at least 10 characters long')
       return
@@ -43,18 +43,22 @@ export default function SubdivisionPlanConfirmationModal({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Create Subdivision Plan"
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} title="Create Subdivision Plan">
       <div className="space-y-4">
         {/* Warning Message */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
-              <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <svg
+                className="w-5 h-5 text-amber-600 mt-0.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="flex-1">
@@ -78,16 +82,28 @@ export default function SubdivisionPlanConfirmationModal({
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h4 className="text-sm font-medium text-gray-900 mb-2">Property Details</h4>
           <div className="space-y-1 text-sm text-gray-600">
-            <p><strong>Name:</strong> {property.name}</p>
-            <p><strong>Location:</strong> {property.location || 'Not specified'}</p>
-            <p><strong>Size:</strong> {property.size_acres ? `${property.size_acres} acres` : 'Not specified'}</p>
-            <p><strong>Current Status:</strong> {property.lifecycle_status || 'Active'}</p>
+            <p>
+              <strong>Name:</strong> {property.name}
+            </p>
+            <p>
+              <strong>Location:</strong> {property.location || 'Not specified'}
+            </p>
+            <p>
+              <strong>Size:</strong>{' '}
+              {property.size_acres ? `${property.size_acres} acres` : 'Not specified'}
+            </p>
+            <p>
+              <strong>Current Status:</strong> {property.lifecycle_status || 'Active'}
+            </p>
           </div>
         </div>
 
         {/* Reason Input */}
         <div>
-          <label htmlFor="subdivision-reason" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="subdivision-reason"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Reason for Creating Subdivision Plan <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -99,9 +115,7 @@ export default function SubdivisionPlanConfirmationModal({
             placeholder="Please provide a detailed reason for creating this subdivision plan (minimum 10 characters)..."
             disabled={isSubmitting}
           />
-          <p className="mt-1 text-xs text-gray-500">
-            {reason.length}/10 characters minimum
-          </p>
+          <p className="mt-1 text-xs text-gray-500">{reason.length}/10 characters minimum</p>
         </div>
 
         {/* Error Message */}
@@ -113,12 +127,7 @@ export default function SubdivisionPlanConfirmationModal({
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
+          <Button type="button" variant="secondary" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button

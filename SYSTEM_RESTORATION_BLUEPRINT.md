@@ -1,12 +1,15 @@
 # Mzima Homes System Restoration Blueprint
-*Complete system state as of August 20, 2025*
+
+_Complete system state as of August 20, 2025_
 
 ## 🎯 Overview
+
 This document serves as a complete restoration guide for the Mzima Homes property management system. If the system needs to be rebuilt from scratch, this blueprint contains all the specifications, configurations, and business logic needed to restore it to its current functional state.
 
 ## 🏗️ System Architecture
 
 ### Core Technologies
+
 - **Frontend**: Next.js 15.4.2 with TypeScript
 - **Backend**: Supabase (PostgreSQL + Auth + Storage)
 - **UI Framework**: Tailwind CSS with custom components
@@ -14,6 +17,7 @@ This document serves as a complete restoration guide for the Mzima Homes propert
 - **State Management**: React hooks and context
 
 ### Database Schema Overview
+
 ```sql
 -- Core Tables
 properties (main property records)
@@ -31,17 +35,20 @@ payment_installments (payment tracking)
 ## 🏠 Property Management System
 
 ### Property Types & Categories
+
 - **Homes**: Residential properties
 - **Hostels**: Student/worker accommodation
 - **Stalls**: Commercial retail spaces
 
 ### Property Status Workflow
+
 ```
 ACTIVE → (can be marked for subdivision) → SUB_DIVISION_STARTED → SUBDIVIDED
 ACTIVE → (can be marked for handover) → PENDING/IN_PROGRESS/COMPLETED
 ```
 
 ### Key Features
+
 1. **Property Lifecycle Management**
    - Status tracking (Active, Subdivided, Handed Over)
    - Independent subdivision and handover workflows
@@ -60,6 +67,7 @@ ACTIVE → (can be marked for handover) → PENDING/IN_PROGRESS/COMPLETED
 ## 🔄 Subdivision Management System
 
 ### Subdivision Workflow
+
 1. **Property Selection**: Only ACTIVE properties can be subdivided
 2. **Status Update**: Mark property as "Sub-Division Started"
 3. **Plan Creation**: Create detailed subdivision plan with mandatory fields
@@ -67,6 +75,7 @@ ACTIVE → (can be marked for handover) → PENDING/IN_PROGRESS/COMPLETED
 5. **History Tracking**: Complete audit trail of all changes
 
 ### Mandatory Fields (Required for Change Tracking)
+
 ```typescript
 subdivisionName: string (required) *
 totalPlotsPlanned: number (required) *
@@ -78,13 +87,15 @@ targetCompletionDate: string (required) *
 ```
 
 ### Optional Fields
+
 ```typescript
-approvalAuthority: string (optional)
-approvalFees: number (optional)
-subdivisionNotes: string (optional)
+approvalAuthority: string(optional)
+approvalFees: number(optional)
+subdivisionNotes: string(optional)
 ```
 
 ### Change Tracking & History
+
 - **Complete audit trail** for all subdivision modifications
 - **Before/after value comparison** with human-readable format
 - **User attribution** with proper name display (Abel Gichimu)
@@ -92,6 +103,7 @@ subdivisionNotes: string (optional)
 - **Visual change indicators**: Red strikethrough → Green new values
 
 ### Subdivision History Display Format
+
 ```
 👤 Abel Gichimu
 🕒 20/08/2025, 18:15:30
@@ -107,6 +119,7 @@ Total Plots Planned: 8 → 7
 ## 💰 Purchase Pipeline System
 
 ### 9-Stage Purchase Workflow
+
 1. **Initial Search** - Property identification and preliminary assessment
 2. **Survey & Mapping** - Land surveying and boundary mapping
 3. **Legal Verification** - Title verification and legal due diligence
@@ -118,6 +131,7 @@ Total Plots Planned: 8 → 7
 9. **Title Registration** - Final ownership transfer
 
 ### Pipeline Features
+
 - **Sequential stage progression** with validation requirements
 - **Document upload functionality** for each stage
 - **Automatic status synchronization** between vendor/buyer views
@@ -127,12 +141,14 @@ Total Plots Planned: 8 → 7
 ## 👥 Tenant Management System
 
 ### Tenant Lifecycle
+
 - **Creation**: Flexible due date controls and property defaults
 - **Management**: Inline interfaces without property filtering
 - **Move Management**: Flexible due date controls
 - **Soft Delete**: Consistent deletion/restoration patterns
 
 ### Integration Points
+
 - **Property-level defaults** replicated across tenant forms
 - **Consistent UI patterns** and validation across all forms
 - **Authentication and authorization** aligned with property access
@@ -140,19 +156,22 @@ Total Plots Planned: 8 → 7
 ## 🎨 User Interface Standards
 
 ### Design Principles
+
 - **WCAG accessibility compliance** throughout
 - **Consistent brand color usage** with clear visual hierarchy
 - **Professional modern aesthetics** with mobile responsiveness
 - **Compact workflow cards** with tab navigation dimensions
 
 ### Navigation Patterns
+
 - **Clickable workflow cards** serving as both display and navigation
 - **Consolidated navigation** removing redundant tab structures
 - **Context-appropriate action buttons** (e.g., 'Start Subdivision' vs 'Start Sale')
 - **Simplified inline management** interfaces
 
 ### Form Standards
-- **Red asterisks (*)** for required fields
+
+- **Red asterisks (\*)** for required fields
 - **Consistent validation patterns** across all forms
 - **Auto-save vs explicit save** based on field criticality
 - **Change warnings** for critical fields with audit trails
@@ -160,11 +179,13 @@ Total Plots Planned: 8 → 7
 ## 🔐 Authentication & Authorization
 
 ### User Management
+
 - **Supabase Auth** integration with user metadata
 - **Role-based access control** (OWNER, PROPERTY_MANAGER)
 - **Property-specific permissions** with edit access validation
 
 ### User Profile Structure
+
 ```typescript
 {
   id: string
@@ -180,6 +201,7 @@ Total Plots Planned: 8 → 7
 ## 📊 Financial Management
 
 ### Cost Tracking Systems
+
 1. **Property Acquisition Costs**
    - Purchase price with change tracking
    - Legal fees and documentation costs
@@ -187,7 +209,7 @@ Total Plots Planned: 8 → 7
 
 2. **Subdivision Costs** (Kenya-specific categories)
    - Statutory fees
-   - Survey fees  
+   - Survey fees
    - Registration fees
    - Legal compliance costs
    - Paid/pending status tracking
@@ -200,6 +222,7 @@ Total Plots Planned: 8 → 7
 ## 🗄️ Database Functions & Procedures
 
 ### Key Database Functions
+
 ```sql
 -- Subdivision history management
 get_subdivision_history(property_uuid UUID)
@@ -211,6 +234,7 @@ checkPropertyEditAccess(user_id, property_id)
 ```
 
 ### RLS (Row Level Security) Policies
+
 - Property access based on ownership/management roles
 - Subdivision history access tied to property permissions
 - Tenant data access controls
@@ -218,6 +242,7 @@ checkPropertyEditAccess(user_id, property_id)
 ## 🔧 Technical Implementation Details
 
 ### Form Validation (Zod Schemas)
+
 ```typescript
 const subdivisionSchema = z.object({
   subdivisionName: z.string().min(1, 'Subdivision name is required'),
@@ -234,6 +259,7 @@ const subdivisionSchema = z.object({
 ```
 
 ### API Endpoints Structure
+
 ```
 /api/properties/[id]/subdivision-history (GET, POST)
 /api/properties/[id]/subdivision-costs (GET, POST, DELETE, PATCH)
@@ -243,6 +269,7 @@ const subdivisionSchema = z.object({
 ```
 
 ### Component Architecture
+
 ```
 components/
 ├── properties/
@@ -260,6 +287,7 @@ components/
 ## 🚀 Deployment Configuration
 
 ### Environment Variables
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://ajrxvnakphkpkcssisxm.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon_key]
@@ -267,6 +295,7 @@ SUPABASE_SERVICE_ROLE_KEY=[service_key]
 ```
 
 ### Supabase Project Details
+
 - **Project ID**: ajrxvnakphkpkcssisxm
 - **Region**: eu-north-1
 - **Database**: PostgreSQL with RLS enabled
@@ -274,6 +303,7 @@ SUPABASE_SERVICE_ROLE_KEY=[service_key]
 ## 📋 Current System State Checklist
 
 ### ✅ Completed Features
+
 - [x] Property management with lifecycle tracking
 - [x] Subdivision system with mandatory field validation
 - [x] Complete change tracking and audit trails
@@ -286,6 +316,7 @@ SUPABASE_SERVICE_ROLE_KEY=[service_key]
 - [x] Proper user name display (Abel Gichimu)
 
 ### 🎯 Key Business Rules
+
 1. **Only ACTIVE properties** can be marked for subdivision
 2. **Subdivision and handover statuses** are independent
 3. **Properties marked SUBDIVIDED or HANDED_OVER** not available for new rentals
@@ -296,18 +327,21 @@ SUPABASE_SERVICE_ROLE_KEY=[service_key]
 ## 🔄 Restoration Process
 
 ### Phase 1: Infrastructure Setup
+
 1. Create new Supabase project
 2. Set up database schema with all tables
 3. Configure RLS policies and database functions
 4. Set up authentication and user roles
 
 ### Phase 2: Core Application
+
 1. Initialize Next.js project with TypeScript
 2. Install and configure dependencies
 3. Set up UI component library
 4. Implement authentication integration
 
 ### Phase 3: Feature Implementation
+
 1. Property management system
 2. Subdivision workflow and tracking
 3. Purchase pipeline implementation
@@ -315,6 +349,7 @@ SUPABASE_SERVICE_ROLE_KEY=[service_key]
 5. Financial tracking systems
 
 ### Phase 4: Testing & Validation
+
 1. Test all workflows end-to-end
 2. Verify change tracking and audit trails
 3. Validate access control and permissions
@@ -323,6 +358,7 @@ SUPABASE_SERVICE_ROLE_KEY=[service_key]
 ## 📚 Detailed Database Schema
 
 ### Properties Table
+
 ```sql
 CREATE TABLE properties (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -344,6 +380,7 @@ CREATE TABLE properties (
 ```
 
 ### Property Subdivisions Table
+
 ```sql
 CREATE TABLE property_subdivisions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -368,6 +405,7 @@ CREATE TABLE property_subdivisions (
 ```
 
 ### Subdivision History Table
+
 ```sql
 CREATE TABLE property_subdivision_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -387,6 +425,7 @@ CREATE TABLE property_subdivision_history (
 ```
 
 ### Subdivision Plots Table
+
 ```sql
 CREATE TABLE subdivision_plots (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -407,6 +446,7 @@ CREATE TABLE subdivision_plots (
 ## 🔧 Critical Database Functions
 
 ### Subdivision History Recording Function
+
 ```sql
 CREATE OR REPLACE FUNCTION record_subdivision_history(
   property_uuid UUID,
@@ -468,6 +508,7 @@ $$;
 ## 🎨 UI Component Specifications
 
 ### Modal Component Standards
+
 ```typescript
 interface ModalProps {
   isOpen: boolean
@@ -479,6 +520,7 @@ interface ModalProps {
 ```
 
 ### Form Field Component Standards
+
 ```typescript
 interface FormFieldProps {
   name: string
@@ -490,6 +532,7 @@ interface FormFieldProps {
 ```
 
 ### Button Variant Standards
+
 ```typescript
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'warning'
 ```
@@ -497,6 +540,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'warning'
 ## 🔐 Row Level Security Policies
 
 ### Properties RLS Policy
+
 ```sql
 CREATE POLICY "Users can view properties they have access to" ON properties
   FOR SELECT USING (
@@ -511,6 +555,7 @@ CREATE POLICY "Users can view properties they have access to" ON properties
 ```
 
 ### Subdivision History RLS Policy
+
 ```sql
 CREATE POLICY "Users can view subdivision history for accessible properties"
   ON property_subdivision_history FOR SELECT USING (
@@ -525,6 +570,7 @@ CREATE POLICY "Users can view subdivision history for accessible properties"
 ## 📱 Mobile Responsiveness Standards
 
 ### Breakpoint System
+
 ```css
 /* Tailwind CSS breakpoints used throughout */
 sm: 640px   /* Small devices */
@@ -534,31 +580,34 @@ xl: 1280px  /* Extra large devices */
 ```
 
 ### Grid Layouts
+
 ```typescript
 // Standard responsive grid patterns
-"grid grid-cols-1 md:grid-cols-2 gap-4"        // 2-column on medium+
-"grid grid-cols-1 md:grid-cols-3 gap-4"        // 3-column on medium+
-"grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"  // Progressive scaling
+'grid grid-cols-1 md:grid-cols-2 gap-4' // 2-column on medium+
+'grid grid-cols-1 md:grid-cols-3 gap-4' // 3-column on medium+
+'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4' // Progressive scaling
 ```
 
 ## 🎯 Business Logic Validation Rules
 
 ### Property Status Transitions
+
 ```typescript
 const validTransitions = {
-  'NOT_STARTED': ['SUB_DIVISION_STARTED'],
-  'SUB_DIVISION_STARTED': ['SUBDIVIDED'],
-  'SUBDIVIDED': [] // Terminal state
+  NOT_STARTED: ['SUB_DIVISION_STARTED'],
+  SUB_DIVISION_STARTED: ['SUBDIVIDED'],
+  SUBDIVIDED: [], // Terminal state
 }
 
 const validHandoverTransitions = {
-  'PENDING': ['IN_PROGRESS'],
-  'IN_PROGRESS': ['COMPLETED'],
-  'COMPLETED': [] // Terminal state
+  PENDING: ['IN_PROGRESS'],
+  IN_PROGRESS: ['COMPLETED'],
+  COMPLETED: [], // Terminal state
 }
 ```
 
 ### Subdivision Validation Rules
+
 ```typescript
 const subdivisionRules = {
   minPlotsPlanned: 1,
@@ -567,13 +616,14 @@ const subdivisionRules = {
   minExpectedPlotValue: 1,
   reasonMinLength: 10,
   nameMinLength: 1,
-  contactMinLength: 1
+  contactMinLength: 1,
 }
 ```
 
 ## 🔄 Data Migration Patterns
 
 ### Property Area Conversion
+
 ```typescript
 // Convert hectares to acres: 1 hectare = 2.47105 acres
 const convertHectaresToAcres = (hectares: number): number => {
@@ -582,6 +632,7 @@ const convertHectaresToAcres = (hectares: number): number => {
 ```
 
 ### Status Migration Logic
+
 ```sql
 -- Update properties that need status migration
 UPDATE properties
@@ -597,6 +648,7 @@ WHERE id IN (
 ## 🚨 Emergency Restoration Commands
 
 ### Quick Database Reset (Nuclear Option)
+
 ```sql
 -- WARNING: This deletes ALL data!
 TRUNCATE TABLE property_subdivision_history CASCADE;
@@ -607,6 +659,7 @@ TRUNCATE TABLE properties CASCADE;
 ```
 
 ### Selective Data Cleanup
+
 ```sql
 -- Clean specific property data
 DELETE FROM property_subdivision_history WHERE property_id = '[property_id]';
@@ -619,6 +672,6 @@ UPDATE properties SET subdivision_status = 'NOT_STARTED' WHERE id = '[property_i
 
 ---
 
-*This blueprint represents the complete state of the Mzima Homes system as of August 20, 2025. Use this document to restore the system to its current functional state if needed.*
+_This blueprint represents the complete state of the Mzima Homes system as of August 20, 2025. Use this document to restore the system to its current functional state if needed._
 
 **For your daughter: This file contains everything needed to rebuild Dad's property management system if you accidentally delete it while making room for games! 😄🎮**

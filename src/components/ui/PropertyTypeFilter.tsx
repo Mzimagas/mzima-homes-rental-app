@@ -1,6 +1,11 @@
-"use client"
+'use client'
 import { useState } from 'react'
-import { type PropertyType, PropertyTypeEnum, getPropertyTypeLabel, getPropertyTypeCategory } from '../../lib/validation/property'
+import {
+  type PropertyType,
+  PropertyTypeEnum,
+  getPropertyTypeLabel,
+  getPropertyTypeCategory,
+} from '../../lib/validation/property'
 import PropertyTypeIcon from './PropertyTypeIcon'
 
 interface PropertyTypeFilterProps {
@@ -20,20 +25,20 @@ export default function PropertyTypeFilter({
   showCategories = true,
   variant = 'buttons',
   size = 'md',
-  className = ''
+  className = '',
 }: PropertyTypeFilterProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const allTypes = PropertyTypeEnum.options
 
   // Group types by category
-  const rentalTypes = allTypes.filter(type => getPropertyTypeCategory(type) === 'rental')
-  const landTypes = allTypes.filter(type => getPropertyTypeCategory(type) === 'land')
+  const rentalTypes = allTypes.filter((type) => getPropertyTypeCategory(type) === 'rental')
+  const landTypes = allTypes.filter((type) => getPropertyTypeCategory(type) === 'land')
 
   const handleTypeToggle = (type: PropertyType) => {
     if (allowMultiple) {
       const newSelection = selectedTypes.includes(type)
-        ? selectedTypes.filter(t => t !== type)
+        ? selectedTypes.filter((t) => t !== type)
         : [...selectedTypes, type]
       onSelectionChange(newSelection)
     } else {
@@ -49,9 +54,9 @@ export default function PropertyTypeFilter({
     const categoryTypes = category === 'rental' ? rentalTypes : landTypes
     if (allowMultiple) {
       // Toggle category: if all are selected, deselect all; otherwise select all
-      const allCategorySelected = categoryTypes.every(type => selectedTypes.includes(type))
+      const allCategorySelected = categoryTypes.every((type) => selectedTypes.includes(type))
       if (allCategorySelected) {
-        onSelectionChange(selectedTypes.filter(type => !categoryTypes.includes(type)))
+        onSelectionChange(selectedTypes.filter((type) => !categoryTypes.includes(type)))
       } else {
         const newSelection = [...new Set([...selectedTypes, ...categoryTypes])]
         onSelectionChange(newSelection)
@@ -65,7 +70,7 @@ export default function PropertyTypeFilter({
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',
     md: 'px-3 py-1.5 text-sm',
-    lg: 'px-4 py-2 text-base'
+    lg: 'px-4 py-2 text-base',
   }
 
   if (variant === 'dropdown') {
@@ -76,12 +81,11 @@ export default function PropertyTypeFilter({
           className={`${sizeClasses[size]} bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 flex items-center justify-between min-w-[200px]`}
         >
           <span>
-            {selectedTypes.length === 0 
-              ? 'All Property Types' 
-              : selectedTypes.length === 1 
-              ? getPropertyTypeLabel(selectedTypes[0])
-              : `${selectedTypes.length} types selected`
-            }
+            {selectedTypes.length === 0
+              ? 'All Property Types'
+              : selectedTypes.length === 1
+                ? getPropertyTypeLabel(selectedTypes[0])
+                : `${selectedTypes.length} types selected`}
           </span>
           <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -112,11 +116,17 @@ export default function PropertyTypeFilter({
                         onClick={() => selectCategory('rental')}
                         className="text-xs text-primary-600 hover:text-primary-800"
                       >
-                        {rentalTypes.every(type => selectedTypes.includes(type)) ? 'Deselect' : 'Select'} All
+                        {rentalTypes.every((type) => selectedTypes.includes(type))
+                          ? 'Deselect'
+                          : 'Select'}{' '}
+                        All
                       </button>
                     </div>
-                    {rentalTypes.map(type => (
-                      <label key={type} className="flex items-center py-1 hover:bg-gray-50 rounded cursor-pointer">
+                    {rentalTypes.map((type) => (
+                      <label
+                        key={type}
+                        className="flex items-center py-1 hover:bg-gray-50 rounded cursor-pointer"
+                      >
                         <input
                           type="checkbox"
                           checked={selectedTypes.includes(type)}
@@ -136,11 +146,17 @@ export default function PropertyTypeFilter({
                         onClick={() => selectCategory('land')}
                         className="text-xs text-primary-600 hover:text-primary-800"
                       >
-                        {landTypes.every(type => selectedTypes.includes(type)) ? 'Deselect' : 'Select'} All
+                        {landTypes.every((type) => selectedTypes.includes(type))
+                          ? 'Deselect'
+                          : 'Select'}{' '}
+                        All
                       </button>
                     </div>
-                    {landTypes.map(type => (
-                      <label key={type} className="flex items-center py-1 hover:bg-gray-50 rounded cursor-pointer">
+                    {landTypes.map((type) => (
+                      <label
+                        key={type}
+                        className="flex items-center py-1 hover:bg-gray-50 rounded cursor-pointer"
+                      >
                         <input
                           type="checkbox"
                           checked={selectedTypes.includes(type)}
@@ -157,8 +173,11 @@ export default function PropertyTypeFilter({
 
               {!showCategories && (
                 <div>
-                  {allTypes.map(type => (
-                    <label key={type} className="flex items-center py-1 hover:bg-gray-50 rounded cursor-pointer">
+                  {allTypes.map((type) => (
+                    <label
+                      key={type}
+                      className="flex items-center py-1 hover:bg-gray-50 rounded cursor-pointer"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedTypes.includes(type)}
@@ -191,11 +210,14 @@ export default function PropertyTypeFilter({
                     onClick={() => selectCategory('rental')}
                     className="text-xs text-primary-600 hover:text-primary-800"
                   >
-                    {rentalTypes.every(type => selectedTypes.includes(type)) ? 'Deselect' : 'Select'} All
+                    {rentalTypes.every((type) => selectedTypes.includes(type))
+                      ? 'Deselect'
+                      : 'Select'}{' '}
+                    All
                   </button>
                 </div>
                 <div className="grid grid-cols-1 gap-2">
-                  {rentalTypes.map(type => (
+                  {rentalTypes.map((type) => (
                     <label key={type} className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -217,11 +239,14 @@ export default function PropertyTypeFilter({
                     onClick={() => selectCategory('land')}
                     className="text-xs text-primary-600 hover:text-primary-800"
                   >
-                    {landTypes.every(type => selectedTypes.includes(type)) ? 'Deselect' : 'Select'} All
+                    {landTypes.every((type) => selectedTypes.includes(type))
+                      ? 'Deselect'
+                      : 'Select'}{' '}
+                    All
                   </button>
                 </div>
                 <div className="grid grid-cols-1 gap-2">
-                  {landTypes.map(type => (
+                  {landTypes.map((type) => (
                     <label key={type} className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -240,7 +265,7 @@ export default function PropertyTypeFilter({
 
           {!showCategories && (
             <div className="grid grid-cols-1 gap-2">
-              {allTypes.map(type => (
+              {allTypes.map((type) => (
                 <label key={type} className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -272,11 +297,14 @@ export default function PropertyTypeFilter({
                   onClick={() => selectCategory('rental')}
                   className="text-xs text-primary-600 hover:text-primary-800"
                 >
-                  {rentalTypes.every(type => selectedTypes.includes(type)) ? 'Deselect' : 'Select'} All
+                  {rentalTypes.every((type) => selectedTypes.includes(type))
+                    ? 'Deselect'
+                    : 'Select'}{' '}
+                  All
                 </button>
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
-                {rentalTypes.map(type => (
+                {rentalTypes.map((type) => (
                   <button
                     key={type}
                     onClick={() => handleTypeToggle(type)}
@@ -300,11 +328,12 @@ export default function PropertyTypeFilter({
                   onClick={() => selectCategory('land')}
                   className="text-xs text-primary-600 hover:text-primary-800"
                 >
-                  {landTypes.every(type => selectedTypes.includes(type)) ? 'Deselect' : 'Select'} All
+                  {landTypes.every((type) => selectedTypes.includes(type)) ? 'Deselect' : 'Select'}{' '}
+                  All
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {landTypes.map(type => (
+                {landTypes.map((type) => (
                   <button
                     key={type}
                     onClick={() => handleTypeToggle(type)}
@@ -325,7 +354,7 @@ export default function PropertyTypeFilter({
 
         {!showCategories && (
           <>
-            {allTypes.map(type => (
+            {allTypes.map((type) => (
               <button
                 key={type}
                 onClick={() => handleTypeToggle(type)}

@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { Button } from '../../ui'
 import Modal from '../../ui/Modal'
-import { 
+import {
   SUBDIVISION_PIPELINE_STAGES,
-  SubdivisionPipelineStageData
+  SubdivisionPipelineStageData,
 } from '../types/property-management.types'
 
 interface SubdivisionStageModalProps {
@@ -14,11 +14,16 @@ interface SubdivisionStageModalProps {
   stageId: number
   subdivisionId: string
   stageData?: SubdivisionPipelineStageData
-  onStageUpdate: (subdivisionId: string, stageId: number, newStatus: string, notes?: string) => Promise<void>
+  onStageUpdate: (
+    subdivisionId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string
+  ) => Promise<void>
 }
 
 const getSubdivisionStageById = (stageId: number) => {
-  return SUBDIVISION_PIPELINE_STAGES.find(stage => stage.id === stageId)
+  return SUBDIVISION_PIPELINE_STAGES.find((stage) => stage.id === stageId)
 }
 
 export default function SubdivisionStageModal({
@@ -27,7 +32,7 @@ export default function SubdivisionStageModal({
   stageId,
   subdivisionId,
   stageData,
-  onStageUpdate
+  onStageUpdate,
 }: SubdivisionStageModalProps) {
   const [selectedStatus, setSelectedStatus] = useState(stageData?.status || 'Not Started')
   const [notes, setNotes] = useState(stageData?.notes || '')
@@ -52,11 +57,7 @@ export default function SubdivisionStageModal({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Stage ${stage.id}: ${stage.name}`}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={`Stage ${stage.id}: ${stage.name}`}>
       <div className="space-y-6">
         {/* Stage Description */}
         <div className="bg-gray-50 rounded-lg p-4">
@@ -98,9 +99,7 @@ export default function SubdivisionStageModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Status Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Update Status
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Update Status</label>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
@@ -117,9 +116,7 @@ export default function SubdivisionStageModal({
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes (Optional)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -132,12 +129,7 @@ export default function SubdivisionStageModal({
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button

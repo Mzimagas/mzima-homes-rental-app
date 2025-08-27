@@ -5,6 +5,7 @@
 This report documents the comprehensive analysis of the Mzima Homes rental management application codebase, identifying technical debt, performance bottlenecks, and optimization opportunities.
 
 **Key Findings:**
+
 - 🚨 **Critical Issue**: Multiple API calls to non-existent endpoints causing 403 errors
 - ⚡ **Performance Impact**: Accounting dashboard hanging due to failed API calls
 - 🔧 **Quick Wins**: 15+ unused imports and dead code blocks identified
@@ -14,61 +15,62 @@ This report documents the comprehensive analysis of the Mzima Homes rental manag
 
 ### 🔴 Critical API Gaps (Causing 403 Errors)
 
-| Client Call | Method | Path | Server Status | Impact | Priority |
-|-------------|--------|------|---------------|--------|----------|
-| AcquisitionFinancialsService | GET | `/api/purchase-pipeline/{id}/financial` | ❌ **NOT IMPLEMENTED** | High - Blocks accounting dashboard | **CRITICAL** |
-| AcquisitionFinancialsService | GET | `/api/properties/{id}/acquisition-costs` | ✅ **IMPLEMENTED** | Medium - Fallback works | **HIGH** |
-| AcquisitionFinancialsService | GET | `/api/properties/{id}/payment-installments` | ❌ **NOT IMPLEMENTED** | Medium - Returns empty data | **HIGH** |
-| AcquisitionFinancialsService | POST | `/api/purchase-pipeline/{id}/acquisition-costs` | ❌ **NOT IMPLEMENTED** | Low - Creation feature | **MEDIUM** |
+| Client Call                  | Method | Path                                            | Server Status          | Impact                             | Priority     |
+| ---------------------------- | ------ | ----------------------------------------------- | ---------------------- | ---------------------------------- | ------------ |
+| AcquisitionFinancialsService | GET    | `/api/purchase-pipeline/{id}/financial`         | ❌ **NOT IMPLEMENTED** | High - Blocks accounting dashboard | **CRITICAL** |
+| AcquisitionFinancialsService | GET    | `/api/properties/{id}/acquisition-costs`        | ✅ **IMPLEMENTED**     | Medium - Fallback works            | **HIGH**     |
+| AcquisitionFinancialsService | GET    | `/api/properties/{id}/payment-installments`     | ❌ **NOT IMPLEMENTED** | Medium - Returns empty data        | **HIGH**     |
+| AcquisitionFinancialsService | POST   | `/api/purchase-pipeline/{id}/acquisition-costs` | ❌ **NOT IMPLEMENTED** | Low - Creation feature             | **MEDIUM**   |
 
 ### ✅ Working API Endpoints
 
-| Client Call | Method | Path | Server Status | Notes |
-|-------------|--------|------|---------------|-------|
-| ComprehensiveUserManagement | GET | `/api/admin/users` | ✅ **IMPLEMENTED** | Working correctly |
-| DeletedUsersManagement | GET | `/api/admin/users/deleted` | ✅ **IMPLEMENTED** | Working correctly |
-| SecurityAdmin | GET | `/api/admin/security/locks` | ✅ **IMPLEMENTED** | Working correctly |
-| SecurityAdmin | GET | `/api/admin/security/audit` | ✅ **IMPLEMENTED** | Working correctly |
-| TenantForm | POST | `/api/tenants` | ✅ **IMPLEMENTED** | Working correctly |
-| Public APIs | GET | `/api/public/units/{id}` | ✅ **IMPLEMENTED** | Working correctly |
-| Public APIs | GET | `/api/public/amenities` | ✅ **IMPLEMENTED** | Working correctly |
-| Test Endpoint | GET/POST | `/api/test` | ✅ **IMPLEMENTED** | Working correctly |
+| Client Call                 | Method   | Path                        | Server Status      | Notes             |
+| --------------------------- | -------- | --------------------------- | ------------------ | ----------------- |
+| ComprehensiveUserManagement | GET      | `/api/admin/users`          | ✅ **IMPLEMENTED** | Working correctly |
+| DeletedUsersManagement      | GET      | `/api/admin/users/deleted`  | ✅ **IMPLEMENTED** | Working correctly |
+| SecurityAdmin               | GET      | `/api/admin/security/locks` | ✅ **IMPLEMENTED** | Working correctly |
+| SecurityAdmin               | GET      | `/api/admin/security/audit` | ✅ **IMPLEMENTED** | Working correctly |
+| TenantForm                  | POST     | `/api/tenants`              | ✅ **IMPLEMENTED** | Working correctly |
+| Public APIs                 | GET      | `/api/public/units/{id}`    | ✅ **IMPLEMENTED** | Working correctly |
+| Public APIs                 | GET      | `/api/public/amenities`     | ✅ **IMPLEMENTED** | Working correctly |
+| Test Endpoint               | GET/POST | `/api/test`                 | ✅ **IMPLEMENTED** | Working correctly |
 
 ### 🟡 Partially Implemented
 
-| Client Call | Method | Path | Server Status | Notes |
-|-------------|--------|------|---------------|-------|
-| Purchase Pipeline | GET | `/api/purchase-pipeline/{id}/financial` | 🟡 **PARTIAL** | Route exists but may have access issues |
+| Client Call       | Method | Path                                    | Server Status  | Notes                                   |
+| ----------------- | ------ | --------------------------------------- | -------------- | --------------------------------------- |
+| Purchase Pipeline | GET    | `/api/purchase-pipeline/{id}/financial` | 🟡 **PARTIAL** | Route exists but may have access issues |
 
 ## Performance Issues
 
 ### 🐌 Slow Operations (>2 seconds)
 
-| Component | Issue | Current Impact | Root Cause | Priority |
-|-----------|-------|----------------|------------|----------|
-| AccountingManagementTabs | 4986ms load time | Dashboard hanging | 98 failed API calls | **CRITICAL** |
-| SubdivisionProcessManager | Promise.all blocking | UI freezing | No error isolation | **HIGH** |
-| PropertyLifecycleTest | Multiple API calls | Slow loading | Promise.all without timeout | **HIGH** |
-| Navigation between tabs | Sluggish transitions | Poor UX | No lazy loading | **HIGH** |
-| Reports dashboard | Heavy component loading | Initial delay | No Suspense boundaries | **MEDIUM** |
+| Component                 | Issue                   | Current Impact    | Root Cause                  | Priority     |
+| ------------------------- | ----------------------- | ----------------- | --------------------------- | ------------ |
+| AccountingManagementTabs  | 4986ms load time        | Dashboard hanging | 98 failed API calls         | **CRITICAL** |
+| SubdivisionProcessManager | Promise.all blocking    | UI freezing       | No error isolation          | **HIGH**     |
+| PropertyLifecycleTest     | Multiple API calls      | Slow loading      | Promise.all without timeout | **HIGH**     |
+| Navigation between tabs   | Sluggish transitions    | Poor UX           | No lazy loading             | **HIGH**     |
+| Reports dashboard         | Heavy component loading | Initial delay     | No Suspense boundaries      | **MEDIUM**   |
 
 ### 🔍 Memory Leak Analysis - COMPREHENSIVE REVIEW
 
-| Component | Cleanup Type | Status | Risk Level |
-|-----------|--------------|--------|------------|
-| EmailMonitoringDashboard | setInterval cleanup | ✅ **PROPER** - `clearInterval(interval)` | **LOW** |
-| ReverseTransferAction | Event listeners cleanup | ✅ **PROPER** - `removeEventListener` for focus/visibility | **LOW** |
-| useRealTimeOccupancy | Supabase subscription | ✅ **PROPER** - `tenancyChannel.unsubscribe()` | **LOW** |
-| ComprehensiveUserManagement | Keyboard event listener | ✅ **PROPER** - `removeEventListener('keydown')` | **LOW** |
-| OptimizedImage | IntersectionObserver | ✅ **PROPER** - `observerRef.current?.disconnect()` | **LOW** |
-| SecurityTestPanel | Supabase subscription | ✅ **PROPER** - Real-time subscription cleanup | **LOW** |
-| UserSelector | Click/keyboard listeners | ✅ **PROPER** - Multiple event listener cleanup | **LOW** |
-| SearchBar | Outside click listener | ✅ **PROPER** - Event listener cleanup | **LOW** |
-| AuditTrailDashboard | Real-time monitoring | ✅ **PROPER** - Subscription management | **LOW** |
+| Component                   | Cleanup Type             | Status                                                     | Risk Level |
+| --------------------------- | ------------------------ | ---------------------------------------------------------- | ---------- |
+| EmailMonitoringDashboard    | setInterval cleanup      | ✅ **PROPER** - `clearInterval(interval)`                  | **LOW**    |
+| ReverseTransferAction       | Event listeners cleanup  | ✅ **PROPER** - `removeEventListener` for focus/visibility | **LOW**    |
+| useRealTimeOccupancy        | Supabase subscription    | ✅ **PROPER** - `tenancyChannel.unsubscribe()`             | **LOW**    |
+| ComprehensiveUserManagement | Keyboard event listener  | ✅ **PROPER** - `removeEventListener('keydown')`           | **LOW**    |
+| OptimizedImage              | IntersectionObserver     | ✅ **PROPER** - `observerRef.current?.disconnect()`        | **LOW**    |
+| SecurityTestPanel           | Supabase subscription    | ✅ **PROPER** - Real-time subscription cleanup             | **LOW**    |
+| UserSelector                | Click/keyboard listeners | ✅ **PROPER** - Multiple event listener cleanup            | **LOW**    |
+| SearchBar                   | Outside click listener   | ✅ **PROPER** - Event listener cleanup                     | **LOW**    |
+| AuditTrailDashboard         | Real-time monitoring     | ✅ **PROPER** - Subscription management                    | **LOW**    |
 
 ### 🎯 Memory Leak Assessment Result
 
 **✅ EXCELLENT**: All components reviewed show **proper cleanup patterns**:
+
 - **setInterval/setTimeout**: All have corresponding `clearInterval/clearTimeout`
 - **Event Listeners**: All have `removeEventListener` in cleanup functions
 - **Supabase Subscriptions**: All have `unsubscribe()` calls
@@ -87,31 +89,32 @@ This report documents the comprehensive analysis of the Mzima Homes rental manag
 
 ### ⏱️ Timeout Protection Analysis
 
-| Component | Timeout Status | Implementation | Risk Level |
-|-----------|----------------|----------------|------------|
-| AcquisitionFinancialsService | ✅ **PROTECTED** | 5s timeout with Promise.race | **LOW** |
-| Geocoding Service | ✅ **PROTECTED** | 10s timeout with AbortSignal | **LOW** |
-| Supabase Client | ✅ **PROTECTED** | Custom fetch with error handling | **LOW** |
-| Edge Functions | ✅ **PROTECTED** | Graceful fallback for 404s | **LOW** |
-| Performance Monitor | ✅ **PROTECTED** | Built-in timeout utilities | **LOW** |
-| Standard Supabase Queries | ⚠️ **PARTIAL** | Relies on Supabase defaults | **MEDIUM** |
-| File Upload Operations | ⚠️ **NEEDS REVIEW** | May need explicit timeouts | **MEDIUM** |
+| Component                    | Timeout Status      | Implementation                   | Risk Level |
+| ---------------------------- | ------------------- | -------------------------------- | ---------- |
+| AcquisitionFinancialsService | ✅ **PROTECTED**    | 5s timeout with Promise.race     | **LOW**    |
+| Geocoding Service            | ✅ **PROTECTED**    | 10s timeout with AbortSignal     | **LOW**    |
+| Supabase Client              | ✅ **PROTECTED**    | Custom fetch with error handling | **LOW**    |
+| Edge Functions               | ✅ **PROTECTED**    | Graceful fallback for 404s       | **LOW**    |
+| Performance Monitor          | ✅ **PROTECTED**    | Built-in timeout utilities       | **LOW**    |
+| Standard Supabase Queries    | ⚠️ **PARTIAL**      | Relies on Supabase defaults      | **MEDIUM** |
+| File Upload Operations       | ⚠️ **NEEDS REVIEW** | May need explicit timeouts       | **MEDIUM** |
 
 ### 🚀 Navigation Performance Analysis
 
-| Navigation Type | Performance Status | Optimizations Applied | Load Time |
-|-----------------|-------------------|----------------------|-----------|
-| **Dashboard Sidebar** | ✅ **OPTIMIZED** | Next.js Link prefetching, active state caching | **<100ms** |
-| **Tab Navigation** | ✅ **OPTIMIZED** | Lazy loading with Suspense boundaries | **<200ms** |
-| **Reports Tabs** | ✅ **OPTIMIZED** | React.lazy() + ErrorBoundary + custom loading | **<300ms** |
-| **Notifications Tabs** | ✅ **OPTIMIZED** | Lazy loading + error isolation | **<300ms** |
-| **Administration Tabs** | ✅ **OPTIMIZED** | Permission-based filtering + lazy loading | **<200ms** |
-| **Properties Workflow** | ✅ **OPTIMIZED** | Gradient animations + hover effects | **<150ms** |
-| **Accounting Dashboard** | ✅ **FIXED** | Feature flags + timeout protection | **<500ms** |
+| Navigation Type          | Performance Status | Optimizations Applied                          | Load Time  |
+| ------------------------ | ------------------ | ---------------------------------------------- | ---------- |
+| **Dashboard Sidebar**    | ✅ **OPTIMIZED**   | Next.js Link prefetching, active state caching | **<100ms** |
+| **Tab Navigation**       | ✅ **OPTIMIZED**   | Lazy loading with Suspense boundaries          | **<200ms** |
+| **Reports Tabs**         | ✅ **OPTIMIZED**   | React.lazy() + ErrorBoundary + custom loading  | **<300ms** |
+| **Notifications Tabs**   | ✅ **OPTIMIZED**   | Lazy loading + error isolation                 | **<300ms** |
+| **Administration Tabs**  | ✅ **OPTIMIZED**   | Permission-based filtering + lazy loading      | **<200ms** |
+| **Properties Workflow**  | ✅ **OPTIMIZED**   | Gradient animations + hover effects            | **<150ms** |
+| **Accounting Dashboard** | ✅ **FIXED**       | Feature flags + timeout protection             | **<500ms** |
 
 ### 🎯 Navigation Performance Improvements
 
 **✅ BEFORE vs AFTER:**
+
 - **Dashboard Navigation**: Instant switching with Next.js Link prefetching
 - **Tab Switching**: 50-70% faster with lazy loading and Suspense
 - **Component Loading**: Error boundaries prevent cascade failures
@@ -119,6 +122,7 @@ This report documents the comprehensive analysis of the Mzima Homes rental manag
 - **Bundle Size**: 30-40% smaller initial payload with code splitting
 
 **🏆 PERFORMANCE PATTERNS IMPLEMENTED:**
+
 - **Lazy Loading**: All heavy dashboard components
 - **Error Boundaries**: Comprehensive error isolation
 - **Suspense Boundaries**: Professional loading states
@@ -183,27 +187,30 @@ This report documents the comprehensive analysis of the Mzima Homes rental manag
 
 ### 📦 Unused Imports Analysis - COMPREHENSIVE SCAN
 
-| File | Unused Import | Status | Impact Reduction |
-|------|---------------|--------|------------------|
-| reports/occupancy-reports.tsx | `addSummaryDashboardToExcel` | ✅ **FIXED** | Bundle size reduced |
-| reports/property-reports.tsx | `addSummaryDashboardToExcel` | ✅ **FIXED** | Bundle size reduced |
-| reports/tenant-analytics.tsx | `addSummaryDashboardToExcel` | ✅ **FIXED** | Bundle size reduced |
-| reports/financial-reports.tsx | `addSummaryDashboardToExcel` | ✅ **FIXED** | Bundle size reduced |
-| lib/validation/business-rules.ts | `invoices` table reference | ⚠️ **NEEDS FIX** | Potential runtime error |
-| lib/services/documents.ts | Unused `z` import | ⚠️ **MINOR** | Small bundle impact |
+| File                             | Unused Import                | Status           | Impact Reduction        |
+| -------------------------------- | ---------------------------- | ---------------- | ----------------------- |
+| reports/occupancy-reports.tsx    | `addSummaryDashboardToExcel` | ✅ **FIXED**     | Bundle size reduced     |
+| reports/property-reports.tsx     | `addSummaryDashboardToExcel` | ✅ **FIXED**     | Bundle size reduced     |
+| reports/tenant-analytics.tsx     | `addSummaryDashboardToExcel` | ✅ **FIXED**     | Bundle size reduced     |
+| reports/financial-reports.tsx    | `addSummaryDashboardToExcel` | ✅ **FIXED**     | Bundle size reduced     |
+| lib/validation/business-rules.ts | `invoices` table reference   | ⚠️ **NEEDS FIX** | Potential runtime error |
+| lib/services/documents.ts        | Unused `z` import            | ⚠️ **MINOR**     | Small bundle impact     |
 
 ### 🎯 Unused Import Cleanup Results
 
 **✅ COMPLETED FIXES:**
+
 - **4 Report Components**: Removed unused `addSummaryDashboardToExcel` imports
 - **Bundle Size Impact**: Reduced by ~2-3KB (minified)
 - **Tree Shaking**: Improved dead code elimination
 
 **⚠️ REMAINING ISSUES:**
+
 - **business-rules.ts**: References non-existent `invoices` table (should be `rent_invoices`)
 - **documents.ts**: Unused Zod import (minor impact)
 
 **📊 SCAN SUMMARY:**
+
 - **Total Files Scanned**: 150+ TypeScript/React files
 - **Unused Imports Found**: 6 instances
 - **Fixed**: 4/6 (67% completion)
@@ -211,29 +218,30 @@ This report documents the comprehensive analysis of the Mzima Homes rental manag
 
 ### 🔧 ESLint Configuration Issues
 
-| Issue | Current State | Recommendation |
-|-------|---------------|----------------|
-| `no-unused-vars` | **OFF** | Enable with TypeScript support |
-| `@typescript-eslint/no-unused-vars` | **MISSING** | Add to catch unused variables |
-| Unused import detection | **DISABLED** | Enable for better code quality |
+| Issue                               | Current State | Recommendation                 |
+| ----------------------------------- | ------------- | ------------------------------ |
+| `no-unused-vars`                    | **OFF**       | Enable with TypeScript support |
+| `@typescript-eslint/no-unused-vars` | **MISSING**   | Add to catch unused variables  |
+| Unused import detection             | **DISABLED**  | Enable for better code quality |
 
 ### 🔧 Dead Function Analysis - COMPREHENSIVE SCAN
 
-| Category | Function | Usage Status | Action Taken |
-|----------|----------|--------------|--------------|
-| **Client Functions** | `acquisition-financials.service.ts::getLeaseAgreements()` | ✅ **REMOVED** | Already cleaned up |
-| **Database Functions** | `auto_expire_offers()` | ✅ **ACTIVE** | Used by cron scheduler |
-| **Database Functions** | `generate_overdue_reminders()` | ✅ **ACTIVE** | Used by notification system |
-| **Database Functions** | `find_orphaned_plots()` | ✅ **ACTIVE** | Used by validation system |
-| **Database Functions** | `find_duplicate_lr_numbers()` | ✅ **ACTIVE** | Used by validation system |
-| **Database Functions** | `cleanup_old_audit_logs()` | ✅ **ACTIVE** | Used by maintenance system |
-| **Utility Functions** | `getCsrfToken()` | ✅ **ACTIVE** | Used by handover service |
-| **Utility Functions** | `documentUtils.*` | ✅ **ACTIVE** | Used by document management |
-| **Utility Functions** | `mappingUtils.*` | ✅ **ACTIVE** | Used by mapping features |
+| Category               | Function                                                  | Usage Status   | Action Taken                |
+| ---------------------- | --------------------------------------------------------- | -------------- | --------------------------- |
+| **Client Functions**   | `acquisition-financials.service.ts::getLeaseAgreements()` | ✅ **REMOVED** | Already cleaned up          |
+| **Database Functions** | `auto_expire_offers()`                                    | ✅ **ACTIVE**  | Used by cron scheduler      |
+| **Database Functions** | `generate_overdue_reminders()`                            | ✅ **ACTIVE**  | Used by notification system |
+| **Database Functions** | `find_orphaned_plots()`                                   | ✅ **ACTIVE**  | Used by validation system   |
+| **Database Functions** | `find_duplicate_lr_numbers()`                             | ✅ **ACTIVE**  | Used by validation system   |
+| **Database Functions** | `cleanup_old_audit_logs()`                                | ✅ **ACTIVE**  | Used by maintenance system  |
+| **Utility Functions**  | `getCsrfToken()`                                          | ✅ **ACTIVE**  | Used by handover service    |
+| **Utility Functions**  | `documentUtils.*`                                         | ✅ **ACTIVE**  | Used by document management |
+| **Utility Functions**  | `mappingUtils.*`                                          | ✅ **ACTIVE**  | Used by mapping features    |
 
 ### 🎯 Dead Function Assessment Result
 
 **✅ EXCELLENT**: Comprehensive scan reveals **minimal dead code**:
+
 - **Database Functions**: All PostgreSQL functions are actively used by cron jobs, validation, or business logic
 - **Utility Functions**: All utility functions have active usage patterns
 - **Service Methods**: All service methods are called by components or other services

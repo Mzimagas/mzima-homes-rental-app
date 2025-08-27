@@ -14,7 +14,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)
@@ -37,7 +39,7 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    
+
     const { data, error } = await admin
       .from('properties')
       .select('landlord_id')
@@ -63,23 +65,30 @@ const paymentReceiptUpdateSchema = z.object({
   payment_date: z.string().optional(),
   payment_reference: z.string().optional(),
   payment_method: z.enum(['CASH', 'BANK_TRANSFER', 'CHEQUE', 'MOBILE_MONEY', 'OTHER']).optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 })
 
 // PATCH /api/properties/[id]/payment-receipts/[receiptId] - Update payment receipt
-export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const PATCH = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id and receipt id from path /api/properties/[id]/payment-receipts/[receiptId]
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
-    const receiptsIdx = segments.findIndex(s => s === 'payment-receipts')
-    const receiptId = receiptsIdx >= 0 && segments[receiptsIdx + 1] ? segments[receiptsIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const receiptsIdx = segments.findIndex((s) => s === 'payment-receipts')
+    const receiptId =
+      receiptsIdx >= 0 && segments[receiptsIdx + 1] ? segments[receiptsIdx + 1] : undefined
 
-    if (!propertyId || !receiptId) return errors.badRequest('Missing property id or receipt id in path')
+    if (!propertyId || !receiptId)
+      return errors.badRequest('Missing property id or receipt id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
     if (!hasAccess) return errors.forbidden()
@@ -92,7 +101,11 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
     }
 
     // Update in memory storage
-    const updatedReceipt = MockStorageService.updatePaymentReceipt(propertyId, receiptId, parsed.data)
+    const updatedReceipt = MockStorageService.updatePaymentReceipt(
+      propertyId,
+      receiptId,
+      parsed.data
+    )
 
     if (!updatedReceipt) {
       return errors.notFound('Payment receipt not found')
@@ -108,19 +121,26 @@ export const PATCH = compose(withRateLimit, withCsrf, withAuth)(async (req: Next
 })
 
 // DELETE /api/properties/[id]/payment-receipts/[receiptId] - Delete payment receipt
-export const DELETE = compose(withRateLimit, withCsrf, withAuth)(async (req: NextRequest) => {
+export const DELETE = compose(
+  withRateLimit,
+  withCsrf,
+  withAuth
+)(async (req: NextRequest) => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
 
     // Extract property id and receipt id from path /api/properties/[id]/payment-receipts/[receiptId]
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
-    const propertiesIdx = segments.findIndex(s => s === 'properties')
-    const propertyId = propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
-    const receiptsIdx = segments.findIndex(s => s === 'payment-receipts')
-    const receiptId = receiptsIdx >= 0 && segments[receiptsIdx + 1] ? segments[receiptsIdx + 1] : undefined
+    const propertiesIdx = segments.findIndex((s) => s === 'properties')
+    const propertyId =
+      propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
+    const receiptsIdx = segments.findIndex((s) => s === 'payment-receipts')
+    const receiptId =
+      receiptsIdx >= 0 && segments[receiptsIdx + 1] ? segments[receiptsIdx + 1] : undefined
 
-    if (!propertyId || !receiptId) return errors.badRequest('Missing property id or receipt id in path')
+    if (!propertyId || !receiptId)
+      return errors.badRequest('Missing property id or receipt id in path')
 
     const hasAccess = await checkPropertyAccess(userId, propertyId)
     if (!hasAccess) return errors.forbidden()

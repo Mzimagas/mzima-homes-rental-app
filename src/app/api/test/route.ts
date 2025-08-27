@@ -9,15 +9,18 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     console.log('Test POST API called with body:', body)
-    return NextResponse.json({ 
-      message: 'Test POST API working', 
+    return NextResponse.json({
+      message: 'Test POST API working',
       received: body,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Test POST API error:', error)
     return NextResponse.json(
-      { error: 'Test POST API error', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Test POST API error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     )
   }

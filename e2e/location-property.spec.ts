@@ -3,7 +3,12 @@ import { test, expect } from '@playwright/test'
 // Helpers to sign in quickly if login is required. Adjust if your app requires auth.
 async function signInIfNeeded(page) {
   await page.goto('/dashboard/properties')
-  if (await page.getByRole('heading', { name: /sign in/i }).isVisible({ timeout: 1000 }).catch(() => false)) {
+  if (
+    await page
+      .getByRole('heading', { name: /sign in/i })
+      .isVisible({ timeout: 1000 })
+      .catch(() => false)
+  ) {
     await page.getByLabel(/email address/i).fill(process.env.TEST_USER_EMAIL || 'user@example.com')
     await page.getByLabel(/password/i).fill(process.env.TEST_USER_PASSWORD || 'Password123!')
     await page.getByRole('button', { name: /sign in/i }).click()
@@ -37,7 +42,10 @@ test('Create property using current location and verify saved', async ({ page, c
   await page.getByRole('button', { name: /use current/i }).click()
 
   // Wait for address field to be populated by reverse geocode
-  const addressInput = page.locator('label:has-text("Physical Address")').locator('..').locator('input')
+  const addressInput = page
+    .locator('label:has-text("Physical Address")')
+    .locator('..')
+    .locator('input')
   await expect(addressInput).toHaveValue(/-?\d+\.?\d*,\s*-?\d+\.?\d*|[a-z]/i, { timeout: 8000 })
 
   // Submit the form
@@ -46,4 +54,3 @@ test('Create property using current location and verify saved', async ({ page, c
   // Expect a refresh back to properties list and presence of the new property name
   await expect(page.getByText('Test Property (GPS)')).toBeVisible({ timeout: 10000 })
 })
-

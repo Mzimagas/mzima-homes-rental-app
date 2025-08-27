@@ -20,7 +20,7 @@ export default function SkeletonLoader({
   lines = 1,
   height,
   width,
-  animated = true
+  animated = true,
 }: SkeletonLoaderProps) {
   const baseClasses = `bg-gray-200 ${animated ? 'animate-pulse' : ''} ${className}`
 
@@ -33,7 +33,7 @@ export default function SkeletonLoader({
             className={`${baseClasses} h-4 rounded`}
             style={{
               width: index === lines - 1 ? '75%' : '100%',
-              height: height || '1rem'
+              height: height || '1rem',
             }}
           />
         ))}
@@ -47,7 +47,7 @@ export default function SkeletonLoader({
         className={`${baseClasses} rounded-full`}
         style={{
           width: width || height || '2.5rem',
-          height: height || width || '2.5rem'
+          height: height || width || '2.5rem',
         }}
       />
     )
@@ -78,20 +78,14 @@ export default function SkeletonLoader({
         {/* Table header */}
         <div className="flex space-x-4">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-4 bg-gray-300 rounded animate-pulse flex-1"
-            />
+            <div key={index} className="h-4 bg-gray-300 rounded animate-pulse flex-1" />
           ))}
         </div>
         {/* Table rows */}
         {Array.from({ length: lines }).map((_, rowIndex) => (
           <div key={rowIndex} className="flex space-x-4">
             {Array.from({ length: 4 }).map((_, colIndex) => (
-              <div
-                key={colIndex}
-                className="h-6 bg-gray-200 rounded animate-pulse flex-1"
-              />
+              <div key={colIndex} className="h-6 bg-gray-200 rounded animate-pulse flex-1" />
             ))}
           </div>
         ))}
@@ -104,7 +98,7 @@ export default function SkeletonLoader({
       className={`${baseClasses} rounded`}
       style={{
         width: width || '100%',
-        height: height || '1rem'
+        height: height || '1rem',
       }}
     />
   )

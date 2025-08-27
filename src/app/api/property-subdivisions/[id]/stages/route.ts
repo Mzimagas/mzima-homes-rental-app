@@ -5,10 +5,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 // PATCH /api/property-subdivisions/[id]/stages - Update subdivision pipeline stages
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = createClient(supabaseUrl, serviceKey)
     const { id: subdivisionId } = await params
@@ -19,7 +16,7 @@ export async function PATCH(
       subdivisionId,
       current_stage,
       overall_progress,
-      stages_count: pipeline_stages?.length
+      stages_count: pipeline_stages?.length,
     })
 
     // Validate required fields
@@ -46,10 +43,7 @@ export async function PATCH(
 
     if (subdivisionError || !subdivision) {
       console.error('Subdivision not found:', subdivisionError)
-      return NextResponse.json(
-        { error: 'Subdivision not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Subdivision not found' }, { status: 404 })
     }
 
     // Update subdivision stages
@@ -59,7 +53,7 @@ export async function PATCH(
         pipeline_stages,
         current_stage,
         overall_progress,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', subdivisionId)
       .select()
@@ -67,29 +61,19 @@ export async function PATCH(
 
     if (updateError) {
       console.error('Error updating subdivision stages:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to update subdivision stages' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to update subdivision stages' }, { status: 500 })
     }
 
     console.log('Successfully updated subdivision stages')
     return NextResponse.json(updatedSubdivision)
-
   } catch (error) {
     console.error('Error in subdivision stages PATCH:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // GET /api/property-subdivisions/[id]/stages - Get subdivision pipeline stages
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = createClient(supabaseUrl, serviceKey)
     const { id: subdivisionId } = await params
@@ -103,21 +87,12 @@ export async function GET(
 
     if (subdivisionError || !subdivision) {
       console.error('Subdivision not found:', subdivisionError)
-      return NextResponse.json(
-        { error: 'Subdivision not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Subdivision not found' }, { status: 404 })
     }
 
-
-
     return NextResponse.json(subdivision)
-
   } catch (error) {
     console.error('Error in subdivision stages GET:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

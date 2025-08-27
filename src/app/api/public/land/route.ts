@@ -6,7 +6,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 const landListSchema = z.object({
-  propertyType: z.enum(['RESIDENTIAL_LAND', 'COMMERCIAL_LAND', 'AGRICULTURAL_LAND', 'MIXED_USE_LAND']).optional(),
+  propertyType: z
+    .enum(['RESIDENTIAL_LAND', 'COMMERCIAL_LAND', 'AGRICULTURAL_LAND', 'MIXED_USE_LAND'])
+    .optional(),
   minArea: z.coerce.number().positive().optional(), // in square meters
   maxArea: z.coerce.number().positive().optional(),
   minPrice: z.coerce.number().positive().optional(),
@@ -54,7 +56,7 @@ export async function GET(req: NextRequest) {
       topography,
       developmentPermit,
       priceType,
-      location
+      location,
     } = parsed.data
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
@@ -78,9 +80,10 @@ export async function GET(req: NextRequest) {
 
     if (location) {
       const searchTerm = location.toLowerCase()
-      rows = rows.filter((r: any) => 
-        r.property_name?.toLowerCase().includes(searchTerm) ||
-        r.physical_address?.toLowerCase().includes(searchTerm)
+      rows = rows.filter(
+        (r: any) =>
+          r.property_name?.toLowerCase().includes(searchTerm) ||
+          r.physical_address?.toLowerCase().includes(searchTerm)
       )
     }
 
@@ -93,21 +96,19 @@ export async function GET(req: NextRequest) {
     }
 
     if (zoning) {
-      rows = rows.filter((r: any) => 
+      rows = rows.filter((r: any) =>
         r.zoning_classification?.toLowerCase().includes(zoning.toLowerCase())
       )
     }
 
     if (roadAccess) {
-      rows = rows.filter((r: any) => 
+      rows = rows.filter((r: any) =>
         r.road_access_type?.toLowerCase().includes(roadAccess.toLowerCase())
       )
     }
 
     if (topography) {
-      rows = rows.filter((r: any) => 
-        r.topography?.toLowerCase().includes(topography.toLowerCase())
-      )
+      rows = rows.filter((r: any) => r.topography?.toLowerCase().includes(topography.toLowerCase()))
     }
 
     if (developmentPermit) {
@@ -118,13 +119,17 @@ export async function GET(req: NextRequest) {
     if (minPrice !== undefined || maxPrice !== undefined) {
       rows = rows.filter((r: any) => {
         let price = 0
-        
+
         if (priceType === 'SALE' && r.sale_price_kes) {
           price = r.sale_price_kes
         } else if (priceType === 'LEASE' && r.lease_price_per_sqm_kes && r.total_area_sqm) {
           price = r.lease_price_per_sqm_kes * r.total_area_sqm
         } else if (priceType === 'BOTH') {
-          price = r.sale_price_kes || (r.lease_price_per_sqm_kes && r.total_area_sqm ? r.lease_price_per_sqm_kes * r.total_area_sqm : 0)
+          price =
+            r.sale_price_kes ||
+            (r.lease_price_per_sqm_kes && r.total_area_sqm
+              ? r.lease_price_per_sqm_kes * r.total_area_sqm
+              : 0)
         }
 
         if (minPrice !== undefined && price < minPrice) return false
@@ -135,16 +140,21 @@ export async function GET(req: NextRequest) {
 
     // Utility filtering
     if (utilities) {
-      const utilityFilters = utilities.split(',').map(u => u.trim().toLowerCase())
-      
+      const utilityFilters = utilities.split(',').map((u) => u.trim().toLowerCase())
+
       rows = rows.filter((r: any) => {
-        return utilityFilters.every(filter => {
+        return utilityFilters.every((filter) => {
           switch (filter) {
-            case 'electricity': return r.electricity_available
-            case 'water': return r.water_available
-            case 'sewer': return r.sewer_available
-            case 'internet': return r.internet_available
-            default: return true
+            case 'electricity':
+              return r.electricity_available
+            case 'water':
+              return r.water_available
+            case 'sewer':
+              return r.sewer_available
+            case 'internet':
+              return r.internet_available
+            default:
+              return true
           }
         })
       })
@@ -153,7 +163,7 @@ export async function GET(req: NextRequest) {
     // Fetch amenities for remaining properties
     const propertyIds = rows.map((r: any) => r.property_id)
     let amenitiesMap: Record<string, any[]> = {}
-    
+
     if (propertyIds.length > 0) {
       const { data: amenityData } = await supabase
         .from('land_property_amenities')
@@ -191,15 +201,16 @@ export async function GET(req: NextRequest) {
       amenities: amenitiesMap[r.property_id] || [],
       media: mediaMap[r.property_id] || [],
       // Calculate total lease price if available
-      total_lease_price_kes: r.lease_price_per_sqm_kes && r.total_area_sqm 
-        ? r.lease_price_per_sqm_kes * r.total_area_sqm 
-        : null,
+      total_lease_price_kes:
+        r.lease_price_per_sqm_kes && r.total_area_sqm
+          ? r.lease_price_per_sqm_kes * r.total_area_sqm
+          : null,
       // Format area display
-      area_display: r.total_area_acres 
+      area_display: r.total_area_acres
         ? `${r.total_area_acres} acres (${r.total_area_sqm?.toLocaleString()} sqm)`
-        : r.total_area_sqm 
-        ? `${r.total_area_sqm.toLocaleString()} sqm`
-        : null
+        : r.total_area_sqm
+          ? `${r.total_area_sqm.toLocaleString()} sqm`
+          : null,
     }))
 
     return NextResponse.json({ ok: true, data: enhancedData })
