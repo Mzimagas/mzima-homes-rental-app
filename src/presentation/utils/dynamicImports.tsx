@@ -3,7 +3,7 @@
  * Utilities for code splitting and lazy loading
  */
 
-import { lazy, ComponentType, LazyExoticComponent } from 'react'
+import React, { lazy, ComponentType, LazyExoticComponent } from 'react'
 import dynamic from 'next/dynamic'
 
 // Loading component for lazy imports

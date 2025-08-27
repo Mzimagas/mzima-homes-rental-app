@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import supabase from '../../../lib/supabase-client'
-
+import UploadDebugger from '../../debug/UploadDebugger'
 
 interface DirectAdditionDocumentsProps {
   propertyId: string
@@ -121,11 +121,13 @@ export default function DirectAdditionDocuments({ propertyId, propertyName }: Di
 
   useEffect(() => {
     loadDocuments()
-  }, [propertyId, loadDocuments])
+  }, [propertyId])
 
-  const loadDocuments = useCallback(async () => {
+  const loadDocuments = async () => {
     try {
       setLoading(true)
+      console.log(`Loading documents for property: ${propertyId}`)
+
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -135,8 +137,11 @@ export default function DirectAdditionDocuments({ propertyId, propertyName }: Di
         .order('uploaded_at', { ascending: false })
 
       if (error) {
+        console.error('Database query error:', error)
         throw new Error(`Failed to load documents: ${error.message}`)
       }
+
+      console.log(`Loaded ${data?.length || 0} documents from database`)
 
       // Group documents by their custom document ID
       const groupedDocs: Record<string, DocumentFile[]> = {}
@@ -146,15 +151,16 @@ export default function DirectAdditionDocuments({ propertyId, propertyName }: Di
         groupedDocs[docId].push(doc)
       })
 
+      console.log('Grouped documents:', Object.keys(groupedDocs).map(key => `${key}: ${groupedDocs[key].length} files`))
       setDocuments(groupedDocs)
 
     } catch (error) {
-      // Error handling without console logging
+      console.error('Error loading documents:', error)
       // Don't show alert for loading errors as it's called automatically
     } finally {
       setLoading(false)
     }
-  }, [propertyId])
+  }
 
   const handleFileUpload = async (documentId: string, files: FileList) => {
     const docConfig = KENYA_PROPERTY_DOCUMENTS.find(d => d.id === documentId)
@@ -360,6 +366,9 @@ export default function DirectAdditionDocuments({ propertyId, propertyName }: Di
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Debug Tool - Remove after fixing upload issues */}
+      <UploadDebugger propertyId={propertyId} />
+
       {/* Header with Progress - Mobile Optimized */}
       <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border border-emerald-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
