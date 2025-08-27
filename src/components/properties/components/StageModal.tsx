@@ -5,7 +5,7 @@ import { Button } from '../../ui'
 import Modal from '../../ui/Modal'
 import { StageModalProps } from '../types/purchase-pipeline.types'
 import { getStageById } from '../utils/purchase-pipeline.utils'
-import PurchasePipelineDocumentsV2 from './PurchasePipelineDocumentsV2'
+
 
 export default function StageModal({
   isOpen,
@@ -134,22 +134,7 @@ export default function StageModal({
             </div>
           )}
 
-          {/* Stage Documents */}
-          <div className="border-t pt-4">
-            <div className="mb-4">
-              <h4 className="font-medium text-gray-900 mb-2">Stage Documents</h4>
-              <p className="text-sm text-gray-600">
-                Documents for this stage of the purchase pipeline
-              </p>
-            </div>
 
-            {/* New Document Management System */}
-            <PurchasePipelineDocumentsV2
-              purchaseId={purchaseId}
-              stageId={stageId}
-              stageName={stage.name}
-            />
-          </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-3 pt-4 border-t">
