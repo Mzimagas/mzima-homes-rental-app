@@ -1,0 +1,550 @@
+{
+  "timestamp": "2025-08-27T09:44:43.829Z",
+  "stagingUrl": "https://ajrxvnakphkpkcssisxm.supabase.co",
+  "environment": "staging",
+  "verification": {
+    "connectionWorking": true,
+    "tablesExpected": 106,
+    "tablesExisting": 106,
+    "tablesMissing": 0,
+    "readyForTesting": true
+  },
+  "tables": [
+    {
+      "name": "active_leases",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "activities_audit",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "agents",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "amenities",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "approvals",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "bank_mpesa_recons",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "clients",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "commissions",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "data_access_logs",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "disputes_logs",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "documents",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "encumbrances",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "enhanced_users",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "expenses",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "geography_columns",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "geometry_columns",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "handover_pipeline",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "in_app_notifications",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "invoices",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "land_amenities",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "land_details",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "land_media",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "land_property_amenities",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "land_rates",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "landlords",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "listings",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "maintenance_requests",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "maintenance_tickets",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "marketing_leads",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "meter_readings",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "mpesa_transactions",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "notification_history",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "notification_rules",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "notification_settings",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "notification_templates",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "offers_reservations",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "owners",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "parcel_owners",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "parcels",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "payment_allocations",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "payment_plans",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "payments",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "permission_audit_log",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "permission_detail_types",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "permission_sections",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "permission_templates",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "plots",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "pricing_zones",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "properties",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_acquisition_costs",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_acquisition_financials_view",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_audit_log",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_handover_costs",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_handover_financials_view",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_payment_installments",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_payment_receipts",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_payment_records",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_purchase_price_history",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_sale_info",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_sale_status_history",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_sale_summary",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_subdivision_costs",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_subdivision_costs_view",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_subdivision_history",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_subdivisions",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "property_users",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "purchase_pipeline",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "purchase_pipeline_audit_log",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "purchase_pipeline_change_approvals",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "purchase_pipeline_costs",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "purchase_pipeline_field_security",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "receipts",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "rent_invoices",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "rent_ledger_view",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "reservation_requests",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "sale_agreements",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "security_events",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "security_user_roles",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "shared_meters",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "spatial_ref_sys",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "subdivision_plots",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "subdivisions",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "surveys",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "tasks_reminders",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "tenancy_agreements",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "tenants",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "transfers_titles",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "unit_amenities",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "unit_occupancy_summary",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "unit_shared_meters",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "units",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "units_media",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "user_activities",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "user_data_access",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "user_invitations",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "user_next_of_kin",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "user_permissions",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "user_profiles",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "user_property_access",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "user_roles",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "utility_accounts",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "utility_ledger",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "value_add_projects",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "view_public_land_listings",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "view_public_vacant_units",
+      "exists": true,
+      "rowCount": "unknown"
+    },
+    {
+      "name": "wayleaves_easements",
+      "exists": true,
+      "rowCount": "unknown"
+    }
+  ],
+  "nextSteps": [
+    "Execute Phase 1: Schema backup and monitoring setup",
+    "Begin Phase 2: Archive 28 high-priority tables",
+    "Monitor application for errors during archiving",
+    "Test rollback procedures"
+  ]
+}

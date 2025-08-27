@@ -1,0 +1,86 @@
+{
+  "timestamp": "2025-08-27T09:41:35.069Z",
+  "backupSource": "./backups/database-backup-2025-08-27T08-37-41-160Z",
+  "stagingUrl": "https://ajrxvnakphkpkcssisxm.supabase.co",
+  "tablesProcessed": 17,
+  "tablesSuccessful": 10,
+  "tablesFailed": 7,
+  "totalRowsRestored": 0,
+  "details": {
+    "properties": {
+      "success": false,
+      "error": "duplicate key value violates unique constraint \"properties_pkey\"",
+      "rowsRestored": 0
+    },
+    "units": {
+      "success": false,
+      "error": "duplicate key value violates unique constraint \"units_pkey\"",
+      "rowsRestored": 0
+    },
+    "tenants": {
+      "success": false,
+      "error": "duplicate key value violates unique constraint \"tenants_pkey\"",
+      "rowsRestored": 0
+    },
+    "tenancy_agreements": {
+      "success": false,
+      "error": "duplicate key value violates unique constraint \"tenancy_agreements_pkey\"",
+      "rowsRestored": 0
+    },
+    "rent_invoices": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "payments": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "property_users": {
+      "success": false,
+      "error": "duplicate key value violates unique constraint \"property_users_pkey\"",
+      "rowsRestored": 0
+    },
+    "landlords": {
+      "success": false,
+      "error": "duplicate key value violates unique constraint \"landlords_pkey\"",
+      "rowsRestored": 0
+    },
+    "parcels": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "subdivisions": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "plots": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "clients": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "documents": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "listings": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "sale_agreements": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "user_profiles": {
+      "success": true,
+      "rowsRestored": 0
+    },
+    "enhanced_users": {
+      "success": false,
+      "error": "duplicate key value violates unique constraint \"enhanced_users_pkey\"",
+      "rowsRestored": 0
+    }
+  }
+}
