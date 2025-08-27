@@ -1,0 +1,265 @@
+{
+  "timestamp": "2025-08-27T10:15:52.058Z",
+  "phase": "Phase 2: Table Assessment",
+  "environment": "staging",
+  "tablesTargeted": 28,
+  "tablesAssessed": 28,
+  "tablesFailed": 0,
+  "assessedTables": [
+    {
+      "success": true,
+      "tableName": "clients",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:52.827Z"
+    },
+    {
+      "success": true,
+      "tableName": "encumbrances",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:53.395Z"
+    },
+    {
+      "success": true,
+      "tableName": "listings",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:54.991Z"
+    },
+    {
+      "success": true,
+      "tableName": "offers_reservations",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:55.669Z"
+    },
+    {
+      "success": true,
+      "tableName": "parcel_owners",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:56.218Z"
+    },
+    {
+      "success": true,
+      "tableName": "parcels",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:56.746Z"
+    },
+    {
+      "success": true,
+      "tableName": "plots",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:57.401Z"
+    },
+    {
+      "success": true,
+      "tableName": "property_handover_costs",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:58.094Z"
+    },
+    {
+      "success": true,
+      "tableName": "property_sale_info",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:58.673Z"
+    },
+    {
+      "success": true,
+      "tableName": "property_sale_status_history",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:59.318Z"
+    },
+    {
+      "success": true,
+      "tableName": "property_subdivision_costs",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:15:59.890Z"
+    },
+    {
+      "success": true,
+      "tableName": "property_subdivision_history",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:00.575Z"
+    },
+    {
+      "success": true,
+      "tableName": "purchase_pipeline_change_approvals",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:01.246Z"
+    },
+    {
+      "success": true,
+      "tableName": "purchase_pipeline_costs",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:01.818Z"
+    },
+    {
+      "success": true,
+      "tableName": "reservation_requests",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:02.521Z"
+    },
+    {
+      "success": true,
+      "tableName": "sale_agreements",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:03.118Z"
+    },
+    {
+      "success": true,
+      "tableName": "subdivision_plots",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:03.724Z"
+    },
+    {
+      "success": true,
+      "tableName": "subdivisions",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:04.294Z"
+    },
+    {
+      "success": true,
+      "tableName": "surveys",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:04.978Z"
+    },
+    {
+      "success": true,
+      "tableName": "transfers_titles",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:05.718Z"
+    },
+    {
+      "success": true,
+      "tableName": "wayleaves_easements",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:06.390Z"
+    },
+    {
+      "success": true,
+      "tableName": "documents",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:07.068Z"
+    },
+    {
+      "success": true,
+      "tableName": "land_media",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:07.644Z"
+    },
+    {
+      "success": true,
+      "tableName": "land_property_amenities",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:08.218Z"
+    },
+    {
+      "success": true,
+      "tableName": "unit_amenities",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:08.770Z"
+    },
+    {
+      "success": true,
+      "tableName": "units_media",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:09.337Z"
+    },
+    {
+      "success": true,
+      "tableName": "amenities",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:09.995Z"
+    },
+    {
+      "success": true,
+      "tableName": "marketing_leads",
+      "rowCount": 0,
+      "isEmpty": true,
+      "safeToArchive": true,
+      "timestamp": "2025-08-27T10:16:10.590Z"
+    }
+  ],
+  "failedTables": [],
+  "healthCheck": {
+    "allPassed": true,
+    "results": [
+      {
+        "name": "properties",
+        "description": "Core property management",
+        "status": "passed",
+        "count": 98
+      },
+      {
+        "name": "units",
+        "description": "Unit management",
+        "status": "passed",
+        "count": 8
+      },
+      {
+        "name": "tenants",
+        "description": "Tenant management",
+        "status": "passed",
+        "count": 11
+      },
+      {
+        "name": "tenancy_agreements",
+        "description": "Tenancy agreements",
+        "status": "passed",
+        "count": 8
+      }
+    ]
+  },
+  "readyForProduction": true
+}

@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-08-27T10:13:26.218Z",
+  "environment": "production",
+  "overallStatus": "HEALTHY",
+  "coreTablesHealthy": 8,
+  "coreTablesFailed": 0,
+  "totalResponseTime": 5427,
+  "averageResponseTime": 678,
+  "tableResults": [
+    {
+      "table": "properties",
+      "status": "HEALTHY",
+      "rowCount": 98,
+      "responseTime": 1391,
+      "description": "Property management"
+    },
+    {
+      "table": "units",
+      "status": "HEALTHY",
+      "rowCount": 8,
+      "responseTime": 748,
+      "description": "Unit management"
+    },
+    {
+      "table": "tenants",
+      "status": "HEALTHY",
+      "rowCount": 11,
+      "responseTime": 558,
+      "description": "Tenant management"
+    },
+    {
+      "table": "tenancy_agreements",
+      "status": "HEALTHY",
+      "rowCount": 8,
+      "responseTime": 532,
+      "description": "Tenancy agreements"
+    },
+    {
+      "table": "property_users",
+      "status": "HEALTHY",
+      "rowCount": 98,
+      "responseTime": 560,
+      "description": "Property user relationships"
+    },
+    {
+      "table": "landlords",
+      "status": "HEALTHY",
+      "rowCount": 1,
+      "responseTime": 600,
+      "description": "Landlord management"
+    },
+    {
+      "table": "rent_invoices",
+      "status": "HEALTHY",
+      "rowCount": 0,
+      "responseTime": 508,
+      "description": "Rent invoicing"
+    },
+    {
+      "table": "payments",
+      "status": "HEALTHY",
+      "rowCount": 0,
+      "responseTime": 530,
+      "description": "Payment processing"
+    }
+  ],
+  "archivedTablesInfo": {
+    "archivedTablesFound": 0,
+    "archivedTables": [],
+    "note": "Archived table detection requires database admin access"
+  },
+  "recommendations": [
+    "All core tables healthy - safe to proceed with archiving"
+  ]
+}
