@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-08-27T08:38:04.068Z",
+  "backupDirectory": "/Users/a0722379217/Downloads/Mzima Homes App/mzima-homes-rental-app/backups/database-backup-2025-08-27T08-37-41-160Z",
+  "tablesBackedUp": 17,
+  "totalRows": 225,
+  "files": [
+    "data-backup.json",
+    "schema-backup.json",
+    "CLI_BACKUP_INSTRUCTIONS.md",
+    "backup-summary.json"
+  ],
+  "nextSteps": [
+    "Verify backup files are complete",
+    "Test backup restoration in staging environment",
+    "Create additional manual backups if needed",
+    "Proceed with staging environment setup"
+  ]
+}

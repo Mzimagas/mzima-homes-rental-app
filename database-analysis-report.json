@@ -1,0 +1,184 @@
+{
+  "timestamp": "2025-08-27T08:31:11.434Z",
+  "summary": {
+    "totalTables": 0,
+    "suspectedUnusedTables": 13,
+    "coreTables": 8
+  },
+  "findings": {
+    "emptyTables": [
+      "parcels",
+      "subdivisions",
+      "plots",
+      "clients",
+      "documents",
+      "listings",
+      "sale_agreements",
+      "user_profiles"
+    ],
+    "missingCoreTables": [],
+    "existingCoreTables": [
+      {
+        "name": "properties",
+        "rowCount": 98
+      },
+      {
+        "name": "units",
+        "rowCount": 8
+      },
+      {
+        "name": "tenants",
+        "rowCount": 11
+      },
+      {
+        "name": "tenancy_agreements",
+        "rowCount": 8
+      },
+      {
+        "name": "rent_invoices",
+        "rowCount": 0
+      },
+      {
+        "name": "payments",
+        "rowCount": 0
+      },
+      {
+        "name": "property_users",
+        "rowCount": 98
+      },
+      {
+        "name": "landlords",
+        "rowCount": 1
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "action": "Remove empty unused tables",
+      "description": "8 tables exist but are completely empty",
+      "tables": [
+        "parcels",
+        "subdivisions",
+        "plots",
+        "clients",
+        "documents",
+        "listings",
+        "sale_agreements",
+        "user_profiles"
+      ]
+    }
+  ],
+  "rawData": {
+    "allTables": null,
+    "suspectedTables": {
+      "parcels": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "EMPTY"
+      },
+      "subdivisions": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "EMPTY"
+      },
+      "plots": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "EMPTY"
+      },
+      "clients": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "EMPTY"
+      },
+      "enhanced_users": {
+        "exists": true,
+        "rowCount": 1,
+        "status": "HAS_DATA"
+      },
+      "documents": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "EMPTY"
+      },
+      "document_versions": {
+        "exists": false,
+        "rowCount": 0,
+        "status": "NOT_EXISTS"
+      },
+      "listings": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "EMPTY"
+      },
+      "offers": {
+        "exists": false,
+        "rowCount": 0,
+        "status": "NOT_EXISTS"
+      },
+      "sale_agreements": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "EMPTY"
+      },
+      "user_profiles": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "EMPTY"
+      },
+      "land_parcels": {
+        "exists": false,
+        "rowCount": 0,
+        "status": "NOT_EXISTS"
+      },
+      "land_subdivisions": {
+        "exists": false,
+        "rowCount": 0,
+        "status": "NOT_EXISTS"
+      }
+    },
+    "coreTables": {
+      "properties": {
+        "exists": true,
+        "rowCount": 98,
+        "status": "CORE_TABLE"
+      },
+      "units": {
+        "exists": true,
+        "rowCount": 8,
+        "status": "CORE_TABLE"
+      },
+      "tenants": {
+        "exists": true,
+        "rowCount": 11,
+        "status": "CORE_TABLE"
+      },
+      "tenancy_agreements": {
+        "exists": true,
+        "rowCount": 8,
+        "status": "CORE_TABLE"
+      },
+      "rent_invoices": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "CORE_TABLE"
+      },
+      "payments": {
+        "exists": true,
+        "rowCount": 0,
+        "status": "CORE_TABLE"
+      },
+      "property_users": {
+        "exists": true,
+        "rowCount": 98,
+        "status": "CORE_TABLE"
+      },
+      "landlords": {
+        "exists": true,
+        "rowCount": 1,
+        "status": "CORE_TABLE"
+      }
+    }
+  }
+}
