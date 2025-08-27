@@ -136,26 +136,11 @@ export default function StageModal({
 
           {/* Stage Documents */}
           <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h4 className="font-medium text-gray-900">Stage Documents</h4>
-                <p className="text-sm text-gray-600">
-                  Documents for this stage of the purchase pipeline
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-gray-500">
-                  {documents.length} document{documents.length !== 1 ? 's' : ''} uploaded
-                </div>
-                <Button
-                  onClick={() => setShowUploadForm(!showUploadForm)}
-                  variant="outline"
-                  size="sm"
-                  disabled={uploading}
-                >
-                  {showUploadForm ? 'Cancel' : 'Upload Document'}
-                </Button>
-              </div>
+            <div className="mb-4">
+              <h4 className="font-medium text-gray-900 mb-2">Stage Documents</h4>
+              <p className="text-sm text-gray-600">
+                Documents for this stage of the purchase pipeline
+              </p>
             </div>
 
             {/* New Document Management System */}
