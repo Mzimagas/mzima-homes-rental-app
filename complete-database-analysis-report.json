@@ -1,0 +1,2930 @@
+{
+  "timestamp": "2025-08-27T09:00:32.933Z",
+  "summary": {
+    "totalTables": 106,
+    "totalRows": 9234,
+    "cleanupCandidates": 73,
+    "cleanupPercentage": 69,
+    "activeTables": 32
+  },
+  "breakdown": {
+    "core-rental-active": [
+      {
+        "tableName": "active_leases",
+        "rowCount": 8,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "tenant_id",
+          "unit_id",
+          "start_date",
+          "end_date",
+          "monthly_rent_kes",
+          "security_deposit_kes",
+          "lease_type",
+          "notes",
+          "created_at",
+          "updated_at",
+          "tenant_name",
+          "tenant_phone",
+          "tenant_email",
+          "unit_label",
+          "property_id",
+          "property_name",
+          "property_address"
+        ],
+        "category": "core-rental-active"
+      },
+      {
+        "tableName": "landlords",
+        "rowCount": 1,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "full_name",
+          "phone",
+          "email",
+          "default_currency",
+          "created_at",
+          "updated_at"
+        ],
+        "category": "core-rental-active"
+      },
+      {
+        "tableName": "properties",
+        "rowCount": 98,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "landlord_id",
+          "name",
+          "physical_address",
+          "lat",
+          "lng",
+          "notes",
+          "created_at",
+          "updated_at",
+          "disabled_at",
+          "disabled_by",
+          "disabled_reason",
+          "default_billing_day",
+          "default_align_billing_to_start",
+          "is_published",
+          "property_type",
+          "total_area_sqm",
+          "total_area_acres",
+          "frontage_meters",
+          "zoning_classification",
+          "title_deed_number",
+          "survey_plan_number",
+          "electricity_available",
+          "water_available",
+          "sewer_available",
+          "internet_available",
+          "road_access_type",
+          "topography",
+          "soil_type",
+          "drainage_status",
+          "sale_price_kes",
+          "lease_price_per_sqm_kes",
+          "lease_duration_years",
+          "price_negotiable",
+          "development_permit_status",
+          "property_source",
+          "lifecycle_status",
+          "source_reference_id",
+          "parent_property_id",
+          "subdivision_date",
+          "purchase_completion_date",
+          "acquisition_notes",
+          "expected_rental_income_kes",
+          "estimated_value_kes",
+          "handover_status",
+          "handover_date",
+          "subdivision_status",
+          "purchase_price_agreement_kes",
+          "purchase_price_last_updated_at",
+          "purchase_price_last_updated_by",
+          "handover_price_agreement_kes"
+        ],
+        "category": "core-rental-active"
+      },
+      {
+        "tableName": "property_users",
+        "rowCount": 98,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "property_id",
+          "user_id",
+          "role",
+          "permissions",
+          "invited_by",
+          "invited_at",
+          "accepted_at",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "category": "core-rental-active"
+      },
+      {
+        "tableName": "tenancy_agreements",
+        "rowCount": 8,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "tenant_id",
+          "unit_id",
+          "start_date",
+          "end_date",
+          "status",
+          "monthly_rent_kes",
+          "created_at",
+          "billing_day",
+          "align_billing_to_start",
+          "lease_type",
+          "security_deposit_kes",
+          "pet_deposit_kes",
+          "created_by",
+          "updated_at",
+          "notes"
+        ],
+        "category": "core-rental-active"
+      },
+      {
+        "tableName": "tenants",
+        "rowCount": 11,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "full_name",
+          "phone",
+          "email",
+          "national_id",
+          "employer",
+          "notes",
+          "emergency_contact_name",
+          "emergency_contact_phone",
+          "emergency_contact_relationship",
+          "emergency_contact_email",
+          "current_unit_id",
+          "status",
+          "created_at",
+          "alternate_phone"
+        ],
+        "category": "core-rental-active"
+      },
+      {
+        "tableName": "units",
+        "rowCount": 8,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "property_id",
+          "unit_label",
+          "monthly_rent_kes",
+          "deposit_kes",
+          "meter_type",
+          "kplc_account",
+          "water_included",
+          "is_active",
+          "created_at",
+          "updated_at",
+          "water_meter_type",
+          "water_meter_number",
+          "shared_meter_id",
+          "shared_meter_type",
+          "disabled_at",
+          "disabled_by",
+          "disabled_reason",
+          "available_from",
+          "status",
+          "last_inspection_date",
+          "next_inspection_date",
+          "maintenance_notes"
+        ],
+        "category": "core-rental-active"
+      }
+    ],
+    "core-rental-empty": [
+      {
+        "tableName": "payments",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "core-rental-empty"
+      },
+      {
+        "tableName": "rent_invoices",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "core-rental-empty"
+      }
+    ],
+    "land-sales-active": [
+      {
+        "tableName": "handover_pipeline",
+        "rowCount": 1,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "property_id",
+          "property_name",
+          "property_address",
+          "property_type",
+          "buyer_name",
+          "buyer_contact",
+          "buyer_email",
+          "buyer_address",
+          "asking_price_kes",
+          "negotiated_price_kes",
+          "deposit_received_kes",
+          "balance_due_kes",
+          "handover_status",
+          "current_stage",
+          "overall_progress",
+          "pipeline_stages",
+          "target_completion_date",
+          "actual_completion_date",
+          "legal_representative",
+          "financing_source",
+          "inspection_notes",
+          "due_diligence_notes",
+          "contract_reference",
+          "title_deed_status",
+          "survey_status",
+          "valuation_amount_kes",
+          "loan_amount_kes",
+          "expected_profit_kes",
+          "expected_profit_percentage",
+          "risk_assessment",
+          "property_condition_notes",
+          "assigned_to",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "property_acquisition_costs",
+        "rowCount": 8,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "property_id",
+          "cost_type_id",
+          "cost_category",
+          "amount_kes",
+          "payment_reference",
+          "payment_date",
+          "notes",
+          "created_at",
+          "updated_at",
+          "created_by"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "property_acquisition_financials_view",
+        "rowCount": 98,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "property_id",
+          "property_name",
+          "purchase_price_agreement_kes",
+          "total_acquisition_costs_kes",
+          "total_payments_kes",
+          "remaining_balance_kes",
+          "total_investment_kes",
+          "cost_count",
+          "payment_count"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "property_handover_financials_view",
+        "rowCount": 98,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "property_id",
+          "property_name",
+          "handover_price_agreement_kes",
+          "total_handover_costs_kes",
+          "total_receipts_kes",
+          "remaining_balance_kes",
+          "total_income_kes",
+          "cost_count",
+          "receipt_count"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "property_purchase_price_history",
+        "rowCount": 4,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "property_id",
+          "previous_price_kes",
+          "new_price_kes",
+          "change_reason",
+          "changed_by",
+          "changed_at",
+          "created_at",
+          "changed_by_name"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "property_sale_summary",
+        "rowCount": 4,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "property_id",
+          "property_name",
+          "physical_address",
+          "property_type",
+          "sale_info_id",
+          "sale_status",
+          "listing_price",
+          "purchase_price",
+          "purchaser_name",
+          "deposit_amount",
+          "total_paid",
+          "payment_status",
+          "handover_status",
+          "handover_date",
+          "sale_created_at",
+          "sale_updated_at",
+          "payment_percentage"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "property_subdivision_costs_view",
+        "rowCount": 98,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "property_id",
+          "property_name",
+          "total_subdivision_costs_kes",
+          "total_paid_kes",
+          "total_pending_kes",
+          "cost_count",
+          "paid_count",
+          "pending_count"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "property_subdivisions",
+        "rowCount": 1,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "original_property_id",
+          "subdivision_name",
+          "subdivision_plan_reference",
+          "surveyor_name",
+          "surveyor_contact",
+          "total_plots_planned",
+          "total_plots_created",
+          "subdivision_status",
+          "approval_authority",
+          "approval_reference",
+          "approval_date",
+          "survey_cost_kes",
+          "approval_fees_kes",
+          "infrastructure_cost_kes",
+          "total_subdivision_cost_kes",
+          "expected_plot_value_kes",
+          "expected_total_value_kes",
+          "expected_profit_kes",
+          "start_date",
+          "target_completion_date",
+          "actual_completion_date",
+          "subdivision_notes",
+          "legal_requirements",
+          "infrastructure_requirements",
+          "created_by",
+          "assigned_to",
+          "created_at",
+          "updated_at",
+          "pipeline_stages",
+          "current_stage",
+          "overall_progress"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "purchase_pipeline",
+        "rowCount": 2,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "property_name",
+          "property_address",
+          "property_type",
+          "seller_name",
+          "seller_contact",
+          "asking_price_kes",
+          "negotiated_price_kes",
+          "deposit_paid_kes",
+          "balance_due_kes",
+          "purchase_status",
+          "target_completion_date",
+          "actual_completion_date",
+          "legal_representative",
+          "financing_source",
+          "inspection_notes",
+          "due_diligence_notes",
+          "contract_reference",
+          "title_deed_status",
+          "survey_status",
+          "valuation_amount_kes",
+          "loan_amount_kes",
+          "cash_amount_kes",
+          "closing_costs_kes",
+          "total_investment_kes",
+          "expected_rental_income_kes",
+          "expected_roi_percentage",
+          "risk_assessment",
+          "property_condition_notes",
+          "required_improvements",
+          "improvement_cost_estimate_kes",
+          "documents_checklist",
+          "milestone_dates",
+          "created_by",
+          "assigned_to",
+          "created_at",
+          "updated_at",
+          "completed_property_id",
+          "pipeline_stages",
+          "current_stage",
+          "overall_progress",
+          "seller_email",
+          "property_id"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "purchase_pipeline_audit_log",
+        "rowCount": 3,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "purchase_id",
+          "operation_type",
+          "changed_fields",
+          "old_values",
+          "new_values",
+          "changed_by",
+          "change_reason",
+          "ip_address",
+          "user_agent",
+          "session_id",
+          "requires_approval",
+          "approved_by",
+          "approved_at",
+          "approval_notes",
+          "created_at"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "purchase_pipeline_field_security",
+        "rowCount": 21,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "field_name",
+          "security_level",
+          "requires_reason",
+          "requires_approval",
+          "allowed_roles",
+          "max_changes_per_day",
+          "lock_after_stage"
+        ],
+        "category": "land-sales-active"
+      },
+      {
+        "tableName": "view_public_land_listings",
+        "rowCount": 96,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "property_id",
+          "property_name",
+          "physical_address",
+          "property_type",
+          "lat",
+          "lng",
+          "total_area_sqm",
+          "total_area_acres",
+          "frontage_meters",
+          "zoning_classification",
+          "title_deed_number",
+          "survey_plan_number",
+          "electricity_available",
+          "water_available",
+          "sewer_available",
+          "internet_available",
+          "road_access_type",
+          "topography",
+          "soil_type",
+          "drainage_status",
+          "sale_price_kes",
+          "lease_price_per_sqm_kes",
+          "lease_duration_years",
+          "price_negotiable",
+          "development_permit_status",
+          "created_at",
+          "updated_at"
+        ],
+        "category": "land-sales-active"
+      }
+    ],
+    "land-sales-empty": [
+      {
+        "tableName": "clients",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "encumbrances",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "listings",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "offers_reservations",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "parcel_owners",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "parcels",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "plots",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "property_handover_costs",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "property_sale_info",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "property_sale_status_history",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "property_subdivision_costs",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "property_subdivision_history",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "purchase_pipeline_change_approvals",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "purchase_pipeline_costs",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "reservation_requests",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "sale_agreements",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "subdivision_plots",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "subdivisions",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "surveys",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "transfers_titles",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      },
+      {
+        "tableName": "wayleaves_easements",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "land-sales-empty"
+      }
+    ],
+    "user-auth-active": [
+      {
+        "tableName": "enhanced_users",
+        "rowCount": 1,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "member_number",
+          "email",
+          "full_name",
+          "phone_number",
+          "id_passport_number",
+          "password_hash",
+          "default_password",
+          "must_change_password",
+          "last_password_change",
+          "profile_complete",
+          "next_of_kin_complete",
+          "status",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "last_login",
+          "deleted_at"
+        ],
+        "category": "user-auth-active"
+      },
+      {
+        "tableName": "permission_detail_types",
+        "rowCount": 4,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "name",
+          "description",
+          "icon",
+          "sort_order"
+        ],
+        "category": "user-auth-active"
+      },
+      {
+        "tableName": "permission_sections",
+        "rowCount": 5,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "name",
+          "description",
+          "icon",
+          "sort_order",
+          "is_active",
+          "available_details",
+          "created_at"
+        ],
+        "category": "user-auth-active"
+      },
+      {
+        "tableName": "permission_templates",
+        "rowCount": 4,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "template_name",
+          "display_name",
+          "description",
+          "icon",
+          "role_template",
+          "default_scope",
+          "section_permissions",
+          "is_system_template",
+          "is_active",
+          "created_at",
+          "updated_at",
+          "created_by"
+        ],
+        "category": "user-auth-active"
+      },
+      {
+        "tableName": "security_user_roles",
+        "rowCount": 1,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "user_id",
+          "role",
+          "permissions",
+          "assigned_by",
+          "assigned_at",
+          "expires_at",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "category": "user-auth-active"
+      },
+      {
+        "tableName": "user_roles",
+        "rowCount": 1,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "user_id",
+          "landlord_id",
+          "role",
+          "property_id",
+          "created_at"
+        ],
+        "category": "user-auth-active"
+      }
+    ],
+    "user-auth-empty": [
+      {
+        "tableName": "agents",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "data_access_logs",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "permission_audit_log",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "security_events",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "user_activities",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "user_data_access",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "user_invitations",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "user_next_of_kin",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "user_permissions",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "user_profiles",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      },
+      {
+        "tableName": "user_property_access",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "user-auth-empty"
+      }
+    ],
+    "financial-active": [
+      {
+        "tableName": "property_payment_installments",
+        "rowCount": 12,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "property_id",
+          "installment_number",
+          "amount_kes",
+          "payment_date",
+          "payment_reference",
+          "payment_method",
+          "notes",
+          "created_at",
+          "updated_at",
+          "created_by"
+        ],
+        "category": "financial-active"
+      },
+      {
+        "tableName": "property_payment_receipts",
+        "rowCount": 1,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "property_id",
+          "receipt_number",
+          "amount_kes",
+          "payment_date",
+          "payment_reference",
+          "payment_method",
+          "notes",
+          "created_at",
+          "updated_at",
+          "created_by"
+        ],
+        "category": "financial-active"
+      }
+    ],
+    "financial-empty": [
+      {
+        "tableName": "bank_mpesa_recons",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "commissions",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "expenses",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "invoices",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "mpesa_transactions",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "payment_allocations",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "payment_plans",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "property_payment_records",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "receipts",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "rent_ledger_view",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      },
+      {
+        "tableName": "utility_ledger",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty"
+      }
+    ],
+    "utility-active": [],
+    "utility-empty": [
+      {
+        "tableName": "meter_readings",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "utility-empty"
+      },
+      {
+        "tableName": "shared_meters",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "utility-empty"
+      },
+      {
+        "tableName": "unit_shared_meters",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "utility-empty"
+      },
+      {
+        "tableName": "utility_accounts",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "utility-empty"
+      }
+    ],
+    "maintenance-active": [],
+    "maintenance-empty": [
+      {
+        "tableName": "maintenance_requests",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "maintenance-empty"
+      },
+      {
+        "tableName": "maintenance_tickets",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "maintenance-empty"
+      },
+      {
+        "tableName": "tasks_reminders",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "maintenance-empty"
+      }
+    ],
+    "notification-active": [
+      {
+        "tableName": "notification_rules",
+        "rowCount": 3,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "landlord_id",
+          "type",
+          "name",
+          "description",
+          "enabled",
+          "trigger_days",
+          "channels",
+          "template_id",
+          "conditions",
+          "created_at",
+          "updated_at"
+        ],
+        "category": "notification-active"
+      },
+      {
+        "tableName": "notification_templates",
+        "rowCount": 2,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "landlord_id",
+          "name",
+          "type",
+          "channel",
+          "subject",
+          "message",
+          "variables",
+          "is_default",
+          "created_at",
+          "updated_at"
+        ],
+        "category": "notification-active"
+      }
+    ],
+    "notification-empty": [
+      {
+        "tableName": "in_app_notifications",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "notification-empty"
+      },
+      {
+        "tableName": "notification_history",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "notification-empty"
+      },
+      {
+        "tableName": "notification_settings",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "notification-empty"
+      }
+    ],
+    "document-media-active": [
+      {
+        "tableName": "land_amenities",
+        "rowCount": 18,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "id",
+          "code",
+          "label",
+          "category"
+        ],
+        "category": "document-media-active"
+      }
+    ],
+    "document-media-empty": [
+      {
+        "tableName": "amenities",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "document-media-empty"
+      },
+      {
+        "tableName": "documents",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "document-media-empty"
+      },
+      {
+        "tableName": "land_media",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "document-media-empty"
+      },
+      {
+        "tableName": "land_property_amenities",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "document-media-empty"
+      },
+      {
+        "tableName": "unit_amenities",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "document-media-empty"
+      },
+      {
+        "tableName": "units_media",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "document-media-empty"
+      }
+    ],
+    "audit-log-active": [],
+    "audit-log-empty": [
+      {
+        "tableName": "activities_audit",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "audit-log-empty"
+      },
+      {
+        "tableName": "disputes_logs",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "audit-log-empty"
+      },
+      {
+        "tableName": "property_audit_log",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "audit-log-empty"
+      }
+    ],
+    "geographic-active": [
+      {
+        "tableName": "spatial_ref_sys",
+        "rowCount": 8500,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "srid",
+          "auth_name",
+          "auth_srid",
+          "srtext",
+          "proj4text"
+        ],
+        "category": "geographic-active"
+      }
+    ],
+    "geographic-empty": [
+      {
+        "tableName": "geography_columns",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "geographic-empty"
+      },
+      {
+        "tableName": "geometry_columns",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "geographic-empty"
+      },
+      {
+        "tableName": "land_rates",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "geographic-empty"
+      },
+      {
+        "tableName": "pricing_zones",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "geographic-empty"
+      }
+    ],
+    "marketing-active": [],
+    "marketing-empty": [
+      {
+        "tableName": "marketing_leads",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "marketing-empty"
+      }
+    ],
+    "view": [
+      {
+        "tableName": "view_public_vacant_units",
+        "rowCount": 8,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "unit_id",
+          "unit_label",
+          "monthly_rent_kes",
+          "deposit_kes",
+          "available_from",
+          "property_id",
+          "property_name",
+          "physical_address",
+          "property_type",
+          "thumbnail_url"
+        ],
+        "category": "view"
+      }
+    ],
+    "unknown-active": [
+      {
+        "tableName": "unit_occupancy_summary",
+        "rowCount": 8,
+        "accessible": true,
+        "hasData": true,
+        "sampleColumns": [
+          "unit_id",
+          "unit_label",
+          "property_id",
+          "property_name",
+          "monthly_rent_kes",
+          "unit_status",
+          "occupancy_status",
+          "tenant_id",
+          "tenant_name",
+          "lease_start",
+          "lease_end",
+          "actual_rent"
+        ],
+        "category": "unknown-active"
+      }
+    ],
+    "unknown-empty": [
+      {
+        "tableName": "approvals",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "unknown-empty"
+      },
+      {
+        "tableName": "land_details",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "unknown-empty"
+      },
+      {
+        "tableName": "owners",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "unknown-empty"
+      },
+      {
+        "tableName": "value_add_projects",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "unknown-empty"
+      }
+    ],
+    "error": []
+  },
+  "cleanupStrategy": {
+    "highPriority": {
+      "count": 28,
+      "tables": [
+        "clients",
+        "encumbrances",
+        "listings",
+        "offers_reservations",
+        "parcel_owners",
+        "parcels",
+        "plots",
+        "property_handover_costs",
+        "property_sale_info",
+        "property_sale_status_history",
+        "property_subdivision_costs",
+        "property_subdivision_history",
+        "purchase_pipeline_change_approvals",
+        "purchase_pipeline_costs",
+        "reservation_requests",
+        "sale_agreements",
+        "subdivision_plots",
+        "subdivisions",
+        "surveys",
+        "transfers_titles",
+        "wayleaves_easements",
+        "amenities",
+        "documents",
+        "land_media",
+        "land_property_amenities",
+        "unit_amenities",
+        "units_media",
+        "marketing_leads"
+      ],
+      "description": "Safe to remove - land sales, unused documents, marketing tables"
+    },
+    "mediumPriority": {
+      "count": 13,
+      "tables": [
+        "maintenance_requests",
+        "maintenance_tickets",
+        "tasks_reminders",
+        "in_app_notifications",
+        "notification_history",
+        "notification_settings",
+        "activities_audit",
+        "disputes_logs",
+        "property_audit_log",
+        "approvals",
+        "land_details",
+        "owners",
+        "value_add_projects"
+      ],
+      "description": "Likely safe to remove - maintenance, notifications, audit logs"
+    },
+    "lowPriority": {
+      "count": 30,
+      "tables": [
+        "bank_mpesa_recons",
+        "commissions",
+        "expenses",
+        "invoices",
+        "mpesa_transactions",
+        "payment_allocations",
+        "payment_plans",
+        "property_payment_records",
+        "receipts",
+        "rent_ledger_view",
+        "utility_ledger",
+        "meter_readings",
+        "shared_meters",
+        "unit_shared_meters",
+        "utility_accounts",
+        "agents",
+        "data_access_logs",
+        "permission_audit_log",
+        "security_events",
+        "user_activities",
+        "user_data_access",
+        "user_invitations",
+        "user_next_of_kin",
+        "user_permissions",
+        "user_profiles",
+        "user_property_access",
+        "geography_columns",
+        "geometry_columns",
+        "land_rates",
+        "pricing_zones"
+      ],
+      "description": "Investigate before removal - financial, utility, user auth tables"
+    },
+    "investigate": {
+      "count": 2,
+      "tables": [
+        "payments",
+        "rent_invoices"
+      ],
+      "description": "Core rental tables that are empty - verify if this is expected"
+    }
+  },
+  "estimatedImpact": {
+    "storageReduction": "69-94%",
+    "performanceImprovement": "21-35%",
+    "backupSpeedImprovement": "28-41%",
+    "schemaSimplification": "69% fewer tables to maintain"
+  },
+  "rawData": [
+    {
+      "tableName": "active_leases",
+      "rowCount": 8,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "tenant_id",
+        "unit_id",
+        "start_date",
+        "end_date",
+        "monthly_rent_kes",
+        "security_deposit_kes",
+        "lease_type",
+        "notes",
+        "created_at",
+        "updated_at",
+        "tenant_name",
+        "tenant_phone",
+        "tenant_email",
+        "unit_label",
+        "property_id",
+        "property_name",
+        "property_address"
+      ],
+      "category": "core-rental-active"
+    },
+    {
+      "tableName": "activities_audit",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "audit-log-empty"
+    },
+    {
+      "tableName": "agents",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "amenities",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "document-media-empty"
+    },
+    {
+      "tableName": "approvals",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "unknown-empty"
+    },
+    {
+      "tableName": "bank_mpesa_recons",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "clients",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "commissions",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "data_access_logs",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "disputes_logs",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "audit-log-empty"
+    },
+    {
+      "tableName": "documents",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "document-media-empty"
+    },
+    {
+      "tableName": "encumbrances",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "enhanced_users",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "member_number",
+        "email",
+        "full_name",
+        "phone_number",
+        "id_passport_number",
+        "password_hash",
+        "default_password",
+        "must_change_password",
+        "last_password_change",
+        "profile_complete",
+        "next_of_kin_complete",
+        "status",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "last_login",
+        "deleted_at"
+      ],
+      "category": "user-auth-active"
+    },
+    {
+      "tableName": "expenses",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "geography_columns",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "geographic-empty"
+    },
+    {
+      "tableName": "geometry_columns",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "geographic-empty"
+    },
+    {
+      "tableName": "handover_pipeline",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_id",
+        "property_name",
+        "property_address",
+        "property_type",
+        "buyer_name",
+        "buyer_contact",
+        "buyer_email",
+        "buyer_address",
+        "asking_price_kes",
+        "negotiated_price_kes",
+        "deposit_received_kes",
+        "balance_due_kes",
+        "handover_status",
+        "current_stage",
+        "overall_progress",
+        "pipeline_stages",
+        "target_completion_date",
+        "actual_completion_date",
+        "legal_representative",
+        "financing_source",
+        "inspection_notes",
+        "due_diligence_notes",
+        "contract_reference",
+        "title_deed_status",
+        "survey_status",
+        "valuation_amount_kes",
+        "loan_amount_kes",
+        "expected_profit_kes",
+        "expected_profit_percentage",
+        "risk_assessment",
+        "property_condition_notes",
+        "assigned_to",
+        "created_by",
+        "created_at",
+        "updated_at"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "in_app_notifications",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "notification-empty"
+    },
+    {
+      "tableName": "invoices",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "land_amenities",
+      "rowCount": 18,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "code",
+        "label",
+        "category"
+      ],
+      "category": "document-media-active"
+    },
+    {
+      "tableName": "land_details",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "unknown-empty"
+    },
+    {
+      "tableName": "land_media",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "document-media-empty"
+    },
+    {
+      "tableName": "land_property_amenities",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "document-media-empty"
+    },
+    {
+      "tableName": "land_rates",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "geographic-empty"
+    },
+    {
+      "tableName": "landlords",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "full_name",
+        "phone",
+        "email",
+        "default_currency",
+        "created_at",
+        "updated_at"
+      ],
+      "category": "core-rental-active"
+    },
+    {
+      "tableName": "listings",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "maintenance_requests",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "maintenance-empty"
+    },
+    {
+      "tableName": "maintenance_tickets",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "maintenance-empty"
+    },
+    {
+      "tableName": "marketing_leads",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "marketing-empty"
+    },
+    {
+      "tableName": "meter_readings",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "utility-empty"
+    },
+    {
+      "tableName": "mpesa_transactions",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "notification_history",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "notification-empty"
+    },
+    {
+      "tableName": "notification_rules",
+      "rowCount": 3,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "landlord_id",
+        "type",
+        "name",
+        "description",
+        "enabled",
+        "trigger_days",
+        "channels",
+        "template_id",
+        "conditions",
+        "created_at",
+        "updated_at"
+      ],
+      "category": "notification-active"
+    },
+    {
+      "tableName": "notification_settings",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "notification-empty"
+    },
+    {
+      "tableName": "notification_templates",
+      "rowCount": 2,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "landlord_id",
+        "name",
+        "type",
+        "channel",
+        "subject",
+        "message",
+        "variables",
+        "is_default",
+        "created_at",
+        "updated_at"
+      ],
+      "category": "notification-active"
+    },
+    {
+      "tableName": "offers_reservations",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "owners",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "unknown-empty"
+    },
+    {
+      "tableName": "parcel_owners",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "parcels",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "payment_allocations",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "payment_plans",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "payments",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "core-rental-empty"
+    },
+    {
+      "tableName": "permission_audit_log",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "permission_detail_types",
+      "rowCount": 4,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "name",
+        "description",
+        "icon",
+        "sort_order"
+      ],
+      "category": "user-auth-active"
+    },
+    {
+      "tableName": "permission_sections",
+      "rowCount": 5,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "name",
+        "description",
+        "icon",
+        "sort_order",
+        "is_active",
+        "available_details",
+        "created_at"
+      ],
+      "category": "user-auth-active"
+    },
+    {
+      "tableName": "permission_templates",
+      "rowCount": 4,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "template_name",
+        "display_name",
+        "description",
+        "icon",
+        "role_template",
+        "default_scope",
+        "section_permissions",
+        "is_system_template",
+        "is_active",
+        "created_at",
+        "updated_at",
+        "created_by"
+      ],
+      "category": "user-auth-active"
+    },
+    {
+      "tableName": "plots",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "pricing_zones",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "geographic-empty"
+    },
+    {
+      "tableName": "properties",
+      "rowCount": 98,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "landlord_id",
+        "name",
+        "physical_address",
+        "lat",
+        "lng",
+        "notes",
+        "created_at",
+        "updated_at",
+        "disabled_at",
+        "disabled_by",
+        "disabled_reason",
+        "default_billing_day",
+        "default_align_billing_to_start",
+        "is_published",
+        "property_type",
+        "total_area_sqm",
+        "total_area_acres",
+        "frontage_meters",
+        "zoning_classification",
+        "title_deed_number",
+        "survey_plan_number",
+        "electricity_available",
+        "water_available",
+        "sewer_available",
+        "internet_available",
+        "road_access_type",
+        "topography",
+        "soil_type",
+        "drainage_status",
+        "sale_price_kes",
+        "lease_price_per_sqm_kes",
+        "lease_duration_years",
+        "price_negotiable",
+        "development_permit_status",
+        "property_source",
+        "lifecycle_status",
+        "source_reference_id",
+        "parent_property_id",
+        "subdivision_date",
+        "purchase_completion_date",
+        "acquisition_notes",
+        "expected_rental_income_kes",
+        "estimated_value_kes",
+        "handover_status",
+        "handover_date",
+        "subdivision_status",
+        "purchase_price_agreement_kes",
+        "purchase_price_last_updated_at",
+        "purchase_price_last_updated_by",
+        "handover_price_agreement_kes"
+      ],
+      "category": "core-rental-active"
+    },
+    {
+      "tableName": "property_acquisition_costs",
+      "rowCount": 8,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_id",
+        "cost_type_id",
+        "cost_category",
+        "amount_kes",
+        "payment_reference",
+        "payment_date",
+        "notes",
+        "created_at",
+        "updated_at",
+        "created_by"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "property_acquisition_financials_view",
+      "rowCount": 98,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "property_id",
+        "property_name",
+        "purchase_price_agreement_kes",
+        "total_acquisition_costs_kes",
+        "total_payments_kes",
+        "remaining_balance_kes",
+        "total_investment_kes",
+        "cost_count",
+        "payment_count"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "property_audit_log",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "audit-log-empty"
+    },
+    {
+      "tableName": "property_handover_costs",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "property_handover_financials_view",
+      "rowCount": 98,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "property_id",
+        "property_name",
+        "handover_price_agreement_kes",
+        "total_handover_costs_kes",
+        "total_receipts_kes",
+        "remaining_balance_kes",
+        "total_income_kes",
+        "cost_count",
+        "receipt_count"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "property_payment_installments",
+      "rowCount": 12,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_id",
+        "installment_number",
+        "amount_kes",
+        "payment_date",
+        "payment_reference",
+        "payment_method",
+        "notes",
+        "created_at",
+        "updated_at",
+        "created_by"
+      ],
+      "category": "financial-active"
+    },
+    {
+      "tableName": "property_payment_receipts",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_id",
+        "receipt_number",
+        "amount_kes",
+        "payment_date",
+        "payment_reference",
+        "payment_method",
+        "notes",
+        "created_at",
+        "updated_at",
+        "created_by"
+      ],
+      "category": "financial-active"
+    },
+    {
+      "tableName": "property_payment_records",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "property_purchase_price_history",
+      "rowCount": 4,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_id",
+        "previous_price_kes",
+        "new_price_kes",
+        "change_reason",
+        "changed_by",
+        "changed_at",
+        "created_at",
+        "changed_by_name"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "property_sale_info",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "property_sale_status_history",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "property_sale_summary",
+      "rowCount": 4,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "property_id",
+        "property_name",
+        "physical_address",
+        "property_type",
+        "sale_info_id",
+        "sale_status",
+        "listing_price",
+        "purchase_price",
+        "purchaser_name",
+        "deposit_amount",
+        "total_paid",
+        "payment_status",
+        "handover_status",
+        "handover_date",
+        "sale_created_at",
+        "sale_updated_at",
+        "payment_percentage"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "property_subdivision_costs",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "property_subdivision_costs_view",
+      "rowCount": 98,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "property_id",
+        "property_name",
+        "total_subdivision_costs_kes",
+        "total_paid_kes",
+        "total_pending_kes",
+        "cost_count",
+        "paid_count",
+        "pending_count"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "property_subdivision_history",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "property_subdivisions",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "original_property_id",
+        "subdivision_name",
+        "subdivision_plan_reference",
+        "surveyor_name",
+        "surveyor_contact",
+        "total_plots_planned",
+        "total_plots_created",
+        "subdivision_status",
+        "approval_authority",
+        "approval_reference",
+        "approval_date",
+        "survey_cost_kes",
+        "approval_fees_kes",
+        "infrastructure_cost_kes",
+        "total_subdivision_cost_kes",
+        "expected_plot_value_kes",
+        "expected_total_value_kes",
+        "expected_profit_kes",
+        "start_date",
+        "target_completion_date",
+        "actual_completion_date",
+        "subdivision_notes",
+        "legal_requirements",
+        "infrastructure_requirements",
+        "created_by",
+        "assigned_to",
+        "created_at",
+        "updated_at",
+        "pipeline_stages",
+        "current_stage",
+        "overall_progress"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "property_users",
+      "rowCount": 98,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_id",
+        "user_id",
+        "role",
+        "permissions",
+        "invited_by",
+        "invited_at",
+        "accepted_at",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "category": "core-rental-active"
+    },
+    {
+      "tableName": "purchase_pipeline",
+      "rowCount": 2,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_name",
+        "property_address",
+        "property_type",
+        "seller_name",
+        "seller_contact",
+        "asking_price_kes",
+        "negotiated_price_kes",
+        "deposit_paid_kes",
+        "balance_due_kes",
+        "purchase_status",
+        "target_completion_date",
+        "actual_completion_date",
+        "legal_representative",
+        "financing_source",
+        "inspection_notes",
+        "due_diligence_notes",
+        "contract_reference",
+        "title_deed_status",
+        "survey_status",
+        "valuation_amount_kes",
+        "loan_amount_kes",
+        "cash_amount_kes",
+        "closing_costs_kes",
+        "total_investment_kes",
+        "expected_rental_income_kes",
+        "expected_roi_percentage",
+        "risk_assessment",
+        "property_condition_notes",
+        "required_improvements",
+        "improvement_cost_estimate_kes",
+        "documents_checklist",
+        "milestone_dates",
+        "created_by",
+        "assigned_to",
+        "created_at",
+        "updated_at",
+        "completed_property_id",
+        "pipeline_stages",
+        "current_stage",
+        "overall_progress",
+        "seller_email",
+        "property_id"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "purchase_pipeline_audit_log",
+      "rowCount": 3,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "purchase_id",
+        "operation_type",
+        "changed_fields",
+        "old_values",
+        "new_values",
+        "changed_by",
+        "change_reason",
+        "ip_address",
+        "user_agent",
+        "session_id",
+        "requires_approval",
+        "approved_by",
+        "approved_at",
+        "approval_notes",
+        "created_at"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "purchase_pipeline_change_approvals",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "purchase_pipeline_costs",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "purchase_pipeline_field_security",
+      "rowCount": 21,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "field_name",
+        "security_level",
+        "requires_reason",
+        "requires_approval",
+        "allowed_roles",
+        "max_changes_per_day",
+        "lock_after_stage"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "receipts",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "rent_invoices",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "core-rental-empty"
+    },
+    {
+      "tableName": "rent_ledger_view",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "reservation_requests",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "sale_agreements",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "security_events",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "security_user_roles",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "user_id",
+        "role",
+        "permissions",
+        "assigned_by",
+        "assigned_at",
+        "expires_at",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "category": "user-auth-active"
+    },
+    {
+      "tableName": "shared_meters",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "utility-empty"
+    },
+    {
+      "tableName": "spatial_ref_sys",
+      "rowCount": 8500,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "srid",
+        "auth_name",
+        "auth_srid",
+        "srtext",
+        "proj4text"
+      ],
+      "category": "geographic-active"
+    },
+    {
+      "tableName": "subdivision_plots",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "subdivisions",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "surveys",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "tasks_reminders",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "maintenance-empty"
+    },
+    {
+      "tableName": "tenancy_agreements",
+      "rowCount": 8,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "tenant_id",
+        "unit_id",
+        "start_date",
+        "end_date",
+        "status",
+        "monthly_rent_kes",
+        "created_at",
+        "billing_day",
+        "align_billing_to_start",
+        "lease_type",
+        "security_deposit_kes",
+        "pet_deposit_kes",
+        "created_by",
+        "updated_at",
+        "notes"
+      ],
+      "category": "core-rental-active"
+    },
+    {
+      "tableName": "tenants",
+      "rowCount": 11,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "full_name",
+        "phone",
+        "email",
+        "national_id",
+        "employer",
+        "notes",
+        "emergency_contact_name",
+        "emergency_contact_phone",
+        "emergency_contact_relationship",
+        "emergency_contact_email",
+        "current_unit_id",
+        "status",
+        "created_at",
+        "alternate_phone"
+      ],
+      "category": "core-rental-active"
+    },
+    {
+      "tableName": "transfers_titles",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    },
+    {
+      "tableName": "unit_amenities",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "document-media-empty"
+    },
+    {
+      "tableName": "unit_occupancy_summary",
+      "rowCount": 8,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "unit_id",
+        "unit_label",
+        "property_id",
+        "property_name",
+        "monthly_rent_kes",
+        "unit_status",
+        "occupancy_status",
+        "tenant_id",
+        "tenant_name",
+        "lease_start",
+        "lease_end",
+        "actual_rent"
+      ],
+      "category": "unknown-active"
+    },
+    {
+      "tableName": "unit_shared_meters",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "utility-empty"
+    },
+    {
+      "tableName": "units",
+      "rowCount": 8,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_id",
+        "unit_label",
+        "monthly_rent_kes",
+        "deposit_kes",
+        "meter_type",
+        "kplc_account",
+        "water_included",
+        "is_active",
+        "created_at",
+        "updated_at",
+        "water_meter_type",
+        "water_meter_number",
+        "shared_meter_id",
+        "shared_meter_type",
+        "disabled_at",
+        "disabled_by",
+        "disabled_reason",
+        "available_from",
+        "status",
+        "last_inspection_date",
+        "next_inspection_date",
+        "maintenance_notes"
+      ],
+      "category": "core-rental-active"
+    },
+    {
+      "tableName": "units_media",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "document-media-empty"
+    },
+    {
+      "tableName": "user_activities",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "user_data_access",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "user_invitations",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "user_next_of_kin",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "user_permissions",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "user_profiles",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "user_property_access",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "user-auth-empty"
+    },
+    {
+      "tableName": "user_roles",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "user_id",
+        "landlord_id",
+        "role",
+        "property_id",
+        "created_at"
+      ],
+      "category": "user-auth-active"
+    },
+    {
+      "tableName": "utility_accounts",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "utility-empty"
+    },
+    {
+      "tableName": "utility_ledger",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty"
+    },
+    {
+      "tableName": "value_add_projects",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "unknown-empty"
+    },
+    {
+      "tableName": "view_public_land_listings",
+      "rowCount": 96,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "property_id",
+        "property_name",
+        "physical_address",
+        "property_type",
+        "lat",
+        "lng",
+        "total_area_sqm",
+        "total_area_acres",
+        "frontage_meters",
+        "zoning_classification",
+        "title_deed_number",
+        "survey_plan_number",
+        "electricity_available",
+        "water_available",
+        "sewer_available",
+        "internet_available",
+        "road_access_type",
+        "topography",
+        "soil_type",
+        "drainage_status",
+        "sale_price_kes",
+        "lease_price_per_sqm_kes",
+        "lease_duration_years",
+        "price_negotiable",
+        "development_permit_status",
+        "created_at",
+        "updated_at"
+      ],
+      "category": "land-sales-active"
+    },
+    {
+      "tableName": "view_public_vacant_units",
+      "rowCount": 8,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "unit_id",
+        "unit_label",
+        "monthly_rent_kes",
+        "deposit_kes",
+        "available_from",
+        "property_id",
+        "property_name",
+        "physical_address",
+        "property_type",
+        "thumbnail_url"
+      ],
+      "category": "view"
+    },
+    {
+      "tableName": "wayleaves_easements",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "land-sales-empty"
+    }
+  ]
+}

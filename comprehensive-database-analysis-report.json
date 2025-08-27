@@ -1,0 +1,1026 @@
+{
+  "timestamp": "2025-08-27T08:52:39.728Z",
+  "summary": {
+    "totalTablesDiscovered": 25,
+    "totalRows": 226,
+    "emptyTablesCount": 17,
+    "activeTablesCount": 8,
+    "systemTablesCount": 0,
+    "errorTablesCount": 0
+  },
+  "breakdown": {
+    "core": {
+      "active": 6,
+      "empty": 3,
+      "tables": [
+        {
+          "tableName": "properties",
+          "rowCount": 98,
+          "accessible": true,
+          "hasData": true,
+          "sampleColumns": [
+            "id",
+            "landlord_id",
+            "name",
+            "physical_address",
+            "lat",
+            "lng",
+            "notes",
+            "created_at",
+            "updated_at",
+            "disabled_at",
+            "disabled_by",
+            "disabled_reason",
+            "default_billing_day",
+            "default_align_billing_to_start",
+            "is_published",
+            "property_type",
+            "total_area_sqm",
+            "total_area_acres",
+            "frontage_meters",
+            "zoning_classification",
+            "title_deed_number",
+            "survey_plan_number",
+            "electricity_available",
+            "water_available",
+            "sewer_available",
+            "internet_available",
+            "road_access_type",
+            "topography",
+            "soil_type",
+            "drainage_status",
+            "sale_price_kes",
+            "lease_price_per_sqm_kes",
+            "lease_duration_years",
+            "price_negotiable",
+            "development_permit_status",
+            "property_source",
+            "lifecycle_status",
+            "source_reference_id",
+            "parent_property_id",
+            "subdivision_date",
+            "purchase_completion_date",
+            "acquisition_notes",
+            "expected_rental_income_kes",
+            "estimated_value_kes",
+            "handover_status",
+            "handover_date",
+            "subdivision_status",
+            "purchase_price_agreement_kes",
+            "purchase_price_last_updated_at",
+            "purchase_price_last_updated_by",
+            "handover_price_agreement_kes"
+          ],
+          "category": "core-active",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "units",
+          "rowCount": 8,
+          "accessible": true,
+          "hasData": true,
+          "sampleColumns": [
+            "id",
+            "property_id",
+            "unit_label",
+            "monthly_rent_kes",
+            "deposit_kes",
+            "meter_type",
+            "kplc_account",
+            "water_included",
+            "is_active",
+            "created_at",
+            "updated_at",
+            "water_meter_type",
+            "water_meter_number",
+            "shared_meter_id",
+            "shared_meter_type",
+            "disabled_at",
+            "disabled_by",
+            "disabled_reason",
+            "available_from",
+            "status",
+            "last_inspection_date",
+            "next_inspection_date",
+            "maintenance_notes"
+          ],
+          "category": "core-active",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "tenants",
+          "rowCount": 11,
+          "accessible": true,
+          "hasData": true,
+          "sampleColumns": [
+            "id",
+            "full_name",
+            "phone",
+            "email",
+            "national_id",
+            "employer",
+            "notes",
+            "emergency_contact_name",
+            "emergency_contact_phone",
+            "emergency_contact_relationship",
+            "emergency_contact_email",
+            "current_unit_id",
+            "status",
+            "created_at",
+            "alternate_phone"
+          ],
+          "category": "core-active",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "tenancy_agreements",
+          "rowCount": 8,
+          "accessible": true,
+          "hasData": true,
+          "sampleColumns": [
+            "id",
+            "tenant_id",
+            "unit_id",
+            "start_date",
+            "end_date",
+            "status",
+            "monthly_rent_kes",
+            "created_at",
+            "billing_day",
+            "align_billing_to_start",
+            "lease_type",
+            "security_deposit_kes",
+            "pet_deposit_kes",
+            "created_by",
+            "updated_at",
+            "notes"
+          ],
+          "category": "core-active",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "property_users",
+          "rowCount": 98,
+          "accessible": true,
+          "hasData": true,
+          "sampleColumns": [
+            "id",
+            "property_id",
+            "user_id",
+            "role",
+            "permissions",
+            "invited_by",
+            "invited_at",
+            "accepted_at",
+            "status",
+            "created_at",
+            "updated_at"
+          ],
+          "category": "core-active",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "landlords",
+          "rowCount": 1,
+          "accessible": true,
+          "hasData": true,
+          "sampleColumns": [
+            "id",
+            "full_name",
+            "phone",
+            "email",
+            "default_currency",
+            "created_at",
+            "updated_at"
+          ],
+          "category": "core-active",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "rent_invoices",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "core-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "payments",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "core-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "user_invitations",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "core-empty",
+          "lastUpdated": null
+        }
+      ]
+    },
+    "sales": {
+      "active": 0,
+      "empty": 6,
+      "tables": [
+        {
+          "tableName": "parcels",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "sales-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "subdivisions",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "sales-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "plots",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "sales-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "clients",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "sales-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "listings",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "sales-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "sale_agreements",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "sales-empty",
+          "lastUpdated": null
+        }
+      ]
+    },
+    "document": {
+      "active": 0,
+      "empty": 1,
+      "tables": [
+        {
+          "tableName": "documents",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "document-empty",
+          "lastUpdated": null
+        }
+      ]
+    },
+    "auth": {
+      "active": 2,
+      "empty": 1,
+      "tables": [
+        {
+          "tableName": "enhanced_users",
+          "rowCount": 1,
+          "accessible": true,
+          "hasData": true,
+          "sampleColumns": [
+            "id",
+            "member_number",
+            "email",
+            "full_name",
+            "phone_number",
+            "id_passport_number",
+            "password_hash",
+            "default_password",
+            "must_change_password",
+            "last_password_change",
+            "profile_complete",
+            "next_of_kin_complete",
+            "status",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "last_login",
+            "deleted_at"
+          ],
+          "category": "auth-active",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "user_roles",
+          "rowCount": 1,
+          "accessible": true,
+          "hasData": true,
+          "sampleColumns": [
+            "id",
+            "user_id",
+            "landlord_id",
+            "role",
+            "property_id",
+            "created_at"
+          ],
+          "category": "auth-active",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "user_profiles",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "auth-empty",
+          "lastUpdated": null
+        }
+      ]
+    },
+    "maintenance": {
+      "active": 0,
+      "empty": 1,
+      "tables": [
+        {
+          "tableName": "maintenance_requests",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "maintenance-empty",
+          "lastUpdated": null
+        }
+      ]
+    },
+    "financial": {
+      "active": 0,
+      "empty": 1,
+      "tables": [
+        {
+          "tableName": "invoices",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "financial-empty",
+          "lastUpdated": null
+        }
+      ]
+    },
+    "unknown": {
+      "active": 0,
+      "empty": 4,
+      "tables": [
+        {
+          "tableName": "amenities",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "unknown-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "expenses",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "unknown-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "utility_accounts",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "unknown-empty",
+          "lastUpdated": null
+        },
+        {
+          "tableName": "agents",
+          "rowCount": 0,
+          "accessible": true,
+          "hasData": false,
+          "sampleColumns": [],
+          "category": "unknown-empty",
+          "lastUpdated": null
+        }
+      ]
+    }
+  },
+  "cleanupCandidates": {
+    "highPriority": [
+      {
+        "tableName": "parcels",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "sales-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "subdivisions",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "sales-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "plots",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "sales-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "clients",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "sales-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "listings",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "sales-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "sale_agreements",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "sales-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "documents",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "document-empty",
+        "lastUpdated": null
+      }
+    ],
+    "mediumPriority": [
+      {
+        "tableName": "maintenance_requests",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "maintenance-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "amenities",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "unknown-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "expenses",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "unknown-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "utility_accounts",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "unknown-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "agents",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "unknown-empty",
+        "lastUpdated": null
+      }
+    ],
+    "lowPriority": [
+      {
+        "tableName": "user_profiles",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "auth-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "invoices",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "financial-empty",
+        "lastUpdated": null
+      }
+    ],
+    "investigate": [
+      {
+        "tableName": "rent_invoices",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "core-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "payments",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "core-empty",
+        "lastUpdated": null
+      },
+      {
+        "tableName": "user_invitations",
+        "rowCount": 0,
+        "accessible": true,
+        "hasData": false,
+        "sampleColumns": [],
+        "category": "core-empty",
+        "lastUpdated": null
+      }
+    ]
+  },
+  "estimatedImpact": {
+    "tablesForRemoval": 17,
+    "totalTables": 25,
+    "removalPercentage": 68,
+    "estimatedStorageReduction": "68-88%",
+    "estimatedPerformanceImprovement": "20-34%",
+    "estimatedBackupSpeedImprovement": "27-41%"
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "action": "Remove empty unused tables",
+      "description": "17 tables are completely empty and can be safely removed",
+      "impact": "High storage and performance improvement",
+      "tables": [
+        "rent_invoices",
+        "payments",
+        "user_invitations",
+        "parcels",
+        "subdivisions",
+        "plots",
+        "clients",
+        "listings",
+        "sale_agreements",
+        "documents",
+        "user_profiles",
+        "maintenance_requests",
+        "invoices",
+        "amenities",
+        "expenses",
+        "utility_accounts",
+        "agents"
+      ]
+    },
+    {
+      "priority": "MEDIUM",
+      "action": "Investigate empty core tables",
+      "description": "3 core rental tables are empty - verify if this is expected",
+      "impact": "Potential functionality issues if these should have data",
+      "tables": [
+        "rent_invoices",
+        "payments",
+        "user_invitations"
+      ]
+    }
+  ],
+  "rawData": [
+    {
+      "tableName": "properties",
+      "rowCount": 98,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "landlord_id",
+        "name",
+        "physical_address",
+        "lat",
+        "lng",
+        "notes",
+        "created_at",
+        "updated_at",
+        "disabled_at",
+        "disabled_by",
+        "disabled_reason",
+        "default_billing_day",
+        "default_align_billing_to_start",
+        "is_published",
+        "property_type",
+        "total_area_sqm",
+        "total_area_acres",
+        "frontage_meters",
+        "zoning_classification",
+        "title_deed_number",
+        "survey_plan_number",
+        "electricity_available",
+        "water_available",
+        "sewer_available",
+        "internet_available",
+        "road_access_type",
+        "topography",
+        "soil_type",
+        "drainage_status",
+        "sale_price_kes",
+        "lease_price_per_sqm_kes",
+        "lease_duration_years",
+        "price_negotiable",
+        "development_permit_status",
+        "property_source",
+        "lifecycle_status",
+        "source_reference_id",
+        "parent_property_id",
+        "subdivision_date",
+        "purchase_completion_date",
+        "acquisition_notes",
+        "expected_rental_income_kes",
+        "estimated_value_kes",
+        "handover_status",
+        "handover_date",
+        "subdivision_status",
+        "purchase_price_agreement_kes",
+        "purchase_price_last_updated_at",
+        "purchase_price_last_updated_by",
+        "handover_price_agreement_kes"
+      ],
+      "category": "core-active",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "units",
+      "rowCount": 8,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_id",
+        "unit_label",
+        "monthly_rent_kes",
+        "deposit_kes",
+        "meter_type",
+        "kplc_account",
+        "water_included",
+        "is_active",
+        "created_at",
+        "updated_at",
+        "water_meter_type",
+        "water_meter_number",
+        "shared_meter_id",
+        "shared_meter_type",
+        "disabled_at",
+        "disabled_by",
+        "disabled_reason",
+        "available_from",
+        "status",
+        "last_inspection_date",
+        "next_inspection_date",
+        "maintenance_notes"
+      ],
+      "category": "core-active",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "tenants",
+      "rowCount": 11,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "full_name",
+        "phone",
+        "email",
+        "national_id",
+        "employer",
+        "notes",
+        "emergency_contact_name",
+        "emergency_contact_phone",
+        "emergency_contact_relationship",
+        "emergency_contact_email",
+        "current_unit_id",
+        "status",
+        "created_at",
+        "alternate_phone"
+      ],
+      "category": "core-active",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "tenancy_agreements",
+      "rowCount": 8,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "tenant_id",
+        "unit_id",
+        "start_date",
+        "end_date",
+        "status",
+        "monthly_rent_kes",
+        "created_at",
+        "billing_day",
+        "align_billing_to_start",
+        "lease_type",
+        "security_deposit_kes",
+        "pet_deposit_kes",
+        "created_by",
+        "updated_at",
+        "notes"
+      ],
+      "category": "core-active",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "rent_invoices",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "core-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "payments",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "core-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "property_users",
+      "rowCount": 98,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "property_id",
+        "user_id",
+        "role",
+        "permissions",
+        "invited_by",
+        "invited_at",
+        "accepted_at",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "category": "core-active",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "landlords",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "full_name",
+        "phone",
+        "email",
+        "default_currency",
+        "created_at",
+        "updated_at"
+      ],
+      "category": "core-active",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "user_invitations",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "core-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "parcels",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "sales-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "subdivisions",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "sales-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "plots",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "sales-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "clients",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "sales-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "documents",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "document-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "listings",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "sales-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "sale_agreements",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "sales-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "user_profiles",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "auth-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "enhanced_users",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "member_number",
+        "email",
+        "full_name",
+        "phone_number",
+        "id_passport_number",
+        "password_hash",
+        "default_password",
+        "must_change_password",
+        "last_password_change",
+        "profile_complete",
+        "next_of_kin_complete",
+        "status",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "last_login",
+        "deleted_at"
+      ],
+      "category": "auth-active",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "maintenance_requests",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "maintenance-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "amenities",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "unknown-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "invoices",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "financial-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "expenses",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "unknown-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "user_roles",
+      "rowCount": 1,
+      "accessible": true,
+      "hasData": true,
+      "sampleColumns": [
+        "id",
+        "user_id",
+        "landlord_id",
+        "role",
+        "property_id",
+        "created_at"
+      ],
+      "category": "auth-active",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "utility_accounts",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "unknown-empty",
+      "lastUpdated": null
+    },
+    {
+      "tableName": "agents",
+      "rowCount": 0,
+      "accessible": true,
+      "hasData": false,
+      "sampleColumns": [],
+      "category": "unknown-empty",
+      "lastUpdated": null
+    }
+  ]
+}
