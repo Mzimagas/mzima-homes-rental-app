@@ -11,7 +11,7 @@ import {
 } from '../utils/property-management.utils'
 import supabase from '../../../lib/supabase-client'
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
-import DirectAdditionDocuments from './DirectAdditionDocuments'
+import DirectAdditionDocumentsV2 from './DirectAdditionDocumentsV2'
 import ProgressTracker from './ProgressTracker'
 import StageModal from './StageModal'
 import SubdivisionProgressTracker from './SubdivisionProgressTracker'
@@ -616,9 +616,9 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
         {activeTab === 'documents' && (
           <div className="space-y-6">
-            {/* Direct Addition Documents - Kenya Property Acquisition Documents */}
+            {/* Direct Addition Documents V2 - New Expandable Card System */}
             {property.property_source === 'DIRECT_ADDITION' && (
-              <DirectAdditionDocuments
+              <DirectAdditionDocumentsV2
                 propertyId={property.id}
                 propertyName={property.name}
               />

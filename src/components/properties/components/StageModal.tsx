@@ -132,6 +132,7 @@ export default function StageModal({
   const [selectedDocType, setSelectedDocType] = useState('')
   const [documentTitle, setDocumentTitle] = useState('')
   const [documentDescription, setDocumentDescription] = useState('')
+  const [uploadingDocType, setUploadingDocType] = useState<string | null>(null)
 
   const stage = getStageById(stageId)
   if (!stage) return null
@@ -163,71 +164,68 @@ export default function StageModal({
     }
   }
 
-  const handleFileUpload = async (files: FileList, documentTypeId: string) => {
-    const documentType = KENYAN_PROPERTY_DOCUMENTS.find(doc => doc.id === documentTypeId)
-    if (!documentType) return
+  const handleFileUpload = async (file: File) => {
+    if (!selectedDocType || !documentTitle.trim()) return
 
-    setUploadingDocType(documentTypeId)
     setUploading(true)
 
     try {
-      const uploadPromises = Array.from(files).map(async (file, index) => {
-        // Generate unique file path
-        const timestamp = Date.now()
-        const randomString = Math.random().toString(36).substring(2, 15)
-        const extension = file.name.split('.').pop()
-        const fileName = `${timestamp}_${randomString}_${index}.${extension}`
-        const filePath = `purchase_pipeline/${purchaseId}/${documentTypeId}/${fileName}`
+      // Generate unique file path
+      const timestamp = Date.now()
+      const randomString = Math.random().toString(36).substring(2, 15)
+      const extension = file.name.split('.').pop()
+      const fileName = `${timestamp}_${randomString}.${extension}`
+      const filePath = `purchase_pipeline/${purchaseId}/${selectedDocType}/${fileName}`
 
-        // Upload to storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false,
-          })
-
-        if (uploadError) throw uploadError
-
-        // Create document record
-        const { error: dbError } = await supabase.from('documents').insert({
-          entity_type: 'purchase_pipeline',
-          entity_id: purchaseId,
-          doc_type: documentType.type,
-          title: `${documentType.label}${files.length > 1 ? ` (${index + 1})` : ''}`,
-          description: documentType.description,
-          file_path: filePath,
-          file_url: filePath,
-          file_name: file.name,
-          file_size: file.size,
-          file_size_bytes: file.size,
-          file_type: file.type,
-          mime_type: file.type,
-          access_level: 'internal',
-          is_current_version: true,
-          uploaded_by: (await supabase.auth.getUser()).data.user?.id,
-          uploaded_at: new Date().toISOString(),
-          metadata: {
-            document_type_id: documentTypeId,
-            document_type_label: documentType.label,
-            is_required: documentType.required,
-            priority: documentType.priority
-          }
+      // Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
         })
 
-        if (dbError) throw dbError
-        return true
+      if (uploadError) throw uploadError
+
+      // Create document record
+      const { error: dbError } = await supabase.from('documents').insert({
+        entity_type: 'purchase_stage',
+        entity_id: `${purchaseId}_${stageId}`,
+        doc_type: selectedDocType,
+        title: documentTitle,
+        description: documentDescription || null,
+        file_path: filePath,
+        file_url: filePath,
+        file_name: file.name,
+        file_size: file.size,
+        file_size_bytes: file.size,
+        file_type: file.type,
+        mime_type: file.type,
+        access_level: 'internal',
+        is_current_version: true,
+        uploaded_by: (await supabase.auth.getUser()).data.user?.id,
+        uploaded_at: new Date().toISOString(),
+        metadata: {
+          stage_id: stageId,
+          purchase_id: purchaseId
+        }
       })
 
-      await Promise.all(uploadPromises)
+      if (dbError) throw dbError
+
       await loadStageDocuments()
 
+      // Reset form
+      setShowUploadForm(false)
+      setSelectedDocType('')
+      setDocumentTitle('')
+      setDocumentDescription('')
+
     } catch (error) {
-      console.error('Error uploading files:', error)
-      alert(`Failed to upload ${documentType.label}`)
+      console.error('Error uploading file:', error)
+      alert('Failed to upload document')
     } finally {
       setUploading(false)
-      setUploadingDocType(null)
     }
   }
 
@@ -359,15 +357,25 @@ export default function StageModal({
             </div>
           )}
 
-          {/* Kenyan Property Acquisition Documents */}
+          {/* Stage Documents */}
           <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h4 className="font-medium text-gray-900">Property Acquisition Documents</h4>
-                <p className="text-sm text-gray-600">Required documents for Kenyan property acquisition process</p>
+                <h4 className="font-medium text-gray-900">Stage Documents</h4>
+                <p className="text-sm text-gray-600">Documents for this stage of the purchase pipeline</p>
               </div>
-              <div className="text-sm text-gray-500">
-                {documents.filter(doc => KENYAN_PROPERTY_DOCUMENTS.find(req => req.required && req.id === doc.metadata?.document_type_id)).length} / {KENYAN_PROPERTY_DOCUMENTS.filter(doc => doc.required).length} Required
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-gray-500">
+                  {documents.length} document{documents.length !== 1 ? 's' : ''} uploaded
+                </div>
+                <Button
+                  onClick={() => setShowUploadForm(!showUploadForm)}
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                >
+                  {showUploadForm ? 'Cancel' : 'Upload Document'}
+                </Button>
               </div>
             </div>
 
