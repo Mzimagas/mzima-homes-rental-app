@@ -135,7 +135,6 @@ export default function StageModal({
   const [uploadingDocType, setUploadingDocType] = useState<string | null>(null)
 
   const stage = getStageById(stageId)
-  if (!stage) return null
 
   // Load documents for this stage
   useEffect(() => {
@@ -143,6 +142,8 @@ export default function StageModal({
       loadStageDocuments()
     }
   }, [isOpen, purchaseId, stageId])
+
+  if (!stage) return null
 
   const loadStageDocuments = async () => {
     try {
