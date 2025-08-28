@@ -24,7 +24,7 @@ import { useEnhancedWorkflow } from '../../../hooks/useEnhancedWorkflow'
 import { stageHasFinancialRequirements } from '../../../lib/constants/financial-stage-requirements'
 import FinancialStatusIndicator from './FinancialStatusIndicator'
 
-interface DirectAdditionDocumentsV2Props {
+interface PurchasePipelineDocumentsProps {
   propertyId: string
   propertyName: string
 }
@@ -81,10 +81,10 @@ interface DocumentStageInfo {
   groupedDocuments?: DocTypeKey[]
 }
 
-export default function DirectAdditionDocumentsV2({
+export default function PurchasePipelineDocuments({
   propertyId,
   propertyName,
-}: DirectAdditionDocumentsV2Props) {
+}: PurchasePipelineDocumentsProps) {
   const [documentStates, setDocumentStates] = useState<Record<DocTypeKey, DocumentTypeState>>(
     {} as Record<DocTypeKey, DocumentTypeState>
   )
@@ -93,6 +93,9 @@ export default function DirectAdditionDocumentsV2({
     {} as Record<DocTypeKey, string>
   )
   const updateTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({})
+  const fileInputRefs = useRef<Record<DocTypeKey, HTMLInputElement | null>>(
+    {} as Record<DocTypeKey, HTMLInputElement | null>
+  )
 
   // Document progression state
   const [documentStages, setDocumentStages] = useState<DocumentStageInfo[]>([])
@@ -103,7 +106,7 @@ export default function DirectAdditionDocumentsV2({
     getStageFinancialStatus,
     getPaymentStatus,
     loading: financialLoading,
-  } = useFinancialStatus(propertyId, 'direct_addition')
+  } = useFinancialStatus(propertyId, 'purchase_pipeline')
 
   // Enhanced workflow integration
   const {
@@ -115,7 +118,7 @@ export default function DirectAdditionDocumentsV2({
     getNextAction,
   } = useEnhancedWorkflow({
     propertyId,
-    pipeline: 'direct_addition',
+    pipeline: 'purchase_pipeline',
     documentStates,
     enableIntegratedLogic: true,
   })
@@ -123,7 +126,7 @@ export default function DirectAdditionDocumentsV2({
   // Real-time financial sync
   const { isSyncing, lastSyncTime, triggerSync } = useFinancialSync({
     propertyId,
-    pipeline: 'direct_addition',
+    pipeline: 'purchase_pipeline',
     enableRealTimeSync: true,
   })
 
@@ -235,7 +238,7 @@ export default function DirectAdditionDocumentsV2({
       DocTypeKey,
       DocumentTypeState
     >
-
+    const initialNotes: Record<DocTypeKey, string> = {} as Record<DocTypeKey, string>
     DOC_TYPES.forEach((docType) => {
       initialStates[docType.key] = {
         documents: [],
@@ -243,9 +246,10 @@ export default function DirectAdditionDocumentsV2({
         isExpanded: false,
         isUploading: false,
       }
+      initialNotes[docType.key] = ''
     })
-
     setDocumentStates(initialStates)
+    setLocalNotes(initialNotes)
   }, [])
 
   const loadDocuments = useCallback(async () => {
@@ -265,7 +269,7 @@ export default function DirectAdditionDocumentsV2({
         .from('property_documents')
         .select('*')
         .eq('property_id', propertyId)
-        .eq('pipeline', 'direct_addition')
+        .eq('pipeline', 'purchase_pipeline')
         .order('uploaded_at', { ascending: false })
 
       if (docsError) throw docsError
@@ -275,38 +279,45 @@ export default function DirectAdditionDocumentsV2({
         .from('property_document_status')
         .select('*')
         .eq('property_id', propertyId)
-        .eq('pipeline', 'direct_addition')
+        .eq('pipeline', 'purchase_pipeline')
 
       if (statusError) throw statusError
 
       // Group documents by type and update states
+      const groupedDocs: Record<string, PropertyDocument[]> = {}
+      documents?.forEach((doc: PropertyDocument) => {
+        if (!groupedDocs[doc.doc_type]) {
+          groupedDocs[doc.doc_type] = []
+        }
+        groupedDocs[doc.doc_type].push(doc)
+      })
+
+      // Group statuses by type
+      const statusMap: Record<string, DocumentStatusRecord> = {}
+      statuses?.forEach((status: DocumentStatusRecord) => {
+        statusMap[status.doc_type] = status
+      })
+
+      // Update document states
       setDocumentStates((prev) => {
         const newStates = { ...prev }
-
-        // Reset all document arrays
         DOC_TYPES.forEach((docType) => {
-          if (newStates[docType.key]) {
-            newStates[docType.key].documents = []
+          newStates[docType.key] = {
+            ...newStates[docType.key],
+            documents: groupedDocs[docType.key] || [],
+            status: statusMap[docType.key] || null,
           }
         })
-
-        // Group documents by type
-        documents?.forEach((doc) => {
-          const docTypeKey = doc.doc_type as DocTypeKey
-          if (newStates[docTypeKey]) {
-            newStates[docTypeKey].documents.push(doc)
-          }
-        })
-
-        // Update statuses
-        statuses?.forEach((status) => {
-          const docTypeKey = status.doc_type as DocTypeKey
-          if (newStates[docTypeKey]) {
-            newStates[docTypeKey].status = status
-          }
-        })
-
         return newStates
+      })
+
+      // Update local notes from database
+      setLocalNotes((prev) => {
+        const newNotes = { ...prev }
+        DOC_TYPES.forEach((docType) => {
+          newNotes[docType.key] = statusMap[docType.key]?.note || ''
+        })
+        return newNotes
       })
     } catch (error) {
       console.error('Error loading documents:', error)
@@ -372,7 +383,7 @@ export default function DirectAdditionDocumentsV2({
       // Upload files
       for (const file of filesToUpload) {
         const uniqueFilename = generateUniqueFilename(file.name)
-        const filePath = `direct_addition/${propertyId}/${docTypeKey}/${uniqueFilename}`
+        const filePath = `purchase_pipeline/${propertyId}/${docTypeKey}/${uniqueFilename}`
 
         // Upload to storage
         const { error: uploadError } = await supabase.storage
@@ -382,12 +393,15 @@ export default function DirectAdditionDocumentsV2({
             upsert: false,
           })
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError)
+          throw new Error(`Storage upload failed: ${uploadError.message}`)
+        }
 
         // Create document record
         const { error: dbError } = await supabase.from('property_documents').insert({
           property_id: propertyId,
-          pipeline: 'direct_addition',
+          pipeline: 'purchase_pipeline',
           doc_type: docTypeKey,
           file_path: filePath,
           file_name: file.name,
@@ -398,7 +412,21 @@ export default function DirectAdditionDocumentsV2({
           meta: {},
         })
 
-        if (dbError) throw dbError
+        if (dbError) {
+          console.error('Database insert error:', dbError)
+
+          // Clean up uploaded file if database insert fails
+          await supabase.storage.from('property-docs').remove([filePath])
+
+          // Provide specific error message for constraint violations
+          if (dbError.message?.includes('constraint') || dbError.message?.includes('check')) {
+            throw new Error(
+              `Database constraint error: The database schema may not support 'purchase_pipeline'. Please run the migration: supabase/migrations/068_fix_purchase_pipeline_documents_constraint.sql`
+            )
+          }
+
+          throw new Error(`Database error: ${dbError.message}`)
+        }
       }
 
       // Reload documents to get updated state
@@ -406,14 +434,24 @@ export default function DirectAdditionDocumentsV2({
     } catch (error) {
       console.error('Error uploading files:', error)
 
+      // Better error handling and logging
       let errorMessage = 'Failed to upload files'
       if (error instanceof Error) {
         errorMessage = error.message
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        })
       } else if (typeof error === 'object' && error !== null) {
+        console.error('Error object:', JSON.stringify(error, null, 2))
         errorMessage = JSON.stringify(error)
+      } else {
+        console.error('Unknown error type:', typeof error, error)
+        errorMessage = String(error)
       }
 
-      alert(errorMessage)
+      alert(`Upload failed: ${errorMessage}`)
     } finally {
       setDocumentStates((prev) => ({
         ...prev,
@@ -423,21 +461,25 @@ export default function DirectAdditionDocumentsV2({
   }
 
   const handleFileDelete = async (document: PropertyDocument) => {
-    if (!confirm('Are you sure you want to delete this file?')) return
+    if (!confirm(`Are you sure you want to delete "${document.file_name}"?`)) {
+      return
+    }
 
     try {
-      const response = await fetch('/api/docs/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filePath: document.file_path,
-          documentId: document.id,
-        }),
-      })
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('property-docs')
+        .remove([document.file_path])
 
-      if (!response.ok) {
-        throw new Error('Failed to delete file')
-      }
+      if (storageError) throw storageError
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('property_documents')
+        .delete()
+        .eq('id', document.id)
+
+      if (dbError) throw dbError
 
       // Reload documents
       await loadDocuments()
@@ -495,7 +537,7 @@ export default function DirectAdditionDocumentsV2({
         .from('property_document_status')
         .select('*')
         .eq('property_id', propertyId)
-        .eq('pipeline', 'direct_addition')
+        .eq('pipeline', 'purchase_pipeline')
         .eq('doc_type', docTypeKey)
         .single()
 
@@ -521,7 +563,7 @@ export default function DirectAdditionDocumentsV2({
         // Insert new record
         result = await supabase.from('property_document_status').insert({
           property_id: propertyId,
-          pipeline: 'direct_addition',
+          pipeline: 'purchase_pipeline',
           doc_type: docTypeKey,
           is_na: isNa,
           note: note || null,
@@ -573,7 +615,7 @@ export default function DirectAdditionDocumentsV2({
           status: {
             id: existingStatus?.id || 'temp-id',
             property_id: propertyId,
-            pipeline: 'direct_addition',
+            pipeline: 'purchase_pipeline',
             doc_type: docTypeKey,
             status: isNa ? 'complete' : existingStatus?.status || 'missing',
             is_na: isNa,
@@ -585,13 +627,19 @@ export default function DirectAdditionDocumentsV2({
     } catch (error) {
       console.error('Error updating document status:', error)
 
-      // Provide user feedback
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      alert(`Failed to update document status: ${errorMessage}`)
+      let errorMessage = 'Failed to update document status'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null) {
+        console.error('Error object:', JSON.stringify(error, null, 2))
+        errorMessage = JSON.stringify(error)
+      }
+
+      alert(errorMessage)
     }
   }
 
-  // Debounced version to prevent rapid-fire updates
+  // Debounced update function with timeout management
   const updateDocumentStatus = useCallback(
     (docTypeKey: DocTypeKey, isNa: boolean, note?: string) => {
       // Check if document is locked due to progression
@@ -600,9 +648,9 @@ export default function DirectAdditionDocumentsV2({
         return
       }
 
-      const key = `${docTypeKey}`
+      const key = `${docTypeKey}-${isNa ? 'na' : 'note'}`
 
-      // Clear existing timeout for this document type
+      // Clear existing timeout for this key
       if (updateTimeoutRef.current[key]) {
         clearTimeout(updateTimeoutRef.current[key])
       }
@@ -647,23 +695,81 @@ export default function DirectAdditionDocumentsV2({
     [documentStates, updateDocumentStatus]
   )
 
-  // Initialize local notes when document states load
-  useEffect(() => {
-    const initialNotes: Record<DocTypeKey, string> = {} as Record<DocTypeKey, string>
-    DOC_TYPES.forEach((docType) => {
-      const note = documentStates[docType.key]?.status?.note || ''
-      initialNotes[docType.key] = note
-    })
-    setLocalNotes(initialNotes)
+  // Update purchase pipeline overall progress when documents change
+  const updatePurchasePipelineProgress = useCallback(
+    async (documentProgress: number) => {
+      try {
+        console.log('Updating purchase pipeline progress:', { propertyId, documentProgress })
+
+        // The propertyId parameter is actually the purchase pipeline ID
+        const { error, data } = await supabase
+          .from('purchase_pipeline')
+          .update({
+            overall_progress: documentProgress,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', propertyId)
+          .select('id, overall_progress')
+
+        if (error) {
+          console.error('Error updating purchase pipeline progress:', error)
+          console.error('Error details:', JSON.stringify(error, null, 2))
+        } else {
+          console.log('Purchase pipeline progress updated successfully:', data)
+        }
+      } catch (error) {
+        console.error('Error updating purchase pipeline progress:', error)
+        if (error instanceof Error) {
+          console.error('Error message:', error.message)
+          console.error('Error stack:', error.stack)
+        }
+      }
+    },
+    [propertyId]
+  )
+
+  // Calculate progress statistics
+  const calculateStats = useCallback(() => {
+    const requiredTypes = DOC_TYPES.filter((dt) => dt.required)
+    const completed = requiredTypes.filter((dt) => {
+      const state = documentStates[dt.key]
+      return state?.status?.is_na || (state?.documents && state.documents.length > 0)
+    }).length
+
+    const percentage =
+      requiredTypes.length > 0 ? Math.round((completed / requiredTypes.length) * 100) : 0
+
+    return {
+      completed,
+      total: requiredTypes.length,
+      percentage,
+    }
   }, [documentStates])
 
-  const getStatusBadge = (docTypeKey: DocTypeKey) => {
-    const state = documentStates[docTypeKey]
-    const docType = DOC_TYPES.find((dt) => dt.key === docTypeKey)
-    const isRequired = docType?.required || false
-    const hasFiles = state?.documents?.length > 0
+  // Calculate stats and update purchase pipeline progress when document stats change
+  const stats = calculateStats()
+  const [lastUpdatedProgress, setLastUpdatedProgress] = useState<number | null>(null)
 
-    if (state?.status?.is_na) {
+  useEffect(() => {
+    if (stats.percentage !== undefined && stats.percentage !== lastUpdatedProgress) {
+      // Debounce the progress update to avoid too many database calls
+      const timeoutId = setTimeout(() => {
+        updatePurchasePipelineProgress(stats.percentage)
+        setLastUpdatedProgress(stats.percentage)
+      }, 1000) // 1 second debounce
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [stats.percentage, lastUpdatedProgress, updatePurchasePipelineProgress])
+
+  // Get status badge info for a document type
+  const getStatusBadge = (docType: DocTypeKey) => {
+    const state = documentStates[docType]
+    const isNA = state?.status?.is_na || false
+    const hasFiles = state?.documents && state.documents.length > 0
+    const isRequired = DOC_TYPES.find((dt) => dt.key === docType)?.required || false
+
+    if (isNA) {
       return { text: 'N/A', className: 'bg-gray-100 text-gray-800' }
     }
     if (hasFiles) {
@@ -679,61 +785,16 @@ export default function DirectAdditionDocumentsV2({
     return { text: 'Optional', className: 'bg-yellow-100 text-yellow-800' }
   }
 
-  const getStatusChip = (docTypeKey: DocTypeKey) => {
-    const state = documentStates[docTypeKey]
-    const docType = DOC_TYPES.find((dt) => dt.key === docTypeKey)
-
-    if (state?.status?.is_na) {
-      return (
-        <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
-          N/A
-        </span>
-      )
-    }
-
-    const fileCount = state?.documents.length || 0
-    let status: DocumentStatus = 'missing'
-    let chipClass = 'bg-red-100 text-red-700'
-    let label = 'Missing'
-
-    if (fileCount > 0) {
-      status = 'complete'
-      chipClass = 'bg-green-100 text-green-700'
-      label = 'Complete'
-    }
-
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${chipClass}`}>{label}</span>
-    )
-  }
-
-  const getCompletionStats = () => {
-    const requiredDocs = DOC_TYPES.filter((dt) => dt.required)
-    const completedDocs = requiredDocs.filter((dt) => {
-      const state = documentStates[dt.key]
-      return state?.status?.is_na || (state?.documents.length || 0) > 0
-    })
-
-    return {
-      completed: completedDocs.length,
-      total: requiredDocs.length,
-      percentage: Math.round((completedDocs.length / requiredDocs.length) * 100),
-    }
-  }
-
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-4">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-teal-200"></div>
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-teal-600 border-t-transparent absolute top-0 left-0"></div>
+      <div className="space-y-4">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading documents...</p>
         </div>
-        <p className="mt-4 text-gray-600 font-medium">Loading documents...</p>
       </div>
     )
   }
-
-  const stats = getCompletionStats()
 
   return (
     <div className="space-y-4">
@@ -742,7 +803,7 @@ export default function DirectAdditionDocumentsV2({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
-              📄 Property Documents
+              📄 Purchase Pipeline Documents
             </h3>
             <p className="text-sm text-gray-600">{propertyName}</p>
           </div>
@@ -762,11 +823,12 @@ export default function DirectAdditionDocumentsV2({
           </div>
         </div>
 
-        <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
           <div
-            className="bg-gradient-to-r from-emerald-500 to-teal-500 h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
+            className="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full transition-all duration-500 ease-out"
             style={{ width: `${stats.percentage}%` }}
-          ></div>
+          />
         </div>
 
         <div className="flex items-center gap-2 text-sm">
@@ -994,7 +1056,6 @@ export default function DirectAdditionDocumentsV2({
                                     type="file"
                                     multiple={groupedDocType.multiple}
                                     accept={groupedDocType.accept.join(',')}
-                                    capture={groupedDocType.capture as any}
                                     className="hidden"
                                     onChange={(e) => {
                                       if (e.target.files && e.target.files.length > 0) {
@@ -1019,7 +1080,7 @@ export default function DirectAdditionDocumentsV2({
                                         key={doc.id}
                                         className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs"
                                       >
-                                        <span className="text-lg">{groupedDocType.icon}</span>
+                                        <span className="text-lg">{getFileIcon(docKey)}</span>
                                         <span className="flex-1 truncate">{doc.file_name}</span>
                                         <button
                                           onClick={() => handleViewFile(doc)}
@@ -1216,51 +1277,47 @@ export default function DirectAdditionDocumentsV2({
                   <div>
                     <label
                       className={`
-                      block w-full p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200
-                      ${
-                        isUploading
-                          ? 'border-teal-300 bg-teal-50 scale-[0.98]'
-                          : 'border-gray-300 bg-gray-50 hover:border-teal-400 hover:bg-teal-50 hover:scale-[1.01]'
-                      }
-                    `}
+                    block w-full p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200
+                    ${
+                      isUploading
+                        ? 'border-teal-300 bg-teal-50 scale-[0.98]'
+                        : 'border-gray-300 bg-gray-50 hover:border-teal-400 hover:bg-teal-50 hover:scale-[1.01]'
+                    }
+                  `}
                     >
-                      {isUploading ? (
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-600 border-t-transparent"></div>
-                          <span className="text-sm font-medium text-teal-700">Uploading...</span>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="text-4xl">📎</div>
-                          <div>
-                            <span className="text-base font-medium text-gray-700 block">
-                              {docType.multiple ? 'Upload Files' : 'Upload File'}
-                            </span>
-                            <span className="text-sm text-gray-500 mt-1 block">
-                              {docType.accept.join(', ')} • Max 10MB each
-                            </span>
-                            {docType.multiple && (
-                              <span className="text-sm text-teal-600 font-medium block mt-1">
-                                Multiple files supported
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
                       <input
+                        ref={(el) => {
+                          fileInputRefs.current[docType.key] = el
+                        }}
                         type="file"
                         multiple={docType.multiple}
                         accept={docType.accept.join(',')}
-                        capture={docType.capture as any}
+                        className="hidden"
                         onChange={(e) => {
                           if (e.target.files && e.target.files.length > 0) {
                             handleFileUpload(docType.key, e.target.files)
-                            e.target.value = ''
+                            e.target.value = '' // Reset input
                           }
                         }}
-                        className="hidden"
                         disabled={isUploading || isDocLocked}
                       />
+
+                      {isUploading ? (
+                        <div className="space-y-2">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
+                          <p className="text-sm font-medium text-teal-700">Uploading...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="text-3xl">📁</div>
+                          <p className="text-sm font-medium text-gray-700">
+                            Click to upload {docType.multiple ? 'files' : 'file'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {docType.accept.join(', ')} • Max 10MB each
+                          </p>
+                        </div>
+                      )}
                     </label>
                   </div>
 

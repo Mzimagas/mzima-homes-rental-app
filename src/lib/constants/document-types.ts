@@ -6,12 +6,12 @@
 export const DOC_TYPES = [
   {
     key: 'title_copy',
-    label: 'Copy of Sellers\' Title/Document',
+    label: "Copy of Sellers' Title/Document",
     description: 'Original title deed or certified copy with title number',
     icon: '📜',
     accept: ['.pdf', '.jpg', '.jpeg', '.png'],
     multiple: false,
-    required: true
+    required: true,
   },
   {
     key: 'property_images',
@@ -21,16 +21,16 @@ export const DOC_TYPES = [
     accept: ['.jpg', '.jpeg', '.png', '.heic'],
     multiple: true,
     required: true,
-    capture: 'environment' // Enable camera capture for mobile
+    capture: 'environment', // Enable camera capture for mobile
   },
   {
     key: 'search_certificate',
     label: 'Search Certificate',
-    description: 'Official property search from the Ministry of Lands',
+    description: 'Official property search/greencard from the Lands Registry',
     icon: '🔍',
     accept: ['.pdf', '.jpg', '.jpeg', '.png'],
     multiple: false,
-    required: true
+    required: true,
   },
   {
     key: 'minutes_decision',
@@ -39,16 +39,54 @@ export const DOC_TYPES = [
     icon: '📋',
     accept: ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'],
     multiple: false,
-    required: true
+    required: true,
   },
   {
-    key: 'sale_agreement',
-    label: 'Agreement with Seller',
-    description: 'Signed purchase agreement or sale contract with the property seller',
-    icon: '🤝',
+    key: 'original_title_deed',
+    label: 'Original Title Deed with Serial Number',
+    description: 'Original title deed document showing clear serial number and ownership details',
+    icon: '📋',
+    accept: ['.pdf', '.jpg', '.jpeg', '.png'],
+    multiple: false,
+    required: true,
+  },
+  {
+    key: 'seller_id_passport',
+    label: 'Seller ID, KRA Pin and Passport photo',
+    description:
+      "Copies of seller's national ID, KRA PIN certificate, and passport photo for identity verification",
+    icon: '🆔',
+    accept: ['.pdf', '.jpg', '.jpeg', '.png'],
+    multiple: true,
+    required: true,
+  },
+  {
+    key: 'spousal_consent',
+    label: 'Spousal Consent Documentation',
+    description: 'Spousal consent forms or affidavit if seller is single',
+    icon: '💑',
     accept: ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'],
     multiple: false,
-    required: true
+    required: true,
+  },
+  {
+    key: 'spouse_id_kra',
+    label: 'Spouse ID and KRA PIN',
+    description:
+      'Spouse national ID and KRA PIN certificate (or mark as N/A if affidavit provided)',
+    icon: '🆔',
+    accept: ['.pdf', '.jpg', '.jpeg', '.png'],
+    multiple: true,
+    required: false, // Can be marked as N/A if affidavit is provided
+  },
+  {
+    key: 'signed_lra33',
+    label: 'Signed LRA 33 Forms',
+    description: 'Completed and signed Land Registration Act Form 33',
+    icon: '📝',
+    accept: ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'],
+    multiple: false,
+    required: true,
   },
   {
     key: 'lcb_consent',
@@ -57,7 +95,7 @@ export const DOC_TYPES = [
     icon: '✅',
     accept: ['.pdf', '.jpg', '.jpeg', '.png'],
     multiple: false,
-    required: true
+    required: true,
   },
   {
     key: 'valuation_report',
@@ -66,7 +104,7 @@ export const DOC_TYPES = [
     icon: '💰',
     accept: ['.pdf'],
     multiple: false,
-    required: true
+    required: true,
   },
   {
     key: 'assessment',
@@ -75,16 +113,16 @@ export const DOC_TYPES = [
     icon: '📊',
     accept: ['.pdf', '.jpg', '.jpeg', '.png'],
     multiple: false,
-    required: true
+    required: true,
   },
   {
     key: 'stamp_duty',
     label: 'Stamp Duty Payment',
-    description: 'Ardhi Sasa stamp duty payment receipts and confirmation',
+    description: 'Ardhi Sasa stamp duty payment invoice and receipts',
     icon: '🧾',
     accept: ['.pdf', '.jpg', '.jpeg', '.png'],
     multiple: true,
-    required: true
+    required: true,
   },
   {
     key: 'registered_title',
@@ -93,11 +131,11 @@ export const DOC_TYPES = [
     icon: '🏆',
     accept: ['.pdf', '.jpg', '.jpeg', '.png'],
     multiple: false,
-    required: true
-  }
+    required: true,
+  },
 ] as const
 
-export type DocType = typeof DOC_TYPES[number]
+export type DocType = (typeof DOC_TYPES)[number]
 export type DocTypeKey = DocType['key']
 
 // Document status types
@@ -116,15 +154,15 @@ export const MIME_TYPE_MAP: Record<string, string[]> = {
   '.jpeg': ['image/jpeg'],
   '.png': ['image/png'],
   '.heic': ['image/heic'],
-  '.gif': ['image/gif']
+  '.gif': ['image/gif'],
 }
 
 // Get MIME types for a document type
 export function getMimeTypesForDocType(docTypeKey: DocTypeKey): string[] {
-  const docType = DOC_TYPES.find(dt => dt.key === docTypeKey)
+  const docType = DOC_TYPES.find((dt) => dt.key === docTypeKey)
   if (!docType) return []
-  
-  return docType.accept.flatMap(ext => MIME_TYPE_MAP[ext] || [])
+
+  return docType.accept.flatMap((ext) => MIME_TYPE_MAP[ext] || [])
 }
 
 // Validate file type for a document type

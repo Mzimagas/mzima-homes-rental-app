@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
 
-
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
+import PurchasePipelineDocuments from './PurchasePipelineDocuments'
 import supabase from '../../../lib/supabase-client'
 import { PurchaseItem, PipelineStageData } from '../types/purchase-pipeline.types'
 import { PropertyWithLifecycle } from '../types/property-management.types'
@@ -36,7 +36,6 @@ export default function InlinePurchaseView({
 
   const [pipelineLoading, setPipelineLoading] = useState(false)
   const [purchaseData, setPurchaseData] = useState<PurchaseItem | null>(null)
-
 
   // Always allow financial management for purchase pipeline entries
   const { properties } = usePropertyAccess()
@@ -123,8 +122,8 @@ export default function InlinePurchaseView({
   }
 
   const handleStageClick = (stageId: number) => {
-    // Stage modal functionality removed
     console.log('Stage clicked:', stageId)
+    // Stage functionality will be integrated into documents view
   }
 
   const handleStageUpdate = async (
@@ -143,8 +142,6 @@ export default function InlinePurchaseView({
     )
     await loadPurchaseData()
   }
-
-
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm mt-4">
@@ -255,16 +252,11 @@ export default function InlinePurchaseView({
               </div>
             ) : purchaseData ? (
               <div className="space-y-6">
-                {/* Documents Section - Ready for Implementation */}
-                <div className="bg-gray-50 rounded-lg p-8 text-center">
-                  <div className="text-gray-400 mb-4">
-                    <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">Documents Section</h3>
-                  <p className="text-sm text-gray-500">Documents section ready for implementation</p>
-                </div>
+                {/* Purchase Pipeline Documents */}
+                <PurchasePipelineDocuments
+                  propertyId={purchaseData.id}
+                  propertyName={purchaseData.property_name}
+                />
               </div>
             ) : (
               <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -280,8 +272,6 @@ export default function InlinePurchaseView({
           </div>
         )}
       </div>
-
-
     </div>
   )
 }

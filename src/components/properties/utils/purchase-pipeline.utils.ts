@@ -10,10 +10,76 @@ export const initializePipelineStages = (): PipelineStageData[] => {
     documents: [],
   }))
 }
+// Calculate overall progress based on completed stages
+export const calculateOverallProgress = (stageData: PipelineStageData[]): number => {
+  const completedStages = stageData.filter((stage) =>
+    [
+      'Completed',
+      'Verified',
+      'Finalized',
+      'Processed',
+      'Approved',
+      'Fully Signed',
+      'Registered',
+      'LCB Approved & Forms Signed',
+    ].includes(stage.status)
+  ).length
+  return Math.round((completedStages / PIPELINE_STAGES.length) * 100)
+}
 
+// Get the current active stage
+export const getCurrentStage = (stageData: PipelineStageData[]): number => {
+  // Find the first non-completed stage
+  for (let i = 0; i < stageData.length; i++) {
+    const stage = stageData[i]
+    if (
+      ![
+        'Completed',
+        'Verified',
+        'Finalized',
+        'Processed',
+        'Approved',
+        'Fully Signed',
+        'Registered',
+        'LCB Approved & Forms Signed',
+      ].includes(stage.status)
+    ) {
+      return stage.stage_id
+    }
+  }
+  return PIPELINE_STAGES.length // All stages completed
+}
 
+// Determine purchase status based on pipeline stages
+export const determinePurchaseStatus = (stageData: PipelineStageData[]): string => {
+  const completionStatuses = [
+    'Completed',
+    'Verified',
+    'Finalized',
+    'Processed',
+    'Approved',
+    'Fully Signed',
+    'Registered',
+    'LCB Approved & Forms Signed',
+  ]
 
+  // Check if all stages are completed
+  const allCompleted = stageData.every((stage) => completionStatuses.includes(stage.status))
+  if (allCompleted) return 'COMPLETED'
 
+  // Find the current active stage (first non-completed stage)
+  const currentStage = getCurrentStage(stageData)
+
+  // Map stage to purchase status
+  if (currentStage <= 1) return 'IDENTIFIED'
+  if (currentStage <= 2) return 'NEGOTIATING'
+  if (currentStage <= 3) return 'DUE_DILIGENCE'
+  if (currentStage <= 4) return 'UNDER_CONTRACT'
+  if (currentStage <= 6) return 'FINANCING'
+  if (currentStage <= 8) return 'CLOSING'
+
+  return 'IDENTIFIED' // Default fallback
+}
 
 // Get status color for purchase status badges
 export const getPurchaseStatusColor = (status: string): string => {
@@ -29,10 +95,6 @@ export const getPurchaseStatusColor = (status: string): string => {
 
   return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
 }
-
-
-
-
 
 // Format currency for display
 export const formatCurrency = (amount: number | undefined): string => {

@@ -11,8 +11,8 @@ import {
 } from '../utils/property-management.utils'
 import supabase from '../../../lib/supabase-client'
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
+import PurchasePipelineDocuments from './PurchasePipelineDocuments'
 import DirectAdditionDocumentsV2 from './DirectAdditionDocumentsV2'
-
 
 import SubdivisionProgressTracker from './SubdivisionProgressTracker'
 import SubdivisionStageModal from './SubdivisionStageModal'
@@ -333,35 +333,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  // Pipeline interaction handlers
-  const handleStageClick = (stageId: number) => {
-    // Stage modal functionality removed
-    console.log('Stage clicked:', stageId)
-  }
-
-  const handleStageUpdate = async (
-    purchaseId: string,
-    stageId: number,
-    newStatus: string,
-    notes?: string,
-    stageData?: any
-  ) => {
-    try {
-      await PurchasePipelineService.updateStageStatus(
-        purchaseId,
-        stageId,
-        newStatus,
-        notes,
-        stageData
-      )
-      // Reload purchase data to get updated stages
-      await loadPurchaseData()
-    } catch (error) {
-      console.error('Error updating stage:', error)
-      throw error
-    }
-  }
-
   // Subdivision pipeline interaction handlers
   const handleSubdivisionStageClick = (stageId: number) => {
     setSelectedSubdivisionStageId(stageId)
@@ -383,7 +354,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           (stage: SubdivisionPipelineStageData) => {
             if (stage.stage_id === stageId) {
               // Handle date logic based on status
-              let updatedStage = {
+              const updatedStage = {
                 ...stage,
                 status: newStatus,
                 notes: notes || stage.notes,
@@ -449,8 +420,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
       throw error
     }
   }
-
-
 
   const getCurrentSubdivisionStageData = () => {
     if (!subdivisionData || !selectedSubdivisionStageId) return undefined
@@ -613,10 +582,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           <div className="space-y-6">
             {/* Direct Addition Documents V2 - New Expandable Card System */}
             {property.property_source === 'DIRECT_ADDITION' && (
-              <DirectAdditionDocumentsV2
-                propertyId={property.id}
-                propertyName={property.name}
-              />
+              <DirectAdditionDocumentsV2 propertyId={property.id} propertyName={property.name} />
             )}
 
             {/* Purchase Pipeline Interface - Only show for purchase pipeline properties */}
@@ -629,16 +595,11 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                   </div>
                 ) : purchaseData ? (
                   <div className="space-y-6">
-                    {/* Documents Section - Ready for Implementation */}
-                    <div className="bg-gray-50 rounded-lg p-8 text-center">
-                      <div className="text-gray-400 mb-4">
-                        <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-700 mb-2">Documents Section</h3>
-                      <p className="text-sm text-gray-500">Documents section ready for implementation</p>
-                    </div>
+                    {/* Purchase Pipeline Documents */}
+                    <PurchasePipelineDocuments
+                      propertyId={purchaseData.id}
+                      propertyName={purchaseData.property_name}
+                    />
 
                     {/* Purchase Card with Direct Addition styling */}
                     <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -823,8 +784,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           </div>
         )}
       </div>
-
-
 
       {/* Stage Modal for Subdivision Pipeline */}
       {showSubdivisionStageModal && selectedSubdivisionStageId && subdivisionData && (
