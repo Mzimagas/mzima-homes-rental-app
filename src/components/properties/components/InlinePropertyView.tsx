@@ -13,7 +13,7 @@ import supabase from '../../../lib/supabase-client'
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import DirectAdditionDocumentsV2 from './DirectAdditionDocumentsV2'
 import ProgressTracker from './ProgressTracker'
-import StageModal from './StageModal'
+
 import SubdivisionProgressTracker from './SubdivisionProgressTracker'
 import SubdivisionStageModal from './SubdivisionStageModal'
 import { PurchaseItem } from '../types/purchase-pipeline.types'
@@ -71,8 +71,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
   // Purchase pipeline state
   const [purchaseData, setPurchaseData] = useState<PurchaseItem | null>(null)
-  const [showStageModal, setShowStageModal] = useState(false)
-  const [selectedStageId, setSelectedStageId] = useState<number | null>(null)
   const [pipelineLoading, setPipelineLoading] = useState(false)
 
   // Subdivision pipeline state
@@ -337,8 +335,8 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
   // Pipeline interaction handlers
   const handleStageClick = (stageId: number) => {
-    setSelectedStageId(stageId)
-    setShowStageModal(true)
+    // Stage modal functionality removed
+    console.log('Stage clicked:', stageId)
   }
 
   const handleStageUpdate = async (
@@ -452,10 +450,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     }
   }
 
-  const getCurrentStageData = () => {
-    if (!purchaseData?.pipeline_stages || !selectedStageId) return undefined
-    return purchaseData.pipeline_stages.find((stage) => stage.stage_id === selectedStageId)
-  }
+
 
   const getCurrentSubdivisionStageData = () => {
     if (!subdivisionData || !selectedSubdivisionStageId) return undefined
@@ -828,17 +823,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
         )}
       </div>
 
-      {/* Stage Modal for Purchase Pipeline */}
-      {showStageModal && selectedStageId && purchaseData && (
-        <StageModal
-          isOpen={showStageModal}
-          onClose={() => setShowStageModal(false)}
-          stageId={selectedStageId}
-          purchaseId={purchaseData.id}
-          stageData={getCurrentStageData()}
-          onStageUpdate={handleStageUpdate}
-        />
-      )}
+
 
       {/* Stage Modal for Subdivision Pipeline */}
       {showSubdivisionStageModal && selectedSubdivisionStageId && subdivisionData && (

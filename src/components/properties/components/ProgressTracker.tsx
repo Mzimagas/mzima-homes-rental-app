@@ -46,12 +46,11 @@ export default function ProgressTracker({
           return (
             <div
               key={stage.id}
-              className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 transform hover:scale-105 ${getStageCardStyling(
+              className={`relative p-4 rounded-lg border-2 transition-all duration-200 ${getStageCardStyling(
                 isActive,
                 isCompleted,
                 canAccess
               )}`}
-              onClick={() => canAccess && onStageClick(stage.id)}
             >
               {/* Stage Number */}
               <div

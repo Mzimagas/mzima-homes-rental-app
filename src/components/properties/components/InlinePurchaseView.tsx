@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
 import ProgressTracker from './ProgressTracker'
-import StageModal from './StageModal'
+
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import supabase from '../../../lib/supabase-client'
 import { PurchaseItem, PipelineStageData } from '../types/purchase-pipeline.types'
@@ -36,8 +36,7 @@ export default function InlinePurchaseView({
 
   const [pipelineLoading, setPipelineLoading] = useState(false)
   const [purchaseData, setPurchaseData] = useState<PurchaseItem | null>(null)
-  const [selectedStageId, setSelectedStageId] = useState<number | null>(null)
-  const [showStageModal, setShowStageModal] = useState(false)
+
 
   // Always allow financial management for purchase pipeline entries
   const { properties } = usePropertyAccess()
@@ -124,13 +123,8 @@ export default function InlinePurchaseView({
   }
 
   const handleStageClick = (stageId: number) => {
-    setSelectedStageId(stageId)
-    setShowStageModal(true)
-  }
-
-  const handleCloseStageModal = () => {
-    setShowStageModal(false)
-    setSelectedStageId(null)
+    // Stage modal functionality removed
+    console.log('Stage clicked:', stageId)
   }
 
   const handleStageUpdate = async (
@@ -150,10 +144,7 @@ export default function InlinePurchaseView({
     await loadPurchaseData()
   }
 
-  const getCurrentStageData = () => {
-    if (!purchaseData?.pipeline_stages || !selectedStageId) return undefined
-    return purchaseData.pipeline_stages.find((stage) => stage.stage_id === selectedStageId)
-  }
+
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm mt-4">
@@ -289,17 +280,7 @@ export default function InlinePurchaseView({
         )}
       </div>
 
-      {/* Stage Modal */}
-      {showStageModal && selectedStageId && purchaseData && (
-        <StageModal
-          isOpen={showStageModal}
-          onClose={handleCloseStageModal}
-          stageId={selectedStageId}
-          purchaseId={purchaseData.id}
-          stageData={getCurrentStageData()}
-          onStageUpdate={handleStageUpdate}
-        />
-      )}
+
     </div>
   )
 }

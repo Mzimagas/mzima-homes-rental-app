@@ -187,20 +187,7 @@ export interface ProgressTrackerProps {
   ) => Promise<void>
 }
 
-export interface StageModalProps {
-  isOpen: boolean
-  onClose: () => void
-  stageId: number
-  purchaseId: string
-  stageData: PipelineStageData | undefined
-  onStageUpdate: (
-    purchaseId: string,
-    stageId: number,
-    newStatus: string,
-    notes?: string,
-    stageData?: any
-  ) => Promise<void>
-}
+
 
 export interface PurchaseListProps {
   purchases: PurchaseItem[]

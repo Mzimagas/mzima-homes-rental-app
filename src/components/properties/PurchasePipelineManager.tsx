@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Button } from '../ui'
 import PurchaseList from './components/PurchaseList'
 import SecurePurchaseForm from './components/SecurePurchaseForm'
-import StageModal from './components/StageModal'
+
 import PropertySearch from './components/PropertySearch'
 import { PurchasePipelineService } from './services/purchase-pipeline.service'
 import { FieldSecurityService, ChangeRequest } from '../../lib/security/field-security.service'
@@ -26,9 +26,7 @@ export default function PurchasePipelineManager({
   const [showForm, setShowForm] = useState(false)
   const [editingPurchase, setEditingPurchase] = useState<PurchaseItem | null>(null)
   const [transferringId, setTransferringId] = useState<string | null>(null)
-  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
-  const [selectedStageId, setSelectedStageId] = useState<number | null>(null)
-  const [showStageModal, setShowStageModal] = useState(false)
+
 
   // Filter purchases based on search term
   const filteredPurchases = useMemo(() => {
@@ -119,9 +117,8 @@ export default function PurchasePipelineManager({
   }
 
   const handleStageClick = (stageId: number, purchaseId: string) => {
-    setSelectedStageId(stageId)
-    setSelectedPurchaseId(purchaseId)
-    setShowStageModal(true)
+    // Stage modal functionality removed
+    console.log('Stage clicked:', { stageId, purchaseId })
   }
 
   const handleStageUpdate = async (
@@ -140,7 +137,6 @@ export default function PurchasePipelineManager({
         stageData
       )
       await loadPurchases()
-      setShowStageModal(false)
     } catch (error) {
       console.error('Error updating stage:', error)
       throw error
@@ -167,21 +163,7 @@ export default function PurchasePipelineManager({
     setEditingPurchase(null)
   }
 
-  const handleCloseStageModal = () => {
-    setShowStageModal(false)
-    setSelectedStageId(null)
-    setSelectedPurchaseId(null)
-  }
 
-  // Get current stage data for the modal
-  const getCurrentStageData = () => {
-    if (!selectedPurchaseId || !selectedStageId) return undefined
-
-    const purchase = purchases.find((p) => p.id === selectedPurchaseId)
-    if (!purchase?.pipeline_stages) return undefined
-
-    return purchase.pipeline_stages.find((stage) => stage.stage_id === selectedStageId)
-  }
 
   return (
     <div className="space-y-6">
@@ -227,17 +209,7 @@ export default function PurchasePipelineManager({
         userRole={userRole}
       />
 
-      {/* Stage Modal */}
-      {showStageModal && selectedStageId && selectedPurchaseId && (
-        <StageModal
-          isOpen={showStageModal}
-          onClose={handleCloseStageModal}
-          stageId={selectedStageId}
-          purchaseId={selectedPurchaseId}
-          stageData={getCurrentStageData()}
-          onStageUpdate={handleStageUpdate}
-        />
-      )}
+
     </div>
   )
 }
