@@ -158,7 +158,6 @@ export interface PurchaseItem {
   property_condition_notes?: string
   current_stage?: number
   pipeline_stages?: PipelineStageData[]
-  overall_progress?: number
   completed_property_id?: string
   created_at: string
   updated_at: string
@@ -172,20 +171,7 @@ export interface PurchasePipelineManagerProps {
   userRole?: string
 }
 
-export interface ProgressTrackerProps {
-  currentStage: number
-  stageData: PipelineStageData[]
-  onStageClick: (stageId: number) => void
-  overallProgress: number
-  purchaseId: string
-  onStageUpdate: (
-    purchaseId: string,
-    stageId: number,
-    newStatus: string,
-    notes?: string,
-    stageData?: any
-  ) => Promise<void>
-}
+
 
 
 

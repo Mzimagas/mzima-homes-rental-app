@@ -2,7 +2,7 @@
 
 import { Button, useToast } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
-import ProgressTracker from './ProgressTracker'
+
 import { PurchaseListProps, PurchaseItem } from '../types/purchase-pipeline.types'
 import { initializePipelineStages, getPurchaseStatusColor } from '../utils/purchase-pipeline.utils'
 import { getSourceIcon, getSourceLabel } from '../utils/property-management.utils'
