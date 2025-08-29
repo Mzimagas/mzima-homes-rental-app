@@ -5,25 +5,21 @@ export interface TabNavigationOptions {
   stageNumber?: number
   paymentId?: string
   action?: 'view' | 'pay' | 'manage'
-  // Optional prefill fields for financial forms
   subtab?: 'acquisition_costs' | 'payments' | string
   costTypeId?: string
   amount?: number
-  date?: string // ISO date (YYYY-MM-DD)
+  date?: string
   description?: string
-  // Pipeline context for better navigation
   pipeline?: 'direct_addition' | 'purchase_pipeline'
-  // Payment type for better categorization
   paymentType?: 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost'
 }
 
 export const useTabNavigation = () => {
-  // Navigate to financial tab with specific context
+  // Simple, direct navigation to financial tab
   const navigateToFinancial = useCallback((options: TabNavigationOptions) => {
     const {
       propertyId,
       stageNumber,
-      paymentId,
       action = 'view',
       subtab,
       costTypeId,
@@ -34,151 +30,114 @@ export const useTabNavigation = () => {
       paymentType,
     } = options
 
-    // Create URL parameters for financial tab context
+    console.log('🚀 Starting financial navigation for property:', propertyId)
+
+    // Build URL parameters for form prefilling
     const params = new URLSearchParams()
     if (stageNumber) params.set('stage', stageNumber.toString())
-    if (paymentId) params.set('payment', paymentId)
     if (action) params.set('action', action)
+    if (subtab) params.set('subtab', subtab)
+    if (costTypeId) params.set('cost_type_id', costTypeId)
+    if (amount) params.set('amount_kes', amount.toString())
+    if (date) params.set('payment_date', date)
+    if (description) params.set('notes', description)
     if (pipeline) params.set('pipeline', pipeline)
     if (paymentType) params.set('payment_type', paymentType)
 
-    // Prefill parameters for acquisition costs/payment forms
-    if (subtab) params.set('subtab', subtab)
-    if (costTypeId) params.set('cost_type_id', costTypeId)
-
-    // Handle different amount parameter names based on subtab
-    if (typeof amount === 'number') {
-      if (subtab === 'payments') {
-        params.set('payment_amount_kes', String(amount))
-      } else {
-        params.set('amount_kes', String(amount))
-      }
-    }
-
-    if (date) params.set('payment_date', date)
-
-    // Handle different description parameter names based on subtab
-    if (description) {
-      if (subtab === 'payments') {
-        params.set('payment_notes', description)
-      } else {
-        params.set('notes', description)
-      }
-    }
-
-    // Construct the financial tab URL - handle both property detail pages and inline views
-    let financialUrl: string
-
-    if (typeof window !== 'undefined') {
-      const currentPath = window.location.pathname
-
-      // If we're already on a specific property page, navigate to its financial tab
-      if (currentPath.includes(`/properties/${propertyId}`)) {
-        const basePath = currentPath.replace(/\/(documents|location|financial)$/, '')
-        financialUrl = `${basePath}/financial${params.toString() ? `?${params.toString()}` : ''}`
-      } else {
-        // If we're on the properties list (purchase pipeline), stay on current page with params
-        // The inline view will handle the tab switching via events
-        financialUrl = `${currentPath}${params.toString() ? `?${params.toString()}` : ''}`
-      }
-    } else {
-      // Server-side fallback - assume property detail page
-      financialUrl = `/dashboard/properties/${propertyId}/financial${params.toString() ? `?${params.toString()}` : ''}`
-    }
-
-    // Optimized navigation: batch DOM operations and reduce event overhead
-    const navigationEvent = new CustomEvent('navigateToFinancial', {
-      detail: {
-        url: financialUrl,
-        propertyId,
-        stageNumber,
-        paymentId,
-        action,
-        subtab,
-        costTypeId,
-        amount,
-        date,
-        description,
-        tabName: 'financial',
-      },
+    // Update URL with parameters for form prefilling
+    const currentUrl = new URL(window.location.href)
+    params.forEach((value, key) => {
+      currentUrl.searchParams.set(key, value)
     })
+    window.history.replaceState({}, '', currentUrl.toString())
+    console.log('📝 Updated URL with parameters:', currentUrl.toString())
 
-    // Use requestAnimationFrame for better performance
-    requestAnimationFrame(() => {
-      // Dispatch event first - this will trigger the InlinePropertyView listener
-      window.dispatchEvent(navigationEvent)
+    // Navigation strategy: Direct DOM manipulation with clear steps
+    const executeNavigation = () => {
+      console.log('🔍 Looking for purchase item with ID:', propertyId)
 
-      // Update URL parameters without changing the path (for form prefilling)
-      try {
-        const currentUrl = new URL(window.location.href)
-        // Only update query parameters, keep the current path
-        params.forEach((value, key) => {
-          currentUrl.searchParams.set(key, value)
-        })
-        window.history.replaceState({}, '', currentUrl.toString())
-      } catch {}
+      // Step 1: Find and open purchase details if not already open
+      let detailsOpened = false
 
-      // Enhanced tab finding with multiple strategies and retry logic
+      // Look for existing financial tab first
+      let financialTab = document.querySelector('[data-tab="financial"]') as HTMLElement
+
+      if (!financialTab) {
+        console.log('💡 Financial tab not found, looking for purchase details button...')
+
+        // Try to find the specific purchase details button using data attribute
+        const detailsButton = document.querySelector(`[data-purchase-details-btn="${propertyId}"]`) as HTMLElement
+
+        if (detailsButton) {
+          console.log('🎯 Found specific details button for property, clicking...')
+          detailsButton.click()
+          detailsOpened = true
+        } else {
+          console.log('⚠️ Specific details button not found, trying generic approach...')
+
+          // Fallback: Find any "View Details" button
+          const allButtons = Array.from(document.querySelectorAll('button'))
+          const genericDetailsButton = allButtons.find(btn =>
+            btn.textContent?.includes('View Details') &&
+            !btn.textContent?.includes('Hide Details')
+          ) as HTMLElement
+
+          if (genericDetailsButton) {
+            console.log('🎯 Found generic details button, clicking...')
+            genericDetailsButton.click()
+            detailsOpened = true
+          }
+        }
+      }
+
+      // Step 2: Wait for details to load and find financial tab
       const findAndClickFinancialTab = (attempt = 0) => {
-        const maxAttempts = 3
+        const maxAttempts = 10
 
-        // Try multiple selectors in order of preference
-        const selectors = [
-          '[data-tab="financial"]',
-          'button[data-tab="financial"]',
-          '.tab-financial',
-          'button[role="tab"][data-tab="financial"]'
-        ]
-
-        let financialTab: HTMLElement | null = null
-
-        // Try direct selectors first
-        for (const selector of selectors) {
-          financialTab = document.querySelector(selector) as HTMLElement
-          if (financialTab) break
-        }
-
-        // Fallback to text content search if direct selectors fail
-        if (!financialTab) {
-          const tabButtons = Array.from(document.querySelectorAll('button[role="tab"], button[data-tab], .tab-button, button'))
-          financialTab = tabButtons.find((el) => {
-            const text = el.textContent?.trim().toLowerCase() || ''
-            return text.includes('financial') || text === 'financial'
-          }) as HTMLElement
-        }
+        financialTab = document.querySelector('[data-tab="financial"]') as HTMLElement
 
         if (financialTab) {
+          console.log('✅ Found financial tab, clicking...')
           financialTab.click()
+          console.log('🎉 Successfully navigated to financial tab!')
           return true
-        } else if (attempt < maxAttempts) {
-          // Retry after a short delay to handle dynamic content
-          setTimeout(() => findAndClickFinancialTab(attempt + 1), 100)
-        } else {
-          // Debug: log available tabs if financial tab not found
-          console.warn('Financial tab not found. Available tabs:',
-            Array.from(document.querySelectorAll('button[data-tab], button[role="tab"]'))
-              .map(el => ({
-                selector: el.getAttribute('data-tab') || el.getAttribute('role'),
-                text: el.textContent?.trim()
-              }))
-          )
         }
+
+        if (attempt < maxAttempts) {
+          console.log(`⏳ Attempt ${attempt + 1}/${maxAttempts}: Financial tab not found, retrying...`)
+          setTimeout(() => findAndClickFinancialTab(attempt + 1), 300)
+        } else {
+          console.error('❌ Failed to find financial tab after', maxAttempts, 'attempts')
+          console.log('🔍 Available elements:', {
+            allButtons: Array.from(document.querySelectorAll('button')).map(b => ({
+              text: b.textContent?.trim(),
+              dataTab: b.getAttribute('data-tab'),
+              classes: b.className
+            })),
+            allDataTabs: Array.from(document.querySelectorAll('[data-tab]')).map(el => ({
+              dataTab: el.getAttribute('data-tab'),
+              text: el.textContent?.trim()
+            }))
+          })
+        }
+
         return false
       }
 
-      findAndClickFinancialTab()
-    })
-
-    // Return the current URL with updated parameters
-    try {
-      const currentUrl = new URL(window.location.href)
-      params.forEach((value, key) => {
-        currentUrl.searchParams.set(key, value)
-      })
-      return currentUrl.toString()
-    } catch {
-      return financialUrl
+      // Start looking for financial tab
+      if (detailsOpened) {
+        // Wait a bit for the details to load
+        setTimeout(() => findAndClickFinancialTab(), 500)
+      } else {
+        // Try immediately if details were already open
+        findAndClickFinancialTab()
+      }
     }
+
+    // Execute navigation
+    executeNavigation()
+
+    return currentUrl.toString()
   }, [])
 
   // Navigate to documents tab with specific stage
@@ -189,17 +148,6 @@ export const useTabNavigation = () => {
     if (stageNumber) params.set('stage', stageNumber.toString())
 
     const documentsUrl = `/properties/${propertyId}/documents${params.toString() ? `?${params.toString()}` : ''}`
-
-    const navigationEvent = new CustomEvent('navigateToDocuments', {
-      detail: {
-        url: documentsUrl,
-        propertyId,
-        stageNumber,
-        tabName: 'documents',
-      },
-    })
-
-    window.dispatchEvent(navigationEvent)
 
     // Try to find and click the documents tab
     const documentsTab = document.querySelector('[data-tab="documents"]') as HTMLElement
@@ -223,42 +171,14 @@ export const useTabNavigation = () => {
         action: 'pay',
       })
 
-      // Additional payment-specific logic could go here
-      // e.g., pre-fill payment forms, highlight specific payment
-
       return financialUrl
     },
     [navigateToFinancial]
   )
 
-  // Get current tab context from URL or state
-  const getCurrentTabContext = useCallback(() => {
-    const url = new URL(window.location.href)
-    const pathParts = url.pathname.split('/')
-
-    // Extract property ID and current tab from URL
-    const propertyIndex = pathParts.indexOf('properties')
-    const propertyId = propertyIndex >= 0 ? pathParts[propertyIndex + 1] : null
-    const currentTab = propertyIndex >= 0 ? pathParts[propertyIndex + 2] : null
-
-    // Extract query parameters
-    const stage = url.searchParams.get('stage')
-    const payment = url.searchParams.get('payment')
-    const action = url.searchParams.get('action')
-
-    return {
-      propertyId,
-      currentTab,
-      stageNumber: stage ? parseInt(stage) : undefined,
-      paymentId: payment,
-      action: action as 'view' | 'pay' | 'manage' | undefined,
-    }
-  }, [])
-
   return {
     navigateToFinancial,
     navigateToDocuments,
     navigateToPayment,
-    getCurrentTabContext,
   }
 }

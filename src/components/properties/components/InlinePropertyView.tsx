@@ -435,18 +435,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     { id: 'documents' as TabType, label: 'Documents', icon: '📁' },
   ]
 
-  // Listen for cross-component navigation to the Financial tab
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const e = event as CustomEvent<any>
-      const detail = e.detail || {}
-      if (detail.tabName === 'financial' && detail.propertyId === property.id) {
-        setActiveTab('financial')
-      }
-    }
-    window.addEventListener('navigateToFinancial', handler as EventListener)
-    return () => window.removeEventListener('navigateToFinancial', handler as EventListener)
-  }, [property.id])
+  // Removed old event listener - using new direct navigation approach
 
   // Listen for cross-component navigation to the Documents tab
   useEffect(() => {

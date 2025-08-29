@@ -69,18 +69,7 @@ export default function InlinePurchaseView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [purchase.id])
 
-  // Listen for cross-component navigation to the Financial tab
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const e = event as CustomEvent<any>
-      const detail = e.detail || {}
-      if (detail.tabName === 'financial' && detail.propertyId === purchase.id) {
-        setActiveTab('financial')
-      }
-    }
-    window.addEventListener('navigateToFinancial', handler as EventListener)
-    return () => window.removeEventListener('navigateToFinancial', handler as EventListener)
-  }, [purchase.id])
+  // Removed old event listener - using new direct navigation approach
 
   const loadPurchaseData = async () => {
     try {

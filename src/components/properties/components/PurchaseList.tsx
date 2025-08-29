@@ -22,22 +22,7 @@ export default function PurchaseList({
   const [openDetailsId, setOpenDetailsId] = useState<string | null>(null)
   const [updatedPurchases, setUpdatedPurchases] = useState<{ [key: string]: PurchaseItem }>({})
 
-  // Listen for navigation events to automatically open purchase details
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const e = event as CustomEvent<any>
-      const detail = e.detail || {}
-      if (detail.tabName === 'financial' && detail.propertyId) {
-        // Find the purchase item with this propertyId and open its details
-        const targetPurchase = purchases.find(p => p.id === detail.propertyId)
-        if (targetPurchase) {
-          setOpenDetailsId(detail.propertyId)
-        }
-      }
-    }
-    window.addEventListener('navigateToFinancial', handler as EventListener)
-    return () => window.removeEventListener('navigateToFinancial', handler as EventListener)
-  }, [purchases])
+  // Removed old event listener - using new direct navigation approach
 
   if (loading) {
     return (
@@ -83,7 +68,10 @@ export default function PurchaseList({
         return (
           <div key={purchase.id} className="space-y-4">
             {/* Purchase Card */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div
+              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              data-purchase-id={purchase.id}
+            >
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mb-4">
                 <div className="md:col-span-2">
                   <div className="flex items-center space-x-3 mb-2">
@@ -157,6 +145,7 @@ export default function PurchaseList({
                     onClick={() =>
                       setOpenDetailsId(openDetailsId === purchase.id ? null : purchase.id)
                     }
+                    data-purchase-details-btn={purchase.id}
                   >
                     {openDetailsId === purchase.id ? 'Hide Details' : 'View Details'}
                   </Button>
