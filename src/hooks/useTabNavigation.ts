@@ -66,18 +66,27 @@ export const useTabNavigation = () => {
       }
     }
 
-    // Construct the financial tab URL (preserve current path and ensure property ID is included)
-    let basePath =
-      typeof window !== 'undefined' ? window.location.pathname : '/dashboard/properties'
+    // Construct the financial tab URL - always navigate to specific property's financial tab
+    let basePath: string
 
-    // Ensure the path includes the property ID and financial tab
-    if (!basePath.includes(propertyId)) {
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname
+
+      // If we're already on a property page, use that path
+      if (currentPath.includes(`/properties/${propertyId}`)) {
+        basePath = currentPath.replace(/\/(documents|location|financial)$/, '')
+      } else {
+        // If we're on the properties list or elsewhere, navigate to the specific property
+        basePath = `/dashboard/properties/${propertyId}`
+      }
+    } else {
+      // Server-side fallback
       basePath = `/dashboard/properties/${propertyId}`
     }
 
     // Ensure the path ends with /financial for the financial tab
     if (!basePath.endsWith('/financial')) {
-      basePath = basePath.replace(/\/(documents|location|financial)$/, '') + '/financial'
+      basePath = basePath + '/financial'
     }
 
     const financialUrl = `${basePath}${params.toString() ? `?${params.toString()}` : ''}`
