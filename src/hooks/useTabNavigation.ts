@@ -117,9 +117,10 @@ export const useTabNavigation = () => {
       // Find and click tab efficiently - try multiple selectors
       const financialTab =
         (document.querySelector('[data-tab="financial"]') as HTMLElement) ||
-        (document.querySelector('button[role="tab"]:has-text("Financial")') as HTMLElement) ||
-        (document.querySelector('button:contains("Financial")') as HTMLElement) ||
-        (document.querySelector('.tab-financial') as HTMLElement)
+        (document.querySelector('.tab-financial') as HTMLElement) ||
+        (Array.from(document.querySelectorAll('button[role="tab"]')).find((el) =>
+          el.textContent?.trim().toLowerCase().includes('financial')
+        ) as HTMLElement)
 
       if (financialTab) {
         financialTab.click()
