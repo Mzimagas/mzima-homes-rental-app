@@ -114,17 +114,55 @@ export const useTabNavigation = () => {
         window.history.replaceState({}, '', currentUrl.toString())
       } catch {}
 
-      // Find and click tab efficiently - try multiple selectors
-      const financialTab =
-        (document.querySelector('[data-tab="financial"]') as HTMLElement) ||
-        (document.querySelector('.tab-financial') as HTMLElement) ||
-        (Array.from(document.querySelectorAll('button[role="tab"]')).find((el) =>
-          el.textContent?.trim().toLowerCase().includes('financial')
-        ) as HTMLElement)
+      // Enhanced tab finding with multiple strategies and retry logic
+      const findAndClickFinancialTab = (attempt = 0) => {
+        const maxAttempts = 3
 
-      if (financialTab) {
-        financialTab.click()
+        // Try multiple selectors in order of preference
+        const selectors = [
+          '[data-tab="financial"]',
+          'button[data-tab="financial"]',
+          '.tab-financial',
+          'button[role="tab"][data-tab="financial"]'
+        ]
+
+        let financialTab: HTMLElement | null = null
+
+        // Try direct selectors first
+        for (const selector of selectors) {
+          financialTab = document.querySelector(selector) as HTMLElement
+          if (financialTab) break
+        }
+
+        // Fallback to text content search if direct selectors fail
+        if (!financialTab) {
+          const tabButtons = Array.from(document.querySelectorAll('button[role="tab"], button[data-tab], .tab-button, button'))
+          financialTab = tabButtons.find((el) => {
+            const text = el.textContent?.trim().toLowerCase() || ''
+            return text.includes('financial') || text === 'financial'
+          }) as HTMLElement
+        }
+
+        if (financialTab) {
+          financialTab.click()
+          return true
+        } else if (attempt < maxAttempts) {
+          // Retry after a short delay to handle dynamic content
+          setTimeout(() => findAndClickFinancialTab(attempt + 1), 100)
+        } else {
+          // Debug: log available tabs if financial tab not found
+          console.warn('Financial tab not found. Available tabs:',
+            Array.from(document.querySelectorAll('button[data-tab], button[role="tab"]'))
+              .map(el => ({
+                selector: el.getAttribute('data-tab') || el.getAttribute('role'),
+                text: el.textContent?.trim()
+              }))
+          )
+        }
+        return false
       }
+
+      findAndClickFinancialTab()
     })
 
     // Return the current URL with updated parameters
