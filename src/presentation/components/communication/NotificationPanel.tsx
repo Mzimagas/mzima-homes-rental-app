@@ -325,5 +325,4 @@ export function NotificationToast() {
   )
 }
 
-// React import
-import React from 'react'
+

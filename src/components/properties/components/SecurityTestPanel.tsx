@@ -29,37 +29,27 @@ export default function SecurityTestPanel() {
       // Also get current user info
       await loadUserInfo()
     } catch (error) {
-      console.error('Security test failed:', error)
-    } finally {
+          } finally {
       setTesting(false)
     }
   }
 
   const loadUserInfo = async () => {
     try {
-      console.log('🔄 Refreshing security context...')
-      const role = await RoleManagementService.getCurrentUserRole()
-      console.log('Current role:', role)
-
-      let perms = await RoleManagementService.getCurrentUserPermissions()
-      console.log('User permissions:', perms)
-
-      // Fallback: If permissions are empty but we have a role, get permissions from role definition
-      if ((!perms || perms.length === 0) && role) {
-        console.log('Permissions empty, using fallback for role:', role)
-        const allRoles = RoleManagementService.getAllRoles()
+            const role = await RoleManagementService.getCurrentUserRole()
+            let perms = await RoleManagementService.getCurrentUserPermissions()
+                  if ((!perms || perms.length === 0) && role) {
+                const allRoles = RoleManagementService.getAllRoles()
         const roleDefinition = allRoles.find((r) => r.role === role)
         if (roleDefinition) {
           perms = roleDefinition.permissions
-          console.log('Fallback permissions from role definition:', perms)
-        }
+                  }
       }
 
       setUserRole(role)
       setPermissions(perms || [])
     } catch (error) {
-      console.error('Error loading user info:', error)
-    }
+          }
   }
 
   // Load user info once on component mount
@@ -70,16 +60,12 @@ export default function SecurityTestPanel() {
   const testFieldSecurity = async () => {
     try {
       const config = await FieldSecurityService.getFieldSecurityConfig()
-      console.log('Field Security Configuration:', config)
-
-      const summary = await FieldSecurityService.getFieldSecuritySummary(
+            const summary = await FieldSecurityService.getFieldSecuritySummary(
         ['asking_price_kes', 'property_name', 'property_condition_notes'],
         userRole || 'property_manager'
       )
-      console.log('Field Security Summary:', summary)
-    } catch (error) {
-      console.error('Field security test failed:', error)
-    }
+          } catch (error) {
+          }
   }
 
   const debugUserInfo = async () => {
@@ -87,19 +73,15 @@ export default function SecurityTestPanel() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      console.log('Current authenticated user:', user)
-
-      if (user) {
+            if (user) {
         const { data: roles, error } = await supabase
           .from('security_user_roles')
           .select('*')
           .eq('user_id', user.id)
 
-        console.log('Direct database query for user roles:', { roles, error })
-      }
+              }
     } catch (error) {
-      console.error('Debug user info failed:', error)
-    }
+          }
   }
 
   const generateSecurityReport = async () => {
@@ -146,8 +128,7 @@ export default function SecurityTestPanel() {
         `Security Report Generated!\n\nTotal Audit Logs (7 days): ${metrics.totalAuditLogs}\nRecent Changes (24h): ${metrics.recentChanges}\nPending Approvals: ${metrics.pendingApprovals}\nRisk Score: ${metrics.riskScore}/100`
       )
     } catch (error) {
-      console.error('Error generating security report:', error)
-      alert('Failed to generate security report')
+            alert('Failed to generate security report')
     } finally {
       setTesting(false)
     }
@@ -180,15 +161,12 @@ export default function SecurityTestPanel() {
           // Add to real-time events feed
           setRealtimeEvents((prev) => [eventData, ...prev.slice(0, 9)]) // Keep last 10 events
 
-          console.log('🔒 Real-time security event:', payload)
-
-          // Show notification with more details
+                    // Show notification with more details
           const message = `🔒 SECURITY ALERT!\n\nEvent: ${eventData.eventType}\nOperation: ${eventData.operationType}\nPurchase: ${eventData.purchaseId}\nTime: ${timestamp.toLocaleTimeString()}\nRequires Approval: ${eventData.requiresApproval ? 'Yes' : 'No'}`
 
           // Use a more prominent notification
           if (window.confirm(message + '\n\nClick OK to view details, Cancel to dismiss')) {
-            console.log('Full event details:', payload)
-          }
+                      }
         }
       )
       .subscribe()
@@ -220,16 +198,13 @@ export default function SecurityTestPanel() {
 
   const simulateSecurityEvent = async () => {
     try {
-      console.log('🔒 Starting security event simulation...')
-
-      // Check authentication
+            // Check authentication
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser()
       if (authError) {
-        console.error('Authentication error:', authError)
-        alert(`Authentication error: ${authError.message}`)
+                alert(`Authentication error: ${authError.message}`)
         return
       }
 
@@ -238,31 +213,22 @@ export default function SecurityTestPanel() {
         return
       }
 
-      console.log('User authenticated:', user.email)
-
-      // Generate a valid UUID for the test
-      const testPurchaseId =
+                  const testPurchaseId =
         '00000000-0000-0000-0000-' + Date.now().toString().padStart(12, '0').slice(-12)
-      console.log('Generated test purchase ID:', testPurchaseId)
-
-      // First, check if the table exists and is accessible
+            // First, check if the table exists and is accessible
       const { data: testQuery, error: testError } = await supabase
         .from('purchase_pipeline_audit_log')
         .select('id')
         .limit(1)
 
       if (testError) {
-        console.error('Table access test failed:', testError)
-        alert(
+                alert(
           `Cannot access audit log table: ${testError.message}\n\nThis might be due to:\n- Table doesn't exist\n- Permission issues\n- RLS policies blocking access`
         )
         return
       }
 
-      console.log('Table access test passed')
-
-      // Try to insert the test event
-      const insertData = {
+                  const insertData = {
         purchase_id: testPurchaseId,
         operation_type: 'UPDATE',
         changed_fields: ['security_test'],
@@ -272,27 +238,22 @@ export default function SecurityTestPanel() {
         requires_approval: true,
       }
 
-      console.log('Attempting to insert:', insertData)
-
-      const { data: insertResult, error: insertError } = await supabase
+            const { data: insertResult, error: insertError } = await supabase
         .from('purchase_pipeline_audit_log')
         .insert(insertData)
         .select()
 
       if (insertError) {
-        console.error('Insert error:', insertError)
-        alert(
+                alert(
           `Failed to simulate security event:\n\nError: ${insertError.message}\nCode: ${insertError.code}\n\nThis might be due to:\n- Missing required fields\n- Data type mismatches\n- RLS policies\n- Permission issues`
         )
       } else {
-        console.log('Insert successful:', insertResult)
-        alert(
+                alert(
           `🔒 Security event simulated successfully!\n\nPurchase ID: ${testPurchaseId}\nOperation: UPDATE\nUser: ${user.email}\nRequires Approval: Yes\n\nCheck the audit trail for the new entry.`
         )
       }
     } catch (error) {
-      console.error('Error simulating security event:', error)
-      console.error('Error details:', JSON.stringify(error, null, 2))
+            console.error('Error details:', JSON.stringify(error, null, 2))
 
       if (error instanceof Error) {
         alert(
@@ -306,8 +267,7 @@ export default function SecurityTestPanel() {
     }
   }
 
-  // Fallback simulation method that doesn't require database access
-  const simulateSecurityEventFallback = () => {
+    const simulateSecurityEventFallback = () => {
     const timestamp = new Date()
     const testEvent = {
       id: Date.now(),
@@ -328,32 +288,14 @@ export default function SecurityTestPanel() {
     )
   }
 
-  // Debug function to test permission loading specifically
-  const debugPermissions = async () => {
+    const debugPermissions = async () => {
     try {
-      console.log('🔍 Debug: Testing permission loading...')
-
-      // Test 1: Get current user role
-      const role = await RoleManagementService.getCurrentUserRole()
-      console.log('Debug - Current role:', role)
-
-      // Test 2: Get all role definitions
-      const allRoles = RoleManagementService.getAllRoles()
-      console.log('Debug - All role definitions:', allRoles)
-
-      // Test 3: Find role definition for current role
-      const roleDefinition = allRoles.find((r) => r.role === role)
-      console.log('Debug - Role definition for', role, ':', roleDefinition)
-
-      // Test 4: Get permissions via service
-      const perms = await RoleManagementService.getCurrentUserPermissions()
-      console.log('Debug - Permissions from service:', perms)
-
-      // Test 5: Get permissions directly from role definition
-      const directPerms = roleDefinition?.permissions || []
-      console.log('Debug - Permissions from definition:', directPerms)
-
-      // Update UI with direct permissions if service fails
+                  const role = await RoleManagementService.getCurrentUserRole()
+                  const allRoles = RoleManagementService.getAllRoles()
+                  const roleDefinition = allRoles.find((r) => r.role === role)
+                  const perms = await RoleManagementService.getCurrentUserPermissions()
+                  const directPerms = roleDefinition?.permissions || []
+            // Update UI with direct permissions if service fails
       if (perms && perms.length > 0) {
         setPermissions(perms)
         alert(`✅ Permissions loaded via service:\n${perms.join(', ')}`)
@@ -364,8 +306,7 @@ export default function SecurityTestPanel() {
         alert('❌ No permissions found. Check console for details.')
       }
     } catch (error) {
-      console.error('Debug permissions error:', error)
-      alert('❌ Permission debug failed. Check console for details.')
+            alert('❌ Permission debug failed. Check console for details.')
     }
   }
 
@@ -513,7 +454,7 @@ export default function SecurityTestPanel() {
             <div className="text-sm text-yellow-800">
               <p>No active security role detected for your account.</p>
               <p className="mt-1 text-xs">
-                Click "Refresh Now" to check for role updates or contact your administrator.
+                Click &quot;Refresh Now&quot; to check for role updates or contact your administrator.
               </p>
             </div>
           </div>
@@ -552,7 +493,7 @@ export default function SecurityTestPanel() {
             ) : (
               <>
                 <p>⚪ Monitoring is currently disabled</p>
-                <p>Click "Start Monitoring" to enable real-time alerts</p>
+                <p>Click &quot;Start Monitoring&quot; to enable real-time alerts</p>
                 <p className="text-xs mt-1">Will monitor: Audit logs, approvals, field changes</p>
               </>
             )}

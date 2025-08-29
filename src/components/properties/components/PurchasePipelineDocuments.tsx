@@ -259,8 +259,7 @@ export default function PurchasePipelineDocuments({
       // Validate propertyId format (should be UUID)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       if (!uuidRegex.test(propertyId)) {
-        console.error(`Invalid property ID format: ${propertyId}. Expected UUID format.`)
-        setLoading(false)
+                setLoading(false)
         return
       }
 
@@ -320,12 +319,9 @@ export default function PurchasePipelineDocuments({
         return newNotes
       })
     } catch (error) {
-      console.error('Error loading documents:', error)
-
-      // Provide user feedback for loading errors
+            // Provide user feedback for loading errors
       if (error instanceof Error) {
-        console.error('Detailed error:', error.message)
-      }
+              }
     } finally {
       setLoading(false)
     }
@@ -394,8 +390,7 @@ export default function PurchasePipelineDocuments({
           })
 
         if (uploadError) {
-          console.error('Storage upload error:', uploadError)
-          throw new Error(`Storage upload failed: ${uploadError.message}`)
+                    throw new Error(`Storage upload failed: ${uploadError.message}`)
         }
 
         // Create document record
@@ -413,9 +408,7 @@ export default function PurchasePipelineDocuments({
         })
 
         if (dbError) {
-          console.error('Database insert error:', dbError)
-
-          // Clean up uploaded file if database insert fails
+                    // Clean up uploaded file if database insert fails
           await supabase.storage.from('property-docs').remove([filePath])
 
           // Provide specific error message for constraint violations
@@ -432,23 +425,15 @@ export default function PurchasePipelineDocuments({
       // Reload documents to get updated state
       await loadDocuments()
     } catch (error) {
-      console.error('Error uploading files:', error)
-
-      // Better error handling and logging
+            // Better error handling and logging
       let errorMessage = 'Failed to upload files'
       if (error instanceof Error) {
         errorMessage = error.message
-        console.error('Error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        })
-      } else if (typeof error === 'object' && error !== null) {
+              } else if (typeof error === 'object' && error !== null) {
         console.error('Error object:', JSON.stringify(error, null, 2))
         errorMessage = JSON.stringify(error)
       } else {
-        console.error('Unknown error type:', typeof error, error)
-        errorMessage = String(error)
+                errorMessage = String(error)
       }
 
       alert(`Upload failed: ${errorMessage}`)
@@ -484,8 +469,7 @@ export default function PurchasePipelineDocuments({
       // Reload documents
       await loadDocuments()
     } catch (error) {
-      console.error('Error deleting file:', error)
-      alert('Failed to delete file')
+            alert('Failed to delete file')
     }
   }
 
@@ -504,8 +488,7 @@ export default function PurchasePipelineDocuments({
       const { url } = await response.json()
       window.open(url, '_blank')
     } catch (error) {
-      console.error('Error viewing file:', error)
-      alert('Failed to open file')
+            alert('Failed to open file')
     }
   }
 
@@ -515,9 +498,7 @@ export default function PurchasePipelineDocuments({
     note?: string
   ) => {
     try {
-      console.log('Updating document status:', { propertyId, docTypeKey, isNa, note })
-
-      // Validate propertyId format (should be UUID)
+            // Validate propertyId format (should be UUID)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       if (!uuidRegex.test(propertyId)) {
         throw new Error(`Invalid property ID format: ${propertyId}. Expected UUID format.`)
@@ -543,8 +524,7 @@ export default function PurchasePipelineDocuments({
 
       if (selectError && selectError.code !== 'PGRST116') {
         // PGRST116 is "not found" error, which is fine
-        console.error('Error checking existing status:', selectError)
-        throw selectError
+                throw selectError
       }
 
       let result
@@ -572,42 +552,23 @@ export default function PurchasePipelineDocuments({
       }
 
       if (result.error) {
-        console.error('Database operation error:', result.error)
-
-        // Log the full error details for debugging
-        console.error('Full error details:', {
-          message: result.error.message,
-          details: result.error.details,
-          hint: result.error.hint,
-          code: result.error.code,
-          propertyId,
-          docTypeKey,
-          isNa,
-          note,
-        })
-
-        // Handle unique constraint violations specifically
+                // Log the full error details for debugging
+                // Handle unique constraint violations specifically
         if (
           result.error.code === '23505' ||
           result.error.message?.includes('duplicate key') ||
           result.error.message?.includes('unique constraint')
         ) {
-          console.warn('Unique constraint violation detected, attempting to reload and retry')
-
-          // Try to reload the document states to get the latest data
-          await loadDocuments()
+                              await loadDocuments()
 
           // Don't throw an error for constraint violations - just log and continue
-          console.log('Constraint violation handled, document states reloaded')
-          return
+                    return
         }
 
         throw new Error(`Database error: ${result.error.message || 'Unknown database error'}`)
       }
 
-      console.log('Status update successful')
-
-      // Update local state instead of reloading all documents
+            // Update local state instead of reloading all documents
       setDocumentStates((prev) => ({
         ...prev,
         [docTypeKey]: {
@@ -625,9 +586,7 @@ export default function PurchasePipelineDocuments({
         },
       }))
     } catch (error) {
-      console.error('Error updating document status:', error)
-
-      let errorMessage = 'Failed to update document status'
+            let errorMessage = 'Failed to update document status'
       if (error instanceof Error) {
         errorMessage = error.message
       } else if (typeof error === 'object' && error !== null) {
@@ -699,9 +658,7 @@ export default function PurchasePipelineDocuments({
   const updatePurchasePipelineProgress = useCallback(
     async (documentProgress: number) => {
       try {
-        console.log('Updating purchase pipeline progress:', { propertyId, documentProgress })
-
-        // The propertyId parameter is actually the purchase pipeline ID
+                // The propertyId parameter is actually the purchase pipeline ID
         const { error, data } = await supabase
           .from('purchase_pipeline')
           .update({
@@ -712,17 +669,12 @@ export default function PurchasePipelineDocuments({
           .select('id, overall_progress')
 
         if (error) {
-          console.error('Error updating purchase pipeline progress:', error)
-          console.error('Error details:', JSON.stringify(error, null, 2))
+                    console.error('Error details:', JSON.stringify(error, null, 2))
         } else {
-          console.log('Purchase pipeline progress updated successfully:', data)
-        }
+                  }
       } catch (error) {
-        console.error('Error updating purchase pipeline progress:', error)
-        if (error instanceof Error) {
-          console.error('Error message:', error.message)
-          console.error('Error stack:', error.stack)
-        }
+                if (error instanceof Error) {
+                            }
       }
     },
     [propertyId]
@@ -934,6 +886,20 @@ export default function PurchasePipelineDocuments({
                                 ? 'Locked'
                                 : 'Pending'}
                         </span>
+
+                        {/* Horizontal Payment Button */}
+                        {!financialLoading && (
+                          <FinancialStatusIndicator
+                            propertyId={propertyId}
+                            stageNumber={stage.stageNumber}
+                            financialStatus={getStageFinancialStatus(stage.stageNumber)}
+                            getPaymentStatus={getPaymentStatus}
+                            pipeline="purchase_pipeline"
+                            documentStates={documentStates}
+                            layout="horizontal"
+                            compact={true}
+                          />
+                        )}
                       </div>
                       <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
                         {docType.description}
@@ -952,17 +918,6 @@ export default function PurchasePipelineDocuments({
                           }{' '}
                           of {stage.groupedDocuments.length} documents completed
                         </span>
-
-                        {/* Financial status indicator */}
-                        {stageHasFinancialRequirements(stage.stageNumber) && !financialLoading && (
-                          <FinancialStatusIndicator
-                            propertyId={propertyId}
-                            stageNumber={stage.stageNumber}
-                            financialStatus={getStageFinancialStatus(stage.stageNumber)}
-                            getPaymentStatus={getPaymentStatus}
-                            compact={true}
-                          />
-                        )}
 
                         {stage.isLocked && (
                           <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -1228,6 +1183,20 @@ export default function PurchasePipelineDocuments({
                               ? 'Locked'
                               : 'Pending'}
                       </span>
+
+                      {/* Horizontal Payment Button */}
+                      {!financialLoading && (
+                        <FinancialStatusIndicator
+                          propertyId={propertyId}
+                          stageNumber={stage.stageNumber}
+                          financialStatus={getStageFinancialStatus(stage.stageNumber)}
+                          getPaymentStatus={getPaymentStatus}
+                          pipeline="purchase_pipeline"
+                          documentStates={documentStates}
+                          layout="horizontal"
+                          compact={true}
+                        />
+                      )}
                     </div>
                     <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
                       {docType.description}
@@ -1240,17 +1209,6 @@ export default function PurchasePipelineDocuments({
                       >
                         {getStatusBadge(docType.key).text}
                       </span>
-
-                      {/* Financial status indicator */}
-                      {stageHasFinancialRequirements(stage.stageNumber) && !financialLoading && (
-                        <FinancialStatusIndicator
-                          propertyId={propertyId}
-                          stageNumber={stage.stageNumber}
-                          financialStatus={getStageFinancialStatus(stage.stageNumber)}
-                          getPaymentStatus={getPaymentStatus}
-                          compact={true}
-                        />
-                      )}
 
                       {stage.isLocked && (
                         <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -1398,16 +1356,6 @@ export default function PurchasePipelineDocuments({
                     </div>
                   </div>
 
-                  {/* Financial Status Display */}
-                  {stageHasFinancialRequirements(stage.stageNumber) && !financialLoading && (
-                    <FinancialStatusIndicator
-                      propertyId={propertyId}
-                      stageNumber={stage.stageNumber}
-                      financialStatus={getStageFinancialStatus(stage.stageNumber)}
-                      getPaymentStatus={getPaymentStatus}
-                      compact={false}
-                    />
-                  )}
                 </div>
               )}
             </div>

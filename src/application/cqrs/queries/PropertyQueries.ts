@@ -334,7 +334,7 @@ export class GetPropertyStatsQueryHandler implements QueryHandler<GetPropertySta
         data: stats,
         metadata: {
           executionTime: Date.now() - startTime,
-          calculatedAt: new Date().toISOString()
+          // calculatedAt: new Date().toISOString() // Custom metadata not supported
         }
       }
 
@@ -442,7 +442,7 @@ export class SearchPropertiesQueryHandler implements QueryHandler<SearchProperti
         metadata: {
           totalCount: propertyDTOs.length,
           executionTime: Date.now() - startTime,
-          searchTerm: query.searchTerm,
+          // searchTerm: query.searchTerm, // Custom metadata not supported
           filtersApplied: Object.keys(query.filters).length
         }
       }

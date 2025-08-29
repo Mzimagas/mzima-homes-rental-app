@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { compose, withAuth, withRateLimit, withCsrf } from '../../../../../lib/api/middleware'
 import { errors } from '../../../../../lib/api/errors'
@@ -71,7 +71,7 @@ async function checkPurchaseAccess(userId: string, purchaseId: string): Promise<
 export const GET = compose(
   withRateLimit,
   withAuth
-)(async (req: NextRequest) => {
+)(async (req: NextRequest): Promise<NextResponse> => {
   try {
     const userId = await resolveUserId(req)
     if (!userId) return errors.unauthorized()
@@ -132,7 +132,7 @@ export const PATCH = compose(
   withRateLimit,
   withCsrf,
   withAuth
-)(async (req: NextRequest) => {
+)(async (req: NextRequest): Promise<NextResponse> => {
   try {
     const userId = await resolveUserId(req)
     console.log('PATCH purchase-pipeline financial - userId:', userId)

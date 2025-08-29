@@ -48,8 +48,7 @@ export default function EnhancedPurchasePriceManager({
       const history = await AcquisitionFinancialsService.getPurchasePriceHistory(propertyId)
       setHasHistory(history.length > 0)
     } catch (error) {
-      console.error('Error checking price history:', error)
-      setHasHistory(false)
+            setHasHistory(false)
     }
   }
 
@@ -59,8 +58,7 @@ export default function EnhancedPurchasePriceManager({
       const history = await AcquisitionFinancialsService.getPurchasePriceHistory(propertyId)
       setPriceHistory(history)
     } catch (error) {
-      console.error('Error loading price history:', error)
-      setError('Failed to load price history')
+            setError('Failed to load price history')
     } finally {
       setIsLoadingHistory(false)
     }
@@ -130,8 +128,7 @@ export default function EnhancedPurchasePriceManager({
         onPriceUpdate(newPrice)
       }
     } catch (error: any) {
-      console.error('Error saving purchase price:', error)
-      setError(error.message || 'Failed to save purchase price')
+            setError(error.message || 'Failed to save purchase price')
     } finally {
       setIsSaving(false)
     }

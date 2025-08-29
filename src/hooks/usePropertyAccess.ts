@@ -101,8 +101,7 @@ export function usePropertyAccess(): PropertyAccess {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
       setError(errorMessage)
-      console.error('Error fetching accessible properties:', err)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }

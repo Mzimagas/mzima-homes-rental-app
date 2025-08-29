@@ -56,8 +56,7 @@ export default function AdvancedRoleManager() {
         error: authError,
       } = await supabase.auth.getUser()
       if (authError) {
-        console.error('Auth error:', authError)
-        return
+                return
       }
 
       if (user) {
@@ -74,21 +73,18 @@ export default function AdvancedRoleManager() {
         const { data: roleResult, error: rolesError } = await supabase.rpc('get_current_user_roles')
 
         if (rolesError) {
-          console.error('Error loading user roles:', rolesError)
-          setError('Failed to load user roles')
+                    setError('Failed to load user roles')
           setUserRoles([])
         } else if (roleResult && roleResult.success) {
           setUserRoles(roleResult.roles || [])
           setError('') // Clear any previous errors
         } else {
-          console.error('Role function returned error:', roleResult?.error)
-          setError(roleResult?.error || 'Unknown error loading roles')
+                    setError(roleResult?.error || 'Unknown error loading roles')
           setUserRoles([])
         }
       }
     } catch (error) {
-      console.error('Error loading role data:', error)
-      setError('Failed to load role data. You may not have sufficient permissions.')
+            setError('Failed to load role data. You may not have sufficient permissions.')
       // Set default empty state
       setUsers([])
       setUserRoles([])
@@ -108,8 +104,7 @@ export default function AdvancedRoleManager() {
       const { data: result, error } = await supabase.rpc('assign_default_role')
 
       if (error) {
-        console.error('Error assigning role:', error)
-        alert(`Failed to assign role: ${error.message || 'Unknown error'}`)
+                alert(`Failed to assign role: ${error.message || 'Unknown error'}`)
       } else if (result && !result.success) {
         alert(`Cannot assign role: ${result.error}`)
       } else {
@@ -120,8 +115,7 @@ export default function AdvancedRoleManager() {
         loadData()
       }
     } catch (error) {
-      console.error('Error assigning role:', error)
-      alert('Failed to assign role: ' + (error as Error).message)
+            alert('Failed to assign role: ' + (error as Error).message)
     }
   }
 
@@ -138,15 +132,13 @@ export default function AdvancedRoleManager() {
         .eq('is_active', true)
 
       if (error) {
-        console.error('Error revoking role:', error)
-        alert(`Failed to revoke role: ${error.message || 'Unknown error'}`)
+                alert(`Failed to revoke role: ${error.message || 'Unknown error'}`)
       } else {
         alert('Role revoked successfully!')
         loadData()
       }
     } catch (error) {
-      console.error('Error revoking role:', error)
-      alert('Failed to revoke role: ' + (error as Error).message)
+            alert('Failed to revoke role: ' + (error as Error).message)
     }
   }
 

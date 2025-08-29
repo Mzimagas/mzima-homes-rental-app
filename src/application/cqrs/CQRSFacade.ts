@@ -276,6 +276,10 @@ export class CQRSFacade {
     await this.queryBus.invalidateCache(pattern)
   }
 
+  async invalidateCache(pattern?: string) {
+    await this.queryBus.invalidateCache(pattern)
+  }
+
   // Event subscriptions
   onCommandEvent(listener: (event: any) => void) {
     return (this.commandBus as DefaultCommandBus).onEvent(listener)

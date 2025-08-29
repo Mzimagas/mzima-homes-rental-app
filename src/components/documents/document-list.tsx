@@ -153,8 +153,7 @@ export default function DocumentList({ documents, onDocumentDeleted }: DocumentL
       const { data, error } = await supabase.storage.from('documents').download(doc.file_path)
 
       if (error) {
-        console.error('Download error:', error)
-        alert('Failed to download file')
+                alert('Failed to download file')
         return
       }
 
@@ -168,8 +167,7 @@ export default function DocumentList({ documents, onDocumentDeleted }: DocumentL
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (err) {
-      console.error('Download error:', err)
-      alert('Failed to download file')
+            alert('Failed to download file')
     } finally {
       setDownloadingId(null)
     }
@@ -186,15 +184,13 @@ export default function DocumentList({ documents, onDocumentDeleted }: DocumentL
       const { error } = await supabase.storage.from('documents').remove([doc.file_path])
 
       if (error) {
-        console.error('Delete error:', error)
-        alert('Failed to delete file')
+                alert('Failed to delete file')
         return
       }
 
       onDocumentDeleted()
     } catch (err) {
-      console.error('Delete error:', err)
-      alert('Failed to delete file')
+            alert('Failed to delete file')
     } finally {
       setDeletingId(null)
     }
@@ -210,8 +206,7 @@ export default function DocumentList({ documents, onDocumentDeleted }: DocumentL
         alert('Failed to generate view link')
       }
     } catch (err) {
-      console.error('View error:', err)
-      alert('Failed to view file')
+            alert('Failed to view file')
     }
   }
 

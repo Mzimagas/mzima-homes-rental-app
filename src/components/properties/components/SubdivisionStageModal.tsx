@@ -49,8 +49,7 @@ export default function SubdivisionStageModal({
       await onStageUpdate(subdivisionId, stageId, selectedStatus, notes)
       onClose()
     } catch (error) {
-      console.error('Error updating subdivision stage:', error)
-      alert('Failed to update subdivision stage')
+            alert('Failed to update subdivision stage')
     } finally {
       setIsSubmitting(false)
     }

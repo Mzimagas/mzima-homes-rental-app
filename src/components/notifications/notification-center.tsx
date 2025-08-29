@@ -53,8 +53,7 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
       setNotifications(data || [])
     } catch (err) {
       setError('Failed to load notifications')
-      console.error('Notifications loading error:', err)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }
@@ -74,8 +73,7 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
         )
       }
     } catch (error) {
-      console.error('Failed to mark notification as read:', error)
-    }
+          }
   }
 
   const markAllAsRead = async () => {
@@ -93,8 +91,7 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
         setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })))
       }
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error)
-    }
+          }
   }
 
   const deleteNotification = async (notificationId: string) => {
@@ -110,8 +107,7 @@ export default function NotificationCenter({ userId, isOpen, onClose }: Notifica
         )
       }
     } catch (error) {
-      console.error('Failed to delete notification:', error)
-    }
+          }
   }
 
   const getNotificationIcon = (type: string) => {

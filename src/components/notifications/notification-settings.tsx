@@ -78,8 +78,7 @@ export default function NotificationSettings() {
       const { data, error: settingsError } = await clientBusinessFunctions.getNotificationSettings()
 
       if (settingsError) {
-        console.error('Error loading notification settings:', settingsError)
-        // Don't show error for missing settings (new user)
+                // Don't show error for missing settings (new user)
         if (!settingsError.includes('No rows')) {
           setError('Failed to load notification settings')
         }
@@ -116,8 +115,7 @@ export default function NotificationSettings() {
         })
       }
     } catch (err) {
-      console.error('Error loading notification settings:', err)
-      setError('Failed to load notification settings')
+            setError('Failed to load notification settings')
     } finally {
       setLoadingSettings(false)
     }
@@ -425,7 +423,7 @@ export default function NotificationSettings() {
                 disabled={!settings.sms.enabled}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
               >
-                <option value="africastalking">Africa's Talking</option>
+                <option value="africastalking">Africa&apos;s Talking</option>
                 <option value="twilio">Twilio</option>
                 <option value="custom">Custom Provider</option>
               </select>

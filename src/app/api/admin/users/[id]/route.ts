@@ -175,7 +175,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
           email: existingUser.email,
           full_name: existingUser.full_name,
           member_number: existingUser.member_number,
-          status: existingUser.status,
+          status: (existingUser as any).status,
         },
         after_snapshot: {
           deleted_at: new Date().toISOString(),

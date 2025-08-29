@@ -67,7 +67,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
             .select('id')
             .eq('property_id', selectedProperty)
           if (!isMounted) return
-          const unitIds = (units || []).map((u) => u.id)
+          const unitIds = (units || []).map((u: any) => u.id)
           if (unitIds.length > 0) {
             const { data: tenants } = await supabase
               .from('tenants')
@@ -112,7 +112,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
         .select('id')
         .eq('property_id', selectedProperty)
       if (!isMounted) return
-      const unitIds = (units || []).map((u) => u.id)
+      const unitIds = (units || []).map((u: any) => u.id)
       if (unitIds.length === 0) {
         setTenantsList([])
         return
@@ -180,8 +180,7 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
       setPayments(paymentsData || [])
     } catch (err: any) {
       setError(err?.message || 'Unable to load payments')
-      console.error('Payment history loading error:', err)
-    } finally {
+          } finally {
       setIsLoadingPayments(false)
     }
   }

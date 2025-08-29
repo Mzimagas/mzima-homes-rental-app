@@ -63,14 +63,23 @@ export const STAGE_PAYMENT_REQUIREMENTS: Record<
     required: [
       {
         id: 'down_payment',
-        name: 'Down Payment',
-        description: 'Initial payment to secure the property purchase',
+        name: 'Purchase Price Deposit',
+        description: 'Initial deposit payment to secure the property purchase as per sales agreement',
         currency: 'KES',
         isRequired: true,
         category: 'payment',
       },
     ],
-    optional: [],
+    optional: [
+      {
+        id: 'purchase_price_installment',
+        name: 'Purchase Price Installment',
+        description: 'Additional installment payment towards the total purchase price',
+        currency: 'KES',
+        isRequired: false,
+        category: 'payment',
+      },
+    ],
   },
   6: {
     // LCB Consent - LCB fee required
@@ -103,19 +112,9 @@ export const STAGE_PAYMENT_REQUIREMENTS: Record<
     ],
   },
   8: {
-    // Assessment - Assessment fee
+    // Assessment - No cost considerations
     required: [],
-    optional: [
-      {
-        id: 'assessment_fee',
-        name: 'Assessment Fee',
-        description: 'Property assessment processing fee',
-        amount: 3000,
-        currency: 'KES',
-        isRequired: false,
-        category: 'fee',
-      },
-    ],
+    optional: [],
   },
   9: {
     // Stamp Duty Payment - Stamp duty required
@@ -136,15 +135,46 @@ export const STAGE_PAYMENT_REQUIREMENTS: Record<
     required: [
       {
         id: 'registration_fee',
-        name: 'Title Registration Fee',
-        description: 'Fee for registering the new title deed',
+        name: 'Title Registration / New Title Costs',
+        description: 'Submission fees to land registry for title registration and new title processing',
         amount: 2000,
         currency: 'KES',
         isRequired: true,
         category: 'fee',
       },
     ],
-    optional: [],
+    optional: [
+      {
+        id: 'final_purchase_payment',
+        name: 'Final Purchase Price Payment',
+        description: 'Final payment to complete the purchase price as per sales agreement',
+        currency: 'KES',
+        isRequired: false,
+        category: 'payment',
+      },
+    ],
+  },
+  11: {
+    // Purchase Completion - Final payments
+    required: [],
+    optional: [
+      {
+        id: 'balance_purchase_payment',
+        name: 'Balance Purchase Payment',
+        description: 'Any remaining balance on the purchase price',
+        currency: 'KES',
+        isRequired: false,
+        category: 'payment',
+      },
+      {
+        id: 'completion_costs',
+        name: 'Property Completion Costs',
+        description: 'Final costs associated with property acquisition completion',
+        currency: 'KES',
+        isRequired: false,
+        category: 'fee',
+      },
+    ],
   },
 }
 

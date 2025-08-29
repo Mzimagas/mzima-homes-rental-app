@@ -21,8 +21,7 @@ function buildGoogleMapsUrl(
 ): string | null {
   if (debug) {
     console.group(`🗺️ Google Maps URL Generation${context ? ` - ${context}` : ''}`)
-    console.log('📍 Input data:', { lat, lng, address })
-    console.log('🔍 Coordinate validation:', {
+        console.log('🔍 Coordinate validation:', {
       latValid: lat != null && !Number.isNaN(lat),
       lngValid: lng != null && !Number.isNaN(lng),
       latType: typeof lat,
@@ -36,8 +35,7 @@ function buildGoogleMapsUrl(
     // Use lat/lng directly for more precise location
     const url = `https://www.google.com/maps?q=${lat},${lng}`
     if (debug) {
-      console.log('✅ Using coordinates:', url)
-      console.groupEnd()
+            console.groupEnd()
     }
     return url
   }
@@ -46,15 +44,13 @@ function buildGoogleMapsUrl(
   if (q.length > 0) {
     const url = `https://www.google.com/maps/search/${encodeURIComponent(q)}`
     if (debug) {
-      console.log('📍 Using address fallback:', url)
-      console.groupEnd()
+            console.groupEnd()
     }
     return url
   }
 
   if (debug) {
-    console.warn('❌ No valid location data available')
-    console.groupEnd()
+        console.groupEnd()
   }
   return null
 }

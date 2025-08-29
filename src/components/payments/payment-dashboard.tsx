@@ -78,31 +78,30 @@ export default function PaymentDashboard() {
         .eq('status', 'OVERDUE')
 
       if (invoicesError) {
-        console.error('Error loading overdue invoices:', invoicesError)
-      }
+              }
 
       // Calculate statistics
       const totalPayments = payments?.length || 0
-      const totalAmount = payments?.reduce((sum, p) => sum + p.amount_kes, 0) || 0
+      const totalAmount = payments?.reduce((sum: number, p: any) => sum + p.amount_kes, 0) || 0
       const averagePayment = totalPayments > 0 ? totalAmount / totalPayments : 0
 
       const overdueAmount =
         overdueInvoices?.reduce(
-          (sum, inv) => sum + (inv.amount_due_kes - inv.amount_paid_kes),
+          (sum: number, inv: any) => sum + (inv.amount_due_kes - inv.amount_paid_kes),
           0
         ) || 0
 
       // This month's payments
       const thisMonth = new Date()
       thisMonth.setDate(1)
-      const thisMonthPayments = payments?.filter((p) => new Date(p.payment_date) >= thisMonth) || []
+      const thisMonthPayments = payments?.filter((p: any) => new Date(p.payment_date) >= thisMonth) || []
 
-      const thisMonthAmount = thisMonthPayments.reduce((sum, p) => sum + p.amount_kes, 0)
+      const thisMonthAmount = thisMonthPayments.reduce((sum: number, p: any) => sum + p.amount_kes, 0)
 
       // Payment methods breakdown
       const methodStats =
         payments?.reduce(
-          (acc, payment) => {
+          (acc: any, payment: any) => {
             const method = payment.method || 'UNKNOWN'
             if (!acc[method]) {
               acc[method] = { count: 0, amount: 0 }
@@ -116,8 +115,8 @@ export default function PaymentDashboard() {
 
       const paymentMethods = Object.entries(methodStats).map(([method, stats]) => ({
         method,
-        count: stats.count,
-        amount: stats.amount,
+        count: (stats as any).count,
+        amount: (stats as any).amount,
       }))
 
       setStats({
@@ -132,8 +131,7 @@ export default function PaymentDashboard() {
       })
     } catch (err) {
       setError('Failed to load payment statistics')
-      console.error('Payment stats loading error:', err)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }
@@ -360,8 +358,7 @@ export default function PaymentDashboard() {
           onRecordPayment={() => setShowPaymentForm(true)}
           onViewPayment={(paymentId) => {
             // Handle payment view
-            console.log('View payment:', paymentId)
-          }}
+                      }}
         />
       )}
 

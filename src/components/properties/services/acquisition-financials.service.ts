@@ -66,8 +66,7 @@ export class AcquisitionFinancialsService {
         try {
           data = JSON.parse(text)
         } catch (e) {
-          console.error('Failed to parse JSON response:', text)
-          throw new Error('Invalid JSON response from server')
+                    throw new Error('Invalid JSON response from server')
         }
       } else {
         data = {}
@@ -90,8 +89,7 @@ export class AcquisitionFinancialsService {
       const data = await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs`)
       return data.data || []
     } catch (error) {
-      console.error('Error fetching acquisition costs:', error)
-      throw error
+            throw error
     }
   }
 
@@ -109,24 +107,17 @@ export class AcquisitionFinancialsService {
             body: JSON.stringify(cost),
           }
         )
-        console.log('Successfully created acquisition cost via purchase pipeline API:', data)
-        return data.data
+                return data.data
       } catch (pipelineError) {
-        console.log(
-          'Purchase pipeline acquisition cost creation failed, trying property API:',
-          pipelineError
-        )
-        // Fall back to property API
+                // Fall back to property API
         const data = await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs`, {
           method: 'POST',
           body: JSON.stringify(cost),
         })
-        console.log('Successfully created acquisition cost via property API:', data)
-        return data.data
+                return data.data
       }
     } catch (error) {
-      console.error('Error creating acquisition cost:', error)
-      throw error
+            throw error
     }
   }
 
@@ -137,22 +128,15 @@ export class AcquisitionFinancialsService {
         await this.makeRequest(`/api/purchase-pipeline/${propertyId}/acquisition-costs/${costId}`, {
           method: 'DELETE',
         })
-        console.log('Successfully deleted acquisition cost via purchase pipeline API')
-        return
+                return
       } catch (pipelineError) {
-        console.log(
-          'Purchase pipeline acquisition cost deletion failed, trying property API:',
-          pipelineError
-        )
-        // Fall back to property API
+                // Fall back to property API
         await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs/${costId}`, {
           method: 'DELETE',
         })
-        console.log('Successfully deleted acquisition cost via property API')
-      }
+              }
     } catch (error) {
-      console.error('Error deleting acquisition cost:', error)
-      throw error
+            throw error
     }
   }
 
@@ -162,8 +146,7 @@ export class AcquisitionFinancialsService {
       const data = await this.makeRequest(`/api/properties/${propertyId}/payment-installments`)
       return data.data || []
     } catch (error) {
-      console.error('Error fetching payment installments:', error)
-      throw error
+            throw error
     }
   }
 
@@ -184,24 +167,17 @@ export class AcquisitionFinancialsService {
             body: JSON.stringify(payment),
           }
         )
-        console.log('Successfully created payment installment via purchase pipeline API:', data)
-        return data.data
+                return data.data
       } catch (pipelineError) {
-        console.log(
-          'Purchase pipeline payment installment creation failed, trying property API:',
-          pipelineError
-        )
-        // Fall back to property API
+                // Fall back to property API
         const data = await this.makeRequest(`/api/properties/${propertyId}/payment-installments`, {
           method: 'POST',
           body: JSON.stringify(payment),
         })
-        console.log('Successfully created payment installment via property API:', data)
-        return data.data
+                return data.data
       }
     } catch (error) {
-      console.error('Error creating payment installment:', error)
-      throw error
+            throw error
     }
   }
 
@@ -215,22 +191,15 @@ export class AcquisitionFinancialsService {
             method: 'DELETE',
           }
         )
-        console.log('Successfully deleted payment installment via purchase pipeline API')
-        return
+                return
       } catch (pipelineError) {
-        console.log(
-          'Purchase pipeline payment installment deletion failed, trying property API:',
-          pipelineError
-        )
-        // Fall back to property API
+                // Fall back to property API
         await this.makeRequest(`/api/properties/${propertyId}/payment-installments/${paymentId}`, {
           method: 'DELETE',
         })
-        console.log('Successfully deleted payment installment via property API')
-      }
+              }
     } catch (error) {
-      console.error('Error deleting payment installment:', error)
-      throw error
+            throw error
     }
   }
 
@@ -251,11 +220,9 @@ export class AcquisitionFinancialsService {
           method: 'PATCH',
           body: JSON.stringify(body),
         })
-        console.log('Successfully updated purchase pipeline price')
-        return
+                return
       } catch (pipelineError) {
-        console.log('Purchase pipeline update failed, trying property API:', pipelineError)
-        // Fall back to property purchase price API
+                // Fall back to property purchase price API
         const body: any = { purchase_price_agreement_kes: purchasePrice }
         if (changeReason) {
           body.change_reason = changeReason
@@ -265,11 +232,9 @@ export class AcquisitionFinancialsService {
           method: 'PATCH',
           body: JSON.stringify(body),
         })
-        console.log('Successfully updated property purchase price')
-      }
+              }
     } catch (error) {
-      console.error('Error updating purchase price:', error)
-      throw error
+            throw error
     }
   }
 
@@ -284,17 +249,9 @@ export class AcquisitionFinancialsService {
             method: 'GET',
           }
         )
-        console.log(
-          'Successfully loaded purchase price history via purchase pipeline API:',
-          response
-        )
-        return response.data || []
+                return response.data || []
       } catch (pipelineError) {
-        console.log(
-          'Purchase pipeline purchase price history failed, trying property API:',
-          pipelineError
-        )
-        // Fall back to property API
+                // Fall back to property API
         try {
           const response = await this.makeRequest(
             `/api/properties/${propertyId}/purchase-price/history`,
@@ -302,16 +259,13 @@ export class AcquisitionFinancialsService {
               method: 'GET',
             }
           )
-          console.log('Successfully loaded purchase price history via property API:', response)
-          return response.data || []
+                    return response.data || []
         } catch (propertyError) {
-          console.log('Property purchase price history also failed:', propertyError)
-          return []
+                    return []
         }
       }
     } catch (error) {
-      console.error('Error fetching purchase price history:', error)
-      // Return empty array instead of throwing
+            // Return empty array instead of throwing
       return []
     }
   }
@@ -342,14 +296,12 @@ export class AcquisitionFinancialsService {
         try {
           const dataPromise = this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`)
           const data = await Promise.race([dataPromise, timeoutPromise])
-          console.log('Successfully loaded from purchase pipeline API:', data)
-          return {
+                    return {
             costs: data.costs || [],
             payments: data.payments || [],
           }
         } catch (pipelineError) {
-          console.log('Purchase pipeline API failed, trying property APIs:', pipelineError)
-        }
+                  }
       }
 
       // Fall back to property financial endpoints with timeout (only if enabled)
@@ -384,8 +336,7 @@ export class AcquisitionFinancialsService {
         !error.message?.includes('404') &&
         !error.message?.includes('timeout')
       ) {
-        console.error('Error loading financial data:', error)
-      }
+              }
       // Always return empty data instead of throwing to prevent UI blocking
       return { costs: [], payments: [] }
     }

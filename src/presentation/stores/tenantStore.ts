@@ -38,15 +38,11 @@ export interface Tenant {
   id: string
   fullName: string
   nationalId: string
-  contactInfo: {
-    phone: string
-    email?: string
-    emergencyContact?: {
-      name: string
-      phone: string
-      relationship: string
-    }
-  }
+  phone: string
+  email?: string
+  emergencyContactName?: string
+  emergencyContactPhone?: string
+  emergencyContactRelationship?: string
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'EVICTED'
   currentUnitId?: string
   leaseStartDate?: string
@@ -176,7 +172,7 @@ const initialState: TenantStoreState = {
 
 // Filter functions
 const filterFunctions = {
-  searchTerm: createSearchFunction<Tenant>(['fullName', 'nationalId', 'contactInfo.phone', 'contactInfo.email']),
+  searchTerm: createSearchFunction<Tenant>(['fullName', 'nationalId', 'phone', 'email']),
   statuses: (tenant: Tenant, statuses: string[]) => statuses.includes(tenant.status),
   unitIds: (tenant: Tenant, unitIds: string[]) => tenant.currentUnitId ? unitIds.includes(tenant.currentUnitId) : false,
   hasActiveLease: (tenant: Tenant, hasLease: boolean) => {
@@ -220,7 +216,7 @@ const debouncedFilterUpdate = debounce((get: any, set: any) => {
   const state = get()
   const allTenants = denormalizeEntities(state.entities)
   
-  const filtered = applyFilters(allTenants, state.filters, filterFunctions)
+  const filtered = applyFilters(allTenants as Tenant[], state.filters, filterFunctions)
   const filteredIds = filtered.map(t => t.id)
   
   const sorted = applySorting(filtered, state.filters.sortBy, state.filters.sortOrder, sortFunctions)
@@ -303,6 +299,12 @@ export const useTenantStore = create<TenantStoreState & TenantStoreActions>()(
           draft.paginatedIds = []
           draft.lastUpdated = new Date()
         }),
+
+        refreshTenant: async (tenantId: string) => {
+          // Placeholder for tenant refresh logic
+          // This would typically fetch the tenant from the API and update the store
+          console.log('Refreshing tenant:', tenantId)
+        },
         
         // Selection operations
         selectTenant: (id) => set((draft) => {
@@ -465,7 +467,7 @@ export const useTenantStore = create<TenantStoreState & TenantStoreActions>()(
         
         searchTenants: (term) => {
           const state = get()
-          const searchFn = createSearchFunction<Tenant>(['fullName', 'nationalId', 'contactInfo.phone'])
+          const searchFn = createSearchFunction<Tenant>(['fullName', 'nationalId', 'phone'])
           return denormalizeEntities(state.entities).filter(t => searchFn(t, term))
         }
       })),

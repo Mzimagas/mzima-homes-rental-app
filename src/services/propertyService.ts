@@ -102,7 +102,7 @@ export async function getAllProperties(): Promise<Property[]> {
       return []
     }
 
-    return (data || []).map((property) => ({
+    return (data || []).map((property: any) => ({
       id: property.id,
       name: property.name || 'Unnamed Property',
       address: property.physical_address || 'No address provided',
@@ -232,7 +232,7 @@ export async function searchProperties(searchTerm: string): Promise<Property[]> 
       return []
     }
 
-    return (data || []).map((property) => ({
+    return (data || []).map((property: any) => ({
       id: property.id,
       name: property.name || 'Unnamed Property',
       address: property.physical_address || 'No address provided',
@@ -303,7 +303,7 @@ export async function getPropertiesByLifecycleStage(
       return []
     }
 
-    return data.map((property) => ({
+    return data.map((property: any) => ({
       id: property.id,
       name: property.name || 'Unnamed Property',
       address: property.physical_address || 'No address provided',
@@ -371,7 +371,7 @@ export async function getPropertyStats() {
       byLifecycleStatus: {} as Record<string, number>,
     }
 
-    data?.forEach((property) => {
+    data?.forEach((property: any) => {
       // Count by type
       const type = property.property_type || 'Unknown'
       stats.byType[type] = (stats.byType[type] || 0) + 1

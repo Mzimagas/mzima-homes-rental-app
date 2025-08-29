@@ -9,7 +9,6 @@ import PropertiesTab from './components/PropertiesTab'
 import HandoverPipelineManager from './components/HandoverPipelineManager'
 // Audit moved to standalone dashboard route
 // import AuditTrailDashboard from './components/AuditTrailDashboard'
-// import SecurityTestPanel from './components/SecurityTestPanel'
 
 import { RoleManagementService } from '../../lib/auth/role-management.service'
 
@@ -53,33 +52,13 @@ export default function PropertyManagementTabs({
       const role = await RoleManagementService.getCurrentUserRole()
       setUserRole(role)
     } catch (error) {
-      console.error('Error loading user role:', error)
-      setUserRole('viewer') // Fallback to viewer role
-    }
+            setUserRole('viewer')     }
   }
 
   const loadProperties = async () => {
     try {
       setLoading(true)
       const data = await PropertyManagementService.loadProperties()
-
-      // Debug: Check if coordinates are included in property data
-      if (process.env.NODE_ENV === 'development') {
-        console.group('🏠 Properties Data Loaded')
-        console.log(`Loaded ${data.length} properties`)
-        if (data.length > 0) {
-          const sampleProperty = data[0]
-          console.log('Sample property data:', sampleProperty)
-          console.log('Coordinate fields:', {
-            lat: sampleProperty.lat,
-            lng: sampleProperty.lng,
-            physical_address: sampleProperty.physical_address,
-            hasCoordinates: sampleProperty.lat != null && sampleProperty.lng != null,
-          })
-        }
-        console.groupEnd()
-      }
-
       setProperties(data)
     } catch (error) {
       console.error('Error loading properties:', error)
@@ -141,8 +120,7 @@ export default function PropertyManagementTabs({
         await loadProperties()
       }
     } catch (error) {
-      console.error('Error saving changes:', error)
-    } finally {
+          } finally {
       setSavingChanges((prev) => ({ ...prev, [propertyId]: false }))
     }
   }

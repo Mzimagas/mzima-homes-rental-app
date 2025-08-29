@@ -122,8 +122,7 @@ export default function MaintenanceForm({
         .in('landlord_id', landlordIds)
 
       if (propertiesError) {
-        console.error('Error loading properties for units:', propertiesError)
-        setUnits([])
+                setUnits([])
         setError('Failed to load properties. Please try again later.')
         return
       }
@@ -155,8 +154,7 @@ export default function MaintenanceForm({
         .order('unit_label', { ascending: true })
 
       if (unitsError) {
-        console.error('Error loading units:', unitsError)
-        setUnits([])
+                setUnits([])
         setError('Failed to load units. Please try again later.')
         return
       }
@@ -177,8 +175,7 @@ export default function MaintenanceForm({
 
       setUnits(transformedUnits)
     } catch (err) {
-      console.error('Error loading units:', err)
-      setUnits([])
+            setUnits([])
       setError('An unexpected error occurred while loading units.')
     } finally {
       setLoadingUnits(false)
@@ -261,8 +258,7 @@ export default function MaintenanceForm({
       onSuccess?.()
     } catch (err) {
       setError('Failed to save maintenance ticket. Please try again.')
-      console.error('Maintenance ticket save error:', err)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }

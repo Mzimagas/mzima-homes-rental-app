@@ -115,8 +115,7 @@ export default function HandoverFinancialSection({
       setShowAddCost(false)
       onDataUpdate()
     } catch (error) {
-      console.error('Error adding cost:', error)
-      alert('Failed to add cost: ' + (error instanceof Error ? error.message : 'Unknown error'))
+            alert('Failed to add cost: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
     }
@@ -157,8 +156,7 @@ export default function HandoverFinancialSection({
       setShowAddReceipt(false)
       onDataUpdate()
     } catch (error) {
-      console.error('Error adding receipt:', error)
-      alert('Failed to add receipt: ' + (error instanceof Error ? error.message : 'Unknown error'))
+            alert('Failed to add receipt: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
     }
@@ -172,8 +170,7 @@ export default function HandoverFinancialSection({
       await HandoverFinancialsService.deleteHandoverCost(propertyId, costId)
       onDataUpdate()
     } catch (error) {
-      console.error('Error deleting cost:', error)
-      alert('Failed to delete cost: ' + (error instanceof Error ? error.message : 'Unknown error'))
+            alert('Failed to delete cost: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
     }
@@ -187,8 +184,7 @@ export default function HandoverFinancialSection({
       await HandoverFinancialsService.deletePaymentReceipt(propertyId, receiptId)
       onDataUpdate()
     } catch (error) {
-      console.error('Error deleting receipt:', error)
-      alert(
+            alert(
         'Failed to delete receipt: ' + (error instanceof Error ? error.message : 'Unknown error')
       )
     } finally {
@@ -227,8 +223,7 @@ export default function HandoverFinancialSection({
       onDataUpdate()
       alert('Handover price updated successfully!')
     } catch (error) {
-      console.error('Error updating price:', error)
-      alert('Failed to update price: ' + (error instanceof Error ? error.message : 'Unknown error'))
+            alert('Failed to update price: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
     }
@@ -241,8 +236,7 @@ export default function HandoverFinancialSection({
       setPriceHistory(history)
       setShowPriceHistory(true)
     } catch (error) {
-      console.error('Error fetching price history:', error)
-      alert(
+            alert(
         'Failed to fetch price history: ' +
           (error instanceof Error ? error.message : 'Unknown error')
       )
@@ -606,7 +600,7 @@ export default function HandoverFinancialSection({
               <div className="text-center py-8">
                 <div className="text-gray-500 mb-2">No deposits or installments recorded yet</div>
                 <div className="text-sm text-gray-400">
-                  Click "Add Deposit/Installment" to record the first payment
+                  Click &quot;Add Deposit/Installment&quot; to record the first payment
                 </div>
               </div>
             ) : (
@@ -785,7 +779,7 @@ export default function HandoverFinancialSection({
               <div className="text-center py-8">
                 <div className="text-gray-500 mb-2">No costs recorded yet</div>
                 <div className="text-sm text-gray-400">
-                  Click "Add Cost" to record the first handover cost
+                  Click &quot;Add Cost&quot; to record the first handover cost
                 </div>
               </div>
             ) : (

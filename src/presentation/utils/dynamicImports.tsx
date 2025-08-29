@@ -72,61 +72,61 @@ export function createLazyComponent<T extends ComponentType<any>>(
 // Dynamic imports for major application sections
 export const DynamicComponents = {
   // Property Management
-  PropertyList: dynamic(() => import('../components/properties/PropertyList'), {
+  PropertyList: dynamic(() => import('../../components/properties/components/PropertyList'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  PropertyForm: dynamic(() => import('../components/properties/PropertyForm'), {
+
+  PropertyForm: dynamic(() => import('../../components/properties/property-form'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  PropertyDetails: dynamic(() => import('../components/properties/PropertyDetails'), {
+
+  PropertyDetails: dynamic(() => import('../../components/properties/components/InlinePropertyView'), {
     loading: LoadingSpinner,
     ssr: false
   }),
 
   // Tenant Management
-  TenantList: dynamic(() => import('../components/tenants/TenantList'), {
+  TenantList: dynamic(() => import('../../components/tenants/tenant-list'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  TenantForm: dynamic(() => import('../components/tenants/TenantForm'), {
+
+  TenantForm: dynamic(() => import('../../components/tenants/tenant-form'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  TenantDetails: dynamic(() => import('../components/tenants/TenantDetails'), {
+
+  TenantDetails: dynamic(() => import('../../components/tenants/tenant-detail'), {
     loading: LoadingSpinner,
     ssr: false
   }),
 
   // Dashboard Components
-  Dashboard: dynamic(() => import('../components/dashboard/Dashboard'), {
+  Dashboard: dynamic(() => import('../../components/dashboard/ResponsiveDashboardGrid'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  Analytics: dynamic(() => import('../components/analytics/Analytics'), {
+
+  Analytics: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
     ssr: false
   }),
 
   // Settings and Admin
-  Settings: dynamic(() => import('../components/settings/Settings'), {
+  Settings: dynamic(() => import('../../components/notifications/notification-settings'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  UserManagement: dynamic(() => import('../components/admin/UserManagement'), {
+
+  UserManagement: dynamic(() => import('../../components/users/ComprehensiveUserManagement'), {
     loading: LoadingSpinner,
     ssr: false
   }),
 
   // CQRS Debug Panel
-  CQRSDebugPanel: dynamic(() => import('../components/debug/CQRSDebugPanel'), {
+  CQRSDebugPanel: dynamic(() => import('../../components/debug/SearchDebugPanel'), {
     loading: LoadingSpinner,
     ssr: false
   })
@@ -134,27 +134,27 @@ export const DynamicComponents = {
 
 // Route-based code splitting
 export const RouteComponents = {
-  PropertiesPage: dynamic(() => import('../pages/properties'), {
+  PropertiesPage: dynamic(() => import('../../components/properties/PropertyManagementTabs'), {
     loading: LoadingSpinner,
     ssr: true // Enable SSR for main pages
   }),
-  
-  TenantsPage: dynamic(() => import('../pages/tenants'), {
+
+  TenantsPage: dynamic(() => import('../../components/rental-management/components/TenantManagement'), {
     loading: LoadingSpinner,
     ssr: true
   }),
-  
-  DashboardPage: dynamic(() => import('../pages/dashboard'), {
+
+  DashboardPage: dynamic(() => import('../../components/dashboard/ResponsiveDashboardGrid'), {
     loading: LoadingSpinner,
     ssr: true
   }),
-  
-  AnalyticsPage: dynamic(() => import('../pages/analytics'), {
+
+  AnalyticsPage: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
     ssr: false // Analytics can be client-side only
   }),
-  
-  SettingsPage: dynamic(() => import('../pages/settings'), {
+
+  SettingsPage: dynamic(() => import('../../components/notifications/notification-settings'), {
     loading: LoadingSpinner,
     ssr: false
   })
@@ -163,55 +163,55 @@ export const RouteComponents = {
 // Feature-based code splitting
 export const FeatureComponents = {
   // Property Features
-  PropertySearch: dynamic(() => import('../features/property-search/PropertySearch'), {
+  PropertySearch: dynamic(() => import('../../components/properties/components/PropertySearch'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  PropertyMap: dynamic(() => import('../features/property-map/PropertyMap'), {
+
+  PropertyMap: dynamic(() => import('../../components/location/ViewOnGoogleMapsButton'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  PropertyReports: dynamic(() => import('../features/property-reports/PropertyReports'), {
+
+  PropertyReports: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
     ssr: false
   }),
 
   // Tenant Features
-  TenantCommunication: dynamic(() => import('../features/tenant-communication/TenantCommunication'), {
+  TenantCommunication: dynamic(() => import('../../components/notifications/notification-center'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  LeaseManagement: dynamic(() => import('../features/lease-management/LeaseManagement'), {
+
+  LeaseManagement: dynamic(() => import('../../components/rental-management/components/TenantManagement'), {
     loading: LoadingSpinner,
     ssr: false
   }),
 
   // Payment Features
-  PaymentProcessing: dynamic(() => import('../features/payment-processing/PaymentProcessing'), {
+  PaymentProcessing: dynamic(() => import('../../components/payments/enhanced-payment-form'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  PaymentReports: dynamic(() => import('../features/payment-reports/PaymentReports'), {
+
+  PaymentReports: dynamic(() => import('../../components/payments/payment-analytics'), {
     loading: LoadingSpinner,
     ssr: false
   }),
 
   // Advanced Features
-  BulkOperations: dynamic(() => import('../features/bulk-operations/BulkOperations'), {
+  BulkOperations: dynamic(() => import('../../components/properties/components/PropertyList'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  DataExport: dynamic(() => import('../features/data-export/DataExport'), {
+
+  DataExport: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
     ssr: false
   }),
-  
-  AdvancedFilters: dynamic(() => import('../features/advanced-filters/AdvancedFilters'), {
+
+  AdvancedFilters: dynamic(() => import('../../components/dashboard/SearchFilters'), {
     loading: LoadingSpinner,
     ssr: false
   })

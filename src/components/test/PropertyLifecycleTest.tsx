@@ -42,12 +42,10 @@ export default function PropertyLifecycleTest() {
         results.forEach((result, index) => {
           if (result.status === 'rejected') {
             const apiNames = ['Properties', 'Pipeline', 'Subdivision', 'Handover']
-            console.warn(`Failed to load ${apiNames[index]} data:`, result.reason)
-          }
+                      }
         })
       } catch (error) {
-        console.error('Error loading property data:', error)
-      } finally {
+              } finally {
         setLoading(false)
       }
     }

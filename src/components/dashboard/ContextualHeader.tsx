@@ -98,7 +98,7 @@ export default function ContextualHeader() {
                   />
                 </svg>
                 <span className="text-sm text-blue-700 font-medium">
-                  Unit {state.selectedUnit.unit_number}
+                  Unit {state.selectedUnit.unit_label}
                 </span>
               </div>
             )}

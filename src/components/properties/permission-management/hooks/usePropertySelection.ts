@@ -47,8 +47,7 @@ export const usePropertySelection = () => {
         loadingProperties: false,
       }))
     } catch (error) {
-      console.error('Error loading properties:', error)
-      setState((prev) => ({
+            setState((prev) => ({
         ...prev,
         properties: [],
         loadingProperties: false,
@@ -105,8 +104,7 @@ export const usePropertySelection = () => {
           loadingProperties: false,
         }))
       } catch (error) {
-        console.error('Error searching properties:', error)
-        setState((prev) => ({
+                setState((prev) => ({
           ...prev,
           properties: [],
           loadingProperties: false,

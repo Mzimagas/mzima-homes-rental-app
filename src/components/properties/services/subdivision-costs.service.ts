@@ -45,11 +45,8 @@ export class SubdivisionCostsService {
     })
 
     if (!response.ok) {
-      console.error('HTTP Error:', response.status, response.statusText)
-      const errorText = await response.text()
-      console.error('Error response body:', errorText)
-
-      let errorData
+            const errorText = await response.text()
+            let errorData
       try {
         errorData = JSON.parse(errorText)
       } catch {
@@ -68,8 +65,7 @@ export class SubdivisionCostsService {
       const data = await this.makeRequest(`/api/properties/${propertyId}/subdivision-costs`)
       return data.data || []
     } catch (error) {
-      console.error('Error fetching subdivision costs:', error)
-      throw error
+            throw error
     }
   }
 
@@ -78,24 +74,18 @@ export class SubdivisionCostsService {
     cost: Omit<SubdivisionCostEntry, 'id' | 'property_id' | 'created_at' | 'updated_at'>
   ): Promise<SubdivisionCostEntry> {
     try {
-      console.log('Creating subdivision cost for property:', propertyId)
-      console.log('Cost data:', cost)
-
-      const response = await this.makeRequest(`/api/properties/${propertyId}/subdivision-costs`, {
+                  const response = await this.makeRequest(`/api/properties/${propertyId}/subdivision-costs`, {
         method: 'POST',
         body: JSON.stringify(cost),
       })
-      console.log('Successfully created subdivision cost:', response)
-
-      // Handle both response formats: {data: cost} and {success: true, data: cost}
+            // Handle both response formats: {data: cost} and {success: true, data: cost}
       if (response.data) {
         return response.data
       } else {
         throw new Error('Invalid response format from API')
       }
     } catch (error) {
-      console.error('Error creating subdivision cost:', error)
-      throw error
+            throw error
     }
   }
 
@@ -117,11 +107,9 @@ export class SubdivisionCostsService {
           body: JSON.stringify(updates),
         }
       )
-      console.log('Successfully updated subdivision cost:', data)
-      return data.data
+            return data.data
     } catch (error) {
-      console.error('Error updating subdivision cost:', error)
-      throw error
+            throw error
     }
   }
 
@@ -130,19 +118,15 @@ export class SubdivisionCostsService {
       await this.makeRequest(`/api/properties/${propertyId}/subdivision-costs/${costId}`, {
         method: 'DELETE',
       })
-      console.log('Successfully deleted subdivision cost')
-    } catch (error) {
-      console.error('Error deleting subdivision cost:', error)
-      throw error
+          } catch (error) {
+            throw error
     }
   }
 
   // Helper function to calculate subdivision cost summary
   static calculateSubdivisionSummary(costs: SubdivisionCostEntry[]) {
     try {
-      console.log('calculateSubdivisionSummary called with:', costs)
-
-      // Ensure costs is an array and filter out any invalid entries
+            // Ensure costs is an array and filter out any invalid entries
       const validCosts = Array.isArray(costs)
         ? costs.filter((cost) => {
             const isValid =
@@ -150,14 +134,11 @@ export class SubdivisionCostsService {
               typeof cost.amount_kes === 'number' &&
               cost.payment_status &&
               cost.cost_category
-            console.log('Cost validation:', cost, 'isValid:', isValid)
-            return isValid
+                        return isValid
           })
         : []
 
-      console.log('Valid costs after filtering:', validCosts)
-
-      const totalCosts = validCosts.reduce((sum, cost) => sum + cost.amount_kes, 0)
+            const totalCosts = validCosts.reduce((sum, cost) => sum + cost.amount_kes, 0)
       const paidCosts = validCosts
         .filter((cost) => cost.payment_status === 'PAID')
         .reduce((sum, cost) => sum + cost.amount_kes, 0)
@@ -206,8 +187,7 @@ export class SubdivisionCostsService {
         ).length,
       }
     } catch (error) {
-      console.error('Error in calculateSubdivisionSummary:', error)
-      // Return safe default values
+            // Return safe default values
       return {
         totalSubdivisionCosts: 0,
         paidSubdivisionCosts: 0,

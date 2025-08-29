@@ -102,18 +102,15 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
         .order('name')
 
       if (error) {
-        console.error('Supabase error loading properties:', error)
-        setProperties([]) // Set empty array to prevent infinite loading
+                setProperties([]) // Set empty array to prevent infinite loading
         setPropertiesLoaded(true) // Still mark as loaded to prevent infinite retries
         return
       }
 
       setProperties(propertiesData || [])
       setPropertiesLoaded(true)
-      console.warn('Properties loaded:', propertiesData?.length || 0, 'properties')
-    } catch (err) {
-      console.error('Error loading properties:', err)
-      setProperties([]) // Set empty array to prevent infinite loading
+          } catch (err) {
+            setProperties([]) // Set empty array to prevent infinite loading
       setPropertiesLoaded(true) // Still mark as loaded to prevent infinite retries
     }
   }
@@ -121,14 +118,12 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
   const loadPropertyReports = async () => {
     // Prevent multiple simultaneous calls
     if (isGeneratingReport) {
-      console.warn('Already generating report, skipping loadPropertyReports call')
-      return
+            return
     }
 
     // Don't load if properties haven't been loaded yet
     if (!propertiesLoaded) {
-      console.warn('Properties not loaded yet, skipping report load')
-      return
+            return
     }
 
     try {
@@ -136,17 +131,7 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
       setIsGeneratingReport(true)
       setError(null)
 
-      console.warn('Loading property reports...', {
-        selectedProperty,
-        selectedPeriod,
-        customDateRange,
-        propertiesCount: properties.length,
-        propertiesLoaded,
-        loading,
-        isGeneratingReport,
-      })
-
-      // For now, using mock landlord ID - in real app, this would come from user profile
+            // For now, using mock landlord ID - in real app, this would come from user profile
       const mockLandlordId = '11111111-1111-1111-1111-111111111111'
 
       // Calculate date range
@@ -204,27 +189,21 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
         maintenanceOverview,
       }
 
-      console.warn('Property reports data loaded successfully:', reportData)
-      setData(reportData)
+            setData(reportData)
     } catch (err) {
-      console.error('Property reports loading error:', err)
-
-      // Set fallback data to prevent infinite loading
-      const fallbackData = {
+                  const fallbackData = {
         propertyPerformance: [],
         unitAnalysis: [],
         revenueComparison: [],
         maintenanceOverview: [],
       }
 
-      console.warn('Setting fallback data due to error')
-      setData(fallbackData)
+            setData(fallbackData)
       setError('Failed to load property reports. Please try again.')
     } finally {
       setLoading(false)
       setIsGeneratingReport(false)
-      console.warn('Property reports loading completed')
-    }
+          }
   }
 
   // Handle predefined period selection
@@ -359,8 +338,7 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
 
       savePDFFile(doc, exportOptions.filename)
     } catch (error) {
-      console.error('Error exporting PDF:', error)
-      alert('Failed to export PDF. Please try again.')
+            alert('Failed to export PDF. Please try again.')
     } finally {
       setIsExporting(false)
     }
@@ -459,8 +437,7 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
 
       saveExcelFile(workbook, exportOptions.filename)
     } catch (error) {
-      console.error('Error exporting Excel:', error)
-      alert('Failed to export Excel file. Please try again.')
+            alert('Failed to export Excel file. Please try again.')
     } finally {
       setIsExporting(false)
     }
@@ -472,37 +449,24 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
     startDate: Date,
     endDate: Date
   ) => {
-    console.warn('calculatePropertyPerformance called with:', {
-      landlordId,
-      propertyFilter,
-      startDate,
-      endDate,
-    })
-
-    const propertiesToAnalyze =
+        const propertiesToAnalyze =
       propertyFilter === 'all' ? properties : properties.filter((p) => p.id === propertyFilter)
 
-    console.log('Properties to analyze:', propertiesToAnalyze)
-
-    // If no properties to analyze, return empty array
+        // If no properties to analyze, return empty array
     if (propertiesToAnalyze.length === 0) {
-      console.log('No properties to analyze, returning empty performance array')
-      return []
+            return []
     }
 
     const performance = []
 
     for (const property of propertiesToAnalyze) {
-      console.log('Processing property:', property)
-
-      // Get property stats
+            // Get property stats
       const { data: stats, error: statsError } = await clientBusinessFunctions.getPropertyStats(
         property.id
       )
 
       if (statsError) {
-        console.error('Error getting property stats for', property.id, ':', statsError)
-        continue
+                continue
       }
 
       if (stats && stats.length > 0) {
@@ -586,15 +550,12 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
   }
 
   const calculateUnitAnalysis = async (landlordId: string, propertyFilter: string) => {
-    console.log('calculateUnitAnalysis called with:', { landlordId, propertyFilter })
-
-    const propertiesToAnalyze =
+        const propertiesToAnalyze =
       propertyFilter === 'all' ? properties : properties.filter((p) => p.id === propertyFilter)
 
     // If no properties to analyze, return empty array
     if (propertiesToAnalyze.length === 0) {
-      console.log('No properties for unit analysis, returning empty array')
-      return []
+            return []
     }
 
     const units = []
@@ -695,20 +656,12 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
     startDate: Date,
     endDate: Date
   ) => {
-    console.log('calculateRevenueComparison called with:', {
-      landlordId,
-      propertyFilter,
-      startDate,
-      endDate,
-    })
-
-    const propertiesToAnalyze =
+        const propertiesToAnalyze =
       propertyFilter === 'all' ? properties : properties.filter((p) => p.id === propertyFilter)
 
     // If no properties to analyze, return empty array
     if (propertiesToAnalyze.length === 0) {
-      console.log('No properties for revenue comparison, returning empty array')
-      return []
+            return []
     }
 
     const comparison = []
@@ -830,16 +783,13 @@ const PropertyReports = forwardRef(function PropertyReports(_props: {}, ref) {
   }
 
   const calculateMaintenanceOverview = async (landlordId: string, propertyFilter: string) => {
-    console.log('calculateMaintenanceOverview called with:', { landlordId, propertyFilter })
-
-    // Placeholder for maintenance data - would need maintenance requests table
+        // Placeholder for maintenance data - would need maintenance requests table
     const propertiesToAnalyze =
       propertyFilter === 'all' ? properties : properties.filter((p) => p.id === propertyFilter)
 
     // If no properties to analyze, return empty array
     if (propertiesToAnalyze.length === 0) {
-      console.log('No properties for maintenance overview, returning empty array')
-      return []
+            return []
     }
 
     return propertiesToAnalyze.map((property) => ({

@@ -171,10 +171,6 @@ export interface PurchasePipelineManagerProps {
   userRole?: string
 }
 
-
-
-
-
 export interface PurchaseListProps {
   purchases: PurchaseItem[]
   loading: boolean

@@ -272,8 +272,8 @@ export default function RentalWorkflowNavigation({
             ))}
           </select>
           <p className="mt-1 text-xs text-gray-600">
-            Select a specific property to manage tenants for that property only, or choose "All
-            Properties" to see all tenants.
+            Select a specific property to manage tenants for that property only, or choose &quot;All
+            Properties&quot; to see all tenants.
           </p>
         </div>
       )}
@@ -290,8 +290,7 @@ export default function RentalWorkflowNavigation({
         <div className="mt-6">
           <UnitAdditionCard
             onUnitCreated={(unitId, propertyId) => {
-              console.log(`Unit ${unitId} created for property ${propertyId}`)
-              // Optionally close the unit addition card after successful creation
+                            // Optionally close the unit addition card after successful creation
               // setShowUnitAddition(false)
             }}
             onClose={closeUnitAddition}

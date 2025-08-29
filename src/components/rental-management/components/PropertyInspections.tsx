@@ -69,8 +69,7 @@ export default function PropertyInspections({
       // For now, using empty array but in real implementation would filter by propertyId
       setInspections([])
     } catch (error) {
-      console.error('Error loading inspections:', error)
-      setError('Failed to load inspections')
+            setError('Failed to load inspections')
     } finally {
       setLoading(false)
     }
@@ -81,8 +80,7 @@ export default function PropertyInspections({
       const propertiesData = await RentalManagementService.getRentalProperties()
       setProperties(propertiesData)
     } catch (error) {
-      console.error('Error loading properties:', error)
-    }
+          }
   }
 
   const loadTenants = async () => {
@@ -90,23 +88,20 @@ export default function PropertyInspections({
       const tenantsData = await RentalManagementService.getTenants()
       setTenants(tenantsData)
     } catch (error) {
-      console.error('Error loading tenants:', error)
-    }
+          }
   }
 
   const onSubmit = async (data: InspectionFormData) => {
     try {
       setSubmitting(true)
       // TODO: Implement createInspection in service
-      console.log('Inspection data:', data)
-      alert('Inspection scheduling functionality will be implemented in the next phase')
+            alert('Inspection scheduling functionality will be implemented in the next phase')
       setShowInspectionModal(false)
       reset()
       loadInspections()
       onDataChange?.()
     } catch (error) {
-      console.error('Error creating inspection:', error)
-      setError('Failed to schedule inspection')
+            setError('Failed to schedule inspection')
     } finally {
       setSubmitting(false)
     }

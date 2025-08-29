@@ -42,15 +42,7 @@ export default function PermissionTable({
 }: PermissionTableProps) {
   const getUserDisplayName = (permission: UserPermissions) => {
     const user = availableUsers.find((u) => u.id === permission.userId)
-    console.log('Getting display name for permission:', {
-      permissionUserId: permission.userId,
-      permissionEmail: permission.email,
-      foundUser: user,
-      userName: user?.name,
-      availableUsersCount: availableUsers.length,
-    })
-
-    if (user?.name) return user.name
+        if (user?.name) return user.name
 
     // If no name available, try to extract a meaningful name from email
     const emailToUse = user?.email || permission.email
@@ -66,15 +58,7 @@ export default function PermissionTable({
   const getUserEmail = (permission: UserPermissions) => {
     const user = availableUsers.find((u) => u.id === permission.userId)
     const finalEmail = user?.email || permission.email
-    console.log('Getting email for permission:', {
-      permissionUserId: permission.userId,
-      permissionEmail: permission.email,
-      foundUser: !!user,
-      userEmail: user?.email,
-      finalEmail,
-      availableUsersCount: availableUsers.length,
-    })
-    return finalEmail
+        return finalEmail
   }
 
   // State for delete confirmation

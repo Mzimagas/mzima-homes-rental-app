@@ -48,9 +48,7 @@ export default function ReverseTransferAction({
         .eq('id', propertyId)
         .single()
 
-      console.log('Property data:', property)
-
-      let purchase = null
+            let purchase = null
 
       // Try to find by source_reference_id first
       if (property?.source_reference_id) {
@@ -60,8 +58,7 @@ export default function ReverseTransferAction({
           .eq('id', property.source_reference_id)
           .maybeSingle()
         purchase = purchaseByRef
-        console.log('Purchase by source_reference_id:', purchase)
-      }
+              }
 
       // If not found, try by completed_property_id
       if (!purchase) {
@@ -71,12 +68,9 @@ export default function ReverseTransferAction({
           .eq('completed_property_id', propertyId)
           .maybeSingle()
         purchase = purchaseByCompleted
-        console.log('Purchase by completed_property_id:', purchase)
-      }
+              }
 
-      console.log('Final purchase data:', purchase)
-      console.log('Pipeline progress:', purchase?.overall_progress)
-      const progress = purchase?.overall_progress ?? null
+                  const progress = purchase?.overall_progress ?? null
       setPipelineProgress(progress)
 
       // Notify parent component about pipeline status
@@ -85,8 +79,7 @@ export default function ReverseTransferAction({
         onPipelineStatusChange(hasIssues)
       }
     } catch (error) {
-      console.error('Error fetching pipeline progress:', error)
-      setPipelineProgress(null)
+            setPipelineProgress(null)
     } finally {
       setLoading(false)
     }

@@ -11,7 +11,10 @@ export class PropertyCreatedEvent extends DomainEvent {
     public readonly propertyName: string,
     public readonly ownerId: string
   ) {
-    super()
+    super('PropertyCreated', propertyId, {
+      propertyName,
+      ownerId
+    })
   }
 
   getEventName(): string {

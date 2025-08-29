@@ -75,8 +75,7 @@ export default function ComprehensiveUserManagement({
 
       setUsers(transformedUsers)
     } catch (err) {
-      console.error('Error fetching users:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch users')
+            setError(err instanceof Error ? err.message : 'Failed to fetch users')
     } finally {
       setLoading(false)
     }
@@ -193,8 +192,7 @@ export default function ComprehensiveUserManagement({
           `✅ ${userName} has been successfully deleted.\n\nThis was a soft delete - the user data has been retained and can be recovered from the Deleted Users section if needed.`
         )
       } catch (err) {
-        console.error('Error deleting user:', err)
-        alert('❌ Failed to delete user. Please try again.')
+                alert('❌ Failed to delete user. Please try again.')
       } finally {
         setDeletingUserId(null)
       }
@@ -227,8 +225,7 @@ export default function ComprehensiveUserManagement({
         )
       )
     } catch (err) {
-      console.error('Error updating user status:', err)
-      alert('Failed to update user status. Please try again.')
+            alert('Failed to update user status. Please try again.')
     }
   }, [])
 
@@ -446,7 +443,7 @@ export default function ComprehensiveUserManagement({
                 <span className="text-sm text-gray-600">Active filters:</span>
                 {searchTerm && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    Search: "{searchTerm}"
+                    Search: &quot;{searchTerm}&quot;
                     <button
                       onClick={() => setSearchTerm('')}
                       className="ml-1 text-blue-600 hover:text-blue-700"
@@ -1029,7 +1026,7 @@ export default function ComprehensiveUserManagement({
                     d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                   />
                 </svg>
-                <span>Use "Quick Add User" to add more</span>
+                <span>Use &quot;Quick Add User&quot; to add more</span>
               </div>
             </div>
           </div>

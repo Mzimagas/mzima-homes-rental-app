@@ -53,8 +53,7 @@ export class RentalManagementService {
         upcomingInspections: 0, // TODO: Implement when inspections table is ready
       }
     } catch (error) {
-      console.error('Error getting dashboard stats:', error)
-      throw new Error('Failed to load dashboard statistics')
+            throw new Error('Failed to load dashboard statistics')
     }
   }
 
@@ -85,8 +84,7 @@ export class RentalManagementService {
         })) || []
       )
     } catch (error) {
-      console.error('Error getting recent activity:', error)
-      return []
+            return []
     }
   }
 
@@ -144,8 +142,7 @@ export class RentalManagementService {
         })) || []
       )
     } catch (error) {
-      console.error('Error getting rental properties:', error)
-      throw new Error('Failed to load rental properties')
+            throw new Error('Failed to load rental properties')
     }
   }
 
@@ -188,8 +185,7 @@ export class RentalManagementService {
         })) || []
       )
     } catch (error) {
-      console.error('Error getting tenants:', error)
-      throw new Error('Failed to load tenants')
+            throw new Error('Failed to load tenants')
     }
   }
 
@@ -212,8 +208,7 @@ export class RentalManagementService {
 
       return data || []
     } catch (error) {
-      console.error('Error getting maintenance requests:', error)
-      throw new Error('Failed to load maintenance requests')
+            throw new Error('Failed to load maintenance requests')
     }
   }
 
@@ -226,8 +221,7 @@ export class RentalManagementService {
 
       return data
     } catch (error) {
-      console.error('Error creating tenant:', error)
-      throw new Error('Failed to create tenant')
+            throw new Error('Failed to create tenant')
     }
   }
 
@@ -250,8 +244,7 @@ export class RentalManagementService {
 
       return data
     } catch (error) {
-      console.error('Error creating lease agreement:', error)
-      throw new Error('Failed to create lease agreement')
+            throw new Error('Failed to create lease agreement')
     }
   }
 
@@ -268,8 +261,7 @@ export class RentalManagementService {
 
       return data
     } catch (error) {
-      console.error('Error creating maintenance request:', error)
-      throw new Error('Failed to create maintenance request')
+            throw new Error('Failed to create maintenance request')
     }
   }
 
@@ -343,8 +335,7 @@ export class RentalManagementService {
         collection_rate: totalMonthlyRent > 0 ? (collectedRent / totalMonthlyRent) * 100 : 0,
       }
     } catch (error) {
-      console.error('Error getting rent roll:', error)
-      throw new Error('Failed to load rent roll')
+            throw new Error('Failed to load rent roll')
     }
   }
 
@@ -357,11 +348,9 @@ export class RentalManagementService {
   static async createPayment(paymentData: any): Promise<any> {
     try {
       // TODO: Implement when payments table is ready
-      console.log('Payment data to be saved:', paymentData)
-      return { id: 'temp-id', ...paymentData }
+            return { id: 'temp-id', ...paymentData }
     } catch (error) {
-      console.error('Error creating payment:', error)
-      throw new Error('Failed to create payment')
+            throw new Error('Failed to create payment')
     }
   }
 
@@ -374,11 +363,9 @@ export class RentalManagementService {
   static async createInspection(inspectionData: any): Promise<any> {
     try {
       // TODO: Implement when inspections table is ready
-      console.log('Inspection data to be saved:', inspectionData)
-      return { id: 'temp-id', ...inspectionData }
+            return { id: 'temp-id', ...inspectionData }
     } catch (error) {
-      console.error('Error creating inspection:', error)
-      throw new Error('Failed to create inspection')
+            throw new Error('Failed to create inspection')
     }
   }
 
@@ -391,11 +378,9 @@ export class RentalManagementService {
   static async uploadDocument(file: File, metadata: any): Promise<any> {
     try {
       // TODO: Implement Supabase Storage upload
-      console.log('Document to be uploaded:', file.name, metadata)
-      return { id: 'temp-id', name: file.name, ...metadata }
+            return { id: 'temp-id', name: file.name, ...metadata }
     } catch (error) {
-      console.error('Error uploading document:', error)
-      throw new Error('Failed to upload document')
+            throw new Error('Failed to upload document')
     }
   }
 
@@ -403,33 +388,27 @@ export class RentalManagementService {
   static async generateIncomeStatement(propertyId?: string, dateRange?: string): Promise<any> {
     try {
       // TODO: Implement income statement generation
-      console.log('Generating income statement for:', propertyId, dateRange)
-      return { type: 'income_statement', data: {} }
+            return { type: 'income_statement', data: {} }
     } catch (error) {
-      console.error('Error generating income statement:', error)
-      throw new Error('Failed to generate income statement')
+            throw new Error('Failed to generate income statement')
     }
   }
 
   static async generateCashFlowReport(propertyId?: string, dateRange?: string): Promise<any> {
     try {
       // TODO: Implement cash flow report generation
-      console.log('Generating cash flow report for:', propertyId, dateRange)
-      return { type: 'cash_flow', data: {} }
+            return { type: 'cash_flow', data: {} }
     } catch (error) {
-      console.error('Error generating cash flow report:', error)
-      throw new Error('Failed to generate cash flow report')
+            throw new Error('Failed to generate cash flow report')
     }
   }
 
   static async generateVacancyReport(propertyId?: string, dateRange?: string): Promise<any> {
     try {
       // TODO: Implement vacancy report generation
-      console.log('Generating vacancy report for:', propertyId, dateRange)
-      return { type: 'vacancy_report', data: {} }
+            return { type: 'vacancy_report', data: {} }
     } catch (error) {
-      console.error('Error generating vacancy report:', error)
-      throw new Error('Failed to generate vacancy report')
+            throw new Error('Failed to generate vacancy report')
     }
   }
 }

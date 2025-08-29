@@ -127,8 +127,7 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
       })
     } catch (err) {
       setError('Failed to load financial data')
-      console.error('Financial data loading error:', err)
-    } finally {
+          } finally {
       setLoading(false)
       setIsGeneratingReport(false)
     }
@@ -279,9 +278,7 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
 
       savePDFFile(doc, exportOptions.filename)
     } catch (error) {
-      console.error('Error exporting PDF:', error)
-
-      alert('Failed to export PDF. Please try again.')
+            alert('Failed to export PDF. Please try again.')
     } finally {
       setIsExporting(false)
     }
@@ -370,8 +367,7 @@ const FinancialReports = forwardRef(function FinancialReports(_props: {}, ref) {
 
       saveExcelFile(workbook, exportOptions.filename)
     } catch (error) {
-      console.error('Error exporting Excel:', error)
-      alert('Failed to export Excel file. Please try again.')
+            alert('Failed to export Excel file. Please try again.')
     } finally {
       setIsExporting(false)
     }

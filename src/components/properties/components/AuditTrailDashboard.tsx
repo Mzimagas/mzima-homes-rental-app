@@ -40,8 +40,7 @@ export default function AuditTrailDashboard({ purchaseId, userRole }: AuditTrail
       const approvals = await FieldSecurityService.getPendingApprovals(userRole)
       setPendingApprovals(approvals)
     } catch (error) {
-      console.error('Error loading audit data:', error)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }
@@ -56,8 +55,7 @@ export default function AuditTrailDashboard({ purchaseId, userRole }: AuditTrail
       await loadData() // Refresh data
       alert(`Change request ${action.toLowerCase()} successfully`)
     } catch (error) {
-      console.error('Error processing approval:', error)
-      alert('Failed to process approval')
+            alert('Failed to process approval')
     }
   }
 
@@ -71,23 +69,22 @@ export default function AuditTrailDashboard({ purchaseId, userRole }: AuditTrail
       if (logs) {
         const analytics = {
           totalOperations: logs.length,
-          operationsByType: logs.reduce((acc: any, log) => {
+          operationsByType: logs.reduce((acc: any, log: any) => {
             acc[log.operation_type] = (acc[log.operation_type] || 0) + 1
             return acc
           }, {}),
-          operationsByDay: logs.reduce((acc: any, log) => {
+          operationsByDay: logs.reduce((acc: any, log: any) => {
             const day = new Date(log.created_at).toDateString()
             acc[day] = (acc[day] || 0) + 1
             return acc
           }, {}),
-          requiresApprovalCount: logs.filter((log) => log.requires_approval).length,
-          uniqueUsers: new Set(logs.map((log) => log.changed_by)).size,
+          requiresApprovalCount: logs.filter((log: any) => log.requires_approval).length,
+          uniqueUsers: new Set(logs.map((log: any) => log.changed_by)).size,
         }
         setAnalytics(analytics)
       }
     } catch (error) {
-      console.error('Error loading analytics:', error)
-    }
+          }
   }
 
   const exportAuditLogs = () => {
@@ -124,9 +121,8 @@ export default function AuditTrailDashboard({ purchaseId, userRole }: AuditTrail
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'purchase_pipeline_audit_log' },
-        (payload) => {
-          console.log('🔒 Real-time audit event:', payload)
-          loadData() // Refresh data when changes occur
+        (payload: any) => {
+                    loadData() // Refresh data when changes occur
 
           // Show notification
           if (payload.eventType === 'INSERT') {
@@ -500,7 +496,7 @@ export default function AuditTrailDashboard({ purchaseId, userRole }: AuditTrail
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">Click "Refresh Analytics" to load security insights</p>
+              <p className="text-gray-500">Click &quot;Refresh Analytics&quot; to load security insights</p>
             </div>
           )}
         </div>

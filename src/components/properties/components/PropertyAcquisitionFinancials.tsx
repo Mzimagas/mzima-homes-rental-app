@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo, useMemo, useCallback } from 'react'
 import { Button, TextField, Select } from '../../ui'
 import {
   PropertyWithLifecycle,
@@ -33,7 +33,7 @@ interface NewPaymentInstallment {
   notes: string
 }
 
-export default function PropertyAcquisitionFinancials({
+const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancials({
   property,
   onUpdate,
 }: PropertyAcquisitionFinancialsProps) {
@@ -113,6 +113,105 @@ export default function PropertyAcquisitionFinancials({
     notes: '',
   })
 
+  // Optimized prefill with debounced event handling and memory leak prevention
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null
+
+    const applyPrefillFromParams = (params: URLSearchParams) => {
+      const subtab = params.get('subtab')
+      if (subtab !== 'acquisition_costs') return
+
+      const cost_type_id = params.get('cost_type_id') || ''
+      const amount_kes = params.get('amount_kes') || ''
+      const payment_date = params.get('payment_date') || new Date().toISOString().slice(0, 10)
+      const notes = params.get('notes') || ''
+
+      // Batch state updates for better performance
+      requestAnimationFrame(() => {
+        setCollapsedCosts(false)
+        setShowAddCost(true)
+        setNewCost((prev) => ({
+          ...prev,
+          cost_type_id,
+          amount_kes,
+          payment_date,
+          notes,
+        }))
+      })
+    }
+
+    // Apply prefill from URL parameters for payment installments
+    const applyPaymentPrefillFromParams = (params: URLSearchParams) => {
+      const subtab = params.get('subtab')
+      if (subtab !== 'payments') return
+
+      const amount_kes = params.get('payment_amount_kes') || ''
+      const payment_date = params.get('payment_date') || new Date().toISOString().slice(0, 10)
+      const notes = params.get('payment_notes') || ''
+
+      if (amount_kes || payment_date || notes) {
+        // Batch state updates for better performance
+        requestAnimationFrame(() => {
+          setCollapsedPayments(false)
+          setShowAddPayment(true)
+          setNewPayment((prev) => ({
+            ...prev,
+            amount_kes,
+            payment_date,
+            notes,
+          }))
+        })
+      }
+    }
+
+    // Debounced navigation handler to prevent excessive updates
+    const navHandler = (event: Event) => {
+      if (timeoutId) clearTimeout(timeoutId)
+
+      timeoutId = setTimeout(() => {
+        const e = event as CustomEvent<any>
+        const detail = e.detail || {}
+        if (detail?.tabName === 'financial' && detail?.propertyId === property.id) {
+          const params = new URLSearchParams()
+
+          // Handle acquisition costs prefill
+          if (detail?.subtab === 'acquisition_costs') {
+            if (detail.costTypeId) params.set('cost_type_id', detail.costTypeId)
+            if (typeof detail.amount === 'number') params.set('amount_kes', String(detail.amount))
+            if (detail.date) params.set('payment_date', detail.date)
+            if (detail.description) params.set('notes', detail.description)
+            params.set('subtab', 'acquisition_costs')
+            applyPrefillFromParams(params)
+          }
+
+          // Handle payment installments prefill
+          else if (detail?.subtab === 'payments') {
+            if (typeof detail.amount === 'number') params.set('payment_amount_kes', String(detail.amount))
+            if (detail.date) params.set('payment_date', detail.date)
+            if (detail.description) params.set('payment_notes', detail.description)
+            params.set('subtab', 'payments')
+            applyPaymentPrefillFromParams(params)
+          }
+        }
+      }, 100) // 100ms debounce
+    }
+
+    // Apply from current URL on mount
+    try {
+      const params = new URLSearchParams(window.location.search)
+      applyPrefillFromParams(params)
+      applyPaymentPrefillFromParams(params)
+    } catch {}
+
+    // Add optimized event listeners
+    window.addEventListener('navigateToFinancial', navHandler as EventListener, { passive: true })
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      window.removeEventListener('navigateToFinancial', navHandler as EventListener)
+    }
+  }, [property.id])
+
   // New payment installment form state
   const [newPayment, setNewPayment] = useState<NewPaymentInstallment>({
     amount_kes: '',
@@ -144,8 +243,7 @@ export default function PropertyAcquisitionFinancials({
       // Set purchase price from property data
       setTotalPurchasePrice(property.purchase_price_agreement_kes?.toString() || '')
     } catch (error) {
-      console.error('Error loading financial data:', error)
-      // Check if it's a database schema issue (migration not applied)
+            // Check if it's a database schema issue (migration not applied)
       const errorMessage = error instanceof Error ? error.message : String(error)
       if (errorMessage.includes('403') || errorMessage.includes('Not allowed')) {
         setError(
@@ -187,8 +285,7 @@ export default function PropertyAcquisitionFinancials({
         pendingSubdivisionCosts: summary.pendingSubdivisionCosts,
       })
     } catch (error) {
-      console.error('Error loading subdivision costs summary:', error)
-      // Don't set error state for subdivision costs as they're optional
+            // Don't set error state for subdivision costs as they're optional
     }
   }
 
@@ -263,8 +360,7 @@ export default function PropertyAcquisitionFinancials({
       setShowAddCost(false)
       onUpdate?.(property.id)
     } catch (error) {
-      console.error('Error adding cost entry:', error)
-      setError('Failed to add cost entry. Please try again.')
+            setError('Failed to add cost entry. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -297,8 +393,7 @@ export default function PropertyAcquisitionFinancials({
       setShowAddPayment(false)
       onUpdate?.(property.id)
     } catch (error) {
-      console.error('Error adding payment:', error)
-      setError('Failed to add payment installment. Please try again.')
+            setError('Failed to add payment installment. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -315,8 +410,7 @@ export default function PropertyAcquisitionFinancials({
       setCostEntries((prev) => prev.filter((entry) => entry.id !== costId))
       onUpdate?.(property.id)
     } catch (error) {
-      console.error('Error deleting cost entry:', error)
-      setError('Failed to delete cost entry. Please try again.')
+            setError('Failed to delete cost entry. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -335,8 +429,7 @@ export default function PropertyAcquisitionFinancials({
       setPaymentInstallments(payments)
       onUpdate?.(property.id)
     } catch (error) {
-      console.error('Error deleting payment:', error)
-      setError('Failed to delete payment installment. Please try again.')
+            setError('Failed to delete payment installment. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -366,8 +459,7 @@ export default function PropertyAcquisitionFinancials({
 
       onUpdate?.(propertyId)
     } catch (error) {
-      console.error('Error updating subdivision costs summary:', error)
-    }
+          }
   }
 
   const totals = calculateTotals()
@@ -874,4 +966,6 @@ export default function PropertyAcquisitionFinancials({
       </div>
     </div>
   )
-}
+})
+
+export default PropertyAcquisitionFinancials

@@ -35,8 +35,7 @@ export default function SubdivisionHistoryModal({
       const historyData = await SubdivisionHistoryService.getSubdivisionHistory(propertyId)
       setHistory(historyData)
     } catch (err: any) {
-      console.error('Error loading subdivision history:', err)
-      setError(err.message || 'Failed to load subdivision history')
+            setError(err.message || 'Failed to load subdivision history')
     } finally {
       setLoading(false)
     }

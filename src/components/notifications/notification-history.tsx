@@ -383,8 +383,7 @@ export default function NotificationHistory({ notifications }: NotificationHisto
                       <button
                         onClick={() => {
                           // In a real implementation, this would retry sending the notification
-                          console.log('Retrying notification:', notification.id)
-                        }}
+                                                  }}
                         className="inline-flex items-center px-3 py-1.5 border border-blue-300 shadow-sm text-xs font-medium rounded text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
                         <svg
@@ -521,8 +520,7 @@ export default function NotificationHistory({ notifications }: NotificationHisto
                   <button
                     onClick={() => {
                       // In a real implementation, this would retry sending the notification
-                      console.log('Retrying notification:', selectedNotification.id)
-                      setSelectedNotification(null)
+                                            setSelectedNotification(null)
                     }}
                     className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >

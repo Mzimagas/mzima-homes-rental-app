@@ -147,7 +147,7 @@ export default function SearchBar({
       )
     } else {
       // Show history when no query
-      out.push(...history.map((h, i) => ({ id: `history-${i}-${h}`, type: 'history', label: h })))
+      out.push(...history.map((h, i) => ({ id: `history-${i}-${h}`, type: 'history' as const, label: h })))
     }
 
     return out.slice(0, 12)

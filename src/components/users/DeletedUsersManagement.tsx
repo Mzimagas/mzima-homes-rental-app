@@ -56,8 +56,7 @@ export default function DeletedUsersManagement({ className = '' }: DeletedUsersM
 
       setDeletedUsers(transformedUsers)
     } catch (err) {
-      console.error('Error fetching deleted users:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch deleted users')
+            setError(err instanceof Error ? err.message : 'Failed to fetch deleted users')
     } finally {
       setLoading(false)
     }
@@ -95,8 +94,7 @@ export default function DeletedUsersManagement({ className = '' }: DeletedUsersM
 
         alert(`✅ ${userName} has been successfully restored and reactivated.`)
       } catch (err) {
-        console.error('Error restoring user:', err)
-        alert('❌ Failed to restore user. Please try again.')
+                alert('❌ Failed to restore user. Please try again.')
       } finally {
         setRestoringUserId(null)
       }
@@ -144,8 +142,7 @@ export default function DeletedUsersManagement({ className = '' }: DeletedUsersM
           `✅ ${userName} has been permanently deleted. All data has been removed and cannot be recovered.`
         )
       } catch (err) {
-        console.error('Error permanently deleting user:', err)
-        alert('❌ Failed to permanently delete user. Please try again.')
+                alert('❌ Failed to permanently delete user. Please try again.')
       } finally {
         setPermanentDeletingUserId(null)
       }

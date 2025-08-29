@@ -13,7 +13,12 @@ export class TenantMovedEvent extends DomainEvent {
     public readonly leaseStartDate?: Date,
     public readonly leaseEndDate?: Date
   ) {
-    super()
+    super('TenantMoved', tenantId, {
+      oldUnitId,
+      newUnitId,
+      leaseStartDate: leaseStartDate?.toISOString(),
+      leaseEndDate: leaseEndDate?.toISOString()
+    })
   }
 
   getEventName(): string {

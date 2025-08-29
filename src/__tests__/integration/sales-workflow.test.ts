@@ -103,6 +103,7 @@ describe('Complete Sales Workflow Integration Tests', () => {
         plot_id: testData.plotId,
         pricing_strategy: 'flat' as const,
         list_price: 500000,
+        price: 500000, // Add required price field
         terms: 'installments' as const,
         status: 'active' as const,
         marketing_description: 'Beautiful plot in prime location',
@@ -136,7 +137,9 @@ describe('Complete Sales Workflow Integration Tests', () => {
       const offerData = {
         plot_id: testData.plotId,
         client_id: testData.clientId,
+        listing_id: testData.listingId, // Add required listing_id
         offer_price: 480000,
+        offer_amount: 480000, // Add required offer_amount
         reservation_fee: 50000,
         reservation_date: new Date().toISOString().split('T')[0],
         expiry_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

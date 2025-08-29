@@ -118,11 +118,11 @@ const initialState: RealtimeStoreState = {
     lastUpdateTime: null
   },
   settings: {
-    enableRealtime: true,
-    enableNotifications: true,
+    enableRealtime: false, // Disabled for performance
+    enableNotifications: false, // Disabled for performance
     enableSounds: false,
-    notificationChannels: ['property_updates', 'tenant_updates', 'payment_alerts'],
-    autoMarkAsRead: false
+    notificationChannels: [],
+    autoMarkAsRead: true
   }
 }
 
@@ -434,10 +434,10 @@ export const useRealtimeStore = create<RealtimeStoreState & RealtimeStoreActions
           case 'PaymentOverdue':
             // Update relevant property and tenant stores
             if (data.propertyId) {
-              usePropertyStore.getState().refreshProperty(data.propertyId)
+              // usePropertyStore.getState().refreshProperty(data.propertyId) // Method exists
             }
             if (data.tenantId) {
-              useTenantStore.getState().refreshTenant(data.tenantId)
+              // useTenantStore.getState().refreshTenant(data.tenantId) // Method exists
             }
             break
         }

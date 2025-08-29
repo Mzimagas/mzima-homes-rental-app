@@ -9,6 +9,7 @@ import {
 } from '../../services/UniversalSearchService'
 import { RentalManagementService } from '../rental-management/services/rental-management.service'
 import { useRouter } from 'next/navigation'
+import { Property, Tenant } from '@/lib/types/database'
 
 interface GlobalSearchProps {
   className?: string
@@ -75,8 +76,7 @@ export default function GlobalSearch({
       })
       setResults(searchResults)
     } catch (error) {
-      console.error('Search error:', error)
-      setResults([])
+            setResults([])
     } finally {
       setLoading(false)
     }
@@ -98,9 +98,9 @@ export default function GlobalSearch({
   const handleResultClick = (result: SearchResult) => {
     // Update context based on result type
     if (result.type === 'property') {
-      selectProperty(result.metadata)
+      selectProperty(result.metadata as Property)
     } else if (result.type === 'tenant') {
-      selectTenant(result.metadata)
+      selectTenant(result.metadata as Tenant)
     }
 
     // Navigate to result URL if available

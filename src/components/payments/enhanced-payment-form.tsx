@@ -150,8 +150,7 @@ export default function EnhancedPaymentForm({
         onSuccess?.(result.paymentId)
       }
     } catch (err) {
-      console.error('Payment processing error:', err)
-      setPaymentResult({
+            setPaymentResult({
         success: false,
         error: 'An unexpected error occurred while processing the payment',
       })

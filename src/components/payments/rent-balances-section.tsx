@@ -64,7 +64,12 @@ export default function RentBalancesSection() {
       await import('jspdf-autotable')
 
       const doc = new jsPDF()
-      createPDFHeader(doc, 'Rent Balance Report')
+      createPDFHeader(doc, {
+        title: 'Rent Balance Report',
+        dateRange: { startDate: new Date().toISOString(), endDate: new Date().toISOString() },
+        data: null,
+        filename: 'rent-balance'
+      })
 
       const headers = ['Date', 'Type', 'Ref', 'Amount', 'Running Balance']
       const rows = ledger.map((row) => [
@@ -76,7 +81,10 @@ export default function RentBalancesSection() {
       ])
 
       addTableToPDF(doc, { headers, rows }, 30)
-      savePDFFile(doc, generateFilename('rent-balance'))
+      savePDFFile(doc, generateFilename('rent-balance', {
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString()
+      }))
     } finally {
       setExporting(null)
     }
@@ -87,7 +95,12 @@ export default function RentBalancesSection() {
     try {
       const { createExcelWorkbook, addTableToExcel, saveExcelFile, generateFilename } =
         await import('../../lib/export-utils')
-      const wb = createExcelWorkbook('Rent Balance')
+      const wb = createExcelWorkbook({
+        title: 'Rent Balance',
+        dateRange: { startDate: new Date().toISOString(), endDate: new Date().toISOString() },
+        data: null,
+        filename: 'rent-balance'
+      })
       const headers = ['Date', 'Type', 'Ref', 'Amount', 'Running Balance']
       const rows = ledger.map((row) => [
         formatDate(row.entry_date),
@@ -96,8 +109,11 @@ export default function RentBalancesSection() {
         row.amount_kes,
         row.running_balance_kes,
       ])
-      addTableToExcel(wb, 'Ledger', { headers, rows })
-      saveExcelFile(wb, generateFilename('rent-balance'))
+      addTableToExcel(wb, { headers, rows }, 'Ledger')
+      saveExcelFile(wb, generateFilename('rent-balance', {
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString()
+      }))
     } finally {
       setExporting(null)
     }

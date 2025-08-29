@@ -46,7 +46,7 @@ function UnitCard({
     }
   }
 
-  const status = getAvailabilityStatus(unit.available_from)
+  const status = getAvailabilityStatus(unit.available_from || null)
 
   return (
     <a

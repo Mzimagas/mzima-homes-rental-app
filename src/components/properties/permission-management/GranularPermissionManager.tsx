@@ -82,8 +82,7 @@ export default function GranularPermissionManager() {
         closeAssignModal()
       }, 1500)
     } catch (error) {
-      console.error('Error assigning permissions:', error)
-      setFeedback({
+            setFeedback({
         type: 'error',
         message: 'Failed to assign permissions. Please try again.',
       })

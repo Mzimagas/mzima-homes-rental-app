@@ -36,8 +36,7 @@ export const useRealTimeOccupancy = () => {
   // Initialize occupancy data
   const loadInitialOccupancyData = useCallback(async () => {
     try {
-      // Try to use the optimized view first, fallback to manual query if view doesn't exist
-      let data, error
+            let data, error
 
       // First try the optimized view
       const viewResult = await supabase.from('unit_occupancy_summary').select('*')
@@ -111,8 +110,7 @@ export const useRealTimeOccupancy = () => {
 
       setOccupancyData(occupancyMap)
     } catch (error) {
-      console.error('Error loading initial occupancy data:', error)
-      // Set empty occupancy data to prevent crashes
+            // Set empty occupancy data to prevent crashes
       setOccupancyData({})
     }
   }, [])
@@ -333,8 +331,7 @@ export const usePropertyRealTime = (propertyId: string) => {
         if (error) throw error
         setPropertyUnits(data?.map((unit) => unit.id) || [])
       } catch (error) {
-        console.error('Error loading property units:', error)
-      }
+              }
     }
 
     loadPropertyUnits()

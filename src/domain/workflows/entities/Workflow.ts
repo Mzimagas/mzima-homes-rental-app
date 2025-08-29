@@ -76,7 +76,7 @@ export class Workflow extends AggregateRoot {
     public executionCount: number = 0,
     public successRate: number = 0
   ) {
-    super(id)
+    super()
   }
 
   // Workflow execution

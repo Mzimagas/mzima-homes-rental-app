@@ -137,15 +137,13 @@ export default function AutomatedNotifications({
       })
 
       if (error) {
-        console.error('Error toggling rule:', error)
-        alert('Failed to update rule. Please try again.')
+                alert('Failed to update rule. Please try again.')
         return
       }
 
       onRulesChange()
     } catch (err) {
-      console.error('Error toggling rule:', err)
-      alert('Failed to update rule. Please try again.')
+            alert('Failed to update rule. Please try again.')
     }
   }
 
@@ -162,21 +160,18 @@ export default function AutomatedNotifications({
       const { error } = await clientBusinessFunctions.deleteNotificationRule(rule.id)
 
       if (error) {
-        console.error('Error deleting rule:', error)
-        alert('Failed to delete rule. Please try again.')
+                alert('Failed to delete rule. Please try again.')
         return
       }
 
       onRulesChange()
     } catch (err) {
-      console.error('Error deleting rule:', err)
-      alert('Failed to delete rule. Please try again.')
+            alert('Failed to delete rule. Please try again.')
     }
   }
 
   const handleFormSave = (savedRule: NotificationRule) => {
-    console.log('Rule saved:', savedRule)
-    setShowCreateForm(false)
+        setShowCreateForm(false)
     setEditingRule(null)
   }
 
@@ -253,8 +248,7 @@ export default function AutomatedNotifications({
       // Show success message
       alert(`${ruleData.name} has been set up successfully!`)
     } catch (err) {
-      console.error('Error creating notification rule:', err)
-      alert('Failed to set up notification rule. Please try again.')
+            alert('Failed to set up notification rule. Please try again.')
     }
   }
 

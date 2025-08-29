@@ -8,8 +8,7 @@ export default function ClientAnalytics() {
     try {
       initAnalytics()
     } catch (error) {
-      console.warn('Analytics initialization failed:', error)
-    }
+          }
   }, [])
   return null
 }

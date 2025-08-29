@@ -93,8 +93,7 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
       setDocuments(mockDocuments)
     } catch (err) {
       setError('Failed to load documents')
-      console.error('Document loading error:', err)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }
@@ -112,15 +111,7 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
     try {
       setUploading(true)
       // TODO: Implement file upload to Supabase Storage
-      console.log(
-        'Uploading file:',
-        selectedFile.name,
-        'Category:',
-        uploadCategory,
-        'Type:',
-        uploadType
-      )
-      alert('Document upload functionality will be implemented in the next phase')
+            alert('Document upload functionality will be implemented in the next phase')
       setShowUploadModal(false)
       setSelectedFile(null)
       setUploadCategory('')
@@ -129,8 +120,7 @@ export default function DocumentManagement({ propertyId, tenantId }: DocumentMan
       setUploadTags('')
       loadDocuments()
     } catch (error) {
-      console.error('Error uploading document:', error)
-      setError('Failed to upload document')
+            setError('Failed to upload document')
     } finally {
       setUploading(false)
     }

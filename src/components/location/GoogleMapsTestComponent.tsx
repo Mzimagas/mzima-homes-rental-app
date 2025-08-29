@@ -8,8 +8,7 @@ import ViewOnGoogleMapsButton from './ViewOnGoogleMapsButton'
  * This component demonstrates the different scenarios for Google Maps integration
  */
 export default function GoogleMapsTestComponent() {
-  // Test data scenarios
-  const testScenarios = [
+    const testScenarios = [
     {
       name: 'Property with Coordinates',
       lat: -1.2921,
@@ -142,7 +141,7 @@ export default function GoogleMapsTestComponent() {
             specific property coordinates.
           </p>
           <p>
-            <strong>Root Cause:</strong> Pipeline queries didn't include property coordinates, only
+            <strong>Root Cause:</strong> Pipeline queries didn&apos;t include property coordinates, only
             addresses.
           </p>
           <p>

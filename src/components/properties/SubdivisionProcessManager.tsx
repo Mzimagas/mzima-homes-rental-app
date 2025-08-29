@@ -282,8 +282,7 @@ export default function SubdivisionProcessManager({
       setSelectedProperty(null)
       subdivisionForm.reset()
     } catch (error) {
-      console.error('Error updating subdivision:', error)
-      alert('Failed to update subdivision plan. Please try again.')
+            alert('Failed to update subdivision plan. Please try again.')
     }
   }
 
@@ -308,8 +307,7 @@ export default function SubdivisionProcessManager({
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
           const operationNames = ['Properties', 'Subdivisions']
-          console.warn(`Failed to load ${operationNames[index]}:`, result.reason)
-        }
+                  }
       })
     } finally {
       setLoading(false)
@@ -327,8 +325,7 @@ export default function SubdivisionProcessManager({
       if (error) throw error
       setProperties(data || [])
     } catch (error) {
-      console.error('Error loading properties:', error)
-    }
+          }
   }
 
   const loadSubdivisions = async () => {
@@ -352,17 +349,9 @@ export default function SubdivisionProcessManager({
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Supabase error loading subdivisions:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        })
-
-        // Check if the error is due to missing table
+                // Check if the error is due to missing table
         if (error.message.includes('property_subdivisions') && error.code === 'PGRST200') {
-          console.log('📋 Subdivision tables not found - they need to be created')
-          setTablesExist(false)
+                    setTablesExist(false)
           setSubdivisions([])
           return
         }
@@ -372,8 +361,7 @@ export default function SubdivisionProcessManager({
       setSubdivisions(data || [])
       setTablesExist(true)
     } catch (error) {
-      console.error('Error loading subdivisions:', error)
-      // Set empty array to prevent UI issues
+            // Set empty array to prevent UI issues
       setSubdivisions([])
     }
   }
@@ -387,21 +375,14 @@ export default function SubdivisionProcessManager({
         .order('plot_number')
 
       if (error) {
-        console.error('Supabase error loading subdivision plots:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        })
-        throw error
+                throw error
       }
       setSubdivisionPlots(data || [])
 
       // Check plot limit after loading plots
       checkPlotLimit(subdivisionId, data || [])
     } catch (error) {
-      console.error('Error loading plots:', error)
-      // Set empty array to prevent UI issues
+            // Set empty array to prevent UI issues
       setSubdivisionPlots([])
     }
   }
@@ -484,8 +465,7 @@ export default function SubdivisionProcessManager({
       setShowConfirmationModal(false)
       setPropertyToSubdivide(null)
     } catch (error) {
-      console.error('Error starting subdivision:', error)
-      alert('Failed to start subdivision process')
+            alert('Failed to start subdivision process')
     } finally {
       setIsCreatingSubdivision(false)
     }
@@ -622,8 +602,7 @@ export default function SubdivisionProcessManager({
         )
       }
     } catch (error) {
-      console.error('Error saving subdivision:', error)
-      alert('Failed to save subdivision')
+            alert('Failed to save subdivision')
     }
   }
 
@@ -651,10 +630,8 @@ export default function SubdivisionProcessManager({
 
       if (error) throw error
 
-      console.log(`Successfully auto-created ${totalPlots} plots for subdivision ${subdivisionId}`)
-    } catch (error) {
-      console.error('Error auto-creating plots:', error)
-      // Don't throw error here to avoid breaking the subdivision creation
+          } catch (error) {
+            // Don't throw error here to avoid breaking the subdivision creation
       // The subdivision is created, just the auto-plots failed
       alert(`Subdivision created but failed to auto-create plots. You can create them manually.`)
     }
@@ -721,8 +698,7 @@ export default function SubdivisionProcessManager({
       loadSubdivisions()
       loadSubdivisionPlots(selectedSubdivision.id)
     } catch (error) {
-      console.error('Error saving plot:', error)
-      alert('Failed to save plot')
+            alert('Failed to save plot')
     }
   }
 
@@ -810,8 +786,7 @@ export default function SubdivisionProcessManager({
       loadSubdivisionPlots(plot.subdivision_id)
       onPropertyCreated?.(propertyId)
     } catch (error) {
-      console.error('Error creating property from plot:', error)
-      alert('Failed to create property from plot')
+            alert('Failed to create property from plot')
     }
   }
 
@@ -907,8 +882,7 @@ export default function SubdivisionProcessManager({
 
       // Don't fail the operation if audit logging fails
       if (auditError) {
-        console.warn('Audit logging failed:', auditError)
-      }
+              }
 
       alert(
         '✅ Property successfully reverted to subdivision plot!\n\nThe plot is now editable and can be modified or re-converted.'
@@ -918,8 +892,7 @@ export default function SubdivisionProcessManager({
       loadSubdivisions()
       loadSubdivisionPlots(plot.subdivision_id)
     } catch (error) {
-      console.error('Error reverting property to plot:', error)
-      alert('❌ Failed to revert property to plot. Please try again.')
+            alert('❌ Failed to revert property to plot. Please try again.')
     }
   }
 
@@ -998,8 +971,7 @@ export default function SubdivisionProcessManager({
 
       // Don't fail the operation if audit logging fails
       if (auditError) {
-        console.warn('Audit logging failed:', auditError)
-      }
+              }
 
       alert(
         '✅ Plot permanently deleted!\n\nThe plot has been removed from the subdivision system.'
@@ -1009,8 +981,7 @@ export default function SubdivisionProcessManager({
       loadSubdivisions()
       loadSubdivisionPlots(plot.subdivision_id)
     } catch (error) {
-      console.error('Error permanently deleting plot:', error)
-      alert('❌ Failed to delete plot. Please try again.')
+            alert('❌ Failed to delete plot. Please try again.')
     }
   }
 
@@ -1080,7 +1051,7 @@ export default function SubdivisionProcessManager({
               <h3 className="text-lg font-medium text-yellow-800">Subdivision Tables Not Found</h3>
               <div className="mt-2 text-sm text-yellow-700">
                 <p>
-                  The subdivision management tables haven't been created yet. To use subdivision
+                  The subdivision management tables haven&apos;t been created yet. To use subdivision
                   features:
                 </p>
                 <ol className="mt-2 list-decimal list-inside space-y-1">
@@ -1107,7 +1078,7 @@ export default function SubdivisionProcessManager({
                   Properties with Subdivision in Progress
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  Showing properties where subdivision status is "Sub-Division Started"
+                  Showing properties where subdivision status is &quot;Sub-Division Started&quot;
                 </p>
               </div>
 
@@ -1128,11 +1099,11 @@ export default function SubdivisionProcessManager({
                   </h3>
                   <p className="text-gray-600 mb-4">
                     Properties will appear here when their subdivision status is set to
-                    "Sub-Division Started" in the Properties tab.
+                    &quot;Sub-Division Started&quot; in the Properties tab.
                   </p>
                   <p className="text-sm text-gray-500">
                     To start subdivision on a property, go to Properties → change subdivision status
-                    to "Sub-Division Started" → Save Changes
+                    to &quot;Sub-Division Started&quot; → Save Changes
                   </p>
                 </div>
               ) : (

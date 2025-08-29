@@ -96,8 +96,7 @@ export default function PaymentForm({
           .select('id, name')
           .in('id', uniqueIds)
         if (propsErr2) {
-          console.warn('Could not fetch property names from table:', propsErr2)
-        } else if (Array.isArray(propsRows)) {
+                  } else if (Array.isArray(propsRows)) {
           propsRows.forEach((row: any) => {
             if (row?.id && row?.name && !nameMap.has(row.id)) {
               nameMap.set(row.id, String(row.name))
@@ -114,8 +113,7 @@ export default function PaymentForm({
       setProperties(mapped)
       if (mapped.length === 1) setSelectedPropertyId(mapped[0].id)
     } catch (e) {
-      console.error('Failed to load properties', e)
-      setProperties([])
+            setProperties([])
     }
   }
 
@@ -148,8 +146,7 @@ export default function PaymentForm({
           'get_user_properties_simple'
         )
         if (propsErr) {
-          console.error('Error loading properties for units:', propsErr?.message || propsErr)
-        }
+                  }
         propIdList = Array.isArray(propertyIds)
           ? (propertyIds as any[])
               .map((p: any) => (typeof p === 'string' ? p : p?.property_id))
@@ -171,8 +168,7 @@ export default function PaymentForm({
         .order('unit_label')
 
       if (unitsError) {
-        console.error('Error loading units:', unitsError?.message || unitsError)
-        setUnits([])
+                setUnits([])
         return
       }
 
@@ -189,8 +185,7 @@ export default function PaymentForm({
         .in('current_unit_id', unitIds)
 
       if (occupantsError) {
-        console.error('Error loading unit occupants:', occupantsError?.message || occupantsError)
-      }
+              }
 
       const occupantMap = new Map<string, { id: string; full_name: string }>()
       ;(occupantRows || []).forEach((t: any) => {
@@ -211,8 +206,7 @@ export default function PaymentForm({
 
       setUnits(mapped)
     } catch (e) {
-      console.error('Failed to load units', e)
-      setUnits([])
+            setUnits([])
     }
   }
 
@@ -253,8 +247,7 @@ export default function PaymentForm({
         onSuccess?.(result.paymentId)
       }
     } catch (err) {
-      console.error('Payment processing error:', err)
-      setPaymentResult({
+            setPaymentResult({
         success: false,
         error: 'An unexpected error occurred while processing the payment',
       })

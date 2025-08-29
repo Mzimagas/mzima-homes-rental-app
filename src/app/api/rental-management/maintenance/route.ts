@@ -245,10 +245,10 @@ export const PUT = compose(
     const updateData: any = { ...parsed.data }
 
     // Set timestamps based on status changes
-    if (parsed.data.status === 'ACKNOWLEDGED' && !existingRequest.acknowledged_date) {
+    if (parsed.data.status === 'ACKNOWLEDGED' && !(existingRequest as any).acknowledged_date) {
       updateData.acknowledged_date = new Date().toISOString()
     }
-    if (parsed.data.status === 'COMPLETED' && !existingRequest.completed_date) {
+    if (parsed.data.status === 'COMPLETED' && !(existingRequest as any).completed_date) {
       updateData.completed_date = new Date().toISOString()
     }
 

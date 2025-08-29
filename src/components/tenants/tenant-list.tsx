@@ -55,31 +55,22 @@ export default function TenantList({
 
   const loadProperties = async () => {
     setError(null)
-    console.info('[TenantList] Loading accessible properties...')
-
-    // Check authentication first
+        // Check authentication first
     const {
       data: { user },
     } = await supabase.auth.getUser()
-    console.info('[TenantList] Current user:', user?.id)
-
-    // Load accessible properties via RPC
+        // Load accessible properties via RPC
     const { data: accessible, error: rpcErr } = await supabase.rpc('get_user_properties_simple')
     if (rpcErr) {
-      console.error('[TenantList] RPC error:', rpcErr)
-      setError(rpcErr.message || 'Failed to load accessible properties')
+            setError(rpcErr.message || 'Failed to load accessible properties')
       return
     }
 
-    console.info('[TenantList] Accessible properties:', accessible)
-    const ids = (accessible || [])
+        const ids = (accessible || [])
       .map((p: any) => (typeof p === 'string' ? p : p?.property_id))
       .filter(Boolean)
-    console.info('[TenantList] Property IDs:', ids)
-
-    if (ids.length === 0) {
-      console.warn('[TenantList] No accessible properties found')
-      setProperties([])
+        if (ids.length === 0) {
+            setProperties([])
       setPropertiesById({})
       setUnitsById({})
       return
@@ -91,14 +82,12 @@ export default function TenantList({
       .in('id', ids)
       .order('name')
     if (error) {
-      console.error('[TenantList] Properties query error:', error)
-      setError(error.message || 'Failed to load properties')
+            setError(error.message || 'Failed to load properties')
       return
     }
 
     const props = data || []
-    console.info('[TenantList] Loaded properties:', props.length)
-    setProperties(props)
+        setProperties(props)
     setPropertiesById(
       props.reduce((acc: any, p: any) => {
         acc[p.id] = p
@@ -112,13 +101,11 @@ export default function TenantList({
       .select('id, unit_label, property_id')
       .in('property_id', ids)
     if (unitsErr) {
-      console.error('[TenantList] Units query error:', unitsErr)
-      setError(unitsErr.message || 'Failed to load units')
+            setError(unitsErr.message || 'Failed to load units')
       return
     }
 
-    console.info('[TenantList] Loaded units:', allUnits?.length || 0)
-    setUnitsById(
+        setUnitsById(
       (allUnits || []).reduce((acc: any, u: any) => {
         acc[u.id] = u
         return acc
@@ -162,32 +149,15 @@ export default function TenantList({
       if (showDeleted) params.set('includeDeleted', '1')
 
       const url = `/api/tenants?${params.toString()}`
-      console.info('[TenantList] Loading tenants from:', url)
-      console.info('[TenantList] Filters:', {
-        q,
-        propertyId: propertyId || defaultPropertyId || 'none',
-        unitId: unitId || 'none',
-        showDeleted,
-        hidePropertyFilters,
-        appliedPropertyFilter: propertyId || defaultPropertyId,
-      })
-
-      const res = await fetch(url, { credentials: 'same-origin' })
-      console.info('[TenantList] Response status:', res.status, res.statusText)
-
-      const j = await res.json()
-      console.info('[TenantList] Response data:', j)
-
-      if (!res.ok || !j.ok) {
-        console.error('[TenantList] API error:', j)
-        throw new Error(j?.message || 'Failed to fetch tenants')
+                  const res = await fetch(url, { credentials: 'same-origin' })
+            const j = await res.json()
+            if (!res.ok || !j.ok) {
+                throw new Error(j?.message || 'Failed to fetch tenants')
       }
 
-      console.info('[TenantList] Setting tenants:', j.data?.length || 0, 'records')
-      setTenants(j.data || [])
+            setTenants(j.data || [])
     } catch (e: any) {
-      console.error('[TenantList] Error loading tenants:', e)
-      setError(e.message || 'Failed to fetch tenants')
+            setError(e.message || 'Failed to fetch tenants')
     } finally {
       setLoading(false)
     }
@@ -209,8 +179,7 @@ export default function TenantList({
   )
 
   const clearAllFilters = () => {
-    console.info('[TenantList] Clearing all filters')
-    setQ('')
+        setQ('')
     setPropertyId('')
     setUnitId('')
   }

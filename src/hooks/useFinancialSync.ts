@@ -56,9 +56,7 @@ export const useFinancialSync = (options: FinancialSyncOptions) => {
     } catch (error) {
       // Log error for debugging in development
       if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.error('Financial sync error:', error)
-      }
+                      }
     } finally {
       setIsSyncing(false)
     }
@@ -145,9 +143,7 @@ export const useFinancialSync = (options: FinancialSyncOptions) => {
             (payload: any) => {
               // Log financial changes in development
               if (process.env.NODE_ENV === 'development') {
-                // eslint-disable-next-line no-console
-                console.log('Financial change detected:', payload)
-              }
+                                              }
 
               // Trigger sync when financial data changes
               triggerSync()
@@ -172,9 +168,7 @@ export const useFinancialSync = (options: FinancialSyncOptions) => {
       } catch (error) {
         // Log subscription errors in development
         if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.error('Failed to setup real-time subscription:', error)
-        }
+                            }
       }
     }
 

@@ -44,8 +44,7 @@ export const useUserSelection = () => {
         loadingUsers: false,
       }))
     } catch (error) {
-      console.error('Error loading users:', error)
-      setState((prev) => ({
+            setState((prev) => ({
         ...prev,
         availableUsers: [],
         loadingUsers: false,
@@ -87,8 +86,7 @@ export const useUserSelection = () => {
         loadingUsers: false,
       }))
     } catch (error) {
-      console.error('Error searching users:', error)
-      setState((prev) => ({
+            setState((prev) => ({
         ...prev,
         availableUsers: [],
         loadingUsers: false,
@@ -151,14 +149,12 @@ export const useUserSelection = () => {
 
         // Validate email format
         if (!isValidEmail(email)) {
-          console.warn('Invalid email format:', email)
-          return
+                    return
         }
 
         // Check selection limit
         if (state.selectedUsers.length >= 10) {
-          console.warn('Maximum 10 users can be selected')
-          return
+                    return
         }
 
         // Add new user

@@ -17,23 +17,19 @@ export default function QuickSearchTest() {
       const stats = universalSearchService.getIndexStats()
       setIndexStats(stats)
     } catch (error) {
-      console.error('Error loading stats:', error)
-    }
+          }
   }
 
   const testSearch = async (query: string) => {
     setLoading(true)
     try {
-      console.log(`Testing search with: "${query}"`)
-      const searchResults = await universalSearchService.search(query, {
+            const searchResults = await universalSearchService.search(query, {
         maxResults: 10,
         qualityThreshold: 'lenient',
       })
       setResults(searchResults)
-      console.log(`Search results:`, searchResults)
-    } catch (error) {
-      console.error('Search failed:', error)
-      setResults([])
+          } catch (error) {
+            setResults([])
     } finally {
       setLoading(false)
     }
@@ -42,13 +38,10 @@ export default function QuickSearchTest() {
   const rebuildIndex = async () => {
     setLoading(true)
     try {
-      console.log('Rebuilding search index...')
-      await (universalSearchService as any).forceRebuildIndex()
+            await (universalSearchService as any).forceRebuildIndex()
       loadStats()
-      console.log('Index rebuilt successfully')
-    } catch (error) {
-      console.error('Index rebuild failed:', error)
-    } finally {
+          } catch (error) {
+          } finally {
       setLoading(false)
     }
   }

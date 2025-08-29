@@ -422,8 +422,8 @@ export const ACQUISITION_COST_TYPES: AcquisitionCostType[] = [
   {
     id: 'registry_submission',
     category: 'TRANSFER_REGISTRATION',
-    label: 'Land registry submission costs',
-    description: 'Submission fees to land registry',
+    label: 'Title Registration / New Title Costs',
+    description: 'Submission fees to land registry for title registration and new title processing',
   },
   {
     id: 'registry_facilitation',

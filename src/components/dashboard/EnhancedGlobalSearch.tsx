@@ -8,6 +8,7 @@ import {
   SearchSuggestion,
 } from '../../services/UniversalSearchService'
 import { useRouter } from 'next/navigation'
+import { Property, Tenant } from '@/lib/types/database'
 
 interface EnhancedGlobalSearchProps {
   className?: string
@@ -105,8 +106,7 @@ export default function EnhancedGlobalSearch({
         const searchSuggestions = await universalSearchService.getSuggestions(searchQuery)
         setSuggestions(searchSuggestions)
       } catch (error) {
-        console.error('Search error:', error)
-        setResults([])
+                setResults([])
       } finally {
         setIsLoading(false)
       }
@@ -180,9 +180,9 @@ export default function EnhancedGlobalSearch({
   const handleResultSelect = (result: SearchResult) => {
     // Update dashboard context based on result type
     if (result.type === 'property') {
-      selectProperty(result.metadata)
+      selectProperty(result.metadata as Property)
     } else if (result.type === 'tenant') {
-      selectTenant(result.metadata)
+      selectTenant(result.metadata as Tenant)
     }
 
     // Navigate to result URL if available
@@ -446,7 +446,7 @@ export default function EnhancedGlobalSearch({
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <p className="text-sm text-gray-500">No results found for "{query}"</p>
+              <p className="text-sm text-gray-500">No results found for &quot;{query}&quot;</p>
               <p className="text-xs text-gray-400 mt-1">Try adjusting your search terms</p>
             </div>
           )}

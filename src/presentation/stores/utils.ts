@@ -243,7 +243,7 @@ export function deepMerge<T>(target: T, source: Partial<T>): T {
       if (targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
         result[key] = deepMerge(targetValue, sourceValue)
       } else {
-        result[key] = sourceValue
+        (result as any)[key] = sourceValue
       }
     } else {
       result[key] = sourceValue as T[Extract<keyof T, string>]
@@ -262,7 +262,7 @@ export function validateState<T>(
   
   for (const [key, validator] of Object.entries(validators)) {
     const value = state[key as keyof T]
-    if (!validator(value)) {
+    if (!(validator as any)(value)) {
       errors.push(`Invalid value for ${key}`)
     }
   }

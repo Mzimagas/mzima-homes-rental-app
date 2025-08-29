@@ -49,9 +49,7 @@ export default function CustomNotificationForm({
       const { data, error } = await clientBusinessFunctions.getTenants()
 
       if (error) {
-        console.error('Error loading tenants:', error)
-
-        // Provide user-friendly error messages based on error type
+                // Provide user-friendly error messages based on error type
         let userFriendlyError = 'Failed to load tenants. '
 
         if (error.includes('not authenticated') || error.includes('JWT')) {
@@ -69,8 +67,7 @@ export default function CustomNotificationForm({
         setError(userFriendlyError)
 
         // Fall back to mock data for demonstration purposes
-        console.log('Using mock tenant data due to error')
-        const mockTenants: Tenant[] = [
+                const mockTenants: Tenant[] = [
           {
             id: 'mock-1',
             name: 'John Doe (Demo)',
@@ -94,21 +91,15 @@ export default function CustomNotificationForm({
         setTenants(data || [])
 
         // Log success for debugging
-        console.log(`Successfully loaded ${data?.length || 0} tenants:`, data)
-
-        // Clear any previous errors
+                // Clear any previous errors
         setError(null)
 
         // Show a brief success message if no tenants found but no error occurred
         if (!data || data.length === 0) {
-          console.log(
-            'No tenants returned from database - this may be normal if no active tenants exist'
-          )
-        }
+                  }
       }
     } catch (err) {
-      console.error('Error loading tenants:', err)
-      setError('Failed to load tenants')
+            setError('Failed to load tenants')
     } finally {
       setLoadingTenants(false)
     }

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       ? (includeParam.split(',') as DashboardBatchRequest['include'])
       : ['properties', 'tenants', 'payments', 'stats', 'alerts']
 
-    const result = await fetchDashboardBatch(supabase, { include })
+    const result = await fetchDashboardBatch(supabase, { include: include as ('properties' | 'tenants' | 'payments' | 'stats' | 'alerts')[] })
     return NextResponse.json(result)
   } catch (error) {
     console.error('Batch dashboard API error:', error)

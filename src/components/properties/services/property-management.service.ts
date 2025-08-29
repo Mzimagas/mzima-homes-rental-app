@@ -5,14 +5,11 @@ import { isAuthError, redirectToLogin } from '../utils/property-management.utils
 export class PropertyManagementService {
   // Helper function to handle authentication errors
   static async handleAuthError(error: any, context: string): Promise<boolean> {
-    console.error(`Authentication error in ${context}:`, error)
-
-    if (isAuthError(error)) {
+        if (isAuthError(error)) {
       try {
         await supabase.auth.signOut()
       } catch (signOutError) {
-        console.error('Error signing out:', signOutError)
-      }
+              }
       redirectToLogin(context)
       return true
     }
@@ -31,8 +28,7 @@ export class PropertyManagementService {
         if (handled) return []
       }
       if (!user) {
-        console.error('No authenticated user found')
-        window.location.href = '/auth/login?message=Please log in to access properties.'
+                window.location.href = '/auth/login?message=Please log in to access properties.'
         return []
       }
 
@@ -69,8 +65,7 @@ export class PropertyManagementService {
       // For now, return data without land financial transformation until DB migration is applied
       return (data as PropertyWithLifecycle[]) || []
     } catch (error) {
-      console.error('Error loading properties:', error)
-      if (error instanceof Error && isAuthError(error)) {
+            if (error instanceof Error && isAuthError(error)) {
         window.location.href = '/auth/login?message=Session expired. Please log in again.'
       }
       return []
@@ -83,25 +78,19 @@ export class PropertyManagementService {
     changes: PendingChanges[string],
     properties: PropertyWithLifecycle[]
   ): Promise<boolean> {
-    console.log('savePropertyChanges called with:', { propertyId, changes })
-
-    if (!changes) {
-      console.log('No changes provided, returning false')
-      return false
+        if (!changes) {
+            return false
     }
 
     try {
       const updateData: any = {}
       const property = properties.find((p) => p.id === propertyId)
       if (!property) {
-        console.error('Property not found:', propertyId)
-        alert('Property not found. Please refresh and try again.')
+                alert('Property not found. Please refresh and try again.')
         return false
       }
 
-      console.log('Found property:', property)
-
-      // Handle subdivision changes
+            // Handle subdivision changes
       if (changes.subdivision !== undefined) {
         const currentSubdivisionValue =
           property.subdivision_status === 'SUBDIVIDED'
@@ -175,34 +164,22 @@ export class PropertyManagementService {
       }
 
       const csrfToken = getCsrfToken()
-      console.log('CSRF token:', csrfToken ? 'Found' : 'Not found')
-      if (!csrfToken)
+            if (!csrfToken)
         throw new Error('CSRF token not found. Please refresh the page and try again.')
 
-      console.log('Getting session...')
-      const {
+            const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession()
-      console.log('Session result:', {
-        session: session ? 'Found' : 'Not found',
-        error: sessionError,
-      })
-
-      if (sessionError) {
-        console.error('Session error:', sessionError)
-        if (isAuthError(sessionError)) {
+            if (sessionError) {
+                if (isAuthError(sessionError)) {
           try {
-            console.log('Attempting session refresh...')
-            const { error: refreshError } = await supabase.auth.refreshSession()
+                        const { error: refreshError } = await supabase.auth.refreshSession()
             if (!refreshError) {
-              console.log('Session refresh successful, retrying...')
-              return this.savePropertyChanges(propertyId, changes, properties) // retry once
+                            return this.savePropertyChanges(propertyId, changes, properties) // retry once
             }
-            console.error('Session refresh failed:', refreshError)
-          } catch (refreshErr) {
-            console.error('Session refresh exception:', refreshErr)
-          }
+                      } catch (refreshErr) {
+                      }
           alert('Your session has expired. Please log in again.')
           window.location.href = '/auth/login?message=Session expired. Please log in again.'
           return false
@@ -211,8 +188,7 @@ export class PropertyManagementService {
       }
 
       if (!session) {
-        console.error('No session found')
-        alert('You are not logged in. Please log in to save changes.')
+                alert('You are not logged in. Please log in to save changes.')
         window.location.href = '/auth/login?message=Please log in to save changes.'
         return false
       }
@@ -223,9 +199,7 @@ export class PropertyManagementService {
       }
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
 
-      console.log('Making PATCH request to:', `/api/properties/${propertyId}`)
-      console.log('Request headers:', headers)
-      console.log('Request body:', JSON.stringify(updateData))
+                  console.log('Request body:', JSON.stringify(updateData))
 
       const response = await fetch(`/api/properties/${propertyId}`, {
         method: 'PATCH',
@@ -234,24 +208,14 @@ export class PropertyManagementService {
         body: JSON.stringify(updateData),
       })
 
-      console.log('Response status:', response.status)
-      console.log('Response ok:', response.ok)
-
-      if (!response.ok) {
+                  if (!response.ok) {
         const errorData = await response.text()
-        console.error('API Error Response:', errorData)
-        throw new Error(`Failed to update property: ${response.status} ${response.statusText}`)
+                throw new Error(`Failed to update property: ${response.status} ${response.statusText}`)
       }
 
       return true
     } catch (err: any) {
-      console.error('Error saving changes:', err)
-      console.error('Error type:', typeof err)
-      console.error('Error name:', err?.name)
-      console.error('Error message:', err?.message)
-      console.error('Error stack:', err?.stack)
-
-      // Handle specific fetch errors
+                                    // Handle specific fetch errors
       if (err instanceof TypeError && err.message === 'Failed to fetch') {
         alert(
           'Network error: Unable to connect to the server. Please check your internet connection and try again.'

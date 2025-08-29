@@ -34,7 +34,7 @@ export default function PropertySelector({
       // Try to use cached data first
       const cachedProperties = getCachedData('properties')
       if (cachedProperties.length > 0 && !isCacheExpired()) {
-        setProperties(cachedProperties)
+        setProperties(cachedProperties as Property[])
         return
       }
 
@@ -45,8 +45,7 @@ export default function PropertySelector({
         setProperties(propertiesData)
         updatePropertiesCache(propertiesData)
       } catch (error) {
-        console.error('Error loading properties:', error)
-      } finally {
+              } finally {
         setLoading(false)
       }
     }
@@ -84,7 +83,7 @@ export default function PropertySelector({
         options={options}
         disabled={loading}
         className="w-full"
-        placeholder={loading ? 'Loading properties...' : placeholder}
+        // placeholder={loading ? 'Loading properties...' : placeholder}
       />
     </div>
   )

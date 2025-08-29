@@ -84,14 +84,11 @@ export default function HandoverPipelineManager({
 
   // Helper function to handle authentication errors
   const handleAuthError = async (error: any, context: string) => {
-    console.error(`Authentication error in ${context}:`, error)
-
-    if (isAuthError(error)) {
+        if (isAuthError(error)) {
       try {
         await supabase.auth.signOut()
       } catch (signOutError) {
-        console.error('Error signing out:', signOutError)
-      }
+              }
       redirectToLogin(context)
       return true
     }
@@ -122,12 +119,10 @@ export default function HandoverPipelineManager({
           handoverError.code === 'PGRST116' ||
           handoverError.message?.includes('does not exist')
         ) {
-          console.warn('Handover pipeline table does not exist. Please run database migrations.')
-          setHandovers([])
+                    setHandovers([])
           return
         }
-        console.error('Error loading handovers:', handoverError)
-        throw handoverError
+                throw handoverError
       }
 
       if (!handoverData || handoverData.length === 0) {
@@ -140,9 +135,7 @@ export default function HandoverPipelineManager({
         .map((handover) => handover.property_id)
         .filter((id) => id != null && id !== '')
 
-      console.log(`Found ${propertyIds.length} property IDs in handover data:`, propertyIds)
-
-      let propertiesMap = new Map()
+            let propertiesMap = new Map()
 
       // If we have property IDs, try to fetch the corresponding property data
       if (propertyIds.length > 0) {
@@ -153,20 +146,16 @@ export default function HandoverPipelineManager({
             .in('id', propertyIds)
 
           if (propertiesError) {
-            console.warn('Error loading property coordinates:', propertiesError)
-          } else if (propertiesData) {
-            console.log(`Loaded ${propertiesData.length} properties with coordinates`)
-            propertiesData.forEach((property) => {
+                      } else if (propertiesData) {
+                        propertiesData.forEach((property) => {
               propertiesMap.set(property.id, property)
             })
           }
         } catch (propertiesError) {
-          console.warn('Could not load property coordinates:', propertiesError)
-          // Continue without coordinates - this is not a fatal error
+                    // Continue without coordinates - this is not a fatal error
         }
       } else {
-        console.log('No property IDs found in handover data - will use addresses only')
-      }
+              }
 
       // Enhance handover data with property coordinates
       const enhancedData = handoverData.map((handover) => {
@@ -181,8 +170,7 @@ export default function HandoverPipelineManager({
 
       setHandovers(enhancedData as HandoverItem[])
     } catch (error) {
-      console.error('Error loading handovers:', error)
-      setHandovers([])
+            setHandovers([])
     } finally {
       setHandoverLoading(false)
     }
@@ -199,8 +187,7 @@ export default function HandoverPipelineManager({
         if (handled) return
       }
       if (!user) {
-        console.error('No authenticated user found')
-        return
+                return
       }
 
       const { data: allProperties, error: propertiesError } = await supabase
@@ -256,8 +243,7 @@ export default function HandoverPipelineManager({
 
       setAvailableProperties(filteredProperties as any)
     } catch (error) {
-      console.error('Error loading available properties:', error)
-      if (error instanceof Error && isAuthError(error)) {
+            if (error instanceof Error && isAuthError(error)) {
         redirectToLogin('loadAvailableProperties')
       }
     }
@@ -284,8 +270,7 @@ export default function HandoverPipelineManager({
       setEditingHandover(null)
       setShowHandoverForm(true)
     } catch (error) {
-      console.error('Error starting handover process:', error)
-      alert('Failed to start handover process')
+            alert('Failed to start handover process')
     }
   }
 
@@ -329,8 +314,7 @@ export default function HandoverPipelineManager({
           alert('Handover pipeline table does not exist. Please run database migrations first.')
           return
         }
-        console.error('Error fetching handover:', fetchError)
-        throw fetchError
+                throw fetchError
       }
 
       let currentStages = handover.pipeline_stages as any[]
@@ -346,8 +330,7 @@ export default function HandoverPipelineManager({
           .eq('id', handoverId)
 
         if (initError) {
-          console.error('Error initializing pipeline stages:', initError)
-          throw initError
+                    throw initError
         }
       }
 
@@ -441,16 +424,14 @@ export default function HandoverPipelineManager({
           alert('Handover pipeline table does not exist. Please run database migrations first.')
           return
         }
-        console.error('Supabase error details:', error)
-        throw error
+                throw error
       }
 
       // Reload handovers
       loadHandovers()
       setShowHandoverStageModal(false)
     } catch (error) {
-      console.error('Error updating handover stage:', error)
-      throw error
+            throw error
     }
   }
 
@@ -462,9 +443,7 @@ export default function HandoverPipelineManager({
 
   const onHandoverSubmit = async (values: HandoverPipelineFormValues) => {
     try {
-      console.log('Handover form values:', values)
-
-      const {
+            const {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) {
@@ -472,27 +451,17 @@ export default function HandoverPipelineManager({
         return
       }
 
-      console.log('Current user:', user.id)
-
-      const selectedProperty = availableProperties.find((p) => p.id === values.propertyId)
+            const selectedProperty = availableProperties.find((p) => p.id === values.propertyId)
       if (!selectedProperty) {
         alert('Selected property not found')
         return
       }
 
-      console.log('Selected property:', selectedProperty)
-
-      const initialStages = initializeHandoverPipelineStages()
+            const initialStages = initializeHandoverPipelineStages()
       const currentStageNum = getCurrentHandoverStage(initialStages)
       const overallProgress = calculateHandoverProgress(initialStages)
 
-      console.log('Pipeline stages initialized:', {
-        initialStages,
-        currentStageNum,
-        overallProgress,
-      })
-
-      const handoverData = {
+            const handoverData = {
         property_id: values.propertyId,
         property_name:
           (selectedProperty as any).name ||
@@ -523,44 +492,32 @@ export default function HandoverPipelineManager({
         created_by: user.id,
       }
 
-      console.log('Handover data to insert:', handoverData)
-
-      if (editingHandover) {
-        console.log('Updating existing handover:', editingHandover.id)
-        const { data: updateResult, error } = await supabase
+            if (editingHandover) {
+                const { data: updateResult, error } = await supabase
           .from('handover_pipeline')
           .update(handoverData)
           .eq('id', editingHandover.id)
           .select()
 
-        console.log('Update result:', updateResult)
-        console.log('Update error:', error)
-
-        if (error) {
+                        if (error) {
           if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
             alert('Handover pipeline table does not exist. Please run database migrations first.')
             return
           }
-          console.error('Update error details:', error)
-          throw error
+                    throw error
         }
       } else {
-        console.log('Creating new handover')
-        const { data: insertResult, error } = await supabase
+                const { data: insertResult, error } = await supabase
           .from('handover_pipeline')
           .insert([handoverData])
           .select()
 
-        console.log('Insert result:', insertResult)
-        console.log('Insert error:', error)
-
-        if (error) {
+                        if (error) {
           if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
             alert('Handover pipeline table does not exist. Please run database migrations first.')
             return
           }
-          console.error('Insert error details:', error)
-          throw error
+                    throw error
         }
       }
 
@@ -586,8 +543,7 @@ export default function HandoverPipelineManager({
       loadAvailableProperties()
       onHandoverCreated?.()
     } catch (error) {
-      console.error('Error saving handover:', error)
-      alert('Failed to save handover')
+            alert('Failed to save handover')
     }
   }
 
@@ -699,7 +655,7 @@ export default function HandoverPipelineManager({
           ) : (
             <div>
               <p className="text-gray-600 mb-4">
-                Start tracking properties you're preparing for handover.
+                Start tracking properties you&apos;re preparing for handover.
               </p>
               <Button
                 variant="primary"

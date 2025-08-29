@@ -92,8 +92,7 @@ export class ConflictPreventionService {
         recommendedAction,
       }
     } catch (error) {
-      console.error('Error checking allocation conflicts:', error)
-      return {
+            return {
         hasConflicts: true,
         conflicts: [
           {
@@ -166,8 +165,7 @@ export class ConflictPreventionService {
         }
       }
     } catch (error) {
-      console.error('Error checking unit conflicts:', error)
-    }
+          }
 
     return conflicts
   }
@@ -229,8 +227,7 @@ export class ConflictPreventionService {
         }
       }
     } catch (error) {
-      console.error('Error checking tenant conflicts:', error)
-    }
+          }
 
     return conflicts
   }
@@ -316,8 +313,7 @@ export class ConflictPreventionService {
         }
       }
     } catch (error) {
-      console.error('Error checking date conflicts:', error)
-    }
+          }
 
     return conflicts
   }
@@ -388,8 +384,7 @@ export class ConflictPreventionService {
         })
       }
     } catch (error) {
-      console.error('Error checking maintenance conflicts:', error)
-    }
+          }
 
     return conflicts
   }
@@ -449,8 +444,7 @@ export class ConflictPreventionService {
         })
       }
     } catch (error) {
-      console.error('Error checking rent conflicts:', error)
-    }
+          }
 
     return conflicts
   }
@@ -489,8 +483,7 @@ export class ConflictPreventionService {
           }
       }
     } catch (error) {
-      console.error('Error executing resolution:', error)
-      return {
+            return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to execute resolution',
       }

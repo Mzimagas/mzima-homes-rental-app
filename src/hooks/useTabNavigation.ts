@@ -5,24 +5,84 @@ export interface TabNavigationOptions {
   stageNumber?: number
   paymentId?: string
   action?: 'view' | 'pay' | 'manage'
+  // Optional prefill fields for financial forms
+  subtab?: 'acquisition_costs' | 'payments' | string
+  costTypeId?: string
+  amount?: number
+  date?: string // ISO date (YYYY-MM-DD)
+  description?: string
+  // Pipeline context for better navigation
+  pipeline?: 'direct_addition' | 'purchase_pipeline'
+  // Payment type for better categorization
+  paymentType?: 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost'
 }
 
 export const useTabNavigation = () => {
   // Navigate to financial tab with specific context
   const navigateToFinancial = useCallback((options: TabNavigationOptions) => {
-    const { propertyId, stageNumber, paymentId, action = 'view' } = options
+    const {
+      propertyId,
+      stageNumber,
+      paymentId,
+      action = 'view',
+      subtab,
+      costTypeId,
+      amount,
+      date,
+      description,
+      pipeline,
+      paymentType,
+    } = options
 
     // Create URL parameters for financial tab context
     const params = new URLSearchParams()
     if (stageNumber) params.set('stage', stageNumber.toString())
     if (paymentId) params.set('payment', paymentId)
     if (action) params.set('action', action)
+    if (pipeline) params.set('pipeline', pipeline)
+    if (paymentType) params.set('payment_type', paymentType)
 
-    // Construct the financial tab URL
-    const financialUrl = `/properties/${propertyId}/financial${params.toString() ? `?${params.toString()}` : ''}`
+    // Prefill parameters for acquisition costs/payment forms
+    if (subtab) params.set('subtab', subtab)
+    if (costTypeId) params.set('cost_type_id', costTypeId)
 
-    // For now, we'll use a custom event to communicate with the parent component
-    // In a real implementation, this would integrate with your routing system
+    // Handle different amount parameter names based on subtab
+    if (typeof amount === 'number') {
+      if (subtab === 'payments') {
+        params.set('payment_amount_kes', String(amount))
+      } else {
+        params.set('amount_kes', String(amount))
+      }
+    }
+
+    if (date) params.set('payment_date', date)
+
+    // Handle different description parameter names based on subtab
+    if (description) {
+      if (subtab === 'payments') {
+        params.set('payment_notes', description)
+      } else {
+        params.set('notes', description)
+      }
+    }
+
+    // Construct the financial tab URL (preserve current path and ensure property ID is included)
+    let basePath =
+      typeof window !== 'undefined' ? window.location.pathname : '/dashboard/properties'
+
+    // Ensure the path includes the property ID and financial tab
+    if (!basePath.includes(propertyId)) {
+      basePath = `/dashboard/properties/${propertyId}`
+    }
+
+    // Ensure the path ends with /financial for the financial tab
+    if (!basePath.endsWith('/financial')) {
+      basePath = basePath.replace(/\/(documents|location|financial)$/, '') + '/financial'
+    }
+
+    const financialUrl = `${basePath}${params.toString() ? `?${params.toString()}` : ''}`
+
+    // Optimized navigation: batch DOM operations and reduce event overhead
     const navigationEvent = new CustomEvent('navigateToFinancial', {
       detail: {
         url: financialUrl,
@@ -30,19 +90,52 @@ export const useTabNavigation = () => {
         stageNumber,
         paymentId,
         action,
+        subtab,
+        costTypeId,
+        amount,
+        date,
+        description,
         tabName: 'financial',
       },
     })
 
-    window.dispatchEvent(navigationEvent)
+    // Use requestAnimationFrame for better performance
+    requestAnimationFrame(() => {
+      // Dispatch event first - this will trigger the InlinePropertyView listener
+      window.dispatchEvent(navigationEvent)
 
-    // Also try to find and click the financial tab if it exists
-    const financialTab = document.querySelector('[data-tab="financial"]') as HTMLElement
-    if (financialTab) {
-      financialTab.click()
+      // Update URL parameters without changing the path (for form prefilling)
+      try {
+        const currentUrl = new URL(window.location.href)
+        // Only update query parameters, keep the current path
+        params.forEach((value, key) => {
+          currentUrl.searchParams.set(key, value)
+        })
+        window.history.replaceState({}, '', currentUrl.toString())
+      } catch {}
+
+      // Find and click tab efficiently - try multiple selectors
+      const financialTab =
+        (document.querySelector('[data-tab="financial"]') as HTMLElement) ||
+        (document.querySelector('button[role="tab"]:has-text("Financial")') as HTMLElement) ||
+        (document.querySelector('button:contains("Financial")') as HTMLElement) ||
+        (document.querySelector('.tab-financial') as HTMLElement)
+
+      if (financialTab) {
+        financialTab.click()
+      }
+    })
+
+    // Return the current URL with updated parameters
+    try {
+      const currentUrl = new URL(window.location.href)
+      params.forEach((value, key) => {
+        currentUrl.searchParams.set(key, value)
+      })
+      return currentUrl.toString()
+    } catch {
+      return financialUrl
     }
-
-    return financialUrl
   }, [])
 
   // Navigate to documents tab with specific stage

@@ -59,8 +59,7 @@ export default function SecurePurchaseForm({
           const properties = await PropertyManagementService.loadProperties()
           setAvailableProperties(properties)
         } catch (error) {
-          console.error('Error loading properties:', error)
-        }
+                  }
       }
     }
     loadProperties()
@@ -247,8 +246,7 @@ export default function SecurePurchaseForm({
       setShowApprovalDialog(false)
       onClose()
     } catch (error) {
-      console.error('Error submitting approval request:', error)
-      alert('Failed to submit approval request')
+            alert('Failed to submit approval request')
     }
   }
 

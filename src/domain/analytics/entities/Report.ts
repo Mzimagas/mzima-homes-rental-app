@@ -89,7 +89,7 @@ export class Report extends AggregateRoot {
     public sharedWith: string[] = [],
     public version: number = 1
   ) {
-    super(id)
+    super()
   }
 
   // Report generation
@@ -114,7 +114,7 @@ export class Report extends AggregateRoot {
 
   // Configuration updates
   updateConfiguration(newConfig: Partial<ReportConfiguration>): void {
-    this.configuration = { ...this.configuration, ...newConfig }
+    this.configuration = { ...this.configuration, ...newConfig } as any
     this.updatedAt = new Date()
     this.version += 1
 

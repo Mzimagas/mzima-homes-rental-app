@@ -85,8 +85,7 @@ export default function AccountingManagementTabs() {
                   purchaseInstallments,
                 }
               } catch (propertyError) {
-                console.warn(`Failed to load data for property ${p.property_name}:`, propertyError)
-                // Return default values for failed properties
+                                // Return default values for failed properties
                 return {
                   property_id: p.property_id,
                   property_name: p.property_name,
@@ -112,11 +111,9 @@ export default function AccountingManagementTabs() {
       // Log failed requests but don't block the UI
       const failedCount = results.filter((result) => result.status === 'rejected').length
       if (failedCount > 0) {
-        console.warn(`${failedCount} properties failed to load financial data`)
-      }
+              }
     } catch (err) {
-      console.error('Error loading accounting data:', err)
-      setError('Some accounting data could not be loaded. The system is still functional.')
+            setError('Some accounting data could not be loaded. The system is still functional.')
       // Set empty rollups to prevent UI blocking
       setRollups([])
     } finally {

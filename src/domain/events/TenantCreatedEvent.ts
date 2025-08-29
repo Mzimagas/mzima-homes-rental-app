@@ -11,7 +11,10 @@ export class TenantCreatedEvent extends DomainEvent {
     public readonly fullName: string,
     public readonly nationalId: string
   ) {
-    super()
+    super('TenantCreated', tenantId, {
+      tenantName,
+      nationalId
+    })
   }
 
   getEventName(): string {

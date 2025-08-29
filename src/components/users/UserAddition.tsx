@@ -132,13 +132,9 @@ export default function UserAddition({ onUserAdded }: UserAdditionProps) {
         }),
       })
 
-      console.log('API Response status:', response.status)
-
-      if (!response.ok) {
+            if (!response.ok) {
         const errorData = await response.json()
-        console.error('API Error:', errorData)
-
-        // Handle specific error cases
+                // Handle specific error cases
         if (response.status === 401) {
           throw new Error(
             'You must be logged in as an administrator to create users. Please log in and try again.'
@@ -149,9 +145,7 @@ export default function UserAddition({ onUserAdded }: UserAdditionProps) {
       }
 
       const result = await response.json()
-      console.log('API Success:', result)
-
-      setSuccessMessage(
+            setSuccessMessage(
         `✅ User "${formData.fullName}" (Member #${formData.memberNumber.toUpperCase()}) has been successfully added with ${roles.find((r) => r.value === formData.initialRole)?.label} role. Default password: ${defaultPassword} (must change on first login)`
       )
 
@@ -171,8 +165,7 @@ export default function UserAddition({ onUserAdded }: UserAdditionProps) {
         onUserAdded()
       }
     } catch (error) {
-      console.error('Error adding user:', error)
-      const errorMsg =
+            const errorMsg =
         error instanceof Error ? error.message : 'Failed to create user. Please try again.'
       setErrorMessage(errorMsg)
 

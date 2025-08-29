@@ -395,7 +395,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <div className="ml-3 flex-1">
                     <p className="text-sm font-medium text-gray-900 truncate">{user?.email}</p>
                     <p className="text-xs text-gray-500">
-                      {propertyAccess.accessibleProperties?.length || 0} properties
+                      {(propertyAccess as any).accessibleProperties?.length || 0} properties
                     </p>
                   </div>
                 </div>

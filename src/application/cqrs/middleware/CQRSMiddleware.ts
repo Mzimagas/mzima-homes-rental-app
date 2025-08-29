@@ -294,7 +294,7 @@ export class PerformanceQueryMiddleware implements QueryMiddleware {
   }
 
   getCacheHitRate(queryType?: string): number {
-    const filtered = queryType 
+    const filtered = queryType
       ? this.metrics.filter(m => m.queryType === queryType)
       : this.metrics
 
@@ -302,6 +302,15 @@ export class PerformanceQueryMiddleware implements QueryMiddleware {
 
     const cacheHits = filtered.filter(m => m.cacheHit).length
     return (cacheHits / filtered.length) * 100
+  }
+
+  private recordMetric(metric: typeof this.metrics[0]): void {
+    this.metrics.push(metric)
+
+    // Keep only last 1000 metrics
+    if (this.metrics.length > 1000) {
+      this.metrics = this.metrics.slice(-1000)
+    }
   }
 }
 

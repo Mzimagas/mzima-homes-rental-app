@@ -36,8 +36,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
-    // Update state so the next render will show the fallback UI
-    return { hasError: true, error }
+        return { hasError: true, error }
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -75,8 +74,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      // Check if we have a custom fallback
-      if (this.props.fallback) {
+            if (this.props.fallback) {
         return this.props.fallback
       }
 
@@ -323,7 +321,7 @@ class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  private getErrorIcon(category: string): JSX.Element {
+  private getErrorIcon(category: string): React.ReactElement {
     const iconClass = 'mx-auto h-12 w-12'
 
     switch (category) {

@@ -100,8 +100,7 @@ export default function UserEditModal({ user, onClose, onUserUpdated }: UserEdit
 
       onUserUpdated()
     } catch (error) {
-      console.error('Error updating user:', error)
-      setErrors({
+            setErrors({
         email: error instanceof Error ? error.message : 'Failed to update user. Please try again.',
       })
     } finally {

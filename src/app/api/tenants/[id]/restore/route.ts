@@ -13,7 +13,7 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
     const supabase = createServerSupabaseClient()
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await (await supabase).auth.getUser()
     if (user) return user.id
   } catch (e) {
     console.warn('[resolveUserId] Cookie auth failed:', e)

@@ -36,14 +36,7 @@ export default function DocumentDebugger({ propertyId }: DocumentDebuggerProps) 
     }
 
     try {
-      // Test 1: Check authentication
-      console.log('🔍 Debug Test 1: Authentication Status')
-      console.log('User:', user)
-      console.log('Session:', session)
-
-      // Test 2: Query documents
-      console.log('🔍 Debug Test 2: Document Query')
-      const testPropertyId = propertyId || '345cf10e-22a6-43c7-8ecc-859238a11fd6'
+                                          const testPropertyId = propertyId || '345cf10e-22a6-43c7-8ecc-859238a11fd6'
       
       const { data: documents, error: docError } = await supabase
         .from('documents')
@@ -55,16 +48,12 @@ export default function DocumentDebugger({ propertyId }: DocumentDebuggerProps) 
 
       if (docError) {
         info.error = `Document query error: ${docError.message}`
-        console.error('Document query error:', docError)
-      } else {
+              } else {
         info.documentsFound = documents.length
         info.documentsData = documents
-        console.log(`Found ${documents.length} documents:`, documents)
-      }
+              }
 
-      // Test 3: Storage access
-      console.log('🔍 Debug Test 3: Storage Access')
-      if (documents && documents.length > 0) {
+                  if (documents && documents.length > 0) {
         const testDoc = documents[0]
         try {
           const { data: urlData, error: urlError } = await supabase.storage
@@ -75,8 +64,7 @@ export default function DocumentDebugger({ propertyId }: DocumentDebuggerProps) 
             info.storageTest = `Storage error: ${urlError.message}`
           } else {
             info.storageTest = 'Storage access successful'
-            console.log('Signed URL created:', urlData.signedUrl)
-          }
+                      }
         } catch (err) {
           info.storageTest = `Storage exception: ${err}`
         }
@@ -86,8 +74,7 @@ export default function DocumentDebugger({ propertyId }: DocumentDebuggerProps) 
 
     } catch (error) {
       info.error = `General error: ${error}`
-      console.error('Debug test error:', error)
-    }
+          }
 
     setDebugInfo(info)
     setLoading(false)
@@ -139,51 +126,51 @@ export default function DocumentDebugger({ propertyId }: DocumentDebuggerProps) 
       <div className="space-y-3 text-sm">
         <div className="flex justify-between">
           <span className="font-medium">Authentication:</span>
-          <span className={debugInfo.isAuthenticated ? 'text-green-600' : 'text-red-600'}>
-            {debugInfo.isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}
+          <span className={debugInfo?.isAuthenticated ? 'text-green-600' : 'text-red-600'}>
+            {debugInfo?.isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}
           </span>
         </div>
         
-        {debugInfo.isAuthenticated && (
+        {debugInfo?.isAuthenticated && (
           <>
             <div className="flex justify-between">
               <span className="font-medium">User ID:</span>
-              <span className="text-gray-600 font-mono text-xs">{debugInfo.userId}</span>
+              <span className="text-gray-600 font-mono text-xs">{debugInfo?.userId}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Email:</span>
-              <span className="text-gray-600">{debugInfo.userEmail}</span>
+              <span className="text-gray-600">{debugInfo?.userEmail}</span>
             </div>
           </>
         )}
         
         <div className="flex justify-between">
           <span className="font-medium">Documents Found:</span>
-          <span className={debugInfo.documentsFound > 0 ? 'text-green-600' : 'text-orange-600'}>
-            {debugInfo.documentsFound} documents
+          <span className={debugInfo?.documentsFound && debugInfo.documentsFound > 0 ? 'text-green-600' : 'text-orange-600'}>
+            {debugInfo?.documentsFound || 0} documents
           </span>
         </div>
         
         <div className="flex justify-between">
           <span className="font-medium">Storage Access:</span>
-          <span className={debugInfo.storageTest.includes('successful') ? 'text-green-600' : 'text-orange-600'}>
-            {debugInfo.storageTest}
+          <span className={debugInfo?.storageTest?.includes('successful') ? 'text-green-600' : 'text-orange-600'}>
+            {debugInfo?.storageTest || 'Unknown'}
           </span>
         </div>
         
-        {debugInfo.error && (
+        {debugInfo?.error && (
           <div className="bg-red-50 border border-red-200 rounded p-2 mt-2">
             <span className="font-medium text-red-800">Error:</span>
-            <span className="text-red-600 ml-2">{debugInfo.error}</span>
+            <span className="text-red-600 ml-2">{debugInfo?.error}</span>
           </div>
         )}
         
-        {debugInfo.documentsData.length > 0 && (
+        {debugInfo?.documentsData && debugInfo.documentsData.length > 0 && (
           <div className="mt-4">
             <span className="font-medium">Document Details:</span>
             <div className="bg-white border rounded p-2 mt-1 max-h-32 overflow-y-auto">
               <pre className="text-xs text-gray-600">
-                {JSON.stringify(debugInfo.documentsData, null, 2)}
+                {JSON.stringify(debugInfo?.documentsData || [], null, 2)}
               </pre>
             </div>
           </div>

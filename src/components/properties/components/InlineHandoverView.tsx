@@ -54,8 +54,7 @@ export default function InlineHandoverView({
       )
       setFinancialSummary(summary)
     } catch (error) {
-      console.error('Error loading financial data:', error)
-      setFinancialError(error instanceof Error ? error.message : 'Failed to load financial data')
+            setFinancialError(error instanceof Error ? error.message : 'Failed to load financial data')
     } finally {
       setLoadingFinancials(false)
     }

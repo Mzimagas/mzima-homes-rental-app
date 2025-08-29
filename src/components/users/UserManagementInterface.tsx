@@ -81,8 +81,7 @@ export default function UserManagementInterface({ className = '' }: UserManageme
           totalPages: data.pagination?.totalPages || 0,
         }))
       } catch (err) {
-        console.error('Error fetching users:', err)
-        setError(err instanceof Error ? err.message : 'Failed to fetch users')
+                setError(err instanceof Error ? err.message : 'Failed to fetch users')
       } finally {
         setLoading(false)
       }
@@ -180,8 +179,7 @@ export default function UserManagementInterface({ className = '' }: UserManageme
         // Refresh user list
         fetchUsers(pagination.page, filters.search)
       } catch (err) {
-        console.error('Error deleting user:', err)
-        alert('Failed to delete user. Please try again.')
+                alert('Failed to delete user. Please try again.')
       }
     },
     [fetchUsers, pagination.page, filters.search]
@@ -212,8 +210,7 @@ export default function UserManagementInterface({ className = '' }: UserManageme
         )
       )
     } catch (err) {
-      console.error('Error updating user status:', err)
-      alert('Failed to update user status. Please try again.')
+            alert('Failed to update user status. Please try again.')
     }
   }, [])
 

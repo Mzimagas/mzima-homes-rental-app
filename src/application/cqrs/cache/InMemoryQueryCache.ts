@@ -256,7 +256,7 @@ export class InMemoryQueryCache implements QueryCache {
     }
 
     if (typeof value === 'object') {
-      return Object.values(value).reduce((sum, item) => sum + this.estimateSize(item), 0)
+      return Object.values(value).reduce((sum: number, item) => (sum as number) + this.estimateSize(item), 0)
     }
 
     return 0

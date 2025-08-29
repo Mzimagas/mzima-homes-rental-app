@@ -52,8 +52,7 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
       const data = await RentalManagementService.getRentalProperties()
       setProperties(data)
     } catch (err: any) {
-      console.error('Error loading properties:', err)
-      setError(err.message || 'Failed to load properties')
+            setError(err.message || 'Failed to load properties')
     } finally {
       setLoading(false)
     }
@@ -167,8 +166,7 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
       setShowRentRollModal(true)
       setShowPropertyModal(false)
     } catch (error) {
-      console.error('Error generating rent roll:', error)
-      setError('Failed to generate rent roll')
+            setError('Failed to generate rent roll')
     } finally {
       setLoadingRentRoll(false)
     }
@@ -723,7 +721,7 @@ export default function RentalPropertyList({ onDataChange }: RentalPropertyListP
                 <div className="text-center py-8">
                   <div className="text-4xl mb-4">🏠</div>
                   <h4 className="text-lg font-medium text-gray-900 mb-2">No Units Found</h4>
-                  <p className="text-gray-500 mb-4">This property doesn't have any units yet.</p>
+                  <p className="text-gray-500 mb-4">This property doesn&apos;t have any units yet.</p>
                   <Button
                     variant="primary"
                     onClick={() => {

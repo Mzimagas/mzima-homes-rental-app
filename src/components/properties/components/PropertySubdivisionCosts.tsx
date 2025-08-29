@@ -77,9 +77,7 @@ export default function PropertySubdivisionCosts({
 
     try {
       const costs = await SubdivisionCostsService.getSubdivisionCosts(property.id)
-      console.log('PropertySubdivisionCosts: Loaded costs from API:', costs)
-
-      // Ensure we only set valid cost entries
+            // Ensure we only set valid cost entries
       const validCosts = Array.isArray(costs)
         ? costs.filter(
             (cost) =>
@@ -91,11 +89,9 @@ export default function PropertySubdivisionCosts({
           )
         : []
 
-      console.log('PropertySubdivisionCosts: Valid costs after filtering:', validCosts)
-      setSubdivisionCosts(validCosts)
+            setSubdivisionCosts(validCosts)
     } catch (error) {
-      console.error('Error loading subdivision costs:', error)
-      setError('Failed to load subdivision costs. Please try again.')
+            setError('Failed to load subdivision costs. Please try again.')
     } finally {
       setInitialLoading(false)
     }
@@ -140,8 +136,7 @@ export default function PropertySubdivisionCosts({
       setShowAddCost(false)
       onUpdate?.(property.id)
     } catch (error) {
-      console.error('Error adding subdivision cost:', error)
-      setError('Failed to add subdivision cost. Please try again.')
+            setError('Failed to add subdivision cost. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -162,8 +157,7 @@ export default function PropertySubdivisionCosts({
       setSubdivisionCosts((prev) => prev.map((cost) => (cost.id === costId ? updatedCost : cost)))
       onUpdate?.(property.id)
     } catch (error) {
-      console.error('Error updating payment status:', error)
-      setError('Failed to update payment status. Please try again.')
+            setError('Failed to update payment status. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -182,8 +176,7 @@ export default function PropertySubdivisionCosts({
       setSubdivisionCosts((prev) => prev.filter((cost) => cost.id !== costId))
       onUpdate?.(property.id)
     } catch (error) {
-      console.error('Error deleting subdivision cost:', error)
-      setError('Failed to delete subdivision cost. Please try again.')
+            setError('Failed to delete subdivision cost. Please try again.')
     } finally {
       setLoading(false)
     }

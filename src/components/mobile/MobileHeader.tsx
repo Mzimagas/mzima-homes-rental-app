@@ -43,14 +43,11 @@ export default function MobileHeader({ onMenuToggle, isMenuOpen }: MobileHeaderP
     try {
       const { error } = await signOut()
       if (error) {
-        console.error('❌ Logout failed:', error)
-        alert(`Logout failed: ${error}`)
+                alert(`Logout failed: ${error}`)
       } else {
-        console.log('✅ Logout successful')
-      }
+              }
     } catch (err) {
-      console.error('❌ Logout exception:', err)
-      alert('An unexpected error occurred during logout')
+            alert('An unexpected error occurred during logout')
     }
   }
 

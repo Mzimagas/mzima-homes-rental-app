@@ -132,8 +132,7 @@ export function useOptimizedProperties(propertyIds?: string[]) {
       const result = await response.json()
       setData(result.properties || [])
     } catch (err) {
-      console.error('Properties loading error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load properties')
+            setError(err instanceof Error ? err.message : 'Failed to load properties')
     } finally {
       setLoading(false)
     }
@@ -183,8 +182,7 @@ export function useOptimizedTenants(filters?: { property_id?: string; status?: s
       const result = await response.json()
       setData(result.tenants || [])
     } catch (err) {
-      console.error('Tenants loading error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load tenants')
+            setError(err instanceof Error ? err.message : 'Failed to load tenants')
     } finally {
       setLoading(false)
     }

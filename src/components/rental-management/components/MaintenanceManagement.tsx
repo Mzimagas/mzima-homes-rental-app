@@ -146,8 +146,7 @@ export default function MaintenanceManagement({
       }
     } catch (err) {
       setError('Failed to load maintenance data')
-      console.error('Maintenance data loading error:', err)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }

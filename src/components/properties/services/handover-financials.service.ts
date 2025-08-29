@@ -106,11 +106,8 @@ export class HandoverFinancialsService {
     })
 
     if (!response.ok) {
-      console.error('HTTP Error:', response.status, response.statusText)
-      const errorText = await response.text()
-      console.error('Error response body:', errorText)
-
-      let errorData
+            const errorText = await response.text()
+            let errorData
       try {
         errorData = JSON.parse(errorText)
       } catch {
@@ -129,8 +126,7 @@ export class HandoverFinancialsService {
       const data = await this.makeRequest(`/api/properties/${propertyId}/handover-costs`)
       return data.data || []
     } catch (error) {
-      console.error('Error fetching handover costs:', error)
-      throw error
+            throw error
     }
   }
 
@@ -143,11 +139,9 @@ export class HandoverFinancialsService {
         method: 'POST',
         body: JSON.stringify(cost),
       })
-      console.log('Successfully created handover cost:', data)
-      return data.data
+            return data.data
     } catch (error) {
-      console.error('Error creating handover cost:', error)
-      throw error
+            throw error
     }
   }
 
@@ -166,11 +160,9 @@ export class HandoverFinancialsService {
           body: JSON.stringify(updates),
         }
       )
-      console.log('Successfully updated handover cost:', data)
-      return data.data
+            return data.data
     } catch (error) {
-      console.error('Error updating handover cost:', error)
-      throw error
+            throw error
     }
   }
 
@@ -179,10 +171,8 @@ export class HandoverFinancialsService {
       await this.makeRequest(`/api/properties/${propertyId}/handover-costs/${costId}`, {
         method: 'DELETE',
       })
-      console.log('Successfully deleted handover cost')
-    } catch (error) {
-      console.error('Error deleting handover cost:', error)
-      throw error
+          } catch (error) {
+            throw error
     }
   }
 
@@ -192,8 +182,7 @@ export class HandoverFinancialsService {
       const data = await this.makeRequest(`/api/properties/${propertyId}/payment-receipts`)
       return data.data || []
     } catch (error) {
-      console.error('Error fetching payment receipts:', error)
-      throw error
+            throw error
     }
   }
 
@@ -206,11 +195,9 @@ export class HandoverFinancialsService {
         method: 'POST',
         body: JSON.stringify(receipt),
       })
-      console.log('Successfully created payment receipt:', data)
-      return data.data
+            return data.data
     } catch (error) {
-      console.error('Error creating payment receipt:', error)
-      throw error
+            throw error
     }
   }
 
@@ -229,11 +216,9 @@ export class HandoverFinancialsService {
           body: JSON.stringify(updates),
         }
       )
-      console.log('Successfully updated payment receipt:', data)
-      return data.data
+            return data.data
     } catch (error) {
-      console.error('Error updating payment receipt:', error)
-      throw error
+            throw error
     }
   }
 
@@ -242,10 +227,8 @@ export class HandoverFinancialsService {
       await this.makeRequest(`/api/properties/${propertyId}/payment-receipts/${receiptId}`, {
         method: 'DELETE',
       })
-      console.log('Successfully deleted payment receipt')
-    } catch (error) {
-      console.error('Error deleting payment receipt:', error)
-      throw error
+          } catch (error) {
+            throw error
     }
   }
 
@@ -257,8 +240,7 @@ export class HandoverFinancialsService {
       )
       return data.data
     } catch (error) {
-      console.error('Error fetching handover financial summary:', error)
-      throw error
+            throw error
     }
   }
 
@@ -278,10 +260,8 @@ export class HandoverFinancialsService {
         method: 'PATCH',
         body: JSON.stringify(body),
       })
-      console.log('Successfully updated handover price')
-    } catch (error) {
-      console.error('Error updating handover price:', error)
-      throw error
+          } catch (error) {
+            throw error
     }
   }
 
@@ -290,8 +270,7 @@ export class HandoverFinancialsService {
       const data = await this.makeRequest(`/api/properties/${propertyId}/handover-price/history`)
       return data.data || []
     } catch (error) {
-      console.error('Error fetching handover price history:', error)
-      // Return empty array if history API doesn't exist yet
+            // Return empty array if history API doesn't exist yet
       return []
     }
   }
@@ -319,17 +298,12 @@ export class HandoverFinancialsService {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
           const operationNames = ['Handover Costs', 'Payment Receipts', 'Financial Summary']
-          console.warn(
-            `Failed to load ${operationNames[index]} for property ${propertyId}:`,
-            result.reason
-          )
-        }
+                  }
       })
 
       return { costs, receipts, summary }
     } catch (error) {
-      console.error('Error loading handover financial data:', error)
-      // Return empty data instead of throwing if it's a 404 (API not implemented yet)
+            // Return empty data instead of throwing if it's a 404 (API not implemented yet)
       return { costs: [], receipts: [] }
     }
   }

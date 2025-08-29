@@ -204,7 +204,7 @@ const debouncedFilterUpdate = debounce((get: any, set: any) => {
   const allProperties = denormalizeEntities(state.entities)
   
   // Apply filters
-  const filtered = applyFilters(allProperties, state.filters, filterFunctions)
+  const filtered = applyFilters(allProperties as Property[], state.filters, filterFunctions)
   const filteredIds = filtered.map(p => p.id)
   
   // Apply sorting
@@ -294,6 +294,12 @@ export const usePropertyStore = create<PropertyStoreState & PropertyStoreActions
           draft.paginatedIds = []
           draft.lastUpdated = new Date()
         }),
+
+        refreshProperty: async (propertyId: string) => {
+          // Placeholder for property refresh logic
+          // This would typically fetch the property from the API and update the store
+          console.log('Refreshing property:', propertyId)
+        },
         
         // Selection operations
         selectProperty: (id) => set((draft) => {

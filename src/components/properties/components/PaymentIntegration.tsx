@@ -107,9 +107,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
         if (error) {
           // Log payment errors in development
           if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
-            console.error('Payment record error:', error)
-          }
+                                  }
           throw new Error('Failed to record payment')
         }
 
@@ -133,9 +131,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
       } catch (error) {
         // Log payment processing errors in development
         if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.error('Payment processing error:', error)
-        }
+                            }
         onPaymentUpdate?.(payment.id, 'failed')
       } finally {
         setIsProcessing(false)

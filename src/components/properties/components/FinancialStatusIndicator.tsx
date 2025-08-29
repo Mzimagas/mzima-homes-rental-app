@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, memo, useMemo } from 'react'
 import {
   CurrencyDollarIcon,
   ExclamationTriangleIcon,
@@ -12,6 +12,7 @@ import {
   formatCurrency,
 } from '../../../lib/constants/financial-stage-requirements'
 import { useTabNavigation } from '../../../hooks/useTabNavigation'
+import PaymentIntegration from './PaymentIntegration'
 
 interface FinancialStatusIndicatorProps {
   propertyId: string
@@ -25,6 +26,9 @@ interface FinancialStatusIndicatorProps {
   }
   onNavigateToFinancial?: () => void
   compact?: boolean
+  pipeline?: string
+  documentStates?: Record<string, any>
+  layout?: 'vertical' | 'horizontal' // New prop for layout control
 }
 
 export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> = ({
@@ -34,12 +38,109 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
   getPaymentStatus,
   onNavigateToFinancial,
   compact = false,
+  pipeline = 'purchase_pipeline',
+  documentStates = {},
+  layout = 'vertical'
 }) => {
   const { requiredPayments, optionalPayments, isFinanciallyComplete, pendingAmount } =
     financialStatus
   const { navigateToFinancial, navigateToPayment } = useTabNavigation()
 
-  // If no financial requirements, don't show anything
+  // Modal state management (payment only)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedPayment, setSelectedPayment] = useState<PaymentRequirement | null>(null)
+
+  // Removed debug logging for performance
+
+  // Horizontal layout - return just the payment button for inline use
+  if (layout === 'horizontal') {
+    // If no financial requirements and no pending payments, don't show anything
+    if (requiredPayments.length === 0 && optionalPayments.length === 0 && isFinanciallyComplete) {
+      return null
+    }
+
+    // Enhanced stage-to-payment mapping with support for different payment types
+    const getPaymentNavigationConfig = (stage: number, payment?: PaymentRequirement) => {
+      // Stage-specific cost type mapping for acquisition costs
+      const stageToAcquisitionCostMapping: Record<number, string> = {
+        3: 'due_diligence_costs', // Property Search & Due Diligence
+        6: 'lcb_application_fees', // LCB Process
+        9: 'stamp_duty', // Stamp Duty
+        10: 'registry_submission', // Title Registration / New Title Costs
+      }
+
+      // Handle case where payment is undefined
+      if (!payment) {
+        return {
+          subtab: 'acquisition_costs',
+          costTypeId: stageToAcquisitionCostMapping[stage],
+          amount: undefined,
+          description: `Stage ${stage} payment`,
+          paymentType: 'acquisition_cost',
+        }
+      }
+
+      // Determine payment type and navigation config
+      if (payment.id === 'down_payment' || payment.category === 'payment') {
+        // Purchase Price Deposit/Payment - navigate to payments section
+        return {
+          subtab: 'payments',
+          costTypeId: undefined,
+          amount: payment.amount,
+          description: payment.description || 'Purchase price deposit payment',
+          paymentType: payment.id === 'down_payment' ? 'deposit' : 'installment',
+        }
+      } else if (payment.category === 'fee' || payment.category === 'tax') {
+        // Acquisition costs (fees, taxes) - navigate to acquisition costs section
+        return {
+          subtab: 'acquisition_costs',
+          costTypeId: stageToAcquisitionCostMapping[stage],
+          amount: payment.amount,
+          description: payment.description || `Stage ${stage} ${payment.category} payment`,
+          paymentType: payment.category === 'fee' ? 'fee' : 'tax',
+        }
+      } else {
+        // Default to acquisition costs
+        return {
+          subtab: 'acquisition_costs',
+          costTypeId: stageToAcquisitionCostMapping[stage],
+          amount: payment.amount,
+          description: payment.description || `Stage ${stage} payment`,
+          paymentType: 'acquisition_cost',
+        }
+      }
+    }
+
+    const payment = requiredPayments[0]
+    const paymentConfig = getPaymentNavigationConfig(stageNumber, payment)
+
+    return (
+      <button
+        onClick={() => {
+          const today = new Date().toISOString().slice(0, 10)
+
+          navigateToFinancial({
+            propertyId,
+            stageNumber,
+            action: 'pay',
+            subtab: paymentConfig.subtab,
+            costTypeId: paymentConfig.costTypeId,
+            amount: paymentConfig.amount,
+            date: today,
+            description: paymentConfig.description,
+            pipeline: pipeline as 'direct_addition' | 'purchase_pipeline',
+            paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost',
+          })
+        }}
+        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-400 rounded-md hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-sm transition-all duration-200"
+      >
+        <CurrencyDollarIcon className="h-3 w-3" />
+        Make Payment
+      </button>
+    )
+  }
+
+  // If no financial requirements, return null for better performance
   if (requiredPayments.length === 0 && optionalPayments.length === 0) {
     return null
   }
@@ -164,34 +265,53 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
           {/* Enhanced Navigation Actions */}
           <div className="mt-3 pt-3 border-t border-blue-200">
             <div className="flex flex-wrap gap-2">
-              {/* View Financial Details */}
-              <button
-                onClick={() =>
-                  navigateToFinancial({
-                    propertyId,
-                    stageNumber,
-                    action: 'view',
-                  })
-                }
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 border border-blue-200 rounded-lg hover:bg-blue-200 transition-colors"
-              >
-                <CurrencyDollarIcon className="h-4 w-4" />
-                View Financial Details
-                <ArrowTopRightOnSquareIcon className="h-3 w-3" />
-              </button>
-
               {/* Quick Pay for Pending Payments */}
               {!isFinanciallyComplete && requiredPayments.length > 0 && (
                 <button
-                  onClick={() =>
-                    navigateToPayment({
+                  onClick={() => {
+                    const payment = requiredPayments[0]
+                    const today = new Date().toISOString().slice(0, 10)
+
+                    // Enhanced payment navigation logic
+                    const getPaymentNavigationConfig = (stage: number, payment: PaymentRequirement) => {
+                      const stageToAcquisitionCostMapping: Record<number, string> = {
+                        3: 'due_diligence_costs',
+                        6: 'lcb_application_fees',
+                        9: 'stamp_duty',
+                        10: 'registry_submission',
+                      }
+
+                      if (payment.id === 'down_payment' || payment.category === 'payment') {
+                        return {
+                          subtab: 'payments',
+                          costTypeId: undefined,
+                          amount: payment.amount,
+                          description: payment.description || 'Purchase price deposit payment',
+                        }
+                      } else {
+                        return {
+                          subtab: 'acquisition_costs',
+                          costTypeId: stageToAcquisitionCostMapping[stage],
+                          amount: payment.amount,
+                          description: payment.description || `Stage ${stage} ${payment.category} payment`,
+                        }
+                      }
+                    }
+
+                    const paymentConfig = getPaymentNavigationConfig(stageNumber, payment)
+
+                    navigateToFinancial({
                       propertyId,
                       stageNumber,
-                      paymentId: requiredPayments[0].id,
-                      amount: requiredPayments[0].amount,
+                      action: 'pay',
+                      subtab: paymentConfig.subtab,
+                      costTypeId: paymentConfig.costTypeId,
+                      amount: paymentConfig.amount,
+                      date: today,
+                      description: paymentConfig.description,
                     })
-                  }
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 border border-green-200 rounded-lg hover:bg-green-200 transition-colors"
+                  }}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-400 rounded-lg hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-md transition-all duration-200"
                 >
                   <CheckCircleIcon className="h-4 w-4" />
                   Make Payment
@@ -215,6 +335,177 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
       </div>
     </div>
   )
+
+  // Return with modals
+  return (
+    <>
+      {/* Main Financial Status Indicator */}
+      <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <CurrencyDollarIcon className="h-5 w-5 text-blue-600" />
+            <span className="font-medium text-blue-900">Financial Status</span>
+          </div>
+          <div className="text-right">
+            <div className={`text-sm font-medium ${
+              isFinanciallyComplete ? 'text-green-600' : 'text-yellow-600'
+            }`}>
+              {isFinanciallyComplete ? 'Complete' : `${formatCurrency(pendingAmount)} pending`}
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Status Summary */}
+        {!compact && (
+          <div className="space-y-2 mb-4">
+            {requiredPayments.map((payment) => {
+              const status = getPaymentStatus(payment)
+              return (
+                <div key={payment.id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700">{payment.name}</span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${status.className}`}>
+                    {status.displayText}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Warning for pending payments */}
+        {!isFinanciallyComplete && requiredPayments.length > 0 && (
+          <div className="flex items-start gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg mb-3">
+            <ExclamationTriangleIcon className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+            <div className="text-xs text-yellow-800">
+              <div className="font-medium">Payment Required</div>
+              <div>Complete required payments to proceed with this stage.</div>
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Navigation Actions */}
+        <div className="flex flex-wrap gap-2">
+          {/* Quick Pay for Pending Payments */}
+          {!isFinanciallyComplete && requiredPayments.length > 0 && (
+            <button
+              onClick={() => {
+                const payment = requiredPayments[0]
+                const today = new Date().toISOString().slice(0, 10)
+
+                // Enhanced payment navigation logic
+                const getPaymentNavigationConfig = (stage: number, payment?: PaymentRequirement) => {
+                  const stageToAcquisitionCostMapping: Record<number, string> = {
+                    3: 'due_diligence_costs',
+                    6: 'lcb_application_fees',
+                    9: 'stamp_duty',
+                    10: 'registry_submission',
+                  }
+
+                  if (!payment) {
+                    return {
+                      subtab: 'acquisition_costs',
+                      costTypeId: stageToAcquisitionCostMapping[stage],
+                      amount: undefined,
+                      description: `Stage ${stage} payment`,
+                      paymentType: 'acquisition_cost',
+                    }
+                  }
+
+                  if (payment.id === 'down_payment' || payment.category === 'payment') {
+                    return {
+                      subtab: 'payments',
+                      costTypeId: undefined,
+                      amount: payment.amount,
+                      description: payment.description || 'Purchase price deposit payment',
+                      paymentType: payment.id === 'down_payment' ? 'deposit' : 'installment',
+                    }
+                  } else {
+                    return {
+                      subtab: 'acquisition_costs',
+                      costTypeId: stageToAcquisitionCostMapping[stage],
+                      amount: payment.amount,
+                      description: payment.description || `Stage ${stage} ${payment.category} payment`,
+                      paymentType: payment.category === 'fee' ? 'fee' : 'tax',
+                    }
+                  }
+                }
+
+                const paymentConfig = getPaymentNavigationConfig(stageNumber, payment)
+
+                navigateToFinancial({
+                  propertyId,
+                  stageNumber,
+                  action: 'pay',
+                  subtab: paymentConfig.subtab,
+                  costTypeId: paymentConfig.costTypeId,
+                  amount: paymentConfig.amount,
+                  date: today,
+                  description: paymentConfig.description,
+                  pipeline: pipeline as 'direct_addition' | 'purchase_pipeline',
+                  paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost',
+                })
+              }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-400 rounded-lg hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-md transition-all duration-200"
+            >
+              <CheckCircleIcon className="h-4 w-4" />
+              Make Payment
+            </button>
+          )}
+
+          {/* Legacy callback support */}
+          {onNavigateToFinancial && (
+            <button
+              onClick={onNavigateToFinancial}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <CurrencyDollarIcon className="h-4 w-4" />
+              Manage Payments
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Payment Modal */}
+      {selectedPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Make Payment</h3>
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false)
+                  setSelectedPayment(null)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
+
+            <PaymentIntegration
+              propertyId={propertyId}
+              stageNumber={stageNumber}
+              payment={selectedPayment}
+              currentStatus="pending"
+              onPaymentUpdate={(paymentId, status) => {
+                if (status === 'completed') {
+                  setShowPaymentModal(false)
+                  setSelectedPayment(null)
+                  // Trigger a refresh of the financial status
+                  window.dispatchEvent(
+                    new CustomEvent('paymentCompleted', {
+                      detail: { propertyId, stageNumber, paymentId },
+                    })
+                  )
+                }
+              }}
+              compact={false}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  )
 }
 
-export default FinancialStatusIndicator
+export default memo(FinancialStatusIndicator)

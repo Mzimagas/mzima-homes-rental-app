@@ -300,7 +300,7 @@ class SearchIndexWorker {
     isProcessing: boolean
     queueLength: number
     currentTask: IndexTask | null
-    stats: typeof this.workerStats
+    stats: any // typeof this.workerStats
   } {
     return {
       isProcessing: this.isProcessing,
@@ -332,7 +332,7 @@ class SearchIndexWorker {
   /**
    * Post message to main thread (if running in a worker)
    */
-  private postMessage(message: WorkerResponse): void {
+  postMessage(message: WorkerResponse): void {
     if (typeof postMessage !== 'undefined') {
       postMessage(message)
     } else {

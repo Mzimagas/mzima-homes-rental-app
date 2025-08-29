@@ -39,13 +39,6 @@ export function useAPIAudit(autoStart = false) {
     setReport(auditReport)
 
     // Log report to console for development
-    if (process.env.NODE_ENV === 'development') {
-      console.group('🔍 API Audit Report')
-      console.log('Summary:', auditReport.summary)
-      console.log('Patterns Found:', auditReport.patterns)
-      console.log('Recommendations:', auditReport.recommendations)
-      console.groupEnd()
-    }
 
     return auditReport
   }

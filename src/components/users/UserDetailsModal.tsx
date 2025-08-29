@@ -38,8 +38,7 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
         setActivities(data.activities || [])
       }
     } catch (error) {
-      console.error('Error fetching user activities:', error)
-    } finally {
+          } finally {
       setLoadingActivities(false)
     }
   }
@@ -232,7 +231,7 @@ export default function UserDetailsModal({ user, onClose, onEdit }: UserDetailsM
               <div className="bg-gray-50 rounded-lg p-6 text-center">
                 <p className="text-gray-600">Permission management integration coming soon...</p>
                 <p className="text-sm text-gray-500 mt-2">
-                  This will show the user's specific permissions and access levels.
+                  This will show the user&apos;s specific permissions and access levels.
                 </p>
               </div>
             </div>

@@ -13,7 +13,11 @@ export class PropertyStatusChangedEvent extends DomainEvent {
     public readonly newStatus: PropertyStatus,
     public readonly reason?: string
   ) {
-    super()
+    super('PropertyStatusChanged', propertyId, {
+      oldStatus,
+      newStatus,
+      reason
+    })
   }
 
   getEventName(): string {

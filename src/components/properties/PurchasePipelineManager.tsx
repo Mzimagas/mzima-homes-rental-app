@@ -27,7 +27,6 @@ export default function PurchasePipelineManager({
   const [editingPurchase, setEditingPurchase] = useState<PurchaseItem | null>(null)
   const [transferringId, setTransferringId] = useState<string | null>(null)
 
-
   // Filter purchases based on search term
   const filteredPurchases = useMemo(() => {
     if (!searchTerm.trim()) return purchases
@@ -56,8 +55,7 @@ export default function PurchasePipelineManager({
       const data = await PurchasePipelineService.loadPurchases()
       setPurchases(data)
     } catch (error) {
-      console.error('Error loading purchases:', error)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }
@@ -111,15 +109,13 @@ export default function PurchasePipelineManager({
 
       handlePurchaseCreated()
     } catch (error) {
-      console.error('Error saving purchase:', error)
-      throw error
+            throw error
     }
   }
 
   const handleStageClick = (stageId: number, purchaseId: string) => {
     // Stage modal functionality removed
-    console.log('Stage clicked:', { stageId, purchaseId })
-  }
+      }
 
   const handleStageUpdate = async (
     purchaseId: string,
@@ -138,8 +134,7 @@ export default function PurchasePipelineManager({
       )
       await loadPurchases()
     } catch (error) {
-      console.error('Error updating stage:', error)
-      throw error
+            throw error
     }
   }
 
@@ -151,8 +146,7 @@ export default function PurchasePipelineManager({
       loadPurchases()
       onPropertyTransferred?.(propertyId)
     } catch (error) {
-      console.error('Error transferring property:', error)
-      alert('Failed to transfer property')
+            alert('Failed to transfer property')
     } finally {
       setTransferringId(null)
     }
@@ -162,8 +156,6 @@ export default function PurchasePipelineManager({
     setShowForm(false)
     setEditingPurchase(null)
   }
-
-
 
   return (
     <div className="space-y-6">
@@ -208,7 +200,6 @@ export default function PurchasePipelineManager({
         onSubmit={handleSecureFormSubmit}
         userRole={userRole}
       />
-
 
     </div>
   )

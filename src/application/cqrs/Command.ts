@@ -20,6 +20,17 @@ export interface CommandResult<T = any> {
   metadata?: Record<string, any>
 }
 
+// Query result interface
+export interface QueryResult<T = any> {
+  success: boolean
+  data?: T
+  errors?: string[]
+  warnings?: string[]
+  metadata?: Record<string, any>
+  cached?: boolean
+  cacheKey?: string
+}
+
 // Command handler interface
 export interface CommandHandler<TCommand extends Command, TResult = any> {
   handle(command: TCommand): Promise<CommandResult<TResult>>

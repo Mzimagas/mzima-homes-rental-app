@@ -34,8 +34,7 @@ export const useFinancialStatus = (propertyId: string, pipeline: string) => {
       // Validate propertyId format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       if (!uuidRegex.test(propertyId)) {
-        console.warn(`Invalid property ID format for financial status: ${propertyId}`)
-        setFinancialRecords([])
+                setFinancialRecords([])
         setLoading(false)
         return
       }
@@ -50,16 +49,14 @@ export const useFinancialStatus = (propertyId: string, pipeline: string) => {
 
       if (error && error.code !== '42P01') {
         // 42P01 = relation does not exist
-        console.error('Error loading financial records:', error)
-        setError(error.message)
+                setError(error.message)
         setFinancialRecords([])
       } else {
         // If table doesn't exist or no data, use empty array
         setFinancialRecords(data || [])
       }
     } catch (err) {
-      console.error('Error in loadFinancialRecords:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
+            setError(err instanceof Error ? err.message : 'Unknown error')
       setFinancialRecords([])
     } finally {
       setLoading(false)

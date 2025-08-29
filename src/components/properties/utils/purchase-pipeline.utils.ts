@@ -78,8 +78,7 @@ export const determinePurchaseStatus = (stageData: PipelineStageData[]): string 
   if (currentStage <= 6) return 'FINANCING'
   if (currentStage <= 8) return 'CLOSING'
 
-  return 'IDENTIFIED' // Default fallback
-}
+  return 'IDENTIFIED' }
 
 // Get status color for purchase status badges
 export const getPurchaseStatusColor = (status: string): string => {

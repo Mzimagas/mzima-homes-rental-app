@@ -38,8 +38,7 @@ export default function PaymentConfirmationModal({
         setError('Unable to load payment confirmation details')
       }
     } catch (err) {
-      console.error('Error loading payment confirmation:', err)
-      setError('Failed to load payment confirmation')
+            setError('Failed to load payment confirmation')
     } finally {
       setLoading(false)
     }

@@ -42,8 +42,7 @@ export default function HandoverStageModal({
       await onStageUpdate(handoverId, stageId, selectedStatus, notes)
       onClose()
     } catch (error) {
-      console.error('Error updating handover stage:', error)
-      alert('Failed to update handover stage')
+            alert('Failed to update handover stage')
     } finally {
       setIsSubmitting(false)
     }

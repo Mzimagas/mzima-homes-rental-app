@@ -165,8 +165,7 @@ export default function TenantDetail({ id }: { id: string }) {
 
       load() // Reload to show updated status
     } catch (err: any) {
-      console.error('Restore error:', err)
-      alert(err.message || 'Failed to restore tenant')
+            alert(err.message || 'Failed to restore tenant')
     } finally {
       setRestoring(false)
     }

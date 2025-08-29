@@ -126,23 +126,16 @@ export default function InlinePropertiesOverview({
         return
       }
 
-      console.log('Loading properties for user:', user.email, '- Inline Properties Overview')
-
-      // Verify current session with Supabase
+            // Verify current session with Supabase
       const { data: authData, error: authError } = await supabase.auth.getUser()
       const currentUser = authData?.user ?? null
 
       if (authError || !currentUser) {
-        console.log(
-          'Properties: Authentication verification failed:',
-          authError?.message || 'No current user'
-        )
-        setError('Authentication expired. Please log in again.')
+                setError('Authentication expired. Please log in again.')
         return
       }
       if (currentUser.id !== user.id) {
-        console.log('Properties: User ID mismatch - session may be stale')
-        setError('Session expired. Please refresh and log in again.')
+                setError('Session expired. Please refresh and log in again.')
         return
       }
 
@@ -168,8 +161,7 @@ export default function InlinePropertiesOverview({
       }
 
       if (!accessibleProperties || accessibleProperties.length === 0) {
-        console.log('No accessible properties found for user')
-        setProperties([])
+                setProperties([])
         return
       }
 
@@ -209,8 +201,7 @@ export default function InlinePropertiesOverview({
         .order('name')) as unknown as { data: PropertyRow[] | null; error: typeof propertiesError }
 
       if (propertiesError) {
-        console.error('Error loading property details:', propertiesError)
-        setError('Failed to load property details')
+                setError('Failed to load property details')
         return
       }
 
@@ -246,8 +237,7 @@ export default function InlinePropertiesOverview({
         }
       })
 
-      console.log(`Loaded ${withStats.length} properties with details`)
-      setProperties(withStats)
+            setProperties(withStats)
     } catch (err) {
       const message =
         err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err)

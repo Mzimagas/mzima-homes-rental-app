@@ -121,8 +121,7 @@ export default function EnhancedPaymentHistory({
       setPayments(data || [])
     } catch (err) {
       setError('Failed to load payment history')
-      console.error('Payment history loading error:', err)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }

@@ -44,8 +44,7 @@ export default function PaymentTracking({ onDataChange }: PaymentTrackingProps) 
       // TODO: Implement getPayments in service
       setPayments([])
     } catch (error) {
-      console.error('Error loading payments:', error)
-      setError('Failed to load payments')
+            setError('Failed to load payments')
     } finally {
       setLoading(false)
     }

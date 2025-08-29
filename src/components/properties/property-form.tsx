@@ -117,8 +117,7 @@ export default function PropertyForm({
       onClose()
       onSuccess?.(result.data?.id || property?.id)
     } catch (error: any) {
-      console.error('Error saving property:', error)
-      showToast({
+            showToast({
         type: 'error',
         message: error.message || 'Failed to save property',
       })

@@ -22,8 +22,7 @@ export class PurchasePipelineService {
         .order('created_at', { ascending: false })
 
       if (purchaseError) {
-        console.error('Supabase error loading purchases:', purchaseError)
-        throw new Error(
+                throw new Error(
           `Failed to load purchases: ${purchaseError.message || 'Unknown database error'}`
         )
       }
@@ -37,9 +36,7 @@ export class PurchasePipelineService {
         .map((purchase) => purchase.property_id)
         .filter((id) => id != null && id !== '')
 
-      console.log(`Found ${propertyIds.length} property IDs in purchase data:`, propertyIds)
-
-      let propertiesMap = new Map()
+            let propertiesMap = new Map()
 
       // If we have property IDs, try to fetch the corresponding property data
       if (propertyIds.length > 0) {
@@ -50,20 +47,16 @@ export class PurchasePipelineService {
             .in('id', propertyIds)
 
           if (propertiesError) {
-            console.warn('Error loading property coordinates:', propertiesError)
-          } else if (propertiesData) {
-            console.log(`Loaded ${propertiesData.length} properties with coordinates`)
-            propertiesData.forEach((property) => {
+                      } else if (propertiesData) {
+                        propertiesData.forEach((property) => {
               propertiesMap.set(property.id, property)
             })
           }
         } catch (propertiesError) {
-          console.warn('Could not load property coordinates:', propertiesError)
-          // Continue without coordinates - this is not a fatal error
+                    // Continue without coordinates - this is not a fatal error
         }
       } else {
-        console.log('No property IDs found in purchase data - will use addresses only')
-      }
+              }
 
       // Enhance purchase data with property coordinates
       const enhancedData = purchaseData.map((purchase) => {
@@ -76,20 +69,14 @@ export class PurchasePipelineService {
         }
 
         if (property) {
-          console.log(`Enhanced purchase ${purchase.id} with coordinates:`, {
-            lat: enhanced.property_lat,
-            lng: enhanced.property_lng,
-            address: enhanced.property_physical_address,
-          })
-        }
+                  }
 
         return enhanced
       })
 
       return enhancedData as PurchaseItem[]
     } catch (error) {
-      console.error('Error loading purchases:', error)
-      if (error instanceof Error) {
+            if (error instanceof Error) {
         throw error
       } else {
         throw new Error('Failed to load purchases: Unknown error')
@@ -139,16 +126,12 @@ export class PurchasePipelineService {
         created_by: user.id,
       }
 
-      console.log('Attempting to insert purchase data:', purchaseData)
-      const { error } = await supabase.from('purchase_pipeline').insert([purchaseData])
+            const { error } = await supabase.from('purchase_pipeline').insert([purchaseData])
       if (error) {
-        console.error('Supabase error details:', error)
-        throw new Error(`Failed to create purchase: ${error.message || 'Unknown database error'}`)
+                throw new Error(`Failed to create purchase: ${error.message || 'Unknown database error'}`)
       }
-      console.log('Purchase created successfully')
-    } catch (error) {
-      console.error('Error creating purchase:', error)
-      console.error('Error details:', JSON.stringify(error, null, 2))
+          } catch (error) {
+            console.error('Error details:', JSON.stringify(error, null, 2))
       if (error instanceof Error) {
         throw error
       } else {
@@ -193,12 +176,10 @@ export class PurchasePipelineService {
         .eq('id', purchaseId)
 
       if (error) {
-        console.error('Supabase error updating purchase:', error)
-        throw new Error(`Failed to update purchase: ${error.message || 'Unknown database error'}`)
+                throw new Error(`Failed to update purchase: ${error.message || 'Unknown database error'}`)
       }
     } catch (error) {
-      console.error('Error updating purchase:', error)
-      if (error instanceof Error) {
+            if (error instanceof Error) {
         throw error
       } else {
         throw new Error('Failed to update purchase: Unknown error')
@@ -223,8 +204,7 @@ export class PurchasePipelineService {
         .single()
 
       if (fetchError) {
-        console.error('Error fetching purchase data:', fetchError)
-        throw new Error(
+                throw new Error(
           `Failed to fetch purchase data: ${fetchError.message || 'Unknown database error'}`
         )
       }
@@ -288,14 +268,12 @@ export class PurchasePipelineService {
         .eq('id', purchaseId)
 
       if (error) {
-        console.error('Supabase error details:', error)
-        throw new Error(
+                throw new Error(
           `Failed to update stage status: ${error.message || 'Unknown database error'}`
         )
       }
     } catch (error) {
-      console.error('Error updating stage status:', error)
-      if (error instanceof Error) {
+            if (error instanceof Error) {
         throw error
       } else {
         throw new Error('Failed to update stage status: Unknown error')
@@ -356,8 +334,7 @@ export class PurchasePipelineService {
 
       return propertyId
     } catch (error) {
-      console.error('Error transferring property:', error)
-      throw error
+            throw error
     }
   }
 
@@ -375,8 +352,7 @@ export class PurchasePipelineService {
 
       if (error) throw error
     } catch (error) {
-      console.error('Error updating purchase status:', error)
-      throw error
+            throw error
     }
   }
 }

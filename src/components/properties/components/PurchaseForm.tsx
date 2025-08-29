@@ -37,9 +37,7 @@ export default function PurchaseForm({
   useEffect(() => {
     if (isOpen) {
       if (editingPurchase) {
-        console.log('Editing purchase data:', editingPurchase)
-        console.log('Property condition notes:', editingPurchase.property_condition_notes)
-        reset({
+                        reset({
           propertyName: editingPurchase.property_name,
           propertyAddress: editingPurchase.property_address,
           propertyType: editingPurchase.property_type as any,
@@ -98,8 +96,7 @@ export default function PurchaseForm({
       onClose()
       onPurchaseCreated()
     } catch (error) {
-      console.error('Error saving purchase:', error)
-      alert('Failed to save purchase')
+            alert('Failed to save purchase')
     }
   }
 

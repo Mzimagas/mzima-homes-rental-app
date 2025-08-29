@@ -291,7 +291,7 @@ export class SearchPerformanceMonitor {
   getDashboardData(): {
     currentStats: PerformanceStats
     recentAlerts: PerformanceAlert[]
-    trends: ReturnType<typeof this.getSearchTrends>
+    trends: any // ReturnType<typeof this.getSearchTrends>
     healthScore: number
   } {
     const last24Hours = {

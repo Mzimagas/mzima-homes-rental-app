@@ -183,8 +183,7 @@ export default function PaymentAnalytics() {
       })
     } catch (err) {
       setError('Failed to load payment analytics')
-      console.error('Payment analytics loading error:', err)
-    } finally {
+          } finally {
       setLoading(false)
       setIsGeneratingReport(false)
     }

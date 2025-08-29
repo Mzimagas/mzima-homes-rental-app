@@ -36,7 +36,7 @@ export default function TenantSelector({
       // Try to use cached data first
       const cachedTenants = getCachedData('tenants')
       if (cachedTenants.length > 0 && !isCacheExpired()) {
-        setTenants(cachedTenants)
+        setTenants(cachedTenants as Tenant[])
         return
       }
 
@@ -47,8 +47,7 @@ export default function TenantSelector({
         setTenants(tenantsData)
         updateTenantsCache(tenantsData)
       } catch (error) {
-        console.error('Error loading tenants:', error)
-      } finally {
+              } finally {
         setLoading(false)
       }
     }
@@ -59,7 +58,7 @@ export default function TenantSelector({
   // Filter tenants by selected property if enabled
   const filteredTenants =
     propertyFilter && state.selectedProperty
-      ? tenants.filter((tenant) => tenant.property_id === state.selectedProperty?.id)
+      ? tenants.filter((tenant) => (tenant as any).property_id === state.selectedProperty?.id)
       : tenants
 
   const handleTenantChange = (tenantId: string) => {
@@ -96,15 +95,15 @@ export default function TenantSelector({
         options={options}
         disabled={loading || (propertyFilter && !state.selectedProperty)}
         className="w-full"
-        placeholder={
-          loading
-            ? 'Loading tenants...'
-            : propertyFilter && !state.selectedProperty
-              ? 'Select a property first'
-              : showPropertyFilterMessage
-                ? 'No tenants for selected property'
-                : placeholder
-        }
+        // placeholder={
+        //   loading
+        //     ? 'Loading tenants...'
+        //     : propertyFilter && !state.selectedProperty
+        //       ? 'Select a property first'
+        //       : showPropertyFilterMessage
+        //         ? 'No tenants for selected property'
+        //         : placeholder
+        // }
       />
 
       {showPropertyFilterMessage && (

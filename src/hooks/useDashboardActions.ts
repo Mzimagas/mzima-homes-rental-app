@@ -57,10 +57,10 @@ export function useDashboardActions() {
         const action: Action = {
           id: `select-unit-${Date.now()}`,
           type: 'unit_selected',
-          label: `Selected Unit ${unit.unit_number}`,
+          label: `Selected Unit ${unit.unit_label}`,
           icon: 'home',
           timestamp: new Date(),
-          data: { unitId: unit.id, unitNumber: unit.unit_number },
+          data: { unitId: unit.id, unitNumber: unit.unit_label },
         }
         dispatch({ type: 'ADD_RECENT_ACTION', payload: action })
       }

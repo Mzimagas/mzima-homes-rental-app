@@ -178,7 +178,7 @@ export default function PropertyTypeIcon({
   const colorClass = colorClasses[color as keyof typeof colorClasses] || colorClasses.gray
 
   return (
-    <SVGComponent className={`${sizeClasses[size]} ${colorClass} ${className}`} title={label} />
+    <SVGComponent className={`${sizeClasses[size]} ${colorClass} ${className}`} {...({ title: label } as any)} />
   )
 }
 

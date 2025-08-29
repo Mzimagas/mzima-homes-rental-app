@@ -114,16 +114,14 @@ export default function InlinePurchaseView({
         setPurchaseData(purchase)
       }
     } catch (err) {
-      console.error('Error loading purchase data:', err)
-      setPurchaseData(purchase)
+            setPurchaseData(purchase)
     } finally {
       setPipelineLoading(false)
     }
   }
 
   const handleStageClick = (stageId: number) => {
-    console.log('Stage clicked:', stageId)
-    // Stage functionality will be integrated into documents view
+        // Stage functionality will be integrated into documents view
   }
 
   const handleStageUpdate = async (
@@ -238,8 +236,7 @@ export default function InlinePurchaseView({
           <PropertyAcquisitionFinancials
             property={convertToProperty(purchaseData || purchase)}
             onUpdate={(propertyId) => {
-              console.log('Financial data updated for purchase:', propertyId)
-            }}
+                          }}
           />
         )}
 

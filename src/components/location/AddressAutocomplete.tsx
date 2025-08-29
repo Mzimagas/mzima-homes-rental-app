@@ -149,8 +149,7 @@ export default function AddressAutocomplete({
               onChange(address)
               onSelect(result)
             } else {
-              // Geocoding failed, use coordinates as fallback
-              const result: GeocodeResult = {
+                            const result: GeocodeResult = {
                 address: `${latitude}, ${longitude}`,
                 lat: latitude,
                 lng: longitude,
@@ -161,8 +160,7 @@ export default function AddressAutocomplete({
             }
             setLoading(false)
           } catch (geocodeError) {
-            console.error('GPS geocoding failed:', geocodeError)
-            const { latitude, longitude } = pos.coords
+                        const { latitude, longitude } = pos.coords
             const result: GeocodeResult = {
               address: `${latitude}, ${longitude}`,
               lat: latitude,
@@ -318,11 +316,7 @@ export default function AddressAutocomplete({
                   return
                 }
                 setCoordsLoading(true)
-                console.info(
-                  `[AddressAutocomplete] Manual coordinates entered: ${parsed.lat}, ${parsed.lng}`
-                )
-
-                try {
+                                try {
                   const address = await reverseGeocode(parsed.lat, parsed.lng)
 
                   if (address && address !== `${parsed.lat}, ${parsed.lng}`) {
@@ -332,8 +326,7 @@ export default function AddressAutocomplete({
                     onChange(address)
                     onSelect(res)
                   } else {
-                    // Geocoding failed or returned coordinates, use coordinates as fallback
-                    const res: GeocodeResult = {
+                                        const res: GeocodeResult = {
                       address: `${parsed.lat}, ${parsed.lng}`,
                       lat: parsed.lat,
                       lng: parsed.lng,
@@ -343,8 +336,7 @@ export default function AddressAutocomplete({
                     onSelect(res)
                   }
                 } catch (e) {
-                  console.error('Manual reverse geocoding error:', e)
-                  const res: GeocodeResult = {
+                                    const res: GeocodeResult = {
                     address: `${parsed.lat}, ${parsed.lng}`,
                     lat: parsed.lat,
                     lng: parsed.lng,

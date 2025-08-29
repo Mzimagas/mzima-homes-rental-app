@@ -85,15 +85,13 @@ export default function UserManagement() {
 
       setUsers(usersWithDetails)
     } catch (err) {
-      console.error('Error loading users:', err)
-      setError('Failed to load users')
+            setError('Failed to load users')
     }
   }
 
   const loadInvitations = async (retryCount = 0) => {
     if (!currentProperty) {
-      console.log('❌ loadInvitations: No current property')
-      return
+            return
     }
 
     console.log(
@@ -101,13 +99,9 @@ export default function UserManagement() {
       retryCount + 1,
       ')'
     )
-    console.log('📍 Property ID:', currentProperty.property_id)
-    console.log('🔑 Supabase client type:', supabase.supabaseUrl ? 'Configured' : 'Not configured')
-
-    try {
+            try {
       // Check authentication state first
-      console.log('🔐 Checking authentication state...')
-      const {
+            const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser()
@@ -123,24 +117,18 @@ export default function UserManagement() {
           errorString: String(authError),
         }
 
-        console.error('❌ Authentication error details:', authErrorInfo)
-
-        // Handle specific authentication errors
+                // Handle specific authentication errors
         if (authError.message?.includes('Auth session missing') || authError.__isAuthError) {
           // Try to refresh the session if this is the first attempt
           if (retryCount === 0) {
-            console.log('🔄 Attempting to refresh session...')
-            try {
+                        try {
               const { error: refreshError } = await supabase.auth.refreshSession()
               if (!refreshError) {
-                console.log('✅ Session refreshed, retrying...')
-                return loadInvitations(retryCount + 1)
+                                return loadInvitations(retryCount + 1)
               } else {
-                console.log('❌ Session refresh failed:', refreshError)
-              }
+                              }
             } catch (refreshErr) {
-              console.log('❌ Session refresh exception:', refreshErr)
-            }
+                          }
           }
 
           // Provide clear guidance to the user
@@ -160,16 +148,12 @@ export default function UserManagement() {
       }
 
       if (!user) {
-        console.error('❌ No authenticated user found')
-        setError('Please sign in to access user management features')
+                setError('Please sign in to access user management features')
         return
       }
 
-      console.log('✅ User authenticated:', user.id, user.email)
-
-      // Check user's property access
-      console.log('🏠 Checking property access...')
-      const { data: propertyAccess, error: accessError } = await supabase
+            // Check user's property access
+            const { data: propertyAccess, error: accessError } = await supabase
         .from('property_users')
         .select('role, status')
         .eq('user_id', user.id)
@@ -178,14 +162,11 @@ export default function UserManagement() {
         .single()
 
       if (accessError) {
-        console.error('❌ Property access check error:', accessError)
-        // Don't throw here, continue with the invitation query
+                // Don't throw here, continue with the invitation query
       } else {
-        console.log('✅ Property access confirmed:', propertyAccess)
-      }
+              }
 
-      console.log('📨 Executing invitation query...')
-      const queryStart = Date.now()
+            const queryStart = Date.now()
 
       const { data, error } = await supabase
         .from('user_invitations')
@@ -194,9 +175,7 @@ export default function UserManagement() {
         .eq('status', 'PENDING')
 
       const queryTime = Date.now() - queryStart
-      console.log(`⏱️ Query completed in ${queryTime}ms`)
-
-      if (error) {
+            if (error) {
         // Extract error properties properly (some are non-enumerable)
         const errorInfo = {
           message: error.message || 'No message',
@@ -213,9 +192,7 @@ export default function UserManagement() {
           isAuthError: error.__isAuthError || false,
         }
 
-        console.error('❌ Supabase query error:', errorInfo)
-
-        // Set user-friendly error message
+                // Set user-friendly error message
         if (error.__isAuthError) {
           setError(`Authentication error: ${error.message || 'Please sign in again'}`)
           return
@@ -232,11 +209,7 @@ export default function UserManagement() {
         return
       }
 
-      console.log('✅ Invitations loaded successfully:', {
-        count: data?.length || 0,
-        data: data,
-      })
-      setInvitations(data || [])
+            setInvitations(data || [])
     } catch (err) {
       // Comprehensive error extraction that handles non-enumerable properties
       const e1 = err as any
@@ -258,9 +231,7 @@ export default function UserManagement() {
         errorJSON: e1 ? JSON.stringify(e1, Object.getOwnPropertyNames(e1)) : 'null',
       }
 
-      console.error('❌ Error in loadInvitations:', errorInfo)
-
-      // Extract meaningful error message
+            // Extract meaningful error message
       let errorMessage = 'Unknown error occurred'
 
       const e2 = err as any
@@ -320,13 +291,7 @@ export default function UserManagement() {
       alert(`Invitation sent to ${inviteEmail}`)
     } catch (err) {
       const e3 = err as any
-      console.error('Error inviting user:', {
-        error: e3,
-        message: e3 instanceof Error ? e3.message : 'Unknown error',
-        details: e3?.details,
-        code: e3?.code,
-      })
-      setError(`Failed to send invitation: ${err instanceof Error ? err.message : 'Unknown error'}`)
+            setError(`Failed to send invitation: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setInviting(false)
     }
@@ -340,21 +305,12 @@ export default function UserManagement() {
         .eq('id', invitationId)
 
       if (error) {
-        console.error('Supabase error revoking invitation:', {
-          message: error.message,
-          details: error.details,
-          code: error.code,
-        })
-        throw error
+                throw error
       }
 
       setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId))
     } catch (err) {
-      console.error('Error revoking invitation:', {
-        error: err,
-        message: err instanceof Error ? err.message : 'Unknown error',
-      })
-      setError(
+            setError(
         `Failed to revoke invitation: ${err instanceof Error ? err.message : 'Unknown error'}`
       )
     }
@@ -373,8 +329,7 @@ export default function UserManagement() {
 
       setUsers((prev) => prev.filter((user) => user.id !== userId))
     } catch (err) {
-      console.error('Error removing user:', err)
-      setError('Failed to remove user')
+            setError('Failed to remove user')
     }
   }
 

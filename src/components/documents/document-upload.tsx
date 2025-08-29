@@ -170,8 +170,7 @@ export default function DocumentUpload({ onSuccess, onCancel, isOpen }: Document
       onSuccess?.()
     } catch (err) {
       setError('Failed to upload document. Please try again.')
-      console.error('Document upload error:', err)
-    } finally {
+          } finally {
       setLoading(false)
       setUploadProgress(0)
     }

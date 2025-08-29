@@ -38,8 +38,7 @@ export class UnitAllocationService {
     endDate?: string
   ): Promise<UnitAvailability> {
     try {
-      // Try to use the database function first, fallback to manual query if function doesn't exist
-      const { data, error } = await supabase.rpc('check_unit_availability', {
+            const { data, error } = await supabase.rpc('check_unit_availability', {
         unit_id_param: unitId,
         start_date_param: startDate,
         end_date_param: endDate || null,
@@ -82,9 +81,7 @@ export class UnitAllocationService {
         conflictingTenant: result.conflicting_tenant,
       }
     } catch (error) {
-      console.error('Error checking unit availability:', error)
-      // Fallback to manual check
-      return this.checkUnitAvailabilityManual(unitId, startDate, endDate)
+                  return this.checkUnitAvailabilityManual(unitId, startDate, endDate)
     }
   }
 
@@ -133,8 +130,7 @@ export class UnitAllocationService {
         conflictingTenant: (firstConflict?.tenants as any)?.full_name,
       }
     } catch (error) {
-      console.error('Error in manual availability check:', error)
-      return { available: false }
+            return { available: false }
     }
   }
 
@@ -188,8 +184,7 @@ export class UnitAllocationService {
 
       return availableUnits.filter(Boolean) as Unit[]
     } catch (error) {
-      console.error('Error getting available units:', error)
-      throw new Error('Failed to load available units')
+            throw new Error('Failed to load available units')
     }
   }
 
@@ -259,9 +254,7 @@ export class UnitAllocationService {
         warnings: warnings.length > 0 ? warnings : undefined,
       }
     } catch (error) {
-      console.error('Error allocating unit to tenant:', error)
-
-      // Enhanced error handling for better debugging
+            // Enhanced error handling for better debugging
       let errorMessage = 'Failed to allocate unit'
 
       if (error instanceof Error) {
@@ -368,8 +361,7 @@ export class UnitAllocationService {
         ],
       }
     } catch (error) {
-      console.error('Error reallocating tenant:', error)
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to reallocate tenant',
       }
@@ -418,8 +410,7 @@ export class UnitAllocationService {
         warnings: [`Tenant reallocated manually (database functions not available)`],
       }
     } catch (error) {
-      console.error('Error in manual reallocation:', error)
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : 'Manual reallocation failed',
       }
@@ -448,8 +439,7 @@ export class UnitAllocationService {
       if (error) throw error
       return data || []
     } catch (error) {
-      console.error('Error getting tenant allocation history:', error)
-      throw new Error('Failed to load allocation history')
+            throw new Error('Failed to load allocation history')
     }
   }
 
@@ -472,8 +462,7 @@ export class UnitAllocationService {
       if (error) throw error
       return data || []
     } catch (error) {
-      console.error('Error getting unit allocation history:', error)
-      throw new Error('Failed to load allocation history')
+            throw new Error('Failed to load allocation history')
     }
   }
 
@@ -489,8 +478,7 @@ export class UnitAllocationService {
     totalActiveLeases: number
   }> {
     try {
-      // Try to use the optimized view first, fallback to manual query if view doesn't exist
-      let data, error
+            let data, error
 
       const viewResult = await supabase.from('unit_occupancy_summary').select('*')
 
@@ -556,8 +544,7 @@ export class UnitAllocationService {
         totalActiveLeases: occupiedUnits,
       }
     } catch (error) {
-      console.error('Error getting allocation stats:', error)
-      // Return default stats instead of throwing
+            // Return default stats instead of throwing
       return {
         totalUnits: 0,
         occupiedUnits: 0,

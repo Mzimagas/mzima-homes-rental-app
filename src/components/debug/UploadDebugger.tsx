@@ -20,23 +20,19 @@ export default function UploadDebugger({ propertyId }: UploadDebuggerProps) {
     }
 
     try {
-      // Test 1: Check authentication
-      console.log('🔍 Debug Test 1: Authentication')
-      const { data: userData, error: userError } = await supabase.auth.getUser()
+                  const { data: userData, error: userError } = await supabase.auth.getUser()
       info.tests.auth = {
         success: !userError,
         user: userData?.user ? { id: userData.user.id, email: userData.user.email } : null,
         error: userError?.message || null
       }
 
-      // Test 2: Check storage bucket access
-      console.log('🔍 Debug Test 2: Storage Bucket Access')
-      try {
+                  try {
         const { data: buckets, error: bucketError } = await supabase.storage.listBuckets()
         info.tests.storage = {
           success: !bucketError,
           bucketsFound: buckets?.length || 0,
-          documentsExists: buckets?.some(b => b.id === 'documents') || false,
+          documentsExists: buckets?.some((b: any) => b.id === 'documents') || false,
           error: bucketError?.message || null
         }
       } catch (err) {
@@ -46,9 +42,7 @@ export default function UploadDebugger({ propertyId }: UploadDebuggerProps) {
         }
       }
 
-      // Test 3: Check database access
-      console.log('🔍 Debug Test 3: Database Access')
-      try {
+                  try {
         const { data: docs, error: dbError } = await supabase
           .from('documents')
           .select('id, title, entity_type, entity_id')
@@ -68,11 +62,8 @@ export default function UploadDebugger({ propertyId }: UploadDebuggerProps) {
         }
       }
 
-      // Test 4: Test file upload simulation
-      console.log('🔍 Debug Test 4: File Upload Simulation')
-      try {
-        // Create a small test file
-        const testContent = 'Test file for debugging upload issues'
+                  try {
+                const testContent = 'Test file for debugging upload issues'
         const testFile = new File([testContent], 'debug-test.txt', { type: 'text/plain' })
         const testPath = `debug/${propertyId}/test-${Date.now()}.txt`
 
@@ -89,8 +80,7 @@ export default function UploadDebugger({ propertyId }: UploadDebuggerProps) {
           error: uploadError?.message || null
         }
 
-        // Clean up test file
-        if (!uploadError) {
+                if (!uploadError) {
           await supabase.storage.from('documents').remove([testPath])
         }
       } catch (err) {
@@ -100,9 +90,7 @@ export default function UploadDebugger({ propertyId }: UploadDebuggerProps) {
         }
       }
 
-      // Test 5: Check document types enum
-      console.log('🔍 Debug Test 5: Document Types')
-      try {
+                  try {
         const { data: enumData, error: enumError } = await supabase.rpc('get_enum_values', {
           enum_name: 'document_type'
         })
@@ -113,7 +101,7 @@ export default function UploadDebugger({ propertyId }: UploadDebuggerProps) {
           error: enumError?.message || null
         }
       } catch (err) {
-        // This might fail if the function doesn't exist, which is okay
+        // This might fail if the function doesn&apos;t exist, which is okay
         info.tests.documentTypes = {
           success: false,
           error: 'Could not check document types (function may not exist)'

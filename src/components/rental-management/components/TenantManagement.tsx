@@ -156,8 +156,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
         if (error) throw error
         setProperties(data || [])
       } catch (e) {
-        console.error('[TenantManagement] loadProps error', e)
-      }
+              }
     }
     loadProps()
   }, [])
@@ -185,8 +184,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       const data = await RentalManagementService.getTenants()
       setTenants(data)
     } catch (err: any) {
-      console.error('Error loading tenants:', err)
-      setError(err.message || 'Failed to load tenants')
+            setError(err.message || 'Failed to load tenants')
     } finally {
       setLoading(false)
     }
@@ -220,8 +218,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       reset()
       onDataChange?.()
     } catch (err: any) {
-      console.error('Error creating tenant:', err)
-      setError(err.message || 'Failed to create tenant')
+            setError(err.message || 'Failed to create tenant')
     } finally {
       setSubmitting(false)
     }
@@ -269,8 +266,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       setAvailableUnits(availableUnitsData)
       setShowReallocationModal(true)
     } catch (error) {
-      console.error('Error loading available units:', error)
-      setError('Failed to load available units')
+            setError('Failed to load available units')
     }
   }
 
@@ -311,8 +307,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       setReallocationNotes('')
       onDataChange?.()
     } catch (error) {
-      console.error('Error reallocating tenant:', error)
-      setError(
+            setError(
         error instanceof Error ? error.message : 'Failed to reallocate tenant. Please try again.'
       )
     } finally {
@@ -353,8 +348,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       setShowLeaseHistoryModal(true)
       setShowTenantModal(false)
     } catch (error) {
-      console.error('Error loading lease history:', error)
-      setError('Failed to load lease history')
+            setError('Failed to load lease history')
     } finally {
       setLoadingHistory(false)
     }
@@ -370,8 +364,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
       setShowPaymentHistoryModal(true)
       setShowTenantModal(false)
     } catch (error) {
-      console.error('Error loading payment history:', error)
-      setError('Failed to load payment history')
+            setError('Failed to load payment history')
     } finally {
       setLoadingHistory(false)
     }
@@ -410,8 +403,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
 
       alert('Tenant updated successfully!')
     } catch (error) {
-      console.error('Error updating tenant:', error)
-      setError('Failed to update tenant')
+            setError('Failed to update tenant')
     } finally {
       setSubmitting(false)
     }
@@ -451,8 +443,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
 
       setAvailableUnits(availableUnitsData)
     } catch (error) {
-      console.error('Error loading available units:', error)
-      setError('Failed to load available units')
+            setError('Failed to load available units')
     }
 
     setShowCreateLeaseModal(true)
@@ -503,8 +494,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
 
       alert('Lease created successfully!')
     } catch (error) {
-      console.error('Error creating lease:', error)
-      setError('Failed to create lease')
+            setError('Failed to create lease')
     } finally {
       setLeaseSubmitting(false)
     }
@@ -531,8 +521,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
 
       alert('Lease terminated successfully!')
     } catch (error) {
-      console.error('Error terminating lease:', error)
-      setError('Failed to terminate lease')
+            setError('Failed to terminate lease')
     }
   }
 
@@ -728,7 +717,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                       <div className="text-center py-4">
                         <p className="text-gray-500 mb-2">No active lease</p>
                         <p className="text-sm text-gray-400">
-                          This tenant doesn't have an active lease agreement
+                          This tenant doesn&apos;t have an active lease agreement
                         </p>
                       </div>
                     )}
@@ -1266,7 +1255,7 @@ export default function TenantManagement({ onDataChange }: TenantManagementProps
                       {isCurrentUnit && (
                         <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
                           <p className="text-sm text-yellow-700 font-medium">
-                            ⚠️ This is the tenant's current unit
+                            ⚠️ This is the tenant&apos;s current unit
                           </p>
                         </div>
                       )}

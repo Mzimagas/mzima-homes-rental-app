@@ -10,6 +10,7 @@ import {
   getLifecycleStatusColor,
 } from '../utils/property-management.utils'
 import supabase from '../../../lib/supabase-client'
+// Import components directly to avoid lazy loading issues with tab navigation
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import PurchasePipelineDocuments from './PurchasePipelineDocuments'
 import DirectAdditionDocumentsV2 from './DirectAdditionDocumentsV2'
@@ -100,7 +101,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
       if (error) throw error
       setDocuments(data || [])
     } catch (error) {
-      console.error('Error loading documents:', error)
     } finally {
       setLoading(false)
     }
@@ -144,9 +144,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
       }
 
       setPipelineDocuments(stageDocuments)
-    } catch (error) {
-      console.error('Error loading pipeline documents:', error)
-    }
+    } catch (error) {}
   }
 
   const loadPurchaseData = async () => {
@@ -179,7 +177,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
       }
 
       if (purchaseError) {
-        console.error('Error loading purchase data:', purchaseError)
         return
       }
 
@@ -190,7 +187,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
         setPurchaseData(null)
       }
     } catch (error) {
-      console.error('Error loading purchase data:', error)
       setPurchaseData(null)
     } finally {
       setPipelineLoading(false)
@@ -216,7 +212,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           .maybeSingle()
 
         if (subdivisionError) {
-          console.error('Error loading subdivision data:', subdivisionError)
           return
         }
 
@@ -246,7 +241,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
         setSubdivisionData(null)
       }
     } catch (error) {
-      console.error('Error loading subdivision data:', error)
       setSubdivisionData(null)
     } finally {
       setSubdivisionLoading(false)
@@ -298,7 +292,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
       await loadDocuments()
     } catch (error) {
-      console.error('Error uploading files:', error)
       alert('Failed to upload files')
     } finally {
       setUploading(false)
@@ -320,7 +313,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
         window.open(data.signedUrl, '_blank')
       }
     } catch (error) {
-      console.error('Error downloading document:', error)
       alert('Failed to download document')
     }
   }
@@ -346,8 +338,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     notes?: string
   ) => {
     try {
-      console.log('Updating subdivision stage:', { subdivisionId, stageId, newStatus, notes })
-
       // Update local subdivision data first for immediate UI feedback
       if (subdivisionData) {
         const updatedStages = subdivisionData.pipeline_stages.map(
@@ -410,11 +400,8 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
         if (!response.ok) {
           throw new Error('Failed to save subdivision stage update')
         }
-
-        console.log('Successfully saved subdivision stage update to database')
       }
     } catch (error) {
-      console.error('Error updating subdivision stage:', error)
       // Reload subdivision data to revert any local changes if save failed
       await loadSubdivisionData()
       throw error
@@ -439,7 +426,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
   // Helper function to refresh property data after financial updates
   const handleFinancialUpdate = (propertyId: string) => {
     // This could trigger a refresh of the property data if needed
-    console.log('Financial data updated for property:', propertyId)
   }
 
   const tabs = [
@@ -448,6 +434,32 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     { id: 'financial' as TabType, label: 'Financial', icon: '💰' },
     { id: 'documents' as TabType, label: 'Documents', icon: '📁' },
   ]
+
+  // Listen for cross-component navigation to the Financial tab
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const e = event as CustomEvent<any>
+      const detail = e.detail || {}
+      if (detail.tabName === 'financial' && detail.propertyId === property.id) {
+        setActiveTab('financial')
+      }
+    }
+    window.addEventListener('navigateToFinancial', handler as EventListener)
+    return () => window.removeEventListener('navigateToFinancial', handler as EventListener)
+  }, [property.id])
+
+  // Listen for cross-component navigation to the Documents tab
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const e = event as CustomEvent<any>
+      const detail = e.detail || {}
+      if (detail.tabName === 'documents' && detail.propertyId === property.id) {
+        setActiveTab('documents')
+      }
+    }
+    window.addEventListener('navigateToDocuments', handler as EventListener)
+    return () => window.removeEventListener('navigateToDocuments', handler as EventListener)
+  }, [property.id])
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm mt-4">
@@ -480,7 +492,13 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              type="button"
+              data-tab={tab.id}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setActiveTab(tab.id)
+              }}
               className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'bg-blue-100 text-blue-700 border border-blue-200'
