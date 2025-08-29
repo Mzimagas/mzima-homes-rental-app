@@ -7,7 +7,7 @@ import { PurchaseListProps, PurchaseItem } from '../types/purchase-pipeline.type
 import { initializePipelineStages, getPurchaseStatusColor } from '../utils/purchase-pipeline.utils'
 import { getSourceIcon, getSourceLabel } from '../utils/property-management.utils'
 import InlinePurchaseView from './InlinePurchaseView'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function PurchaseList({
   purchases,
@@ -21,6 +21,23 @@ export default function PurchaseList({
 }: PurchaseListProps) {
   const [openDetailsId, setOpenDetailsId] = useState<string | null>(null)
   const [updatedPurchases, setUpdatedPurchases] = useState<{ [key: string]: PurchaseItem }>({})
+
+  // Listen for navigation events to automatically open purchase details
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const e = event as CustomEvent<any>
+      const detail = e.detail || {}
+      if (detail.tabName === 'financial' && detail.propertyId) {
+        // Find the purchase item with this propertyId and open its details
+        const targetPurchase = purchases.find(p => p.id === detail.propertyId)
+        if (targetPurchase) {
+          setOpenDetailsId(detail.propertyId)
+        }
+      }
+    }
+    window.addEventListener('navigateToFinancial', handler as EventListener)
+    return () => window.removeEventListener('navigateToFinancial', handler as EventListener)
+  }, [purchases])
 
   if (loading) {
     return (
