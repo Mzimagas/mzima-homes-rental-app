@@ -176,6 +176,7 @@ export default function InlinePurchaseView({
           {(['details', 'location', 'financial', 'documents'] as TabType[]).map((tab) => (
             <button
               key={tab}
+              data-tab={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 focus:outline-none transition-colors ${
                 activeTab === tab

@@ -56,82 +56,81 @@ export const useTabNavigation = () => {
     const executeNavigation = () => {
       console.log('🔍 Looking for purchase item with ID:', propertyId)
 
-      // Step 1: Find and open purchase details if not already open
-      let detailsOpened = false
-
-      // Look for existing financial tab first
+      // Step 1: Check if financial tab is already available
       let financialTab = document.querySelector('[data-tab="financial"]') as HTMLElement
 
-      if (!financialTab) {
-        console.log('💡 Financial tab not found, looking for purchase details button...')
+      if (financialTab) {
+        console.log('✅ Financial tab already available, clicking...')
+        financialTab.click()
+        console.log('🎉 Successfully navigated to financial tab!')
+        return
+      }
+
+      // Step 2: Find and open purchase details if not already open
+      console.log('💡 Financial tab not found, looking for purchase details button...')
+
+      const openDetailsAndNavigate = (attempt = 0) => {
+        const maxAttempts = 15
 
         // Try to find the specific purchase details button using data attribute
-        const detailsButton = document.querySelector(`[data-purchase-details-btn="${propertyId}"]`) as HTMLElement
+        let detailsButton = document.querySelector(`[data-purchase-details-btn="${propertyId}"]`) as HTMLElement
 
-        if (detailsButton) {
-          console.log('🎯 Found specific details button for property, clicking...')
-          detailsButton.click()
-          detailsOpened = true
-        } else {
-          console.log('⚠️ Specific details button not found, trying generic approach...')
-
-          // Fallback: Find any "View Details" button
+        if (!detailsButton) {
+          // Fallback: Find any "View Details" button that's not "Hide Details"
           const allButtons = Array.from(document.querySelectorAll('button'))
-          const genericDetailsButton = allButtons.find(btn =>
+          detailsButton = allButtons.find(btn =>
             btn.textContent?.includes('View Details') &&
             !btn.textContent?.includes('Hide Details')
           ) as HTMLElement
-
-          if (genericDetailsButton) {
-            console.log('🎯 Found generic details button, clicking...')
-            genericDetailsButton.click()
-            detailsOpened = true
-          }
-        }
-      }
-
-      // Step 2: Wait for details to load and find financial tab
-      const findAndClickFinancialTab = (attempt = 0) => {
-        const maxAttempts = 10
-
-        financialTab = document.querySelector('[data-tab="financial"]') as HTMLElement
-
-        if (financialTab) {
-          console.log('✅ Found financial tab, clicking...')
-          financialTab.click()
-          console.log('🎉 Successfully navigated to financial tab!')
-          return true
         }
 
-        if (attempt < maxAttempts) {
-          console.log(`⏳ Attempt ${attempt + 1}/${maxAttempts}: Financial tab not found, retrying...`)
-          setTimeout(() => findAndClickFinancialTab(attempt + 1), 300)
+        if (detailsButton) {
+          console.log('🎯 Found details button, clicking...')
+          detailsButton.click()
+
+          // Wait for details to load, then look for financial tab
+          setTimeout(() => {
+            financialTab = document.querySelector('[data-tab="financial"]') as HTMLElement
+
+            if (financialTab) {
+              console.log('✅ Found financial tab after opening details, clicking...')
+              financialTab.click()
+              console.log('🎉 Successfully navigated to financial tab!')
+            } else if (attempt < maxAttempts) {
+              console.log(`⏳ Attempt ${attempt + 1}/${maxAttempts}: Financial tab still not found, retrying...`)
+              openDetailsAndNavigate(attempt + 1)
+            } else {
+              console.error('❌ Failed to find financial tab after', maxAttempts, 'attempts')
+              console.log('🔍 Available elements after opening details:', {
+                allButtons: Array.from(document.querySelectorAll('button')).map(b => ({
+                  text: b.textContent?.trim(),
+                  dataTab: b.getAttribute('data-tab'),
+                  classes: b.className
+                })),
+                allDataTabs: Array.from(document.querySelectorAll('[data-tab]')).map(el => ({
+                  dataTab: el.getAttribute('data-tab'),
+                  text: el.textContent?.trim()
+                }))
+              })
+            }
+          }, 400)
+        } else if (attempt < maxAttempts) {
+          console.log(`⏳ Attempt ${attempt + 1}/${maxAttempts}: Details button not found, retrying...`)
+          setTimeout(() => openDetailsAndNavigate(attempt + 1), 200)
         } else {
-          console.error('❌ Failed to find financial tab after', maxAttempts, 'attempts')
-          console.log('🔍 Available elements:', {
-            allButtons: Array.from(document.querySelectorAll('button')).map(b => ({
+          console.error('❌ Failed to find details button after', maxAttempts, 'attempts')
+          console.log('🔍 Available buttons:',
+            Array.from(document.querySelectorAll('button')).map(b => ({
               text: b.textContent?.trim(),
-              dataTab: b.getAttribute('data-tab'),
+              attributes: Array.from(b.attributes).map(attr => `${attr.name}="${attr.value}"`),
               classes: b.className
-            })),
-            allDataTabs: Array.from(document.querySelectorAll('[data-tab]')).map(el => ({
-              dataTab: el.getAttribute('data-tab'),
-              text: el.textContent?.trim()
             }))
-          })
+          )
         }
-
-        return false
       }
 
-      // Start looking for financial tab
-      if (detailsOpened) {
-        // Wait a bit for the details to load
-        setTimeout(() => findAndClickFinancialTab(), 500)
-      } else {
-        // Try immediately if details were already open
-        findAndClickFinancialTab()
-      }
+      // Start the process
+      openDetailsAndNavigate()
     }
 
     // Execute navigation
