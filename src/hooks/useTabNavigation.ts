@@ -66,30 +66,25 @@ export const useTabNavigation = () => {
       }
     }
 
-    // Construct the financial tab URL - always navigate to specific property's financial tab
-    let basePath: string
+    // Construct the financial tab URL - handle both property detail pages and inline views
+    let financialUrl: string
 
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname
 
-      // If we're already on a property page, use that path
+      // If we're already on a specific property page, navigate to its financial tab
       if (currentPath.includes(`/properties/${propertyId}`)) {
-        basePath = currentPath.replace(/\/(documents|location|financial)$/, '')
+        const basePath = currentPath.replace(/\/(documents|location|financial)$/, '')
+        financialUrl = `${basePath}/financial${params.toString() ? `?${params.toString()}` : ''}`
       } else {
-        // If we're on the properties list or elsewhere, navigate to the specific property
-        basePath = `/dashboard/properties/${propertyId}`
+        // If we're on the properties list (purchase pipeline), stay on current page with params
+        // The inline view will handle the tab switching via events
+        financialUrl = `${currentPath}${params.toString() ? `?${params.toString()}` : ''}`
       }
     } else {
-      // Server-side fallback
-      basePath = `/dashboard/properties/${propertyId}`
+      // Server-side fallback - assume property detail page
+      financialUrl = `/dashboard/properties/${propertyId}/financial${params.toString() ? `?${params.toString()}` : ''}`
     }
-
-    // Ensure the path ends with /financial for the financial tab
-    if (!basePath.endsWith('/financial')) {
-      basePath = basePath + '/financial'
-    }
-
-    const financialUrl = `${basePath}${params.toString() ? `?${params.toString()}` : ''}`
 
     // Optimized navigation: batch DOM operations and reduce event overhead
     const navigationEvent = new CustomEvent('navigateToFinancial', {
