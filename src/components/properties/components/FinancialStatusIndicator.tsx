@@ -209,7 +209,6 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
 
   // Full view for expanded sections
   return (
-    <>
     <div className="border-t border-gray-200 bg-blue-50 p-3 rounded-b-lg">
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">
@@ -406,7 +405,7 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
 
