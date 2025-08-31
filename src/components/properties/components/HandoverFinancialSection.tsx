@@ -145,13 +145,17 @@ export default function HandoverFinancialSection({
       // Ensure the Costs section is expanded and form visible
       setCollapsedSections((prev) => ({ ...prev, costs: false }))
       setShowAddCost(true)
-      setNewCost((prev) => ({
-        ...prev,
+      const newCostData = {
         cost_type_id: costTypeId,
         cost_category: costType?.category || ('' as HandoverCostCategory),
         amount_kes: params.get('amount_kes') || '',
         payment_date: params.get('payment_date') || new Date().toISOString().slice(0, 10),
         notes: params.get('notes') || ''
+      }
+      console.log('🔍 HandoverFinancialSection setting newCost:', newCostData)
+      setNewCost((prev) => ({
+        ...prev,
+        ...newCostData
       }))
       setPrefillApplied('cost')
       setPrefillRenderKey(sig) // force inputs to re-render with new values
@@ -192,6 +196,13 @@ export default function HandoverFinancialSection({
       const url = new URL(window.location.href)
       const currentParams = url.searchParams
       const subtab = currentParams.get('subtab')
+      console.log('🔍 HandoverFinancialSection URL prefill check:', {
+        url: url.href,
+        subtab,
+        cost_type_id: currentParams.get('cost_type_id'),
+        amount_kes: currentParams.get('amount_kes'),
+        notes: currentParams.get('notes')
+      })
       if (subtab === 'handover_costs') {
         applyCostPrefill(currentParams)
       } else if (subtab === 'payments') {
