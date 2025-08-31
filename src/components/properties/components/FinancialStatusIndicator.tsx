@@ -209,6 +209,7 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
 
   // Full view for expanded sections
   return (
+    <>
     <div className="border-t border-gray-200 bg-blue-50 p-3 rounded-b-lg">
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">
@@ -307,6 +308,26 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                     const today = new Date().toISOString().slice(0, 10)
 
                     // Use pipeline-aware navigation config (handover → handover_costs)
+                    const getPaymentNavigationConfig = (stage: number, payment?: PaymentRequirement) => {
+                      if (payment?.category === 'payment') {
+                        return {
+                          subtab: 'payment_receipts',
+                          costTypeId: undefined,
+                          amount: payment.amount,
+                          description: payment.description || 'Purchase price payment',
+                          paymentType: 'installment',
+                        }
+                      } else {
+                        return {
+                          subtab: 'handover_costs',
+                          costTypeId: payment?.id,
+                          amount: payment?.amount,
+                          description: payment?.description,
+                          paymentType: 'fee',
+                        }
+                      }
+                    }
+
                     const paymentConfig = getPaymentNavigationConfig(stageNumber, payment)
 
                     navigateToFinancial({
