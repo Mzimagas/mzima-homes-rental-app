@@ -99,18 +99,18 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
         paymentType: payment.id === 'down_payment' ? 'deposit' : 'installment',
       }
     } else if (payment.category === 'fee' || payment.category === 'tax') {
-      // Costs (fees, taxes) - navigate to handover costs section
+      // Costs (fees, taxes) - navigate to acquisition costs section
       return {
-        subtab: 'handover_costs',
+        subtab: 'acquisition_costs',
         costTypeId: stageToHandoverCostMapping[stage],
         amount: payment.amount,
         description: payment.description || `Stage ${stage} ${payment.category} payment`,
         paymentType: payment.category === 'fee' ? 'fee' : 'tax',
       }
     } else {
-      // Default to handover costs for handover pipeline
+      // Default to acquisition costs for handover pipeline
       return {
-        subtab: 'handover_costs',
+        subtab: 'acquisition_costs',
         costTypeId: stageToHandoverCostMapping[stage],
         amount: payment.amount,
         description: payment.description || `Stage ${stage} payment`,

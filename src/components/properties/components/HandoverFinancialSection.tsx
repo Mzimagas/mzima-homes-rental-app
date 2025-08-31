@@ -203,7 +203,7 @@ export default function HandoverFinancialSection({
         amount_kes: currentParams.get('amount_kes'),
         notes: currentParams.get('notes')
       })
-      if (subtab === 'handover_costs') {
+      if (subtab === 'acquisition_costs') {
         applyCostPrefill(currentParams)
       } else if (subtab === 'payments') {
         applyPaymentPrefill(currentParams)
@@ -228,12 +228,12 @@ export default function HandoverFinancialSection({
 
         if (detail?.tabName === 'financial' && detail?.propertyId === propertyId) {
           const params = new URLSearchParams()
-          if (detail?.subtab === 'handover_costs') {
+          if (detail?.subtab === 'acquisition_costs') {
             if (detail.costTypeId) params.set('cost_type_id', detail.costTypeId)
             if (typeof detail.amount === 'number') params.set('amount_kes', String(detail.amount))
             if (detail.date) params.set('payment_date', detail.date)
             if (detail.description) params.set('notes', detail.description)
-            params.set('subtab', 'handover_costs')
+            params.set('subtab', 'acquisition_costs')
             applyCostPrefill(params)
           } else if (detail?.subtab === 'payments') {
             if (typeof detail.amount === 'number') params.set('payment_amount_kes', String(detail.amount))
@@ -633,7 +633,7 @@ export default function HandoverFinancialSection({
                 </div>
               </div>
               <div>
-                <div className="text-sm text-green-700">Handover Costs</div>
+                <div className="text-sm text-green-700">Acquisition Costs</div>
                 <div className="font-bold text-green-900">
                   {formatCurrency(financial_summary?.total_handover_costs_kes)}
                 </div>
@@ -658,7 +658,7 @@ export default function HandoverFinancialSection({
                   {formatCurrency(financial_summary?.total_income_kes)}
                 </span>
               </div>
-              <div className="text-sm text-green-700 mt-1">Purchase Price - Handover Costs</div>
+              <div className="text-sm text-green-700 mt-1">Purchase Price - Acquisition Costs</div>
             </div>
           </>
         )}
@@ -852,7 +852,7 @@ export default function HandoverFinancialSection({
         )}
       </div>
 
-      {/* Handover Costs */}
+      {/* Acquisition Costs */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex justify-between items-center">
           <button
@@ -861,7 +861,7 @@ export default function HandoverFinancialSection({
             className="flex items-center space-x-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
           >
             <span aria-hidden="true">{collapsedSections.costs ? '▶' : '▼'}</span>
-            <h4 className="text-lg font-semibold text-gray-900">Handover Costs</h4>
+            <h4 className="text-lg font-semibold text-gray-900">Acquisition Costs</h4>
           </button>
           {!collapsedSections.costs && (
             <Button
