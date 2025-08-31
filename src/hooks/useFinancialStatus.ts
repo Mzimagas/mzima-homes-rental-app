@@ -34,29 +34,74 @@ export const useFinancialStatus = (propertyId: string, pipeline: string) => {
       // Validate propertyId format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       if (!uuidRegex.test(propertyId)) {
-                setFinancialRecords([])
+        setFinancialRecords([])
         setLoading(false)
         return
       }
 
-      // For now, we'll simulate financial data since the financial table might not exist yet
-      // In a real implementation, this would query the financial/payments table
-      const { data, error } = await supabase
-        .from('property_financials')
-        .select('*')
-        .eq('property_id', propertyId)
-        .eq('pipeline', pipeline)
+      // Use pipeline-specific tables for financial data
+      if (pipeline === 'handover') {
+        // For handover pipeline, use handover-specific tables
+        const [costsResult, receiptsResult] = await Promise.allSettled([
+          supabase.from('property_handover_costs').select('*').eq('property_id', propertyId),
+          supabase.from('property_payment_receipts').select('*').eq('property_id', propertyId),
+        ])
 
-      if (error && error.code !== '42P01') {
-        // 42P01 = relation does not exist
-                setError(error.message)
-        setFinancialRecords([])
+        // Convert handover data to financial records format
+        const costs = costsResult.status === 'fulfilled' ? costsResult.value.data || [] : []
+        const receipts =
+          receiptsResult.status === 'fulfilled' ? receiptsResult.value.data || [] : []
+
+        // Transform to unified financial records format
+        const financialRecords = [
+          ...costs.map((cost: any) => ({
+            id: cost.id,
+            property_id: cost.property_id,
+            pipeline: 'handover',
+            payment_type: cost.cost_type_id,
+            amount: cost.amount_kes,
+            currency: 'KES',
+            status: 'completed',
+            description: cost.notes || `${cost.cost_type_id} cost`,
+            created_at: cost.created_at,
+            updated_at: cost.updated_at,
+            category: 'cost',
+          })),
+          ...receipts.map((receipt: any) => ({
+            id: receipt.id,
+            property_id: receipt.property_id,
+            pipeline: 'handover',
+            payment_type: 'payment_receipt',
+            amount: receipt.amount_kes,
+            currency: 'KES',
+            status: 'completed',
+            description: receipt.notes || `Payment receipt #${receipt.receipt_number}`,
+            created_at: receipt.created_at,
+            updated_at: receipt.updated_at,
+            category: 'payment',
+          })),
+        ]
+
+        setFinancialRecords(financialRecords)
       } else {
-        // If table doesn't exist or no data, use empty array
-        setFinancialRecords(data || [])
+        // For other pipelines, use the generic property_financials table
+        const { data, error } = await supabase
+          .from('property_financials')
+          .select('*')
+          .eq('property_id', propertyId)
+          .eq('pipeline', pipeline)
+
+        if (error && error.code !== '42P01') {
+          // 42P01 = relation does not exist
+          setError(error.message)
+          setFinancialRecords([])
+        } else {
+          // If table doesn't exist or no data, use empty array
+          setFinancialRecords(data || [])
+        }
       }
     } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : 'Unknown error')
       setFinancialRecords([])
     } finally {
       setLoading(false)

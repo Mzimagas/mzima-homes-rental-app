@@ -56,7 +56,7 @@ export const useFinancialSync = (options: FinancialSyncOptions) => {
     } catch (error) {
       // Log error for debugging in development
       if (process.env.NODE_ENV === 'development') {
-                      }
+      }
     } finally {
       setIsSyncing(false)
     }
@@ -129,7 +129,9 @@ export const useFinancialSync = (options: FinancialSyncOptions) => {
 
     const setupRealtimeSubscription = async () => {
       try {
-        // Subscribe to property_financials table changes
+        // Subscribe to pipeline-specific table changes
+        const tableName =
+          pipeline === 'handover' ? 'property_handover_costs' : 'property_financials'
         subscription = supabase
           .channel(`financial_changes_${propertyId}`)
           .on(
@@ -137,13 +139,13 @@ export const useFinancialSync = (options: FinancialSyncOptions) => {
             {
               event: '*',
               schema: 'public',
-              table: 'property_financials',
+              table: tableName,
               filter: `property_id=eq.${propertyId}`,
             },
             (payload: any) => {
               // Log financial changes in development
               if (process.env.NODE_ENV === 'development') {
-                                              }
+              }
 
               // Trigger sync when financial data changes
               triggerSync()
@@ -168,7 +170,7 @@ export const useFinancialSync = (options: FinancialSyncOptions) => {
       } catch (error) {
         // Log subscription errors in development
         if (process.env.NODE_ENV === 'development') {
-                            }
+        }
       }
     }
 

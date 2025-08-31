@@ -140,30 +140,40 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
         // Simulate API call delay
         await new Promise((resolve) => setTimeout(resolve, 2000))
 
-        // Create payment record in database
-        const { error } = await supabase.from('property_financials').upsert(
-          {
+        // Create payment record in appropriate table based on payment type
+        // Note: This is a simplified implementation - in production, this should use the proper API endpoints
+        let error = null
+
+        if (payment.category === 'payment') {
+          // For purchase price payments, use payment receipts table
+          const { error: receiptError } = await supabase.from('property_payment_receipts').insert({
             property_id: propertyId,
-            pipeline: 'purchase_pipeline', // This should be dynamic based on context
-            payment_type: payment.id,
-            amount: paymentDetails.amount,
-            currency: payment.currency,
-            status: 'completed', // In real implementation, this would be 'pending' initially
-            description: payment.description,
-            payment_method: method,
-            reference: paymentDetails.reference,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'property_id,pipeline,payment_type',
-          }
-        )
+            receipt_number: Math.floor(Math.random() * 10000), // Should be auto-generated
+            amount_kes: paymentDetails.amount,
+            payment_date: new Date().toISOString().split('T')[0],
+            payment_reference: paymentDetails.reference,
+            payment_method: method.toUpperCase(),
+            notes: payment.description,
+          })
+          error = receiptError
+        } else {
+          // For fees/taxes, use handover costs table
+          const { error: costError } = await supabase.from('property_handover_costs').insert({
+            property_id: propertyId,
+            cost_type_id: payment.id,
+            cost_category: payment.category === 'fee' ? 'OTHER' : 'OTHER',
+            amount_kes: paymentDetails.amount,
+            payment_date: new Date().toISOString().split('T')[0],
+            payment_reference: paymentDetails.reference,
+            notes: payment.description,
+          })
+          error = costError
+        }
 
         if (error) {
           // Log payment errors in development
           if (process.env.NODE_ENV === 'development') {
-                                  }
+          }
           throw new Error('Failed to record payment')
         }
 
@@ -187,7 +197,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
       } catch (error) {
         // Log payment processing errors in development
         if (process.env.NODE_ENV === 'development') {
-                            }
+        }
         onPaymentUpdate?.(payment.id, 'failed')
       } finally {
         setIsProcessing(false)
@@ -226,7 +236,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
               console.log('🔍 PaymentIntegration navigation config:', {
                 stageNumber,
                 payment: { id: payment.id, category: payment.category, amount: payment.amount },
-                paymentConfig
+                paymentConfig,
               })
               navigateToFinancial({
                 propertyId,
@@ -237,7 +247,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
                 amount: paymentConfig.amount,
                 description: paymentConfig.description,
                 pipeline: 'handover',
-                paymentType: paymentConfig.paymentType
+                paymentType: paymentConfig.paymentType,
               })
             }}
             className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors"
@@ -387,7 +397,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
               console.log('🔍 PaymentIntegration navigation config:', {
                 stageNumber,
                 payment: { id: payment.id, category: payment.category, amount: payment.amount },
-                paymentConfig
+                paymentConfig,
               })
               navigateToFinancial({
                 propertyId,
@@ -398,7 +408,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
                 amount: paymentConfig.amount,
                 description: paymentConfig.description,
                 pipeline: 'handover',
-                paymentType: paymentConfig.paymentType
+                paymentType: paymentConfig.paymentType,
               })
             }}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
