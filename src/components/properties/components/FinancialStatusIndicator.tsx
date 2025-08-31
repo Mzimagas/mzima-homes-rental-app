@@ -152,14 +152,14 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
           const navigationParams = {
             propertyId,
             stageNumber,
-            action: 'pay',
+            action: 'pay' as const,
             subtab: paymentConfig.subtab,
             costTypeId: paymentConfig.costTypeId,
             amount: paymentConfig.amount,
             date: today,
             description: paymentConfig.description,
-            pipeline: pipeline as 'direct_addition' | 'purchase_pipeline' | 'handover',
-            paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost',
+            pipeline: pipeline as 'direct_addition' | 'purchase_pipeline' | 'handover' | 'subdivision',
+            paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost' | 'subdivision_cost',
           }
 
           console.log('🔍 FinancialStatusIndicator navigateToFinancial called:', navigationParams)
@@ -306,8 +306,31 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                     const payment = requiredPayments[0]
                     const today = new Date().toISOString().slice(0, 10)
 
-                    // Use pipeline-aware navigation config (handover → handover_costs)
+                    // Use pipeline-aware navigation config
                     const getPaymentNavigationConfig = (stage: number, payment?: PaymentRequirement) => {
+                      // For subdivision stages 11-16, route to subdivision costs
+                      if (stage >= 11 && stage <= 16) {
+                        // Map payment IDs to subdivision cost type IDs
+                        const paymentToSubdivisionCostMap: Record<string, string> = {
+                          'search_fee_subdivision': 'search_fee',
+                          'lcb_normal_fee_subdivision': 'lcb_normal_fee',
+                          'lcb_special_fee_subdivision': 'lcb_special_fee',
+                          'mutation_costs': 'mutation_drawing',
+                          'beaconing_costs': 'beaconing',
+                          'title_registration_subdivision': 'new_title_registration',
+                        }
+
+                        const subdivisionCostTypeId = paymentToSubdivisionCostMap[payment?.id || ''] || payment?.id
+
+                        return {
+                          subtab: 'subdivision_costs',
+                          costTypeId: subdivisionCostTypeId,
+                          amount: payment?.amount,
+                          description: payment?.description || `Stage ${stage} subdivision payment`,
+                          paymentType: 'subdivision_cost',
+                        }
+                      }
+
                       if (payment?.category === 'payment') {
                         return {
                           subtab: 'payment_receipts',

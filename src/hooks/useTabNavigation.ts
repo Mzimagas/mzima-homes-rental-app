@@ -10,8 +10,8 @@ export interface TabNavigationOptions {
   amount?: number
   date?: string
   description?: string
-  pipeline?: 'direct_addition' | 'purchase_pipeline' | 'handover'
-  paymentType?: 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost'
+  pipeline?: 'direct_addition' | 'purchase_pipeline' | 'handover' | 'subdivision'
+  paymentType?: 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost' | 'subdivision_cost'
 }
 
 export const useTabNavigation = () => {

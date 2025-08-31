@@ -90,7 +90,30 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
       7: 'other_handover_expense', // Final Handover & Completion (updated to match current types)
     }
 
-    // Determine payment type and navigation config
+    // For subdivision stages 11-16, route to subdivision costs
+    if (stage >= 11 && stage <= 16) {
+      // Map payment IDs to subdivision cost type IDs
+      const paymentToSubdivisionCostMap: Record<string, string> = {
+        'search_fee_subdivision': 'search_fee',
+        'lcb_normal_fee_subdivision': 'lcb_normal_fee',
+        'lcb_special_fee_subdivision': 'lcb_special_fee',
+        'mutation_costs': 'mutation_drawing',
+        'beaconing_costs': 'beaconing',
+        'title_registration_subdivision': 'new_title_registration',
+      }
+
+      const subdivisionCostTypeId = paymentToSubdivisionCostMap[payment.id] || payment.id
+
+      return {
+        subtab: 'subdivision_costs',
+        costTypeId: subdivisionCostTypeId,
+        amount: payment.amount,
+        description: payment.description || `Stage ${stage} subdivision payment`,
+        paymentType: 'subdivision_cost',
+      }
+    }
+
+    // Determine payment type and navigation config for other stages
     if (payment.id === 'down_payment' || payment.category === 'payment') {
       // Purchase Price Deposit/Payment - navigate to payments section
       return {
@@ -158,24 +181,26 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
             notes: payment.description,
           })
           error = receiptError
-        } else if (stageNumber >= 12 && stageNumber <= 16) {
-          // For subdivision stages (12-16), use subdivision costs table
-          // Map payment IDs to subdivision cost type IDs
-          const paymentToSubdivisionCostMap: Record<string, string> = {
-            'search_fee_subdivision': 'search_fee',
-            'lcb_normal_fee_subdivision': 'lcb_normal_fee',
-            'lcb_special_fee_subdivision': 'lcb_special_fee',
-            'mutation_costs': 'mutation_drawing',
-            'beaconing_costs': 'beaconing',
-            'title_registration_subdivision': 'new_title_registration',
+        } else if (stageNumber >= 11 && stageNumber <= 16) {
+          // For subdivision stages (11-16), use subdivision costs table
+          // Map payment IDs to subdivision cost type IDs and their categories
+          const paymentToSubdivisionCostMap: Record<string, { costTypeId: string; category: string }> = {
+            'search_fee_subdivision': { costTypeId: 'search_fee', category: 'LEGAL_COMPLIANCE' },
+            'lcb_normal_fee_subdivision': { costTypeId: 'lcb_normal_fee', category: 'STATUTORY_BOARD_FEES' },
+            'lcb_special_fee_subdivision': { costTypeId: 'lcb_special_fee', category: 'STATUTORY_BOARD_FEES' },
+            'mutation_costs': { costTypeId: 'mutation_drawing', category: 'SURVEY_PLANNING_FEES' },
+            'beaconing_costs': { costTypeId: 'beaconing', category: 'SURVEY_PLANNING_FEES' },
+            'title_registration_subdivision': { costTypeId: 'new_title_registration', category: 'REGISTRATION_TITLE_FEES' },
           }
 
-          const subdivisionCostTypeId = paymentToSubdivisionCostMap[payment.id] || payment.id
+          const subdivisionMapping = paymentToSubdivisionCostMap[payment.id]
+          const subdivisionCostTypeId = subdivisionMapping?.costTypeId || payment.id
+          const subdivisionCategory = subdivisionMapping?.category || 'OTHER_CHARGES'
 
           const { error: subdivisionError } = await supabase.from('property_subdivision_costs').insert({
             property_id: propertyId,
             cost_type_id: subdivisionCostTypeId,
-            cost_category: 'SURVEY_PLANNING_FEES',
+            cost_category: subdivisionCategory,
             amount_kes: paymentDetails.amount,
             payment_status: 'PAID',
             payment_date: new Date().toISOString().split('T')[0],
@@ -434,7 +459,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
                 costTypeId: paymentConfig.costTypeId,
                 amount: paymentConfig.amount,
                 description: paymentConfig.description,
-                pipeline: 'handover',
+                pipeline: pipeline as 'direct_addition' | 'purchase_pipeline' | 'handover' | 'subdivision',
                 paymentType: paymentConfig.paymentType,
               })
             }}
