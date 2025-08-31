@@ -201,6 +201,7 @@ export class UniversalSearchService {
       qualityThreshold = 'moderate',
     } = options
 
+    // Lazy load index on first search
     await this.ensureIndex()
 
     this.recent.add(q)
@@ -281,10 +282,17 @@ export class UniversalSearchService {
     this.recent.clear()
   }
 
-  // Private
+  // Private - lazy index building
   private async ensureIndex() {
     if (this.engine.size() === 0) {
-      await this.buildIndexSync()
+      // Use the search initialization service for lazy building
+      const { searchInitializationService } = await import('./SearchInitializationService')
+      await searchInitializationService.ensureIndexBuilt()
+
+      // If still empty, build directly as fallback
+      if (this.engine.size() === 0) {
+        await this.buildIndexSync()
+      }
     }
   }
 

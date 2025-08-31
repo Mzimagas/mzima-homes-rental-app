@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Invalid file path format. Expected: {pipeline}/{property_id}/{doc_type}/{filename}',
+            'Invalid file path format. Expected: {pipeline}/{property_id}/{doc_type}/{filename]',
         },
         { status: 400 }
       )

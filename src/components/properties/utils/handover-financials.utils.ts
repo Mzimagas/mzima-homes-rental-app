@@ -32,11 +32,11 @@ export function calculateHandoverCostsByCategory(
   costs: HandoverCostEntry[]
 ): Record<string, number> {
   const totals: Record<string, number> = {
-    CLIENT_ENGAGEMENT: 0,
-    REGULATORY_LEGAL: 0,
-    SURVEY_MAPPING: 0,
-    ADMINISTRATIVE: 0,
-    TOTAL_ACQUISITION: 0,
+    PRE_HANDOVER: 0,
+    AGREEMENT_LEGAL: 0,
+    LCB_PROCESS: 0,
+    PAYMENT_TRACKING: 0,
+    TRANSFER_REGISTRATION: 0,
     OTHER: 0,
   }
 

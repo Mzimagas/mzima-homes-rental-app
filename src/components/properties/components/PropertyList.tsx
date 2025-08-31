@@ -1,10 +1,11 @@
 'use client'
 import ReverseTransferAction from './ReverseTransferAction'
 
-import { useState } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
 import InlinePropertyView from './InlinePropertyView'
+import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 import {
   getSourceIcon,
@@ -31,6 +32,67 @@ interface PropertyListProps {
   onDeleteProperty?: (propertyId: string) => void
 }
 
+interface PropertyItemProps {
+  property: PropertyWithLifecycle
+  pendingChanges: PendingChanges
+  savingChanges: { [propertyId: string]: boolean }
+  propertiesWithPipelineIssues: Set<string>
+  onEditProperty: (property: PropertyWithLifecycle) => void
+  onSubdivisionChange: (propertyId: string, value: string) => void
+  onHandoverChange: (propertyId: string, value: string) => void
+  onSaveChanges: (propertyId: string) => void
+  onCancelChanges: (propertyId: string) => void
+  onNavigateToTabs?: (tab: string) => void
+  onDeleteProperty?: (propertyId: string) => void
+  onViewProperty: (propertyId: string) => void
+  onPipelineStatusChange: (propertyId: string, hasIssues: boolean) => void
+}
+
+// Memoized property item to prevent unnecessary re-renders
+const PropertyItem = memo(function PropertyItem({
+  property,
+  pendingChanges,
+  savingChanges,
+  propertiesWithPipelineIssues,
+  onEditProperty,
+  onSubdivisionChange,
+  onHandoverChange,
+  onSaveChanges,
+  onCancelChanges,
+  onNavigateToTabs,
+  onDeleteProperty,
+  onViewProperty,
+  onPipelineStatusChange,
+}: PropertyItemProps) {
+  // Memoize computed values
+  const hasChanges = useMemo(() => hasPendingChanges(property.id, pendingChanges), [property.id, pendingChanges])
+  const isSaving = useMemo(() => savingChanges[property.id], [savingChanges, property.id])
+  const subdivisionValue = useMemo(() => getPendingSubdivisionValue(property, pendingChanges), [property, pendingChanges])
+  const handoverValue = useMemo(() => getPendingHandoverValue(property, pendingChanges), [property, pendingChanges])
+
+  // Memoized handlers
+  const handleEdit = useCallback(() => onEditProperty(property), [onEditProperty, property])
+  const handleView = useCallback(() => onViewProperty(property.id), [onViewProperty, property.id])
+  const handleSubdivisionChange = useCallback((value: string) => onSubdivisionChange(property.id, value), [onSubdivisionChange, property.id])
+  const handleHandoverChange = useCallback((value: string) => onHandoverChange(property.id, value), [onHandoverChange, property.id])
+  const handleSave = useCallback(() => onSaveChanges(property.id), [onSaveChanges, property.id])
+  const handleCancel = useCallback(() => onCancelChanges(property.id), [onCancelChanges, property.id])
+  const handleDelete = useCallback(() => onDeleteProperty?.(property.id), [onDeleteProperty, property.id])
+
+  return (
+    <PropertyCard
+      key={property.id}
+      lifecycle={property.lifecycle_status}
+      hasErrors={false}
+      interactive={true}
+      theme="direct-addition"
+      aria-label={`Property: ${property.name}`}
+    >
+      {/* Property card content will be moved here */}
+    </PropertyCard>
+  )
+})
+
 export default function PropertyList({
   properties,
   loading,
@@ -51,8 +113,8 @@ export default function PropertyList({
     new Set()
   )
 
-  // Handle pipeline status changes for properties
-  const handlePipelineStatusChange = (propertyId: string, hasIssues: boolean) => {
+  // Memoized handlers to prevent unnecessary re-renders
+  const handlePipelineStatusChange = useCallback((propertyId: string, hasIssues: boolean) => {
     setPropertiesWithPipelineIssues((prev) => {
       const newSet = new Set(prev)
       if (hasIssues) {
@@ -62,7 +124,15 @@ export default function PropertyList({
       }
       return newSet
     })
-  }
+  }, [])
+
+  const handleViewProperty = useCallback((propertyId: string) => {
+    setViewingPropertyId(propertyId)
+  }, [])
+
+  const handleCloseView = useCallback(() => {
+    setViewingPropertyId(null)
+  }, [])
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -98,62 +168,68 @@ export default function PropertyList({
   return (
     <div className="grid gap-6">
       {properties.map((property) => (
-        <div
+        <PropertyCard
           key={property.id}
-          className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+          lifecycle={property.lifecycle_status}
+          hasErrors={false}
+          interactive={true}
+          theme="direct-addition"
+          aria-label={`Property: ${property.name}`}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mb-4">
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-3 mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">{property.name}</h3>
-                <span className="text-lg">{getSourceIcon(property.property_source)}</span>
-                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                  {getSourceLabel(property.property_source)}
-                </span>
-                {property.lifecycle_status && (
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${getLifecycleStatusColor(property.lifecycle_status)}`}
-                  >
-                    {property.lifecycle_status.replace('_', ' ')}
+          <PropertyCardHeader>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+              <div className="md:col-span-2">
+                <div className="flex items-center space-x-3 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">{property.name}</h3>
+                  <span className="text-lg">{getSourceIcon(property.property_source)}</span>
+                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                    {getSourceLabel(property.property_source)}
                   </span>
-                )}
+                  {property.lifecycle_status && (
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-medium ${getLifecycleStatusColor(property.lifecycle_status)}`}
+                    >
+                      {property.lifecycle_status.replace('_', ' ')}
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-600 mb-2">{property.physical_address}</p>
+                <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                  <span>Type: {property.property_type?.replace('_', ' ') || 'Unknown'}</span>
+                  {property.total_area_acres && <span>Area: {property.total_area_acres} acres</span>}
+                  {property.expected_rental_income_kes && (
+                    <span>
+                      Expected Rent: KES {property.expected_rental_income_kes.toLocaleString()}/month
+                    </span>
+                  )}
+                  {property.purchase_completion_date && (
+                    <span>
+                      Purchased: {new Date(property.purchase_completion_date).toLocaleDateString()}
+                    </span>
+                  )}
+                  {property.subdivision_date && (
+                    <span>
+                      Subdivided: {new Date(property.subdivision_date).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
               </div>
-              <p className="text-gray-600 mb-2">{property.physical_address}</p>
-              <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                <span>Type: {property.property_type?.replace('_', ' ') || 'Unknown'}</span>
-                {property.total_area_acres && <span>Area: {property.total_area_acres} acres</span>}
-                {property.expected_rental_income_kes && (
-                  <span>
-                    Expected Rent: KES {property.expected_rental_income_kes.toLocaleString()}/month
-                  </span>
-                )}
-                {property.purchase_completion_date && (
-                  <span>
-                    Purchased: {new Date(property.purchase_completion_date).toLocaleDateString()}
-                  </span>
-                )}
-                {property.subdivision_date && (
-                  <span>
-                    Subdivided: {new Date(property.subdivision_date).toLocaleDateString()}
-                  </span>
-                )}
+
+              <div className="flex justify-end">
+                <ViewOnGoogleMapsButton
+                  lat={(property as any).lat ?? null}
+                  lng={(property as any).lng ?? null}
+                  address={property.physical_address ?? property.name}
+                  propertyName={property.name}
+                  debug={process.env.NODE_ENV === 'development'}
+                  debugContext={`Property List - ${property.name}`}
+                />
               </div>
             </div>
+          </PropertyCardHeader>
 
-            <div className="flex justify-end">
-              <ViewOnGoogleMapsButton
-                lat={(property as any).lat ?? null}
-                lng={(property as any).lng ?? null}
-                address={property.physical_address ?? property.name}
-                propertyName={property.name}
-                debug={process.env.NODE_ENV === 'development'}
-                debugContext={`Property List - ${property.name}`}
-              />
-            </div>
-          </div>
-
-          {/* Status Dropdowns */}
-          <div className="mt-4 space-y-4">
+          <PropertyCardContent>
+            {/* Status Dropdowns */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Subdivision Status */}
               <div>
@@ -247,46 +323,48 @@ export default function PropertyList({
                 <div className="text-xs text-amber-600">You have unsaved changes</div>
               </div>
             )}
-          </div>
 
-          {property.acquisition_notes && (
-            <p className="text-sm text-gray-600 mt-2 italic">{property.acquisition_notes}</p>
-          )}
+            {property.acquisition_notes && (
+              <p className="text-sm text-gray-600 mt-2 italic">{property.acquisition_notes}</p>
+            )}
+          </PropertyCardContent>
 
-          <div className="flex flex-wrap gap-2 mt-4 items-center justify-between">
-            <div className="flex space-x-2">
-              <Button variant="secondary" size="sm" onClick={() => onEditProperty(property)}>
-                Edit
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() =>
-                  setViewingPropertyId(viewingPropertyId === property.id ? null : property.id)
-                }
-              >
-                {viewingPropertyId === property.id ? 'Hide Details' : 'View Details'}
-              </Button>
+          <PropertyCardFooter>
+            <div className="flex flex-wrap gap-2 items-center justify-between">
+              <div className="flex space-x-2">
+                <Button variant="secondary" size="sm" onClick={() => onEditProperty(property)}>
+                  Edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setViewingPropertyId(viewingPropertyId === property.id ? null : property.id)
+                  }
+                >
+                  {viewingPropertyId === property.id ? 'Hide Details' : 'View Details'}
+                </Button>
+              </div>
+
+              {/* Reverse transfer action for items that came from Purchase Pipeline */}
+              {property.property_source === 'PURCHASE_PIPELINE' && (
+                <ReverseTransferAction
+                  propertyId={property.id}
+                  sourceReferenceId={property.source_reference_id as any}
+                  onSuccess={onRefresh}
+                  onPipelineStatusChange={(hasIssues) =>
+                    handlePipelineStatusChange(property.id, hasIssues)
+                  }
+                />
+              )}
             </div>
 
-            {/* Reverse transfer action for items that came from Purchase Pipeline */}
-            {property.property_source === 'PURCHASE_PIPELINE' && (
-              <ReverseTransferAction
-                propertyId={property.id}
-                sourceReferenceId={property.source_reference_id as any}
-                onSuccess={onRefresh}
-                onPipelineStatusChange={(hasIssues) =>
-                  handlePipelineStatusChange(property.id, hasIssues)
-                }
-              />
+            {/* Inline Property View */}
+            {viewingPropertyId === property.id && (
+              <InlinePropertyView property={property} onClose={() => setViewingPropertyId(null)} />
             )}
-          </div>
-
-          {/* Inline Property View */}
-          {viewingPropertyId === property.id && (
-            <InlinePropertyView property={property} onClose={() => setViewingPropertyId(null)} />
-          )}
-        </div>
+          </PropertyCardFooter>
+        </PropertyCard>
       ))}
     </div>
   )

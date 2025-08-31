@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo, useRef, useEffect } from 'react'
 
 interface ViewOnGoogleMapsButtonProps {
   lat?: number | null
@@ -19,9 +19,10 @@ function buildGoogleMapsUrl(
   debug?: boolean,
   context?: string
 ): string | null {
-  if (debug) {
+  // Only log in development and avoid duplicate logging
+  if (debug && process.env.NODE_ENV !== 'production') {
     console.group(`🗺️ Google Maps URL Generation${context ? ` - ${context}` : ''}`)
-        console.log('🔍 Coordinate validation:', {
+    console.log('🔍 Coordinate validation:', {
       latValid: lat != null && !Number.isNaN(lat),
       lngValid: lng != null && !Number.isNaN(lng),
       latType: typeof lat,
@@ -64,16 +65,32 @@ export default function ViewOnGoogleMapsButton({
   debug = false,
   debugContext,
 }: ViewOnGoogleMapsButtonProps) {
-  const mapsUrl = buildGoogleMapsUrl(lat, lng, address, debug, debugContext)
+  // Memoize URL generation to avoid recomputation on every render
+  const mapsUrl = useMemo(() => {
+    return buildGoogleMapsUrl(lat, lng, address, debug, debugContext)
+  }, [lat, lng, address, debug, debugContext])
+
+  // Track logging to avoid duplicates in StrictMode
+  const hasLogged = useRef(false)
+
+  useEffect(() => {
+    if (debug && process.env.NODE_ENV !== 'production' && !hasLogged.current) {
+      hasLogged.current = true
+      // Logging is now handled in buildGoogleMapsUrl with production guards
+    }
+  }, [debug, lat, lng, address])
+
+  // Lazy click handler - only generate URL when actually needed
+  const handleClick = () => {
+    if (mapsUrl) {
+      window.open(mapsUrl, '_blank', 'noopener,noreferrer')
+    }
+  }
 
   if (!mapsUrl) {
     return (
       <div className={`text-xs text-gray-400 px-3 py-2 ${className}`}>No location available</div>
     )
-  }
-
-  const handleClick = () => {
-    window.open(mapsUrl, '_blank', 'noopener,noreferrer')
   }
 
   return (

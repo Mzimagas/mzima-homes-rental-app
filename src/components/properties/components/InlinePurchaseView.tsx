@@ -18,6 +18,7 @@ import {
 } from '../utils/purchase-pipeline.utils'
 import { getSourceIcon, getSourceLabel } from '../utils/property-management.utils'
 import { usePropertyAccess } from '../../../hooks/usePropertyAccess'
+import { useTabState, TabNavigation, TabContent, getTabLabel, useTabNavigation as useTabListener } from '../utils/tab-utils'
 
 interface InlinePurchaseViewProps {
   purchase: PurchaseItem
@@ -25,29 +26,34 @@ interface InlinePurchaseViewProps {
   onPurchaseUpdate?: (updatedPurchase: PurchaseItem) => void
 }
 
-type TabType = 'details' | 'location' | 'financial' | 'documents'
+type TabType = 'details' | 'financial' | 'documents'
 
 export default function InlinePurchaseView({
   purchase,
   onClose,
   onPurchaseUpdate,
 }: InlinePurchaseViewProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('details')
+  const { activeTab, setActiveTab } = useTabState({
+    defaultTab: 'details',
+    persistKey: `purchase-${purchase.id}`
+  })
+
+  // Listen for external tab navigation events (event-driven)
+  useTabListener(purchase.id, setActiveTab)
 
   const [pipelineLoading, setPipelineLoading] = useState(false)
   const [purchaseData, setPurchaseData] = useState<PurchaseItem | null>(null)
 
-  // Always allow financial management for purchase pipeline entries
   const { properties } = usePropertyAccess()
-  const hasPropertyAccess = true // User owns the purchase pipeline entry
+  const hasPropertyAccess = true
 
-  // Convert PurchaseItem to PropertyWithLifecycle format for PropertyAcquisitionFinancials
+
   const convertToProperty = (purchaseItem: PurchaseItem): PropertyWithLifecycle => {
     return {
       id: purchaseItem.id,
       name: purchaseItem.property_name,
       physical_address: purchaseItem.property_address || '',
-      property_type: 'UNKNOWN' as any, // Default since purchase pipeline doesn't have this
+      property_type: 'UNKNOWN' as any,
       property_source: 'PURCHASE_PIPELINE',
       lifecycle_status: 'ACTIVE',
       purchase_price_agreement_kes:
@@ -69,7 +75,7 @@ export default function InlinePurchaseView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [purchase.id])
 
-  // Removed old event listener - using new direct navigation approach
+
 
   const loadPurchaseData = async () => {
     try {
@@ -81,7 +87,7 @@ export default function InlinePurchaseView({
         .single()
 
       if (!error && data) {
-        // Normalize field names to match PurchaseItem interface where needed
+
         const normalized: PurchaseItem = {
           id: data.id,
           property_name: data.property_name,
@@ -108,7 +114,7 @@ export default function InlinePurchaseView({
           updated_at: data.updated_at,
         }
         setPurchaseData(normalized)
-        // Notify parent of updated purchase data
+
         if (onPurchaseUpdate) {
           onPurchaseUpdate(normalized)
         }
@@ -123,7 +129,7 @@ export default function InlinePurchaseView({
   }
 
   const handleStageClick = (stageId: number) => {
-        // Stage functionality will be integrated into documents view
+    // Stage functionality integrated into documents view
   }
 
   const handleStageUpdate = async (
@@ -172,21 +178,17 @@ export default function InlinePurchaseView({
 
       {/* Tabs */}
       <div className="px-6 pt-4">
-        <div className="flex border-b border-gray-200 mb-4">
-          {(['details', 'location', 'financial', 'documents'] as TabType[]).map((tab) => (
-            <button
-              key={tab}
-              data-tab={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 focus:outline-none transition-colors ${
-                activeTab === tab
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+        <div className="border-b border-gray-200 mb-4">
+          <TabNavigation
+            tabs={[
+              { id: 'details', label: 'Basic Info', icon: '🏠' },
+              { id: 'documents', label: 'Documents', icon: '📁' },
+              { id: 'financial', label: 'Financial', icon: '💰' }
+            ]}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            variant="default"
+          />
         </div>
       </div>
 
@@ -222,18 +224,7 @@ export default function InlinePurchaseView({
           </div>
         )}
 
-        {activeTab === 'location' && (
-          <div className="space-y-4">
-            <ViewOnGoogleMapsButton
-              address={
-                purchaseData?.property_address ||
-                purchase.property_address ||
-                purchase.property_name
-              }
-              propertyName={purchaseData?.property_name || purchase.property_name}
-            />
-          </div>
-        )}
+
 
         {activeTab === 'financial' && (
           <PropertyAcquisitionFinancials

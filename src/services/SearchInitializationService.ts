@@ -10,6 +10,8 @@ export class SearchInitializationService {
   private isInitialized = false
   private isInitializing = false
   private initializationPromise: Promise<void> | null = null
+  private hasBuiltIndex = false
+  private indexBuildPromise: Promise<void> | null = null
 
   private constructor() {}
 
@@ -21,7 +23,7 @@ export class SearchInitializationService {
   }
 
   /**
-   * Initialize the search service and build the index
+   * Initialize the search service (lightweight initialization)
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
@@ -33,18 +35,46 @@ export class SearchInitializationService {
     }
 
     this.isInitializing = true
-    this.initializationPromise = this.performInitialization()
+    this.initializationPromise = this.performLightweightInitialization()
 
     try {
       await this.initializationPromise
       this.isInitialized = true
-      console.log('✅ Search service initialized successfully')
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('✅ Search service initialized successfully (lightweight)')
+      }
     } catch (error) {
       console.error('❌ Failed to initialize search service:', error)
       // Don't throw error - allow app to continue working
-      console.log('⚠️ App will continue, search will build index on first use')
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('⚠️ App will continue, search will build index on first use')
+      }
     } finally {
       this.isInitializing = false
+    }
+  }
+
+  /**
+   * Lazy build index only when first search is performed
+   */
+  async ensureIndexBuilt(): Promise<void> {
+    if (this.hasBuiltIndex) {
+      return
+    }
+
+    if (this.indexBuildPromise) {
+      return this.indexBuildPromise
+    }
+
+    this.indexBuildPromise = this.buildIndexOnDemand()
+
+    try {
+      await this.indexBuildPromise
+      this.hasBuiltIndex = true
+    } catch (error) {
+      console.error('❌ Failed to build search index:', error)
+      this.indexBuildPromise = null // Allow retry
+      throw error
     }
   }
 
@@ -77,44 +107,64 @@ export class SearchInitializationService {
   }
 
   /**
-   * Perform the actual initialization
+   * Lightweight initialization - just prepare the service without building index
    */
-  private async performInitialization(): Promise<void> {
-    console.log('🔍 Initializing search service...')
+  private async performLightweightInitialization(): Promise<void> {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 Initializing search service (lightweight)...')
+    }
 
     try {
-      // Check if index needs to be built
+      // Just verify the service is available, don't build index yet
+      const stats = universalSearchService.getIndexStats()
+
+      if (stats.totalEntries > 0) {
+        this.hasBuiltIndex = true
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`📊 Search index already exists with ${stats.totalEntries} entries`)
+        }
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('⚠️ Search service not immediately available, will build on demand')
+      }
+    }
+  }
+
+  /**
+   * Build index on demand (when first search is performed)
+   */
+  private async buildIndexOnDemand(): Promise<void> {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 Building search index on demand...')
+    }
+
+    try {
       const stats = universalSearchService.getIndexStats()
 
       if (stats.totalEntries === 0) {
-        console.log('📊 Building initial search index...')
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('📊 Building initial search index...')
+        }
         await universalSearchService.buildIndex()
       } else {
-        console.log(`📊 Search index already exists with ${stats.totalEntries} entries`)
-
         // Check if index is stale (older than 1 hour)
         const indexAge = Date.now() - stats.lastUpdate.getTime()
         const oneHour = 60 * 60 * 1000
 
         if (indexAge > oneHour) {
-          console.log('🔄 Search index is stale, rebuilding...')
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('🔄 Search index is stale, rebuilding...')
+          }
           await universalSearchService.buildIndex()
         }
       }
 
-      // Verify the index is working
+      // Quick verification
       await this.verifySearchFunctionality()
     } catch (error) {
-      console.error('❌ Search initialization failed:', error)
-
-      // Try to build a minimal index as fallback
-      try {
-        console.log('🔄 Attempting fallback initialization...')
-        await this.fallbackInitialization()
-      } catch (fallbackError) {
-        console.error('❌ Fallback initialization also failed:', fallbackError)
-        throw new Error('Search service initialization failed completely')
-      }
+      console.error('❌ On-demand index build failed:', error)
+      throw error
     }
   }
 

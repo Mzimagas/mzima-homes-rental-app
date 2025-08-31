@@ -48,7 +48,7 @@ if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
       fetch: async (url, options = {}) => {
         try {
           if (shouldLogAuth()) logger.debug('Supabase fetch', url)
-          const res = await fetch(url as any, options as any)
+          const res = await globalThis.fetch(url as any, options as any)
           if (!res.ok) {
             // Do not consume body; just log status and url
             if (shouldLogAuth())

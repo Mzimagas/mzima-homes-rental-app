@@ -4,6 +4,7 @@ import AuthWrapper from '../components/auth-wrapper'
 import ClientAnalytics from '../components/ClientAnalytics'
 import ErrorBoundary from '../components/ErrorBoundary'
 import { ToastProvider } from '../components/ui/Toast'
+import ServiceWorkerProvider from '../components/ServiceWorkerProvider'
 import './globals.css'
 
 const geistSans = Geist({
@@ -33,12 +34,14 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ErrorBoundary>
-          <AuthWrapper>
-            <ToastProvider>
-              <ClientAnalytics />
-              {children}
-            </ToastProvider>
-          </AuthWrapper>
+          <ServiceWorkerProvider>
+            <AuthWrapper>
+              <ToastProvider>
+                <ClientAnalytics />
+                {children}
+              </ToastProvider>
+            </AuthWrapper>
+          </ServiceWorkerProvider>
         </ErrorBoundary>
       </body>
     </html>

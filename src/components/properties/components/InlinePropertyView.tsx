@@ -3,25 +3,25 @@
 import { useState, useEffect } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
 import { PropertyWithLifecycle } from '../types/property-management.types'
 import {
   getSourceIcon,
   getSourceLabel,
   getLifecycleStatusColor,
 } from '../utils/property-management.utils'
+import { useTabState, TabNavigation, TabContent, PROPERTY_TABS, useTabNavigation } from '../utils/tab-utils'
 import supabase from '../../../lib/supabase-client'
-// Import components directly to avoid lazy loading issues with tab navigation
+
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import PurchasePipelineDocuments from './PurchasePipelineDocuments'
 import DirectAdditionDocumentsV2 from './DirectAdditionDocumentsV2'
+import HandoverDocumentsV2 from './HandoverDocumentsV2'
 
 import SubdivisionProgressTracker from './SubdivisionProgressTracker'
 import SubdivisionStageModal from './SubdivisionStageModal'
 import { PurchaseItem } from '../types/purchase-pipeline.types'
-import {
-  SubdivisionPipelineStageData,
-  SubdivisionProgressTrackerProps,
-} from '../types/property-management.types'
+import { SubdivisionPipelineStageData } from '../types/property-management.types'
 import { PurchasePipelineService } from '../services/purchase-pipeline.service'
 import {
   initializePipelineStages,
@@ -61,10 +61,13 @@ interface PurchasePipelineDocument {
   documents: PropertyDocument[]
 }
 
-type TabType = 'details' | 'location' | 'financial' | 'documents'
+type TabType = 'details' | 'financial' | 'documents'
 
 export default function InlinePropertyView({ property, onClose }: InlinePropertyViewProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('details')
+  const { activeTab, setActiveTab } = useTabState({
+    defaultTab: 'details',
+    persistKey: `property-${property.id}`
+  })
   const [documents, setDocuments] = useState<PropertyDocument[]>([])
   const [pipelineDocuments, setPipelineDocuments] = useState<PurchasePipelineDocument[]>([])
   const [loading, setLoading] = useState(false)
@@ -428,27 +431,12 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     // This could trigger a refresh of the property data if needed
   }
 
-  const tabs = [
-    { id: 'details' as TabType, label: 'Basic Info', icon: '🏠' },
-    { id: 'location' as TabType, label: 'Location', icon: '📍' },
-    { id: 'financial' as TabType, label: 'Financial', icon: '💰' },
-    { id: 'documents' as TabType, label: 'Documents', icon: '📁' },
-  ]
 
-  // Removed old event listener - using new direct navigation approach
 
-  // Listen for cross-component navigation to the Documents tab
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const e = event as CustomEvent<any>
-      const detail = e.detail || {}
-      if (detail.tabName === 'documents' && detail.propertyId === property.id) {
-        setActiveTab('documents')
-      }
-    }
-    window.addEventListener('navigateToDocuments', handler as EventListener)
-    return () => window.removeEventListener('navigateToDocuments', handler as EventListener)
-  }, [property.id])
+
+
+  // Listen for cross-component navigation
+  useTabNavigation(property.id, setActiveTab)
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm mt-4">
@@ -477,33 +465,17 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
       {/* Tab Navigation */}
       <div className="px-6 py-3 border-b border-gray-200 bg-gray-50">
-        <div className="flex space-x-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              data-tab={tab.id}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                setActiveTab(tab.id)
-              }}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
+        <TabNavigation
+          tabs={PROPERTY_TABS}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          variant="pills"
+        />
       </div>
 
       {/* Tab Content */}
       <div className="p-6">
-        {activeTab === 'details' && (
+        <TabContent activeTab={activeTab} tabId="details">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -550,46 +522,31 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
               </div>
             )}
           </div>
-        )}
+        </TabContent>
 
-        {activeTab === 'location' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Physical Address</h4>
-                <p className="text-gray-700">{property.physical_address}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Coordinates</h4>
-                <p className="text-gray-700">
-                  {(property as any).lat && (property as any).lng
-                    ? `${(property as any).lat}, ${(property as any).lng}`
-                    : 'Not available'}
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-start">
-              <ViewOnGoogleMapsButton
-                lat={(property as any).lat ?? null}
-                lng={(property as any).lng ?? null}
-                address={property.physical_address ?? property.name}
-                propertyName={property.name}
-                debug={process.env.NODE_ENV === 'development'}
-                debugContext={`Property Details - Location Tab - ${property.name}`}
-              />
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'financial' && (
+        <TabContent activeTab={activeTab} tabId="financial">
           <PropertyAcquisitionFinancials property={property} onUpdate={handleFinancialUpdate} />
-        )}
+        </TabContent>
 
-        {activeTab === 'documents' && (
+        <TabContent activeTab={activeTab} tabId="documents">
           <div className="space-y-6">
             {/* Direct Addition Documents V2 - New Expandable Card System */}
             {property.property_source === 'DIRECT_ADDITION' && (
               <DirectAdditionDocumentsV2 propertyId={property.id} propertyName={property.name} />
+            )}
+
+            {/* Handover Documents V2 - For handover properties */}
+            {(property.handover_status === 'IN_PROGRESS' ||
+              property.handover_status === 'COMPLETED' ||
+              property.handover_status === 'PENDING' ||
+              property.handover_status === 'IDENTIFIED' ||
+              property.handover_status === 'NEGOTIATING' ||
+              property.handover_status === 'UNDER_CONTRACT' ||
+              property.handover_status === 'DUE_DILIGENCE' ||
+              property.handover_status === 'FINANCING' ||
+              property.handover_status === 'CLOSING' ||
+              (property.handover_status && property.handover_status !== 'NOT_STARTED' && property.handover_status !== 'CANCELLED')) && (
+              <HandoverDocumentsV2 propertyId={property.id} propertyName={property.name} />
             )}
 
             {/* Purchase Pipeline Interface - Only show for purchase pipeline properties */}
@@ -608,91 +565,99 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                       propertyName={purchaseData.property_name}
                     />
 
-                    {/* Purchase Card with Direct Addition styling */}
-                    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mb-4">
-                        <div className="md:col-span-2">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {purchaseData.property_name}
-                            </h3>
-                            <span className="text-lg">{getSourceIcon('PURCHASE_PIPELINE')}</span>
-                            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                              {getSourceLabel('PURCHASE_PIPELINE')}
-                            </span>
-                            <span
-                              className={`text-xs px-2 py-1 rounded-full font-medium ${getPurchaseStatusColor(purchaseData.purchase_status)}`}
-                            >
-                              {purchaseData.purchase_status.replace('_', ' ')}
-                            </span>
-                          </div>
-                          <p className="text-gray-600 mb-2">{purchaseData.property_address}</p>
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                            {purchaseData.seller_name && (
-                              <span>Seller: {purchaseData.seller_name}</span>
-                            )}
-                            {purchaseData.asking_price_kes && (
-                              <span>Asking: {formatCurrency(purchaseData.asking_price_kes)}</span>
-                            )}
-                            {purchaseData.negotiated_price_kes && (
-                              <span>
-                                Negotiated: {formatCurrency(purchaseData.negotiated_price_kes)}
+                    {/* Purchase Card with Enhanced Border Styling */}
+                    <PropertyCard
+                      status={purchaseData.purchase_status}
+                      interactive={false}
+                      aria-label={`Purchase details: ${purchaseData.property_name}`}
+                    >
+                      <PropertyCardHeader>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                          <div className="md:col-span-2">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">
+                                {purchaseData.property_name}
+                              </h3>
+                              <span className="text-lg">{getSourceIcon('PURCHASE_PIPELINE')}</span>
+                              <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                                {getSourceLabel('PURCHASE_PIPELINE')}
                               </span>
-                            )}
-                            <span>Progress: {purchaseData.overall_progress}%</span>
+                              <span
+                                className={`text-xs px-2 py-1 rounded-full font-medium ${getPurchaseStatusColor(purchaseData.purchase_status)}`}
+                              >
+                                {purchaseData.purchase_status.replace('_', ' ')}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 mb-2">{purchaseData.property_address}</p>
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                              {purchaseData.seller_name && (
+                                <span>Seller: {purchaseData.seller_name}</span>
+                              )}
+                              {purchaseData.asking_price_kes && (
+                                <span>Asking: {formatCurrency(purchaseData.asking_price_kes)}</span>
+                              )}
+                              {purchaseData.negotiated_price_kes && (
+                                <span>
+                                  Negotiated: {formatCurrency(purchaseData.negotiated_price_kes)}
+                                </span>
+                              )}
+                              <span>Progress: {purchaseData.overall_progress}%</span>
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="flex justify-end">
-                          <ViewOnGoogleMapsButton
-                            lat={(purchaseData as any).property_lat ?? null}
-                            lng={(purchaseData as any).property_lng ?? null}
-                            address={
-                              (purchaseData as any).property_physical_address ||
-                              purchaseData.property_address ||
-                              purchaseData.property_name
-                            }
-                            propertyName={purchaseData.property_name}
-                            debug={process.env.NODE_ENV === 'development'}
-                            debugContext={`Purchase Pipeline - ${purchaseData.property_name}`}
-                          />
+                          <div className="flex justify-end">
+                            <ViewOnGoogleMapsButton
+                              lat={(purchaseData as any).property_lat ?? null}
+                              lng={(purchaseData as any).property_lng ?? null}
+                              address={
+                                (purchaseData as any).property_physical_address ||
+                                purchaseData.property_address ||
+                                purchaseData.property_name
+                              }
+                              propertyName={purchaseData.property_name}
+                              debug={process.env.NODE_ENV === 'development'}
+                              debugContext={`Purchase Pipeline - ${purchaseData.property_name}`}
+                            />
+                          </div>
                         </div>
-                      </div>
+                      </PropertyCardHeader>
 
-                      {/* Financial Summary */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <div className="text-xs text-gray-500">Asking Price</div>
-                          <div className="font-medium">
-                            {formatCurrency(purchaseData.asking_price_kes)}
+                      <PropertyCardContent>
+                        {/* Financial Summary */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                          <div>
+                            <div className="text-xs text-gray-500">Asking Price</div>
+                            <div className="font-medium">
+                              {formatCurrency(purchaseData.asking_price_kes)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">Negotiated Price</div>
+                            <div className="font-medium">
+                              {formatCurrency(purchaseData.negotiated_price_kes)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">Deposit Paid</div>
+                            <div className="font-medium">
+                              {formatCurrency(purchaseData.deposit_paid_kes)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">Balance Due</div>
+                            <div className="font-medium">
+                              {formatCurrency(
+                                calculateBalanceDue(
+                                  purchaseData.negotiated_price_kes,
+                                  purchaseData.asking_price_kes,
+                                  purchaseData.deposit_paid_kes
+                                )
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div>
-                          <div className="text-xs text-gray-500">Negotiated Price</div>
-                          <div className="font-medium">
-                            {formatCurrency(purchaseData.negotiated_price_kes)}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-500">Deposit Paid</div>
-                          <div className="font-medium">
-                            {formatCurrency(purchaseData.deposit_paid_kes)}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-500">Balance Due</div>
-                          <div className="font-medium">
-                            {formatCurrency(
-                              calculateBalanceDue(
-                                purchaseData.negotiated_price_kes,
-                                purchaseData.asking_price_kes,
-                                purchaseData.deposit_paid_kes
-                              )
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      </PropertyCardContent>
+                    </PropertyCard>
                   </div>
                 ) : (
                   <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -788,8 +753,30 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                 </div>
               </div>
             )}
+
+            {/* Fallback message when no document components render */}
+            {!(property.property_source === 'DIRECT_ADDITION') &&
+             !(property.handover_status === 'IN_PROGRESS' ||
+               property.handover_status === 'COMPLETED' ||
+               property.handover_status === 'PENDING' ||
+               property.handover_status === 'IDENTIFIED' ||
+               property.handover_status === 'NEGOTIATING' ||
+               property.handover_status === 'UNDER_CONTRACT' ||
+               property.handover_status === 'DUE_DILIGENCE' ||
+               property.handover_status === 'FINANCING' ||
+               property.handover_status === 'CLOSING' ||
+               (property.handover_status && property.handover_status !== 'NOT_STARTED' && property.handover_status !== 'CANCELLED')) &&
+             !(property.property_source === 'PURCHASE_PIPELINE') &&
+             !(property.property_source === 'SUBDIVISION_PROCESS') && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                <div className="text-gray-600">
+                  <p className="text-lg font-medium">No documents available</p>
+                  <p className="mt-2">Document management is not available for this property type at this time.</p>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </TabContent>
       </div>
 
       {/* Stage Modal for Subdivision Pipeline */}

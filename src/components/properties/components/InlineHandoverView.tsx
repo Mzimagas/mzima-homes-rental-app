@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
-import HandoverProgressTracker from './HandoverProgressTracker'
 import HandoverFinancialSection from './HandoverFinancialSection'
 import { HandoverItem } from '../types/property-management.types'
 import { initializeHandoverPipelineStages } from '../utils/property-management.utils'
@@ -11,6 +10,10 @@ import {
   HandoverFinancialsService,
   HandoverFinancialSummary,
 } from '../services/handover-financials.service'
+import { useTabState, TabNavigation, TabContent, HANDOVER_TABS, useTabNavigation } from '../utils/tab-utils'
+
+import HandoverDocumentsV2 from './HandoverDocumentsV2'
+
 
 interface InlineHandoverViewProps {
   handover: HandoverItem
@@ -30,12 +33,18 @@ export default function InlineHandoverView({
   onStageClick,
   onStageUpdate,
 }: InlineHandoverViewProps) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'location' | 'financial' | 'documents'>(
-    'basic'
-  )
+  const { activeTab, setActiveTab } = useTabState({
+    defaultTab: 'details',
+    persistKey: `handover-${handover.id}`
+  })
+
+  // Listen for cross-component navigation (e.g., from "Make Payment" buttons)
+  useTabNavigation(handover.property_id, setActiveTab)
+
   const [financialSummary, setFinancialSummary] = useState<HandoverFinancialSummary | null>(null)
   const [loadingFinancials, setLoadingFinancials] = useState(false)
   const [financialError, setFinancialError] = useState<string | null>(null)
+  const [currentStage, setCurrentStage] = useState<number>(handover.current_stage || 1)
 
   // Load financial data when component mounts or when switching to financial tab
   useEffect(() => {
@@ -83,53 +92,17 @@ export default function InlineHandoverView({
 
       {/* Tab Navigation */}
       <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('basic')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'basic'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            🏠 Basic Info
-          </button>
-          <button
-            onClick={() => setActiveTab('location')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'location'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            📍 Location
-          </button>
-          <button
-            onClick={() => setActiveTab('financial')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'financial'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            💰 Financial
-          </button>
-          <button
-            onClick={() => setActiveTab('documents')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'documents'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            📁 Documents
-          </button>
-        </nav>
+        <TabNavigation
+          tabs={HANDOVER_TABS}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          variant="underline"
+        />
       </div>
 
       {/* Tab Content */}
       <div className="space-y-6">
-        {activeTab === 'basic' && (
+        <TabContent activeTab={activeTab} tabId="details">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -159,13 +132,6 @@ export default function InlineHandoverView({
                       {handover.handover_status.replace('_', ' ')}
                     </span>
                   </div>
-                  <p className="text-gray-700">
-                    <span className="font-medium">Progress:</span> {handover.overall_progress}%
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-medium">Current Stage:</span> {handover.current_stage} of
-                    8
-                  </p>
                 </div>
               </div>
             </div>
@@ -235,35 +201,21 @@ export default function InlineHandoverView({
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {activeTab === 'location' && (
+
+          </div>
+        </TabContent>
+
+
+
+        <TabContent activeTab={activeTab} tabId="documents">
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Property Address</h4>
-                <p className="text-gray-700">{handover.property_address}</p>
-              </div>
-            </div>
-            <div className="flex justify-start">
-              <ViewOnGoogleMapsButton
-                lat={(handover as any).property_lat ?? null}
-                lng={(handover as any).property_lng ?? null}
-                address={
-                  (handover as any).property_physical_address ||
-                  handover.property_address ||
-                  handover.property_name
-                }
-                propertyName={handover.property_name}
-                debug={process.env.NODE_ENV === 'development'}
-                debugContext={`Handover Details - Location Tab - ${handover.property_name}`}
-              />
-            </div>
+            <HandoverDocumentsV2 propertyId={handover.property_id} propertyName={handover.property_name} />
           </div>
-        )}
+        </TabContent>
 
-        {activeTab === 'financial' && (
+
+        <TabContent activeTab={activeTab} tabId="financial">
           <div className="space-y-6">
             {loadingFinancials ? (
               <div className="flex items-center justify-center py-8">
@@ -286,36 +238,13 @@ export default function InlineHandoverView({
                 propertyId={handover.property_id}
                 financialSummary={financialSummary}
                 onDataUpdate={loadFinancialData}
+
+
+
               />
             )}
           </div>
-        )}
-
-        {activeTab === 'documents' && (
-          <div className="space-y-6">
-            {/* Handover Progress Tracker */}
-            <div>
-              <HandoverProgressTracker
-                currentStage={handover.current_stage || 1}
-                stageData={handover.pipeline_stages || initializeHandoverPipelineStages()}
-                onStageClick={(stageId) => onStageClick(stageId, handover.id)}
-                overallProgress={handover.overall_progress || 0}
-                handoverId={handover.id}
-                onStageUpdate={onStageUpdate}
-              />
-            </div>
-
-            {/* Progress Cards Info */}
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-              <div className="flex items-center text-sm text-purple-800">
-                <span className="mr-2">📋</span>
-                <span>
-                  Click on any accessible stage card above to view details and update status
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+        </TabContent>
       </div>
     </div>
   )

@@ -3,7 +3,6 @@ import { compose, withAuth, withCsrf, withRateLimit } from '../../../../../lib/a
 import { errors } from '../../../../../lib/api/errors'
 import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '../../../../../lib/supabase-server'
-import { MockStorageService } from '../../../../../lib/mock-storage'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -90,44 +89,38 @@ export const GET = compose(
       return errors.notFound('Property not found')
     }
 
-    // Get REAL data from in-memory storage
+    // Get data from database
     const handoverPrice = property.handover_price_agreement_kes || 0
-    const costEntries = MockStorageService.getHandoverCosts(propertyId)
-    const paymentReceipts = MockStorageService.getPaymentReceipts(propertyId)
 
-    console.log('🔍 CLEAN REAL DATA FROM STORAGE:', {
-      propertyId,
-      handoverPrice,
-      costEntriesCount: costEntries.length,
-      paymentReceiptsCount: paymentReceipts.length,
-      costEntries: costEntries.map((c) => ({
-        id: c.id,
-        amount: c.amount_kes,
-        category: c.cost_category,
-        type: c.cost_type_id,
-        date: c.payment_date,
-      })),
-      paymentReceipts: paymentReceipts.map((p) => ({
-        id: p.id,
-        amount: p.amount_kes,
-        receipt_number: p.receipt_number,
-        date: p.payment_date,
-      })),
-    })
+    // Fetch handover costs from database
+    const { data: costEntries, error: costsError } = await admin
+      .from('property_handover_costs')
+      .select('*')
+      .eq('property_id', propertyId)
+      .order('created_at', { ascending: false })
+
+    if (costsError) {
+      console.error('Error fetching handover costs:', costsError)
+      return errors.internal('Failed to fetch handover costs')
+    }
+
+    // Fetch payment receipts from database
+    const { data: paymentReceipts, error: receiptsError } = await admin
+      .from('property_payment_receipts')
+      .select('*')
+      .eq('property_id', propertyId)
+      .order('created_at', { ascending: false })
+
+    if (receiptsError) {
+      console.error('Error fetching payment receipts:', receiptsError)
+      return errors.internal('Failed to fetch payment receipts')
+    }
 
     // Calculate totals
-    const totalCosts = costEntries.reduce((sum, cost) => sum + cost.amount_kes, 0)
-    const totalReceipts = paymentReceipts.reduce((sum, receipt) => sum + receipt.amount_kes, 0)
+    const totalCosts = (costEntries || []).reduce((sum, cost) => sum + cost.amount_kes, 0)
+    const totalReceipts = (paymentReceipts || []).reduce((sum, receipt) => sum + receipt.amount_kes, 0)
     const remainingBalance = handoverPrice - totalReceipts
     const totalIncome = handoverPrice - totalCosts
-
-    console.log('💰 CLEAN FINANCIAL SUMMARY:', {
-      handoverPrice,
-      totalCosts,
-      totalReceipts,
-      remainingBalance,
-      totalIncome,
-    })
 
     const summary = {
       property_id: propertyId,
@@ -139,8 +132,23 @@ export const GET = compose(
       payment_progress_percentage: handoverPrice > 0 ? (totalReceipts / handoverPrice) * 100 : 0,
     }
 
-    // Calculate cost breakdown by category from real data
-    const costsByCategory = MockStorageService.getCostsByCategory(propertyId)
+    // Calculate cost breakdown by category from database data
+    const costsByCategory: Record<string, number> = {
+      PRE_HANDOVER: 0,
+      AGREEMENT_LEGAL: 0,
+      LCB_PROCESS: 0,
+      PAYMENT_TRACKING: 0,
+      TRANSFER_REGISTRATION: 0,
+      OTHER: 0,
+    }
+
+    if (costEntries) {
+      costEntries.forEach((cost) => {
+        if (Object.hasOwn(costsByCategory, cost.cost_category)) {
+          costsByCategory[cost.cost_category] += cost.amount_kes
+        }
+      })
+    }
 
     const response = {
       property: {

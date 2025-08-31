@@ -24,6 +24,8 @@ import { useEnhancedWorkflow } from '../../../hooks/useEnhancedWorkflow'
 import { stageHasFinancialRequirements } from '../../../lib/constants/financial-stage-requirements'
 import FinancialStatusIndicator from './FinancialStatusIndicator'
 
+import { PurchasePipelineService } from '../services/purchase-pipeline.service'
+
 interface PurchasePipelineDocumentsProps {
   propertyId: string
   propertyName: string
@@ -100,6 +102,8 @@ export default function PurchasePipelineDocuments({
   // Document progression state
   const [documentStages, setDocumentStages] = useState<DocumentStageInfo[]>([])
   const [currentActiveStage, setCurrentActiveStage] = useState<number>(1)
+  const lastNotifiedStageRef = useRef<number>(0)
+  const lastPersistedStageRef = useRef<number>(0)
 
   // Financial status integration
   const {
@@ -139,10 +143,13 @@ export default function PurchasePipelineDocuments({
     'signed_lra33',
   ]
 
-  // Calculate document progression stages with multi-document agreement stage
+  // Calculate document progression stages with multi-document agreement stage and financial gating
   const calculateDocumentStages = useCallback((): DocumentStageInfo[] => {
     const stages: DocumentStageInfo[] = []
     let stageNumber = 1
+
+    // Stages that require payment before proceeding with documents
+    const paymentFirstStages = new Set([3, 6, 9, 10])
 
     for (let index = 0; index < DOC_TYPES.length; index++) {
       const docType = DOC_TYPES[index]
@@ -171,6 +178,11 @@ export default function PurchasePipelineDocuments({
         // Check if previous stages are completed
         const previousStagesCompleted = stages.every((stage) => stage.isCompleted)
 
+        // Financial gating for this stage
+        const finStatus = getStageFinancialStatus(stageNumber)
+        const requiresPaymentFirst = paymentFirstStages.has(stageNumber)
+        const financialBlocking = requiresPaymentFirst && !finStatus.isFinanciallyComplete
+
         stages.push({
           docType: {
             ...docType,
@@ -178,9 +190,9 @@ export default function PurchasePipelineDocuments({
             description: 'Complete set of seller agreement and verification documents',
           },
           stageNumber,
-          isActive: previousStagesCompleted && !agreementCompleted,
+          isActive: previousStagesCompleted && !agreementCompleted && !financialBlocking,
           isCompleted: agreementCompleted,
-          isLocked: !previousStagesCompleted && !agreementCompleted,
+          isLocked: (!previousStagesCompleted && !agreementCompleted) || financialBlocking,
           isMultiDocument: true,
           groupedDocuments: AGREEMENT_STAGE_DOCUMENTS,
         })
@@ -194,12 +206,17 @@ export default function PurchasePipelineDocuments({
         // Check if previous stages are completed
         const previousStagesCompleted = stages.every((stage) => stage.isCompleted)
 
+        // Financial gating for this stage
+        const finStatus = getStageFinancialStatus(stageNumber)
+        const requiresPaymentFirst = paymentFirstStages.has(stageNumber)
+        const financialBlocking = requiresPaymentFirst && !finStatus.isFinanciallyComplete
+
         stages.push({
           docType,
           stageNumber,
-          isActive: previousStagesCompleted && !isCompleted,
+          isActive: previousStagesCompleted && !isCompleted && !financialBlocking,
           isCompleted,
-          isLocked: !previousStagesCompleted && !isCompleted,
+          isLocked: (!previousStagesCompleted && !isCompleted) || financialBlocking,
         })
       }
 
@@ -207,7 +224,62 @@ export default function PurchasePipelineDocuments({
     }
 
     return stages
-  }, [documentStates])
+  }, [documentStates, getStageFinancialStatus])
+  // When a stage becomes newly completed, emit events and notify workflow (guard against loops)
+  useEffect(() => {
+    if (documentStages.length === 0) return
+
+    const completedStages = documentStages.filter((s) => s.isCompleted).map((s) => s.stageNumber)
+    if (completedStages.length === 0) return
+
+    const latestCompleted = Math.max(...completedStages)
+
+    // Only notify when we advance beyond the last notified stage
+    if (latestCompleted > lastNotifiedStageRef.current) {
+      lastNotifiedStageRef.current = latestCompleted
+      handleStageCompletion(latestCompleted)
+      window.dispatchEvent(
+        new CustomEvent('stageUnlocked', {
+          detail: { propertyId, pipeline: 'purchase_pipeline', stageNumber: latestCompleted }
+        })
+      )
+    }
+  }, [documentStages, handleStageCompletion, propertyId])
+
+  // Persist stage status to purchase_pipeline when newly completed (guard against loops)
+  useEffect(() => {
+    if (documentStages.length === 0) return
+
+    const highestCompleted = Math.max(
+      0,
+      ...documentStages.filter((s) => s.isCompleted).map((s) => s.stageNumber)
+    )
+    if (highestCompleted === 0) return
+
+    // Only persist when we advance beyond the last persisted stage
+    if (highestCompleted <= lastPersistedStageRef.current) return
+
+    const statusMap: Record<number, string> = {
+      1: 'Completed',
+      2: 'Completed',
+      3: 'Verified',
+      4: 'Finalized',
+      5: 'Processed',
+      6: 'Completed',
+      7: 'LCB Approved & Forms Signed',
+      8: 'Registered',
+      9: 'Processed',
+      10: 'Completed',
+    }
+
+    const newStatus = statusMap[highestCompleted] || 'Completed'
+
+    lastPersistedStageRef.current = highestCompleted
+    PurchasePipelineService.updateStageStatus(propertyId, highestCompleted, newStatus).catch((err) => {
+      console.warn('Failed to persist stage status:', err)
+    })
+  }, [documentStages, propertyId])
+
 
   // Update document stages when document states change
   useEffect(() => {

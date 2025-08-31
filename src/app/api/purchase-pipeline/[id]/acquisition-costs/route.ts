@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { compose, withAuth, withRateLimit, withCsrf } from '../../../../../lib/api/middleware'
 import { errors } from '../../../../../lib/api/errors'
 import { createServerSupabaseClient } from '../../../../../lib/supabase-server'
+import { z } from 'zod'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -47,7 +48,7 @@ async function checkPurchaseAccess(userId: string, purchaseId: string): Promise<
 
   const { data, error } = await supabase
     .from('purchase_pipeline')
-    .select('created_by')
+    .select('created_by, property_id, completed_property_id')
     .eq('id', purchaseId)
     .single()
 
@@ -58,10 +59,74 @@ async function checkPurchaseAccess(userId: string, purchaseId: string): Promise<
     return false
   }
 
-  const hasAccess = data.created_by === userId
-  console.log('checkPurchaseAccess - hasAccess:', hasAccess)
-  return hasAccess
+  // Check if user created this purchase pipeline entry
+  if (data.created_by === userId) {
+    console.log('checkPurchaseAccess - user is creator')
+    return true
+  }
+
+  // If purchase is linked to a property, check property access as fallback
+  if (data.property_id || data.completed_property_id) {
+    const propertyId = data.property_id || data.completed_property_id
+    console.log('checkPurchaseAccess - checking property access for:', propertyId)
+
+    try {
+      // Check if user has access to the linked property
+      const { data: propertyAccess, error: accessError } = await supabase.rpc(
+        'get_user_accessible_properties',
+        { user_uuid: userId }
+      )
+
+      if (!accessError && Array.isArray(propertyAccess)) {
+        const hasPropertyAccess = propertyAccess.some((p: any) => {
+          if (typeof p === 'string') {
+            return p === propertyId
+          } else if (p && typeof p === 'object') {
+            return p.property_id === propertyId
+          }
+          return false
+        })
+
+        console.log('checkPurchaseAccess - property access:', hasPropertyAccess)
+        if (hasPropertyAccess) return true
+      }
+
+      // Fallback: Check direct property ownership
+      const { data: property, error: propError } = await supabase
+        .from('properties')
+        .select('id, landlord_id')
+        .eq('id', propertyId)
+        .eq('landlord_id', userId)
+        .single()
+
+      if (!propError && property) {
+        console.log('checkPurchaseAccess - user owns linked property')
+        return true
+      }
+    } catch (e) {
+      console.log('checkPurchaseAccess - property access check failed:', e)
+    }
+  }
+
+  console.log('checkPurchaseAccess - no access found')
+  return false
 }
+
+// Validation schema for acquisition cost entry
+const acquisitionCostSchema = z.object({
+  cost_type_id: z.string().min(1, 'Cost type is required'),
+  cost_category: z.enum([
+    'PRE_PURCHASE',
+    'AGREEMENT_LEGAL',
+    'LCB_PROCESS',
+    'TRANSFER_REGISTRATION',
+    'OTHER',
+  ]),
+  amount_kes: z.number().positive('Amount must be positive'),
+  payment_reference: z.string().optional(),
+  payment_date: z.string().optional(),
+  notes: z.string().optional(),
+})
 
 // GET /api/purchase-pipeline/[id]/acquisition-costs - Get acquisition costs for purchase pipeline entry
 export const GET = compose(
@@ -141,14 +206,26 @@ export const POST = compose(
 
     console.log('POST acquisition-costs - hasAccess:', hasAccess)
 
-    const body = await req.json()
+    const json = await req.json().catch(() => ({}))
+    const parsed = acquisitionCostSchema.safeParse(json)
+
+    if (!parsed.success) {
+      return errors.validation(parsed.error.flatten())
+    }
+
     const supabase = createClient(supabaseUrl, serviceKey)
 
     const { data, error } = await supabase
       .from('property_acquisition_costs')
       .insert({
-        ...body,
         property_id: purchaseId,
+        cost_type_id: parsed.data.cost_type_id,
+        cost_category: parsed.data.cost_category,
+        amount_kes: parsed.data.amount_kes,
+        payment_reference: parsed.data.payment_reference,
+        payment_date: parsed.data.payment_date,
+        notes: parsed.data.notes,
+        created_by: userId,
       })
       .select()
       .single()

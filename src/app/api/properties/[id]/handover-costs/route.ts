@@ -4,7 +4,6 @@ import { errors } from '../../../../../lib/api/errors'
 import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '../../../../../lib/supabase-server'
 import { z } from 'zod'
-import { MockStorageService } from '../../../../../lib/mock-storage'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -62,11 +61,11 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
 const handoverCostSchema = z.object({
   cost_type_id: z.string().min(1, 'Cost type is required'),
   cost_category: z.enum([
-    'CLIENT_ENGAGEMENT',
-    'REGULATORY_LEGAL',
-    'SURVEY_MAPPING',
-    'ADMINISTRATIVE',
-    'TOTAL_ACQUISITION',
+    'PRE_HANDOVER',
+    'AGREEMENT_LEGAL',
+    'LCB_PROCESS',
+    'PAYMENT_TRACKING',
+    'TRANSFER_REGISTRATION',
     'OTHER',
   ]),
   amount_kes: z.number().positive('Amount must be positive'),
@@ -91,11 +90,21 @@ export async function GET(req: NextRequest) {
     const hasAccess = await checkPropertyAccess(userId, propertyId)
     if (!hasAccess) return errors.forbidden()
 
-    // TODO: Replace with actual database query once table is created
-    // For now, return empty array
-    const costs: any[] = []
+    const admin = createClient(supabaseUrl, serviceKey)
 
-    return NextResponse.json({ ok: true, data: costs })
+    // Fetch handover costs from database
+    const { data: costs, error } = await admin
+      .from('property_handover_costs')
+      .select('*')
+      .eq('property_id', propertyId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching handover costs:', error)
+      return errors.internal('Failed to fetch handover costs')
+    }
+
+    return NextResponse.json({ ok: true, data: costs || [] })
   } catch (e: any) {
     console.error('GET /api/properties/[id]/handover-costs error:', e)
     return errors.internal(e?.message || 'Failed to fetch handover costs')
@@ -129,26 +138,30 @@ export const POST = compose(
       return errors.validation(parsed.error.flatten())
     }
 
-    // Use in-memory storage for development
-    const cost = {
-      id: `cost-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      property_id: propertyId,
-      cost_type_id: parsed.data.cost_type_id,
-      cost_category: parsed.data.cost_category,
-      amount_kes: parsed.data.amount_kes,
-      payment_reference: parsed.data.payment_reference,
-      payment_date: parsed.data.payment_date,
-      notes: parsed.data.notes,
-      created_by: userId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    const admin = createClient(supabaseUrl, serviceKey)
+
+    // Insert the new handover cost entry
+    const { data: cost, error } = await admin
+      .from('property_handover_costs')
+      .insert({
+        property_id: propertyId,
+        cost_type_id: parsed.data.cost_type_id,
+        cost_category: parsed.data.cost_category,
+        amount_kes: parsed.data.amount_kes,
+        payment_reference: parsed.data.payment_reference,
+        payment_date: parsed.data.payment_date,
+        notes: parsed.data.notes,
+        created_by: userId,
+      })
+      .select('*')
+      .single()
+
+    if (error) {
+      console.error('Error creating handover cost:', error)
+      return errors.internal('Failed to create handover cost entry')
     }
 
-    // Store in memory
-    const savedCost = MockStorageService.addHandoverCost(propertyId, cost)
-    console.log('Handover cost saved to memory:', savedCost)
-
-    return NextResponse.json({ ok: true, data: savedCost })
+    return NextResponse.json({ ok: true, data: cost })
   } catch (e: any) {
     console.error('POST /api/properties/[id]/handover-costs error:', e)
     return errors.internal(e?.message || 'Failed to create handover cost')

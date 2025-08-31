@@ -1,4 +1,4 @@
-import React, { useState, memo, useMemo } from 'react'
+import React, { useState, memo, useMemo, useEffect } from 'react'
 import {
   CurrencyDollarIcon,
   ExclamationTriangleIcon,
@@ -50,6 +50,12 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<PaymentRequirement | null>(null)
 
+  // Reset modal state when property changes
+  useEffect(() => {
+    setShowPaymentModal(false)
+    setSelectedPayment(null)
+  }, [propertyId])
+
   // Removed debug logging for performance
 
   // Horizontal layout - return just the payment button for inline use
@@ -69,14 +75,31 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
         10: 'registry_submission', // Title Registration / New Title Costs
       }
 
+      // Stage-specific cost type mapping for handover costs
+      const stageToHandoverCostMapping: Record<number, string> = {
+        1: 'property_valuation', // Initial Handover Preparation
+        2: 'property_inspection', // Property Documentation & Survey
+        3: 'marketing_preparation', // Marketing & Buyer Identification
+        4: 'contract_preparation', // Agreement Preparation
+        5: 'lcb_application_fee', // LCB Process
+        6: 'transfer_fee', // Transfer & Registration
+        7: 'other_handover_cost', // Final Handover & Completion
+      }
+
       // Handle case where payment is undefined
       if (!payment) {
+        // Use pipeline-specific subtab and cost mapping
+        const subtab = pipeline === 'handover' ? 'handover_costs' : 'acquisition_costs'
+        const costTypeId = pipeline === 'handover'
+          ? stageToHandoverCostMapping[stage]
+          : stageToAcquisitionCostMapping[stage]
+
         return {
-          subtab: 'acquisition_costs',
-          costTypeId: stageToAcquisitionCostMapping[stage],
+          subtab,
+          costTypeId,
           amount: undefined,
           description: `Stage ${stage} payment`,
-          paymentType: 'acquisition_cost',
+          paymentType: pipeline === 'handover' ? 'handover_cost' : 'acquisition_cost',
         }
       }
 
@@ -91,22 +114,32 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
           paymentType: payment.id === 'down_payment' ? 'deposit' : 'installment',
         }
       } else if (payment.category === 'fee' || payment.category === 'tax') {
-        // Acquisition costs (fees, taxes) - navigate to acquisition costs section
+        // Costs (fees, taxes) - navigate to pipeline-specific costs section
+        const subtab = pipeline === 'handover' ? 'handover_costs' : 'acquisition_costs'
+        const costTypeId = pipeline === 'handover'
+          ? stageToHandoverCostMapping[stage]
+          : stageToAcquisitionCostMapping[stage]
+
         return {
-          subtab: 'acquisition_costs',
-          costTypeId: stageToAcquisitionCostMapping[stage],
+          subtab,
+          costTypeId,
           amount: payment.amount,
           description: payment.description || `Stage ${stage} ${payment.category} payment`,
           paymentType: payment.category === 'fee' ? 'fee' : 'tax',
         }
       } else {
-        // Default to acquisition costs
+        // Default to pipeline-specific costs
+        const subtab = pipeline === 'handover' ? 'handover_costs' : 'acquisition_costs'
+        const costTypeId = pipeline === 'handover'
+          ? stageToHandoverCostMapping[stage]
+          : stageToAcquisitionCostMapping[stage]
+
         return {
-          subtab: 'acquisition_costs',
-          costTypeId: stageToAcquisitionCostMapping[stage],
+          subtab,
+          costTypeId,
           amount: payment.amount,
           description: payment.description || `Stage ${stage} payment`,
-          paymentType: 'acquisition_cost',
+          paymentType: pipeline === 'handover' ? 'handover_cost' : 'acquisition_cost',
         }
       }
     }
@@ -119,7 +152,7 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
         onClick={() => {
           const today = new Date().toISOString().slice(0, 10)
 
-          navigateToFinancial({
+          const navigationParams = {
             propertyId,
             stageNumber,
             action: 'pay',
@@ -128,9 +161,13 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
             amount: paymentConfig.amount,
             date: today,
             description: paymentConfig.description,
-            pipeline: pipeline as 'direct_addition' | 'purchase_pipeline',
+            pipeline: pipeline as 'direct_addition' | 'purchase_pipeline' | 'handover',
             paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost',
-          })
+          }
+
+          console.log('🔍 FinancialStatusIndicator navigateToFinancial called:', navigationParams)
+
+          navigateToFinancial(navigationParams)
         }}
         className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-400 rounded-md hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-sm transition-all duration-200"
       >
@@ -272,32 +309,7 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                     const payment = requiredPayments[0]
                     const today = new Date().toISOString().slice(0, 10)
 
-                    // Enhanced payment navigation logic
-                    const getPaymentNavigationConfig = (stage: number, payment: PaymentRequirement) => {
-                      const stageToAcquisitionCostMapping: Record<number, string> = {
-                        3: 'due_diligence_costs',
-                        6: 'lcb_application_fees',
-                        9: 'stamp_duty',
-                        10: 'registry_submission',
-                      }
-
-                      if (payment.id === 'down_payment' || payment.category === 'payment') {
-                        return {
-                          subtab: 'payments',
-                          costTypeId: undefined,
-                          amount: payment.amount,
-                          description: payment.description || 'Purchase price deposit payment',
-                        }
-                      } else {
-                        return {
-                          subtab: 'acquisition_costs',
-                          costTypeId: stageToAcquisitionCostMapping[stage],
-                          amount: payment.amount,
-                          description: payment.description || `Stage ${stage} ${payment.category} payment`,
-                        }
-                      }
-                    }
-
+                    // Use pipeline-aware navigation config (handover → handover_costs)
                     const paymentConfig = getPaymentNavigationConfig(stageNumber, payment)
 
                     navigateToFinancial({
@@ -309,6 +321,8 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                       amount: paymentConfig.amount,
                       date: today,
                       description: paymentConfig.description,
+                      pipeline: pipeline as 'direct_addition' | 'purchase_pipeline' | 'handover',
+                      paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost',
                     })
                   }}
                   className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-400 rounded-lg hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-md transition-all duration-200"
@@ -420,13 +434,8 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                       paymentType: payment.id === 'down_payment' ? 'deposit' : 'installment',
                     }
                   } else {
-                    return {
-                      subtab: 'acquisition_costs',
-                      costTypeId: stageToAcquisitionCostMapping[stage],
-                      amount: payment.amount,
-                      description: payment.description || `Stage ${stage} ${payment.category} payment`,
-                      paymentType: payment.category === 'fee' ? 'fee' : 'tax',
-                    }
+                    // Use pipeline-aware config from top-level helper
+                    return getPaymentNavigationConfig(stageNumber, payment)
                   }
                 }
 
@@ -441,7 +450,7 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                   amount: paymentConfig.amount,
                   date: today,
                   description: paymentConfig.description,
-                  pipeline: pipeline as 'direct_addition' | 'purchase_pipeline',
+                  pipeline: pipeline as 'direct_addition' | 'purchase_pipeline' | 'handover',
                   paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost',
                 })
               }}

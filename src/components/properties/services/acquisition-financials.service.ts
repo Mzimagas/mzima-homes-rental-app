@@ -20,9 +20,9 @@ function getCsrfToken(): string | null {
 export class AcquisitionFinancialsService {
   // Feature flags to disable non-existent APIs and reduce 403 errors
   private static readonly FEATURE_FLAGS = {
-    PURCHASE_PIPELINE_API: false, // Set to true when API is implemented
-    ACQUISITION_COSTS_API: false, // Set to true when API is implemented
-    PAYMENT_INSTALLMENTS_API: false, // Set to true when API is implemented
+    PURCHASE_PIPELINE_API: true, // ✅ Enabled - APIs are implemented and working
+    ACQUISITION_COSTS_API: true, // ✅ Enabled - APIs are implemented and working
+    PAYMENT_INSTALLMENTS_API: true, // ✅ Enabled - APIs are implemented and working
   }
 
   private static async makeRequest(
@@ -66,7 +66,7 @@ export class AcquisitionFinancialsService {
         try {
           data = JSON.parse(text)
         } catch (e) {
-                    throw new Error('Invalid JSON response from server')
+          throw new Error('Invalid JSON response from server')
         }
       } else {
         data = {}
@@ -89,7 +89,7 @@ export class AcquisitionFinancialsService {
       const data = await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs`)
       return data.data || []
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
@@ -107,17 +107,17 @@ export class AcquisitionFinancialsService {
             body: JSON.stringify(cost),
           }
         )
-                return data.data
+        return data.data
       } catch (pipelineError) {
-                // Fall back to property API
+        // Fall back to property API
         const data = await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs`, {
           method: 'POST',
           body: JSON.stringify(cost),
         })
-                return data.data
+        return data.data
       }
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
@@ -128,15 +128,15 @@ export class AcquisitionFinancialsService {
         await this.makeRequest(`/api/purchase-pipeline/${propertyId}/acquisition-costs/${costId}`, {
           method: 'DELETE',
         })
-                return
+        return
       } catch (pipelineError) {
-                // Fall back to property API
+        // Fall back to property API
         await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs/${costId}`, {
           method: 'DELETE',
         })
-              }
+      }
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
@@ -146,7 +146,7 @@ export class AcquisitionFinancialsService {
       const data = await this.makeRequest(`/api/properties/${propertyId}/payment-installments`)
       return data.data || []
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
@@ -167,17 +167,17 @@ export class AcquisitionFinancialsService {
             body: JSON.stringify(payment),
           }
         )
-                return data.data
+        return data.data
       } catch (pipelineError) {
-                // Fall back to property API
+        // Fall back to property API
         const data = await this.makeRequest(`/api/properties/${propertyId}/payment-installments`, {
           method: 'POST',
           body: JSON.stringify(payment),
         })
-                return data.data
+        return data.data
       }
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
@@ -191,15 +191,15 @@ export class AcquisitionFinancialsService {
             method: 'DELETE',
           }
         )
-                return
+        return
       } catch (pipelineError) {
-                // Fall back to property API
+        // Fall back to property API
         await this.makeRequest(`/api/properties/${propertyId}/payment-installments/${paymentId}`, {
           method: 'DELETE',
         })
-              }
+      }
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
@@ -220,9 +220,9 @@ export class AcquisitionFinancialsService {
           method: 'PATCH',
           body: JSON.stringify(body),
         })
-                return
+        return
       } catch (pipelineError) {
-                // Fall back to property purchase price API
+        // Fall back to property purchase price API
         const body: any = { purchase_price_agreement_kes: purchasePrice }
         if (changeReason) {
           body.change_reason = changeReason
@@ -232,9 +232,9 @@ export class AcquisitionFinancialsService {
           method: 'PATCH',
           body: JSON.stringify(body),
         })
-              }
+      }
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
@@ -249,9 +249,9 @@ export class AcquisitionFinancialsService {
             method: 'GET',
           }
         )
-                return response.data || []
+        return response.data || []
       } catch (pipelineError) {
-                // Fall back to property API
+        // Fall back to property API
         try {
           const response = await this.makeRequest(
             `/api/properties/${propertyId}/purchase-price/history`,
@@ -259,13 +259,13 @@ export class AcquisitionFinancialsService {
               method: 'GET',
             }
           )
-                    return response.data || []
+          return response.data || []
         } catch (propertyError) {
-                    return []
+          return []
         }
       }
     } catch (error) {
-            // Return empty array instead of throwing
+      // Return empty array instead of throwing
       return []
     }
   }
@@ -296,12 +296,11 @@ export class AcquisitionFinancialsService {
         try {
           const dataPromise = this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`)
           const data = await Promise.race([dataPromise, timeoutPromise])
-                    return {
+          return {
             costs: data.costs || [],
             payments: data.payments || [],
           }
-        } catch (pipelineError) {
-                  }
+        } catch (pipelineError) {}
       }
 
       // Fall back to property financial endpoints with timeout (only if enabled)
@@ -336,7 +335,7 @@ export class AcquisitionFinancialsService {
         !error.message?.includes('404') &&
         !error.message?.includes('timeout')
       ) {
-              }
+      }
       // Always return empty data instead of throwing to prevent UI blocking
       return { costs: [], payments: [] }
     }

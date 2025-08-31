@@ -115,7 +115,6 @@ export interface HandoverPipelineStageData {
   started_date?: string
   completed_date?: string
   notes: string
-  documents: string[]
 }
 
 // Handover Item Interface
@@ -171,11 +170,11 @@ export type SubdivisionCostCategory =
 
 // Property handover cost categories - Kenya-specific property handover cost framework
 export type HandoverCostCategory =
-  | 'CLIENT_ENGAGEMENT'
-  | 'REGULATORY_LEGAL'
-  | 'SURVEY_MAPPING'
-  | 'ADMINISTRATIVE'
-  | 'TOTAL_ACQUISITION'
+  | 'PRE_HANDOVER'
+  | 'AGREEMENT_LEGAL'
+  | 'LCB_PROCESS'
+  | 'PAYMENT_TRACKING'
+  | 'TRANSFER_REGISTRATION'
   | 'OTHER'
 
 // Property acquisition cost types
@@ -208,6 +207,7 @@ export interface AcquisitionCostEntry {
   id: string
   property_id: string
   cost_type_id: string
+  cost_category: AcquisitionCostCategory
   amount_kes: number
   payment_reference?: string
   payment_date?: string
@@ -440,9 +440,9 @@ export const ACQUISITION_COST_TYPES: AcquisitionCostType[] = [
 
   // Other Costs
   {
-    id: 'other_cost',
+    id: 'other_acquisition_cost',
     category: 'OTHER',
-    label: 'Other Cost',
+    label: 'Other Acquisition Cost',
     description: 'Miscellaneous acquisition costs not covered by other categories',
   },
 ]
@@ -459,21 +459,130 @@ export const ACQUISITION_COST_CATEGORY_LABELS: Record<AcquisitionCostCategory, s
 
 // Predefined handover cost types - Kenya-specific property handover cost framework
 export const HANDOVER_COST_TYPES: HandoverCostType[] = [
-  // Client Engagement / Viewing
+  // Pre-Handover Preparation
   {
-    id: 'land_visit',
-    category: 'CLIENT_ENGAGEMENT',
-    label: 'Land Visit (Site Viewing)',
-    description:
-      'Variable costs for fuel, logistics, facilitation for showing property to potential clients',
+    id: 'property_valuation',
+    category: 'PRE_HANDOVER',
+    label: 'Property Valuation',
+    description: 'Professional property valuation for handover pricing',
+  },
+  {
+    id: 'market_research',
+    category: 'PRE_HANDOVER',
+    label: 'Market Research',
+    description: 'Market analysis and pricing research',
+  },
+  {
+    id: 'property_inspection',
+    category: 'PRE_HANDOVER',
+    label: 'Property Inspection',
+    description: 'Pre-handover property condition assessment',
+  },
+  {
+    id: 'marketing_preparation',
+    category: 'PRE_HANDOVER',
+    label: 'Marketing Preparation',
+    description: 'Costs for preparing property marketing materials',
   },
 
-  // Regulatory / Legal Approvals
+  // Agreement & Legal Fees
   {
-    id: 'lcb_consent_normal',
-    category: 'REGULATORY_LEGAL',
-    label: 'LCB Consent - Normal Board',
-    description: 'Land Control Board Consent for normal board proceedings - KES 3,050',
+    id: 'legal_fees',
+    category: 'AGREEMENT_LEGAL',
+    label: 'Legal Fees',
+    description: 'Legal representation and advisory fees',
+  },
+  {
+    id: 'contract_preparation',
+    category: 'AGREEMENT_LEGAL',
+    label: 'Contract Preparation',
+    description: 'Sale agreement drafting and preparation costs',
+  },
+  {
+    id: 'due_diligence',
+    category: 'AGREEMENT_LEGAL',
+    label: 'Due Diligence',
+    description: 'Legal due diligence and verification costs',
+  },
+  {
+    id: 'title_verification',
+    category: 'AGREEMENT_LEGAL',
+    label: 'Title Verification',
+    description: 'Title deed verification and search costs',
+  },
+
+  // LCB Process & Consent
+  {
+    id: 'lcb_application_fee',
+    category: 'LCB_PROCESS',
+    label: 'LCB Application Fee',
+    description: 'Land Control Board application processing fee',
+  },
+  {
+    id: 'lcb_processing_fee',
+    category: 'LCB_PROCESS',
+    label: 'LCB Processing Fee',
+    description: 'Additional LCB processing and administrative fees',
+  },
+  {
+    id: 'consent_fee',
+    category: 'LCB_PROCESS',
+    label: 'Consent Fee',
+    description: 'Land Control Board consent issuance fee',
+  },
+
+  // Payment Processing & Tracking
+  {
+    id: 'deposit_handling',
+    category: 'PAYMENT_TRACKING',
+    label: 'Deposit Handling',
+    description: 'Costs for processing and securing buyer deposits',
+  },
+  {
+    id: 'installment_processing',
+    category: 'PAYMENT_TRACKING',
+    label: 'Installment Processing',
+    description: 'Payment installment processing and tracking costs',
+  },
+  {
+    id: 'payment_verification',
+    category: 'PAYMENT_TRACKING',
+    label: 'Payment Verification',
+    description: 'Bank verification and payment confirmation costs',
+  },
+
+  // Transfer & Registration
+  {
+    id: 'transfer_fee',
+    category: 'TRANSFER_REGISTRATION',
+    label: 'Transfer Fee',
+    description: 'Property transfer processing fee',
+  },
+  {
+    id: 'registration_fee',
+    category: 'TRANSFER_REGISTRATION',
+    label: 'Registration Fee',
+    description: 'Land registry registration fees',
+  },
+  {
+    id: 'stamp_duty',
+    category: 'TRANSFER_REGISTRATION',
+    label: 'Stamp Duty',
+    description: 'Government stamp duty on property transfer',
+  },
+  {
+    id: 'mutation_fee',
+    category: 'TRANSFER_REGISTRATION',
+    label: 'Mutation Fee',
+    description: 'Property mutation and record update fees',
+  },
+
+  // Other Costs
+  {
+    id: 'other_handover_expense',
+    category: 'OTHER',
+    label: 'Other Handover Expense',
+    description: 'Miscellaneous handover-related expenses',
   },
   {
     id: 'lcb_consent_special',
@@ -534,20 +643,20 @@ export const HANDOVER_COST_TYPES: HandoverCostType[] = [
 
   // Other Costs
   {
-    id: 'other_cost',
+    id: 'other_handover_cost',
     category: 'OTHER',
-    label: 'Other Cost',
+    label: 'Other Handover Cost',
     description: 'Miscellaneous handover costs not covered by other categories',
   },
 ]
 
 // Handover cost category labels for display
 export const HANDOVER_COST_CATEGORY_LABELS: Record<HandoverCostCategory, string> = {
-  CLIENT_ENGAGEMENT: 'Client Engagement / Viewing',
-  REGULATORY_LEGAL: 'Regulatory / Legal Approvals',
-  SURVEY_MAPPING: 'Survey & Mapping',
-  ADMINISTRATIVE: 'Administrative / Incidental Costs',
-  TOTAL_ACQUISITION: 'Total Acquisition Cost',
+  PRE_HANDOVER: 'Pre-Handover Preparation',
+  AGREEMENT_LEGAL: 'Agreement & Legal Fees',
+  LCB_PROCESS: 'LCB Process & Consent',
+  PAYMENT_TRACKING: 'Payment Processing & Tracking',
+  TRANSFER_REGISTRATION: 'Transfer & Registration',
   OTHER: 'Other Costs',
 }
 
@@ -817,4 +926,25 @@ export const SUBDIVISION_COST_CATEGORY_LABELS: Record<SubdivisionCostCategory, s
   REGISTRATION_TITLE_FEES: 'Registration & Title Fees',
   LEGAL_COMPLIANCE: 'Legal & Compliance',
   OTHER_CHARGES: 'Other Charges',
+}
+
+// Utility functions for property management
+export const hasPendingChanges = (property: PropertyItem): boolean => {
+  // Check if property has any pending changes in any pipeline
+  return (
+    property.direct_addition_pipeline?.some(stage => stage.status === 'In Progress') ||
+    property.purchase_pipeline?.some(stage => stage.status === 'In Progress') ||
+    property.handover_pipeline?.some(stage => stage.status === 'In Progress') ||
+    false
+  )
+}
+
+export const getPendingSubdivisionValue = (property: PropertyItem): number => {
+  // Get pending subdivision value if any
+  return property.subdivision_value || 0
+}
+
+export const getPendingHandoverValue = (property: PropertyItem): number => {
+  // Get pending handover value if any
+  return property.handover_value || 0
 }

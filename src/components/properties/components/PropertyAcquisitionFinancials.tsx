@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, memo, useMemo, useCallback, useRef } from 'react'
 import { Button, TextField, Select } from '../../ui'
 import {
   PropertyWithLifecycle,
@@ -12,6 +12,8 @@ import { AcquisitionFinancialsService } from '../services/acquisition-financials
 import EnhancedPurchasePriceManager from './EnhancedPurchasePriceManager'
 import PropertySubdivisionCosts from './PropertySubdivisionCosts'
 
+import { useToast } from '../../ui/Toast'
+
 interface PropertyAcquisitionFinancialsProps {
   property: PropertyWithLifecycle
   onUpdate?: (propertyId: string) => void
@@ -22,6 +24,7 @@ interface NewCostEntry {
   amount_kes: string
   payment_reference: string
   payment_date: string
+
   notes: string
 }
 
@@ -55,6 +58,8 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   const [collapsedCosts, setCollapsedCosts] = useState(true)
   const [collapsedBreakdown, setCollapsedBreakdown] = useState(false)
 
+  const { show: showToast } = useToast()
+
   // Persist collapsible states in localStorage
   const LS_KEYS = {
     payments: 'acqfin:collapsed:payments',
@@ -71,6 +76,12 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       const b = localStorage.getItem(LS_KEYS.breakdown)
       if (b !== null) setCollapsedBreakdown(b === 'true')
     } catch {}
+
+    // Reset form states when property changes
+    setShowAddCost(false)
+    setShowAddPayment(false)
+    setError(null)
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [property.id])
 
@@ -112,6 +123,9 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     payment_date: '',
     notes: '',
   })
+  // Track last applied prefill to avoid overwriting after a successful add
+  const lastAppliedPrefillRef = useRef<string | null>(null)
+
 
   // Optimized prefill with debounced event handling and memory leak prevention
   useEffect(() => {
@@ -120,6 +134,16 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     const applyPrefillFromParams = (params: URLSearchParams) => {
       const subtab = params.get('subtab')
       if (subtab !== 'acquisition_costs') return
+
+      // Create a stable signature for this prefill payload to avoid re-applying
+      const sig = JSON.stringify({
+        type: 'cost',
+        cost_type_id: params.get('cost_type_id') || '',
+        amount_kes: params.get('amount_kes') || '',
+        payment_date: params.get('payment_date') || new Date().toISOString().slice(0, 10),
+        notes: params.get('notes') || ''
+      })
+      if (lastAppliedPrefillRef.current === sig) return
 
       const cost_type_id = params.get('cost_type_id') || ''
       const amount_kes = params.get('amount_kes') || ''
@@ -137,6 +161,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
           payment_date,
           notes,
         }))
+        lastAppliedPrefillRef.current = sig
       })
     }
 
@@ -144,6 +169,15 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     const applyPaymentPrefillFromParams = (params: URLSearchParams) => {
       const subtab = params.get('subtab')
       if (subtab !== 'payments') return
+
+      // Create a stable signature for this prefill payload to avoid re-applying
+      const sig = JSON.stringify({
+        type: 'payment',
+        amount_kes: params.get('payment_amount_kes') || '',
+        payment_date: params.get('payment_date') || new Date().toISOString().slice(0, 10),
+        notes: params.get('payment_notes') || ''
+      })
+      if (lastAppliedPrefillRef.current === sig) return
 
       const amount_kes = params.get('payment_amount_kes') || ''
       const payment_date = params.get('payment_date') || new Date().toISOString().slice(0, 10)
@@ -160,6 +194,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
             payment_date,
             notes,
           }))
+          lastAppliedPrefillRef.current = sig
         })
       }
     }
@@ -186,7 +221,8 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
 
           // Handle payment installments prefill
           else if (detail?.subtab === 'payments') {
-            if (typeof detail.amount === 'number') params.set('payment_amount_kes', String(detail.amount))
+            if (typeof detail.amount === 'number')
+              params.set('payment_amount_kes', String(detail.amount))
             if (detail.date) params.set('payment_date', detail.date)
             if (detail.description) params.set('payment_notes', detail.description)
             params.set('subtab', 'payments')
@@ -243,7 +279,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       // Set purchase price from property data
       setTotalPurchasePrice(property.purchase_price_agreement_kes?.toString() || '')
     } catch (error) {
-            // Check if it's a database schema issue (migration not applied)
+      // Check if it's a database schema issue (migration not applied)
       const errorMessage = error instanceof Error ? error.message : String(error)
       if (errorMessage.includes('403') || errorMessage.includes('Not allowed')) {
         setError(
@@ -285,7 +321,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         pendingSubdivisionCosts: summary.pendingSubdivisionCosts,
       })
     } catch (error) {
-            // Don't set error state for subdivision costs as they're optional
+      // Don't set error state for subdivision costs as they're optional
     }
   }
 
@@ -343,6 +379,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       // Create cost entry via API
       const costEntry = await AcquisitionFinancialsService.createAcquisitionCost(property.id, {
         cost_type_id: newCost.cost_type_id,
+        cost_category: costType.category,
         amount_kes: parseFloat(newCost.amount_kes),
         payment_reference: newCost.payment_reference || undefined,
         payment_date: newCost.payment_date || undefined,
@@ -357,12 +394,38 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         payment_date: '',
         notes: '',
       })
+      // Clear any stale URL params for prefill to avoid re-filling the form after success
+      try {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('subtab')
+        url.searchParams.delete('cost_type_id')
+        url.searchParams.delete('amount_kes')
+        url.searchParams.delete('payment_date')
+        url.searchParams.delete('notes')
+        window.history.replaceState({}, '', url.toString())
+      } catch {}
+
       setShowAddCost(false)
       onUpdate?.(property.id)
+
+      // Successful add toast and auto-scroll to the new entry after refresh
+      showToast('Cost added successfully', { variant: 'success' })
+
+      // Refresh data from server to ensure consistency
+      setTimeout(async () => {
+        await loadFinancialData()
+        // Attempt to scroll to costs section
+        const section = document.getElementById(`costs-section-${property.id}`)
+        if (section && section.scrollIntoView) {
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 300)
     } catch (error) {
-            setError('Failed to add cost entry. Please try again.')
+      setError('Failed to add cost entry. Please try again.')
     } finally {
       setLoading(false)
+      // After add completes, clear prefill signature so new navigations can re-apply
+      lastAppliedPrefillRef.current = null
     }
   }
 
@@ -392,10 +455,30 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       })
       setShowAddPayment(false)
       onUpdate?.(property.id)
+
+      // Successful add toast and auto-scroll to the payments section
+      showToast('Payment added successfully', { variant: 'success' })
+
+      // Refresh data and scroll
+      setTimeout(async () => {
+        await loadFinancialData()
+        const section = document.getElementById(`payments-section-${property.id}`)
+        if (section && section.scrollIntoView) section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 300)
     } catch (error) {
-            setError('Failed to add payment installment. Please try again.')
+      setError('Failed to add payment installment. Please try again.')
     } finally {
       setLoading(false)
+      // Clear payment prefill URL params so the form doesn't re-populate
+      try {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('subtab')
+        url.searchParams.delete('payment_amount_kes')
+        url.searchParams.delete('payment_date')
+        url.searchParams.delete('payment_notes')
+        window.history.replaceState({}, '', url.toString())
+      } catch {}
+      lastAppliedPrefillRef.current = null
     }
   }
 
@@ -409,8 +492,13 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       await AcquisitionFinancialsService.deleteAcquisitionCost(property.id, costId)
       setCostEntries((prev) => prev.filter((entry) => entry.id !== costId))
       onUpdate?.(property.id)
+
+      // Refresh data from server to ensure consistency
+      setTimeout(() => {
+        loadFinancialData()
+      }, 500)
     } catch (error) {
-            setError('Failed to delete cost entry. Please try again.')
+      setError('Failed to delete cost entry. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -429,7 +517,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       setPaymentInstallments(payments)
       onUpdate?.(property.id)
     } catch (error) {
-            setError('Failed to delete payment installment. Please try again.')
+      setError('Failed to delete payment installment. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -458,8 +546,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       })
 
       onUpdate?.(propertyId)
-    } catch (error) {
-          }
+    } catch (error) {}
   }
 
   const totals = calculateTotals()

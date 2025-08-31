@@ -1,0 +1,387 @@
+'use client'
+
+import React, { useMemo, useCallback, memo, useState, useRef, useEffect } from 'react'
+import { FixedSizeList as List, VariableSizeList } from 'react-window'
+import { Button } from '../../ui'
+import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import InlinePropertyView from './InlinePropertyView'
+import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
+import ReverseTransferAction from './ReverseTransferAction'
+import {
+  PropertyWithLifecycle,
+  PendingChanges,
+  hasPendingChanges,
+  getPendingSubdivisionValue,
+  getPendingHandoverValue,
+} from '../types/property-management.types'
+import {
+  getSourceIcon,
+  getSourceLabel,
+  getLifecycleStatusColor,
+} from '../utils/property-management.utils'
+
+interface VirtualizedPropertyListProps {
+  properties: PropertyWithLifecycle[]
+  loading: boolean
+  pendingChanges: PendingChanges
+  savingChanges: { [propertyId: string]: boolean }
+  onAddProperty: () => void
+  onEditProperty: (property: PropertyWithLifecycle) => void
+  onSubdivisionChange: (propertyId: string, value: string) => void
+  onHandoverChange: (propertyId: string, value: string) => void
+  onRefresh?: () => void
+  onSaveChanges: (propertyId: string) => void
+  onCancelChanges: (propertyId: string) => void
+  onNavigateToTabs?: (tab: string) => void
+  onDeleteProperty?: (propertyId: string) => void
+  itemHeight?: number
+  overscan?: number
+}
+
+interface PropertyItemData {
+  properties: PropertyWithLifecycle[]
+  pendingChanges: PendingChanges
+  savingChanges: { [propertyId: string]: boolean }
+  propertiesWithPipelineIssues: Set<string>
+  handlers: {
+    onEditProperty: (property: PropertyWithLifecycle) => void
+    onSubdivisionChange: (propertyId: string, value: string) => void
+    onHandoverChange: (propertyId: string, value: string) => void
+    onSaveChanges: (propertyId: string) => void
+    onCancelChanges: (propertyId: string) => void
+    onNavigateToTabs?: (tab: string) => void
+    onDeleteProperty?: (propertyId: string) => void
+    onViewProperty: (propertyId: string) => void
+    onPipelineStatusChange: (propertyId: string, hasIssues: boolean) => void
+  }
+}
+
+// Memoized property item component for virtualization
+const VirtualPropertyItem = memo(function VirtualPropertyItem({
+  index,
+  style,
+  data,
+}: {
+  index: number
+  style: React.CSSProperties
+  data: PropertyItemData
+}) {
+  const { properties, pendingChanges, savingChanges, propertiesWithPipelineIssues, handlers } = data
+  const property = properties[index]
+
+  if (!property) {
+    return <div style={style} />
+  }
+
+  // Memoize computed values
+  const hasChanges = useMemo(() => hasPendingChanges(property.id, pendingChanges), [property.id, pendingChanges])
+  const isSaving = useMemo(() => savingChanges[property.id], [savingChanges, property.id])
+  const subdivisionValue = useMemo(() => getPendingSubdivisionValue(property, pendingChanges), [property, pendingChanges])
+  const handoverValue = useMemo(() => getPendingHandoverValue(property, pendingChanges), [property, pendingChanges])
+  
+  // Memoized handlers
+  const handleEdit = useCallback(() => handlers.onEditProperty(property), [handlers.onEditProperty, property])
+  const handleView = useCallback(() => handlers.onViewProperty(property.id), [handlers.onViewProperty, property.id])
+  const handleSubdivisionChange = useCallback((value: string) => handlers.onSubdivisionChange(property.id, value), [handlers.onSubdivisionChange, property.id])
+  const handleHandoverChange = useCallback((value: string) => handlers.onHandoverChange(property.id, value), [handlers.onHandoverChange, property.id])
+  const handleSave = useCallback(() => handlers.onSaveChanges(property.id), [handlers.onSaveChanges, property.id])
+  const handleCancel = useCallback(() => handlers.onCancelChanges(property.id), [handlers.onCancelChanges, property.id])
+  const handleDelete = useCallback(() => handlers.onDeleteProperty?.(property.id), [handlers.onDeleteProperty, property.id])
+
+  return (
+    <div style={style} className="px-4 py-2">
+      <PropertyCard
+        lifecycle={property.lifecycle_status}
+        hasErrors={false}
+        interactive={true}
+        theme="direct-addition"
+        aria-label={`Property: ${property.name}`}
+      >
+        <PropertyCardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <span className="text-lg">{getSourceIcon(property.property_source)}</span>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{property.name}</h3>
+                <p className="text-sm text-gray-600">
+                  {getSourceLabel(property.property_source)} • {property.property_type || 'Unknown Type'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span
+                className={`px-2 py-1 text-xs font-medium rounded-full ${getLifecycleStatusColor(
+                  property.lifecycle_status
+                )}`}
+              >
+                {property.lifecycle_status?.replace('_', ' ') || 'Unknown'}
+              </span>
+              {hasChanges && (
+                <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                  Unsaved Changes
+                </span>
+              )}
+            </div>
+          </div>
+        </PropertyCardHeader>
+
+        <PropertyCardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <p className="text-sm text-gray-900">{property.physical_address || 'No address provided'}</p>
+              {property.lat && property.lng && (
+                <ViewOnGoogleMapsButton
+                  lat={property.lat}
+                  lng={property.lng}
+                  address={property.physical_address}
+                  propertyName={property.name}
+                  className="mt-1"
+                />
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Subdivision Status</label>
+              <select
+                value={subdivisionValue}
+                onChange={(e) => handleSubdivisionChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isSaving}
+              >
+                <option value="NOT_STARTED">Not Started</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="ON_HOLD">On Hold</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Handover Status</label>
+              <select
+                value={handoverValue}
+                onChange={(e) => handleHandoverChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isSaving}
+              >
+                <option value="NOT_STARTED">Not Started</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="PENDING_DOCUMENTATION">Pending Documentation</option>
+              </select>
+            </div>
+          </div>
+
+          {property.total_area_acres && (
+            <div className="mt-4">
+              <span className="text-sm text-gray-600">
+                Total Area: {property.total_area_acres} acres
+              </span>
+            </div>
+          )}
+        </PropertyCardContent>
+
+        <PropertyCardFooter>
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEdit}
+                disabled={isSaving}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleView}
+                disabled={isSaving}
+              >
+                View Details
+              </Button>
+              {handlers.onDeleteProperty && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isSaving}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Delete
+                </Button>
+              )}
+            </div>
+
+            {hasChanges && (
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            )}
+
+            {property.property_source === 'REVERSE_TRANSFER' && (
+              <ReverseTransferAction
+                propertyId={property.id}
+                currentStatus={property.lifecycle_status}
+                onStatusChange={(status) => {
+                  // Handle reverse transfer status change
+                }}
+              />
+            )}
+          </div>
+        </PropertyCardFooter>
+      </PropertyCard>
+    </div>
+  )
+})
+
+export default function VirtualizedPropertyList({
+  properties,
+  loading,
+  pendingChanges,
+  savingChanges,
+  onAddProperty,
+  onEditProperty,
+  onSubdivisionChange,
+  onHandoverChange,
+  onRefresh,
+  onSaveChanges,
+  onCancelChanges,
+  onNavigateToTabs,
+  onDeleteProperty,
+  itemHeight = 280,
+  overscan = 5,
+}: VirtualizedPropertyListProps) {
+  const [viewingPropertyId, setViewingPropertyId] = useState<string | null>(null)
+  const [propertiesWithPipelineIssues, setPropertiesWithPipelineIssues] = useState<Set<string>>(new Set())
+  const listRef = useRef<List>(null)
+
+  // Memoized handlers to prevent unnecessary re-renders
+  const handlers = useMemo(() => ({
+    onEditProperty,
+    onSubdivisionChange,
+    onHandoverChange,
+    onSaveChanges,
+    onCancelChanges,
+    onNavigateToTabs,
+    onDeleteProperty,
+    onViewProperty: useCallback((propertyId: string) => {
+      setViewingPropertyId(propertyId)
+    }, []),
+    onPipelineStatusChange: useCallback((propertyId: string, hasIssues: boolean) => {
+      setPropertiesWithPipelineIssues((prev) => {
+        const newSet = new Set(prev)
+        if (hasIssues) {
+          newSet.add(propertyId)
+        } else {
+          newSet.delete(propertyId)
+        }
+        return newSet
+      })
+    }, []),
+  }), [onEditProperty, onSubdivisionChange, onHandoverChange, onSaveChanges, onCancelChanges, onNavigateToTabs, onDeleteProperty])
+
+  // Memoized item data to prevent unnecessary re-renders
+  const itemData = useMemo<PropertyItemData>(() => ({
+    properties,
+    pendingChanges,
+    savingChanges,
+    propertiesWithPipelineIssues,
+    handlers,
+  }), [properties, pendingChanges, savingChanges, propertiesWithPipelineIssues, handlers])
+
+  const handleCloseView = useCallback(() => {
+    setViewingPropertyId(null)
+  }, [])
+
+  // Auto-scroll to top when properties change
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollToItem(0, 'start')
+    }
+  }, [properties.length])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading properties...</span>
+      </div>
+    )
+  }
+
+  if (properties.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-500 mb-4">
+          <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
+        <p className="text-gray-500 mb-4">Get started by adding your first property.</p>
+        <Button onClick={onAddProperty}>Add Property</Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header with actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Properties ({properties.length})
+          </h2>
+          {onRefresh && (
+            <Button variant="outline" size="sm" onClick={onRefresh}>
+              Refresh
+            </Button>
+          )}
+        </div>
+        <Button onClick={onAddProperty}>Add Property</Button>
+      </div>
+
+      {/* Virtualized list */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <List
+          ref={listRef}
+          height={Math.min(600, properties.length * itemHeight)} // Max height of 600px
+          itemCount={properties.length}
+          itemSize={itemHeight}
+          itemData={itemData}
+          overscanCount={overscan}
+          className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+        >
+          {VirtualPropertyItem}
+        </List>
+      </div>
+
+      {/* Inline property view modal */}
+      {viewingPropertyId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <InlinePropertyView
+              property={properties.find(p => p.id === viewingPropertyId)!}
+              onClose={handleCloseView}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

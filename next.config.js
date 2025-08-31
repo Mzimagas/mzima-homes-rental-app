@@ -84,6 +84,23 @@ const nextConfig = {
 
   // Bundle optimization
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Strip console logs in production
+    if (!dev && !isServer) {
+      config.optimization.minimizer = config.optimization.minimizer || []
+      const TerserPlugin = require('terser-webpack-plugin')
+
+      config.optimization.minimizer.push(
+        new TerserPlugin({
+          terserOptions: {
+            compress: {
+              drop_console: true, // Remove console.log statements
+              drop_debugger: true, // Remove debugger statements
+            },
+          },
+        })
+      )
+    }
+
     // Bundle analyzer (only in development)
     if (dev && process.env.ANALYZE === 'true') {
       const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
@@ -95,19 +112,55 @@ const nextConfig = {
       )
     }
 
-    // Optimize chunks
+    // Advanced chunk optimization
     if (!dev && !isServer) {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
+          minSize: 20000,
+          maxSize: 244000,
           cacheGroups: {
-            // Vendor chunk for node_modules
+            // Framework chunk (React, Next.js)
+            framework: {
+              test: /[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
+              name: 'framework',
+              chunks: 'all',
+              priority: 40,
+              enforce: true,
+            },
+            // Large vendor libraries
             vendor: {
               test: /[\\/]node_modules[\\/]/,
               name: 'vendors',
               chunks: 'all',
               priority: 10,
+              minChunks: 1,
+              maxSize: 200000,
+            },
+            // Property management components
+            propertyComponents: {
+              test: /[\\/]src[\\/]components[\\/]properties[\\/]/,
+              name: 'property-components',
+              chunks: 'all',
+              priority: 30,
+              minChunks: 1,
+            },
+            // UI components
+            uiComponents: {
+              test: /[\\/]src[\\/]components[\\/]ui[\\/]/,
+              name: 'ui-components',
+              chunks: 'all',
+              priority: 25,
+              minChunks: 2,
+            },
+            // Services and utilities
+            services: {
+              test: /[\\/]src[\\/](services|lib|utils)[\\/]/,
+              name: 'services',
+              chunks: 'all',
+              priority: 20,
+              minChunks: 2,
             },
             // Common chunk for shared code
             common: {
@@ -116,37 +169,22 @@ const nextConfig = {
               chunks: 'all',
               priority: 5,
               reuseExistingChunk: true,
+              maxSize: 100000,
             },
-            // CQRS chunk
-            cqrs: {
-              test: /[\\/]src[\\/]application[\\/]cqrs[\\/]/,
-              name: 'cqrs',
-              chunks: 'all',
-              priority: 8,
-            },
-            // Domain chunk
-            domain: {
-              test: /[\\/]src[\\/]domain[\\/]/,
-              name: 'domain',
-              chunks: 'all',
-              priority: 8,
-            },
-            // Stores chunk
-            stores: {
-              test: /[\\/]src[\\/]presentation[\\/]stores[\\/]/,
-              name: 'stores',
-              chunks: 'all',
-              priority: 7,
-            },
-            // UI components chunk
-            components: {
-              test: /[\\/]src[\\/]presentation[\\/]components[\\/]/,
-              name: 'components',
-              chunks: 'all',
-              priority: 6,
+            // Default chunk
+            default: {
+              minChunks: 2,
+              priority: -20,
+              reuseExistingChunk: true,
             },
           },
         },
+        // Module concatenation for better tree shaking
+        concatenateModules: true,
+        // Minimize duplicate code
+        mergeDuplicateChunks: true,
+        // Remove empty chunks
+        removeEmptyChunks: true,
       }
     }
 

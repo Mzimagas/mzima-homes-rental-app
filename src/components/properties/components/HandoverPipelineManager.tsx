@@ -6,8 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, TextField, FormField } from '../../ui'
 import Modal from '../../ui/Modal'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
 import HandoverStageModal from './HandoverStageModal'
-import HandoverProgressTracker from './HandoverProgressTracker'
 import PropertySearch from './PropertySearch'
 import InlineHandoverView from './InlineHandoverView'
 import { Property } from '../../../lib/types/database'
@@ -84,11 +84,10 @@ export default function HandoverPipelineManager({
 
   // Helper function to handle authentication errors
   const handleAuthError = async (error: any, context: string) => {
-        if (isAuthError(error)) {
+    if (isAuthError(error)) {
       try {
         await supabase.auth.signOut()
-      } catch (signOutError) {
-              }
+      } catch (signOutError) {}
       redirectToLogin(context)
       return true
     }
@@ -119,10 +118,10 @@ export default function HandoverPipelineManager({
           handoverError.code === 'PGRST116' ||
           handoverError.message?.includes('does not exist')
         ) {
-                    setHandovers([])
+          setHandovers([])
           return
         }
-                throw handoverError
+        throw handoverError
       }
 
       if (!handoverData || handoverData.length === 0) {
@@ -135,7 +134,7 @@ export default function HandoverPipelineManager({
         .map((handover) => handover.property_id)
         .filter((id) => id != null && id !== '')
 
-            let propertiesMap = new Map()
+      const propertiesMap = new Map()
 
       // If we have property IDs, try to fetch the corresponding property data
       if (propertyIds.length > 0) {
@@ -146,16 +145,16 @@ export default function HandoverPipelineManager({
             .in('id', propertyIds)
 
           if (propertiesError) {
-                      } else if (propertiesData) {
-                        propertiesData.forEach((property) => {
+          } else if (propertiesData) {
+            propertiesData.forEach((property) => {
               propertiesMap.set(property.id, property)
             })
           }
         } catch (propertiesError) {
-                    // Continue without coordinates - this is not a fatal error
+          // Continue without coordinates - this is not a fatal error
         }
       } else {
-              }
+      }
 
       // Enhance handover data with property coordinates
       const enhancedData = handoverData.map((handover) => {
@@ -170,7 +169,7 @@ export default function HandoverPipelineManager({
 
       setHandovers(enhancedData as HandoverItem[])
     } catch (error) {
-            setHandovers([])
+      setHandovers([])
     } finally {
       setHandoverLoading(false)
     }
@@ -187,7 +186,7 @@ export default function HandoverPipelineManager({
         if (handled) return
       }
       if (!user) {
-                return
+        return
       }
 
       const { data: allProperties, error: propertiesError } = await supabase
@@ -243,7 +242,7 @@ export default function HandoverPipelineManager({
 
       setAvailableProperties(filteredProperties as any)
     } catch (error) {
-            if (error instanceof Error && isAuthError(error)) {
+      if (error instanceof Error && isAuthError(error)) {
         redirectToLogin('loadAvailableProperties')
       }
     }
@@ -270,7 +269,7 @@ export default function HandoverPipelineManager({
       setEditingHandover(null)
       setShowHandoverForm(true)
     } catch (error) {
-            alert('Failed to start handover process')
+      alert('Failed to start handover process')
     }
   }
 
@@ -314,7 +313,7 @@ export default function HandoverPipelineManager({
           alert('Handover pipeline table does not exist. Please run database migrations first.')
           return
         }
-                throw fetchError
+        throw fetchError
       }
 
       let currentStages = handover.pipeline_stages as any[]
@@ -330,7 +329,7 @@ export default function HandoverPipelineManager({
           .eq('id', handoverId)
 
         if (initError) {
-                    throw initError
+          throw initError
         }
       }
 
@@ -424,14 +423,14 @@ export default function HandoverPipelineManager({
           alert('Handover pipeline table does not exist. Please run database migrations first.')
           return
         }
-                throw error
+        throw error
       }
 
       // Reload handovers
       loadHandovers()
       setShowHandoverStageModal(false)
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
@@ -443,7 +442,7 @@ export default function HandoverPipelineManager({
 
   const onHandoverSubmit = async (values: HandoverPipelineFormValues) => {
     try {
-            const {
+      const {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) {
@@ -451,17 +450,17 @@ export default function HandoverPipelineManager({
         return
       }
 
-            const selectedProperty = availableProperties.find((p) => p.id === values.propertyId)
+      const selectedProperty = availableProperties.find((p) => p.id === values.propertyId)
       if (!selectedProperty) {
         alert('Selected property not found')
         return
       }
 
-            const initialStages = initializeHandoverPipelineStages()
+      const initialStages = initializeHandoverPipelineStages()
       const currentStageNum = getCurrentHandoverStage(initialStages)
       const overallProgress = calculateHandoverProgress(initialStages)
 
-            const handoverData = {
+      const handoverData = {
         property_id: values.propertyId,
         property_name:
           (selectedProperty as any).name ||
@@ -492,32 +491,32 @@ export default function HandoverPipelineManager({
         created_by: user.id,
       }
 
-            if (editingHandover) {
-                const { data: updateResult, error } = await supabase
+      if (editingHandover) {
+        const { data: updateResult, error } = await supabase
           .from('handover_pipeline')
           .update(handoverData)
           .eq('id', editingHandover.id)
           .select()
 
-                        if (error) {
+        if (error) {
           if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
             alert('Handover pipeline table does not exist. Please run database migrations first.')
             return
           }
-                    throw error
+          throw error
         }
       } else {
-                const { data: insertResult, error } = await supabase
+        const { data: insertResult, error } = await supabase
           .from('handover_pipeline')
           .insert([handoverData])
           .select()
 
-                        if (error) {
+        if (error) {
           if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
             alert('Handover pipeline table does not exist. Please run database migrations first.')
             return
           }
-                    throw error
+          throw error
         }
       }
 
@@ -543,7 +542,7 @@ export default function HandoverPipelineManager({
       loadAvailableProperties()
       onHandoverCreated?.()
     } catch (error) {
-            alert('Failed to save handover')
+      alert('Failed to save handover')
     }
   }
 
@@ -673,95 +672,98 @@ export default function HandoverPipelineManager({
       ) : (
         <div className="grid gap-6">
           {filteredHandovers.map((handover) => (
-            <div
+            <PropertyCard
               key={handover.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              status={handover.handover_status}
+              interactive={true}
+              theme="handover"
+              aria-label={`Handover: ${handover.property_name}`}
             >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mb-4">
-                <div className="md:col-span-2">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {handover.property_name}
-                    </h3>
-                    <span className="text-lg">🏠</span>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full font-medium ${
-                        handover.handover_status === 'COMPLETED'
-                          ? 'bg-green-100 text-green-800'
-                          : handover.handover_status === 'CLOSING'
-                            ? 'bg-blue-100 text-blue-800'
-                            : handover.handover_status === 'FINANCING'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {handover.handover_status.replace('_', ' ')}
-                    </span>
-                    <span className="text-xs text-blue-600 flex items-center">
-                      <span className="mr-1">🔄</span>
-                      Auto-sync
-                    </span>
-                  </div>
-                  <p className="text-gray-600 mb-2">{handover.property_address}</p>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                    <span>Buyer: {handover.buyer_name || 'Not specified'}</span>
-                    {handover.asking_price_kes && (
-                      <span>Asking: KES {handover.asking_price_kes.toLocaleString()}</span>
-                    )}
-                    {handover.negotiated_price_kes && (
-                      <span>Negotiated: KES {handover.negotiated_price_kes.toLocaleString()}</span>
-                    )}
-                    <span>Progress: {handover.overall_progress}%</span>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  {process.env.NODE_ENV === 'development' && (
-                    <div className="text-xs text-gray-500 mr-2 p-1 bg-blue-50 border border-blue-200 rounded">
-                      Main: lat={(handover as any).property_lat}, lng=
-                      {(handover as any).property_lng}
+              <PropertyCardHeader>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                  <div className="md:col-span-2">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {handover.property_name}
+                      </h3>
+                      <span className="text-lg">🏠</span>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          handover.handover_status === 'COMPLETED'
+                            ? 'bg-green-100 text-green-800'
+                            : handover.handover_status === 'CLOSING'
+                              ? 'bg-blue-100 text-blue-800'
+                              : handover.handover_status === 'FINANCING'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {handover.handover_status.replace('_', ' ')}
+                      </span>
+                      <span className="text-xs text-blue-600 flex items-center">
+                        <span className="mr-1">🔄</span>
+                        Auto-sync
+                      </span>
                     </div>
-                  )}
-                  <ViewOnGoogleMapsButton
-                    lat={(handover as any).property_lat ?? null}
-                    lng={(handover as any).property_lng ?? null}
-                    address={
-                      (handover as any).property_physical_address ||
-                      handover.property_address ||
-                      handover.property_name
-                    }
-                    propertyName={handover.property_name}
-                    debug={process.env.NODE_ENV === 'development'}
-                    debugContext={`Handover Pipeline - ${handover.property_name}`}
-                  />
+                    <p className="text-gray-600 mb-2">{handover.property_address}</p>
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                      <span>Buyer: {handover.buyer_name || 'Not specified'}</span>
+                      {handover.asking_price_kes && (
+                        <span>Asking: KES {handover.asking_price_kes.toLocaleString()}</span>
+                      )}
+                      {handover.negotiated_price_kes && (
+                        <span>Negotiated: KES {handover.negotiated_price_kes.toLocaleString()}</span>
+                      )}
+                      <span>Progress: {handover.overall_progress}%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <ViewOnGoogleMapsButton
+                      lat={(handover as any).property_lat ?? null}
+                      lng={(handover as any).property_lng ?? null}
+                      address={
+                        (handover as any).property_physical_address ||
+                        handover.property_address ||
+                        handover.property_name
+                      }
+                      propertyName={handover.property_name}
+                      debug={process.env.NODE_ENV === 'development'}
+                      debugContext={`Handover Pipeline - ${handover.property_name}`}
+                    />
+                  </div>
                 </div>
-              </div>
+              </PropertyCardHeader>
 
-              <div className="flex space-x-2">
-                <Button variant="secondary" size="sm" onClick={() => handleEditHandover(handover)}>
-                  Edit Details
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() =>
-                    setViewingHandoverId(viewingHandoverId === handover.id ? null : handover.id)
-                  }
-                >
-                  {viewingHandoverId === handover.id ? 'Hide Details' : 'View Details'}
-                </Button>
-              </div>
+              <PropertyCardFooter>
+                <div className="flex space-x-2">
+                  <Button variant="secondary" size="sm" onClick={() => handleEditHandover(handover)}>
+                    Edit Details
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      setViewingHandoverId(viewingHandoverId === handover.id ? null : handover.id)
+                    }
+                  >
+                    {viewingHandoverId === handover.id ? 'Hide Details' : 'View Details'}
+                  </Button>
+                </div>
 
-              {/* Inline Handover Details */}
-              {viewingHandoverId === handover.id && (
-                <InlineHandoverView
-                  handover={handover}
-                  onClose={() => setViewingHandoverId(null)}
-                  onStageClick={handleHandoverStageClick}
-                  onStageUpdate={handleHandoverStageUpdate}
-                />
-              )}
-            </div>
+                {/* Inline Handover Details */}
+                {viewingHandoverId === handover.id && (
+                  <div className="mt-4">
+                    <InlineHandoverView
+                      handover={handover}
+                      onClose={() => setViewingHandoverId(null)}
+                      onStageClick={handleHandoverStageClick}
+                      onStageUpdate={handleHandoverStageUpdate}
+                    />
+                  </div>
+                )}
+              </PropertyCardFooter>
+            </PropertyCard>
           ))}
         </div>
       )}

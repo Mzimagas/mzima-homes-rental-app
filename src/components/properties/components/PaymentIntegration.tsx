@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import {
   CurrencyDollarIcon,
   CreditCardIcon,
@@ -74,6 +74,62 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
   })
 
   const { navigateToFinancial } = useTabNavigation()
+
+  // Enhanced stage-to-payment mapping with support for different payment types
+  const getPaymentNavigationConfig = (stage: number, payment: PaymentRequirement) => {
+    // Stage-specific cost type mapping for handover costs (using current HANDOVER_COST_TYPES)
+    const stageToHandoverCostMapping: Record<number, string> = {
+      1: 'property_valuation', // Initial Handover Preparation
+      2: 'property_inspection', // Property Documentation & Survey
+      3: 'marketing_preparation', // Marketing & Buyer Identification
+      4: 'contract_preparation', // Agreement Preparation
+      5: 'lcb_application_fee', // LCB Process
+      6: 'transfer_fee', // Transfer & Registration
+      7: 'other_handover_expense', // Final Handover & Completion (updated to match current types)
+    }
+
+    // Determine payment type and navigation config
+    if (payment.id === 'down_payment' || payment.category === 'payment') {
+      // Purchase Price Deposit/Payment - navigate to payments section
+      return {
+        subtab: 'payments',
+        costTypeId: undefined,
+        amount: payment.amount,
+        description: payment.description || 'Purchase price deposit payment',
+        paymentType: payment.id === 'down_payment' ? 'deposit' : 'installment',
+      }
+    } else if (payment.category === 'fee' || payment.category === 'tax') {
+      // Costs (fees, taxes) - navigate to handover costs section
+      return {
+        subtab: 'handover_costs',
+        costTypeId: stageToHandoverCostMapping[stage],
+        amount: payment.amount,
+        description: payment.description || `Stage ${stage} ${payment.category} payment`,
+        paymentType: payment.category === 'fee' ? 'fee' : 'tax',
+      }
+    } else {
+      // Default to handover costs for handover pipeline
+      return {
+        subtab: 'handover_costs',
+        costTypeId: stageToHandoverCostMapping[stage],
+        amount: payment.amount,
+        description: payment.description || `Stage ${stage} payment`,
+        paymentType: 'handover_cost',
+      }
+    }
+  }
+
+  // Reset payment form state when property changes
+  useEffect(() => {
+    setIsProcessing(false)
+    setSelectedMethod('')
+    setShowPaymentForm(false)
+    setPaymentDetails({
+      phoneNumber: '',
+      amount: payment.amount || 0,
+      reference: `${propertyId}-stage${stageNumber}-${payment.id}`,
+    })
+  }, [propertyId, stageNumber, payment.amount, payment.id])
 
   // Simulate payment processing
   const processPayment = useCallback(
@@ -165,7 +221,25 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
           </span>
         ) : (
           <button
-            onClick={() => setShowPaymentForm(true)}
+            onClick={() => {
+              const paymentConfig = getPaymentNavigationConfig(stageNumber, payment)
+              console.log('🔍 PaymentIntegration navigation config:', {
+                stageNumber,
+                payment: { id: payment.id, category: payment.category, amount: payment.amount },
+                paymentConfig
+              })
+              navigateToFinancial({
+                propertyId,
+                stageNumber,
+                action: 'pay',
+                subtab: paymentConfig.subtab,
+                costTypeId: paymentConfig.costTypeId,
+                amount: paymentConfig.amount,
+                description: paymentConfig.description,
+                pipeline: 'handover',
+                paymentType: paymentConfig.paymentType
+              })
+            }}
             className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors"
           >
             <CurrencyDollarIcon className="h-3 w-3" />
@@ -308,7 +382,25 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
       {currentStatus !== 'completed' && (
         <div className="flex gap-2">
           <button
-            onClick={() => setShowPaymentForm(true)}
+            onClick={() => {
+              const paymentConfig = getPaymentNavigationConfig(stageNumber, payment)
+              console.log('🔍 PaymentIntegration navigation config:', {
+                stageNumber,
+                payment: { id: payment.id, category: payment.category, amount: payment.amount },
+                paymentConfig
+              })
+              navigateToFinancial({
+                propertyId,
+                stageNumber,
+                action: 'pay',
+                subtab: paymentConfig.subtab,
+                costTypeId: paymentConfig.costTypeId,
+                amount: paymentConfig.amount,
+                description: paymentConfig.description,
+                pipeline: 'handover',
+                paymentType: paymentConfig.paymentType
+              })
+            }}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
             <CurrencyDollarIcon className="h-4 w-4" />
@@ -316,10 +408,11 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
           </button>
 
           <button
-            onClick={() => navigateToFinancial({ propertyId, stageNumber, action: 'view' })}
+            onClick={() => setShowPaymentForm(true)}
             className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            title="Quick Payment Form"
           >
-            <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+            <CreditCardIcon className="h-4 w-4" />
           </button>
         </div>
       )}

@@ -30,3 +30,73 @@ body {
   color: #171717;
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Enhanced Property Card System */
+.property-card {
+  background-color: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.property-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transform: translateY(-1px);
+}
+
+.property-card--active {
+  border-color: #7cc4ff;
+  background-color: #f8faff;
+  box-shadow: 0 0 0 1px #b8dcff;
+}
+
+.property-card--completed {
+  border-color: #86efac;
+  background-color: #f0fdf4;
+}
+
+.property-card--warning {
+  border-color: #fde047;
+  background-color: #fefce8;
+}
+
+.property-card--error {
+  border-color: #fca5a5;
+  background-color: #fef2f2;
+}
+
+.property-card--interactive {
+  cursor: pointer;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .property-card {
+    border-width: 1px;
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+}
+
+/* Tab-specific light background colors */
+.bg-green-25 {
+  background-color: #f7fef7;
+}
+
+.bg-blue-25 {
+  background-color: #f7f9ff;
+}
+
+.bg-orange-25 {
+  background-color: #fffaf7;
+}
+
+.bg-purple-25 {
+  background-color: #faf7ff;
+}
+
+.bg-indigo-25 {
+  background-color: #f7f8ff;
+}

@@ -20,6 +20,12 @@ export interface RoleDefinition {
 }
 
 export class RoleManagementService {
+  // Cache for user roles to avoid repeated API calls
+  private static roleCache = new Map<string, { roles: UserRole[]; timestamp: number }>()
+  private static readonly CACHE_TTL = 10 * 60 * 1000 // 10 minutes
+  private static readonly RETRY_DELAYS = [1000, 3000, 9000] // Exponential backoff
+  private static retryCount = 0
+
   // Predefined roles and their permissions
   static readonly ROLE_DEFINITIONS: RoleDefinition[] = [
     {
@@ -128,19 +134,37 @@ export class RoleManagementService {
     },
   ]
 
-  // Get current user's roles
+  // Get current user's roles with caching and enhanced error handling
   static async getCurrentUserRoles(): Promise<UserRole[]> {
     try {
-      console.log('Getting current user roles...')
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Getting current user roles...')
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) {
-        console.log('User not authenticated')
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('User not authenticated')
+        }
         return []
       }
 
-      console.log('Current user ID:', user.id)
+      // Check cache first
+      const cached = this.roleCache.get(user.id)
+      const now = Date.now()
+
+      if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Returning cached roles for user:', user.id)
+        }
+        return cached.roles
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Current user ID:', user.id)
+      }
 
       const { data, error } = await supabase
         .from('security_user_roles')
@@ -148,22 +172,68 @@ export class RoleManagementService {
         .eq('user_id', user.id)
         .eq('is_active', true)
 
-      console.log('Database query result:', { data, error })
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Database query result:', { data, error })
+      }
 
       if (error) {
-        console.log('Error fetching user roles:', error.message)
+        console.error('Error fetching user roles:', error)
+
+        // Check if it's a server error (500+) - RLS recursion typically shows as 500
+        if (error.code === 'PGRST301' || (error.message && error.message.includes('infinite recursion'))) {
+          console.warn('RLS recursion detected, attempting fallback...')
+
+          // Implement exponential backoff for server errors
+          if (this.retryCount < this.RETRY_DELAYS.length) {
+            const delay = this.RETRY_DELAYS[this.retryCount]
+            this.retryCount++
+
+            console.warn(`Backing off for ${delay}ms before retry...`)
+            await new Promise(resolve => setTimeout(resolve, delay))
+          }
+
+          // Try fallback RPC if available
+          try {
+            const { data: rpcData, error: rpcError } = await supabase
+              .rpc('get_user_active_roles', { p_uid: user.id })
+
+            if (!rpcError && rpcData) {
+              if (process.env.NODE_ENV !== 'production') {
+                console.log('Fallback RPC successful:', rpcData)
+              }
+
+              // Cache successful result
+              this.roleCache.set(user.id, { roles: rpcData, timestamp: now })
+              this.retryCount = 0 // Reset retry count on success
+              return rpcData
+            }
+          } catch (rpcErr) {
+            console.warn('Fallback RPC also failed:', rpcErr)
+          }
+
+          // Show user-friendly error for server issues
+          throw new Error('Server error: Unable to load user roles. Please try again or contact support.')
+        }
+
         return []
       }
 
-      console.log('Returning roles:', data || [])
-      return data || []
+      // Cache successful result
+      const roles = data || []
+      this.roleCache.set(user.id, { roles, timestamp: now })
+      this.retryCount = 0 // Reset retry count on success
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Returning roles:', roles)
+      }
+      return roles
     } catch (error) {
       console.log('Error in getCurrentUserRoles:', error)
       return []
     }
   }
 
-  // Get user's highest role
+  // Get user's highest role with enhanced error handling
   static async getCurrentUserRole(): Promise<string> {
     try {
       const roles = await this.getCurrentUserRoles()
@@ -185,10 +255,15 @@ export class RoleManagementService {
 
       return highestRole.role
     } catch (error) {
-      console.log(
-        'Error getting user role, defaulting to property_manager:',
-        error?.message || 'Unknown error'
-      )
+      console.error('Error getting user role:', error)
+
+      // If it's a server error, show a warning but still provide fallback
+      if (error instanceof Error && error.message.includes('Server error:')) {
+        console.warn('Server error detected in getCurrentUserRole, using fallback role')
+        // Could show a toast notification here in the future
+      }
+
+      console.log('Defaulting to property_manager role')
       return 'property_manager' // Fallback to property_manager role
     }
   }
@@ -338,5 +413,31 @@ export class RoleManagementService {
     if (!requiredPermission) return true // No specific permission required
 
     return roleDef.permissions.includes(requiredPermission)
+  }
+
+  // Clear role cache (useful for logout or role changes)
+  static clearRoleCache(userId?: string): void {
+    if (userId) {
+      this.roleCache.delete(userId)
+    } else {
+      this.roleCache.clear()
+    }
+    this.retryCount = 0
+  }
+
+  // Get cache stats (for debugging)
+  static getCacheStats(): { size: number; entries: Array<{ userId: string; age: number }> } {
+    const now = Date.now()
+    const entries = Array.from(this.roleCache.entries()).map(([userId, cached]) => ({
+      userId,
+      age: now - cached.timestamp
+    }))
+
+    return { size: this.roleCache.size, entries }
+  }
+
+  // Get all available role definitions
+  static getRoleDefinitions(): RoleDefinition[] {
+    return this.ROLE_DEFINITIONS
   }
 }

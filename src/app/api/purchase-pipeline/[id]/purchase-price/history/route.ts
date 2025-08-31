@@ -47,7 +47,7 @@ async function checkPurchaseAccess(userId: string, purchaseId: string): Promise<
 
   const { data, error } = await supabase
     .from('purchase_pipeline')
-    .select('created_by')
+    .select('created_by, property_id, completed_property_id')
     .eq('id', purchaseId)
     .single()
 
@@ -58,9 +58,57 @@ async function checkPurchaseAccess(userId: string, purchaseId: string): Promise<
     return false
   }
 
-  const hasAccess = data.created_by === userId
-  console.log('checkPurchaseAccess - hasAccess:', hasAccess)
-  return hasAccess
+  // Check if user created this purchase pipeline entry
+  if (data.created_by === userId) {
+    console.log('checkPurchaseAccess - user is creator')
+    return true
+  }
+
+  // If purchase is linked to a property, check property access as fallback
+  if (data.property_id || data.completed_property_id) {
+    const propertyId = data.property_id || data.completed_property_id
+    console.log('checkPurchaseAccess - checking property access for:', propertyId)
+
+    try {
+      // Check if user has access to the linked property
+      const { data: propertyAccess, error: accessError } = await supabase.rpc(
+        'get_user_accessible_properties',
+        { user_uuid: userId }
+      )
+
+      if (!accessError && Array.isArray(propertyAccess)) {
+        const hasPropertyAccess = propertyAccess.some((p: any) => {
+          if (typeof p === 'string') {
+            return p === propertyId
+          } else if (p && typeof p === 'object') {
+            return p.property_id === propertyId
+          }
+          return false
+        })
+
+        console.log('checkPurchaseAccess - property access:', hasPropertyAccess)
+        if (hasPropertyAccess) return true
+      }
+
+      // Fallback: Check direct property ownership
+      const { data: property, error: propError } = await supabase
+        .from('properties')
+        .select('id, landlord_id')
+        .eq('id', propertyId)
+        .eq('landlord_id', userId)
+        .single()
+
+      if (!propError && property) {
+        console.log('checkPurchaseAccess - user owns linked property')
+        return true
+      }
+    } catch (e) {
+      console.log('checkPurchaseAccess - property access check failed:', e)
+    }
+  }
+
+  console.log('checkPurchaseAccess - no access found')
+  return false
 }
 
 // GET /api/purchase-pipeline/[id]/purchase-price/history - Get purchase price change history for purchase pipeline entry

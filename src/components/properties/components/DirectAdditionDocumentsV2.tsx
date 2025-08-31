@@ -27,6 +27,7 @@ import FinancialStatusIndicator from './FinancialStatusIndicator'
 interface DirectAdditionDocumentsV2Props {
   propertyId: string
   propertyName: string
+  pipeline?: 'direct_addition' | 'handover'
 }
 
 interface PropertyDocument {
@@ -84,6 +85,7 @@ interface DocumentStageInfo {
 export default function DirectAdditionDocumentsV2({
   propertyId,
   propertyName,
+  pipeline = 'direct_addition',
 }: DirectAdditionDocumentsV2Props) {
   const [documentStates, setDocumentStates] = useState<Record<DocTypeKey, DocumentTypeState>>(
     {} as Record<DocTypeKey, DocumentTypeState>
@@ -103,7 +105,7 @@ export default function DirectAdditionDocumentsV2({
     getStageFinancialStatus,
     getPaymentStatus,
     loading: financialLoading,
-  } = useFinancialStatus(propertyId, 'direct_addition')
+  } = useFinancialStatus(propertyId, pipeline)
 
   // Enhanced workflow integration
   const {
@@ -115,7 +117,7 @@ export default function DirectAdditionDocumentsV2({
     getNextAction,
   } = useEnhancedWorkflow({
     propertyId,
-    pipeline: 'direct_addition',
+    pipeline,
     documentStates,
     enableIntegratedLogic: true,
   })
@@ -123,7 +125,7 @@ export default function DirectAdditionDocumentsV2({
   // Real-time financial sync
   const { isSyncing, lastSyncTime, triggerSync } = useFinancialSync({
     propertyId,
-    pipeline: 'direct_addition',
+    pipeline,
     enableRealTimeSync: true,
   })
 
@@ -264,7 +266,7 @@ export default function DirectAdditionDocumentsV2({
         .from('property_documents')
         .select('*')
         .eq('property_id', propertyId)
-        .eq('pipeline', 'direct_addition')
+        .eq('pipeline', pipeline)
         .order('uploaded_at', { ascending: false })
 
       if (docsError) throw docsError
@@ -274,7 +276,7 @@ export default function DirectAdditionDocumentsV2({
         .from('property_document_status')
         .select('*')
         .eq('property_id', propertyId)
-        .eq('pipeline', 'direct_addition')
+        .eq('pipeline', pipeline)
 
       if (statusError) throw statusError
 
@@ -368,7 +370,7 @@ export default function DirectAdditionDocumentsV2({
       // Upload files
       for (const file of filesToUpload) {
         const uniqueFilename = generateUniqueFilename(file.name)
-        const filePath = `direct_addition/${propertyId}/${docTypeKey}/${uniqueFilename}`
+        const filePath = `${pipeline}/${propertyId}/${docTypeKey}/${uniqueFilename}`
 
         // Upload to storage
         const { error: uploadError } = await supabase.storage
@@ -383,7 +385,7 @@ export default function DirectAdditionDocumentsV2({
         // Create document record
         const { error: dbError } = await supabase.from('property_documents').insert({
           property_id: propertyId,
-          pipeline: 'direct_addition',
+          pipeline,
           doc_type: docTypeKey,
           file_path: filePath,
           file_name: file.name,
@@ -485,7 +487,7 @@ export default function DirectAdditionDocumentsV2({
         .from('property_document_status')
         .select('*')
         .eq('property_id', propertyId)
-        .eq('pipeline', 'direct_addition')
+        .eq('pipeline', pipeline)
         .eq('doc_type', docTypeKey)
         .single()
 
@@ -510,7 +512,7 @@ export default function DirectAdditionDocumentsV2({
         // Insert new record
         result = await supabase.from('property_document_status').insert({
           property_id: propertyId,
-          pipeline: 'direct_addition',
+          pipeline,
           doc_type: docTypeKey,
           is_na: isNa,
           note: note || null,
@@ -543,7 +545,7 @@ export default function DirectAdditionDocumentsV2({
           status: {
             id: existingStatus?.id || 'temp-id',
             property_id: propertyId,
-            pipeline: 'direct_addition',
+            pipeline,
             doc_type: docTypeKey,
             status: isNa ? 'complete' : existingStatus?.status || 'missing',
             is_na: isNa,
@@ -701,6 +703,20 @@ export default function DirectAdditionDocumentsV2({
     )
   }
 
+  // Check if no document states loaded
+  if (!loading && Object.keys(documentStates).length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 px-4">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+          <div className="text-gray-600">
+            <p className="text-lg font-medium">No documents available</p>
+            <p className="mt-2 text-sm">Document management is not available for this property at this time.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const stats = getCompletionStats()
 
   return (
@@ -848,7 +864,7 @@ export default function DirectAdditionDocumentsV2({
                             stageNumber={stage.stageNumber}
                             financialStatus={getStageFinancialStatus(stage.stageNumber)}
                             getPaymentStatus={getPaymentStatus}
-                            pipeline="direct_addition"
+                            pipeline={pipeline}
                             documentStates={documentStates}
                             layout="horizontal"
                             compact={true}
@@ -1146,7 +1162,7 @@ export default function DirectAdditionDocumentsV2({
                           stageNumber={stage.stageNumber}
                           financialStatus={getStageFinancialStatus(stage.stageNumber)}
                           getPaymentStatus={getPaymentStatus}
-                          pipeline="direct_addition"
+                          pipeline={pipeline}
                           documentStates={documentStates}
                           layout="horizontal"
                           compact={true}

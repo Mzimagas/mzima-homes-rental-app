@@ -3,10 +3,11 @@
  * Handles caching, offline functionality, and background sync
  */
 
-const CACHE_NAME = 'mzima-homes-v1.0.0'
-const STATIC_CACHE = 'mzima-static-v1'
-const DYNAMIC_CACHE = 'mzima-dynamic-v1'
-const API_CACHE = 'mzima-api-v1'
+const CACHE_VERSION = 'v8' // Bumped to clear old cache
+const CACHE_NAME = `mzima-homes-${CACHE_VERSION}`
+const STATIC_CACHE = `mzima-static-${CACHE_VERSION}`
+const DYNAMIC_CACHE = `mzima-dynamic-${CACHE_VERSION}`
+const API_CACHE = `mzima-api-${CACHE_VERSION}`
 
 // Files to cache immediately
 const STATIC_FILES = [
@@ -21,8 +22,15 @@ const STATIC_FILES = [
 const API_ENDPOINTS = [
   '/api/properties',
   '/api/tenants',
-  '/api/dashboard/stats'
+  '/api/dashboard/stats',
+  '/api/purchase-pipeline',
+  '/api/property-subdivisions',
+  '/api/property-handovers',
+  '/api/property-documents'
 ]
+
+// Offline operations queue name
+const OFFLINE_QUEUE_NAME = 'offline-operations'
 
 // Install event - cache static files
 self.addEventListener('install', (event) => {
@@ -48,26 +56,24 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Activating...')
   
-  event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== STATIC_CACHE && 
-                cacheName !== DYNAMIC_CACHE && 
-                cacheName !== API_CACHE) {
-              console.log('Service Worker: Deleting old cache', cacheName)
-              return caches.delete(cacheName)
-            }
-          })
-        )
-      })
-      .then(() => {
-        console.log('Service Worker: Activated')
-        return self.clients.claim()
-      })
-  )
+  event.waitUntil((async () => {
+    const keys = await caches.keys()
+    await Promise.all(keys
+      .filter(k => ![STATIC_CACHE, DYNAMIC_CACHE, API_CACHE].includes(k))
+      .map(k => {
+        console.log('Service Worker: Deleting old cache', k)
+        return caches.delete(k)
+      }))
+    console.log('Service Worker: Activated')
+    await self.clients.claim()
+  })())
 })
+
+// Don't cache Supabase/API responses to prevent stale data
+const shouldBypass = (url) =>
+  url.includes('supabase.co') ||
+  url.includes('/rest/v1/') ||
+  url.includes('/auth/v1/')
 
 // Fetch event - handle requests with caching strategy
 self.addEventListener('fetch', (event) => {
@@ -79,6 +85,17 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  // Bypass Supabase and API endpoints completely
+  if (shouldBypass(url.href)) {
+    return
+  }
+
+  // Handle SPA navigations with network-first (prevents stale HTML)
+  if (request.mode === 'navigate') {
+    event.respondWith(handleNavigationRequest(request))
+    return
+  }
+
   // Handle different types of requests
   if (url.pathname.startsWith('/api/')) {
     // API requests - Network First with cache fallback
@@ -87,7 +104,7 @@ self.addEventListener('fetch', (event) => {
     // Static assets - Cache First
     event.respondWith(handleStaticAssets(request))
   } else {
-    // HTML pages - Stale While Revalidate
+    // HTML pages - Network First to prevent stale content
     event.respondWith(handlePageRequest(request))
   }
 })
@@ -98,15 +115,17 @@ async function handleApiRequest(request) {
   
   try {
     // Try network first
-    const networkResponse = await fetch(request)
-    
-    if (networkResponse.ok) {
+    const netResp = await fetch(request)
+
+    if (netResp.ok) {
       // Cache successful responses
       const cache = await caches.open(cacheName)
-      cache.put(request, networkResponse.clone())
+      // Clone BEFORE any body usage to prevent "already used" error
+      const clone = netResp.clone()
+      cache.put(request, clone).catch(err => console.log('Cache put failed:', err))
     }
-    
-    return networkResponse
+
+    return netResp
   } catch (error) {
     console.log('Service Worker: Network failed, trying cache for API request')
     
@@ -142,14 +161,16 @@ async function handleStaticAssets(request) {
   
   try {
     // Fallback to network
-    const networkResponse = await fetch(request)
-    
-    if (networkResponse.ok) {
+    const netResp = await fetch(request)
+
+    if (netResp.ok) {
       const cache = await caches.open(cacheName)
-      cache.put(request, networkResponse.clone())
+      // Clone BEFORE any body usage to prevent "already used" error
+      const clone = netResp.clone()
+      cache.put(request, clone).catch(err => console.log('Cache put failed:', err))
     }
-    
-    return networkResponse
+
+    return netResp
   } catch (error) {
     console.log('Service Worker: Failed to fetch static asset', request.url)
     
@@ -165,32 +186,39 @@ async function handleStaticAssets(request) {
   }
 }
 
-// Page request handler - Stale While Revalidate
-async function handlePageRequest(request) {
-  const cacheName = DYNAMIC_CACHE
-  
+// Navigation request handler - Network First (prevents stale HTML)
+async function handleNavigationRequest(request) {
+  const cache = await caches.open(DYNAMIC_CACHE)
+
   try {
-    // Try cache first
-    const cachedResponse = await caches.match(request)
-    
-    // Fetch from network in background
-    const networkPromise = fetch(request).then((networkResponse) => {
-      if (networkResponse.ok) {
-        const cache = caches.open(cacheName)
-        cache.then(c => c.put(request, networkResponse.clone()))
-      }
-      return networkResponse
-    })
-    
-    // Return cached version immediately if available
-    if (cachedResponse) {
-      return cachedResponse
-    }
-    
-    // Otherwise wait for network
-    return await networkPromise
+    const netResp = await fetch(request)
+    // Clone BEFORE any body usage to prevent "already used" error
+    const clone = netResp.clone()
+    // Don't block the response
+    cache.put(request, clone).catch(err => console.log('Cache put failed:', err))
+    return netResp
+  } catch (err) {
+    const cached = await cache.match(request, { ignoreSearch: true })
+    if (cached) return cached
+    throw err
+  }
+}
+
+// Page request handler - Network First (prevents stale content)
+async function handlePageRequest(request) {
+  const cache = await caches.open(DYNAMIC_CACHE)
+
+  try {
+    const netResp = await fetch(request)
+    // Clone BEFORE any body usage to prevent "already used" error
+    const clone = netResp.clone()
+    // Don't block the response
+    cache.put(request, clone).catch(err => console.log('Cache put failed:', err))
+    return netResp
   } catch (error) {
-    console.log('Service Worker: Page request failed, showing offline page')
+    console.log('Service Worker: Page request failed, trying cache')
+    const cached = await cache.match(request)
+    if (cached) return cached
     
     // Show offline page
     const offlineResponse = await caches.match('/offline')
@@ -344,15 +372,159 @@ async function removeOfflineCommand(commandId) {
   console.log('Removing offline command:', commandId)
 }
 
-// Message handler for communication with main thread
-self.addEventListener('message', (event) => {
-  console.log('Service Worker: Message received', event.data)
-  
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting()
+// Enhanced offline operations queue using IndexedDB
+async function queueOfflineOperation(request) {
+  try {
+    const operation = {
+      id: Date.now() + Math.random(),
+      url: request.url,
+      method: request.method,
+      headers: Object.fromEntries(request.headers.entries()),
+      body: request.method !== 'GET' ? await request.text() : null,
+      timestamp: Date.now(),
+      retryCount: 0
+    }
+
+    const db = await openOfflineDB()
+    const transaction = db.transaction(['operations'], 'readwrite')
+    const store = transaction.objectStore('operations')
+    await store.add(operation)
+
+    console.log('SW: Queued offline operation:', operation.id)
+
+    // Register for background sync
+    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+      await self.registration.sync.register('offline-operations')
+    }
+  } catch (error) {
+    console.error('SW: Failed to queue offline operation:', error)
   }
-  
-  if (event.data && event.data.type === 'GET_VERSION') {
-    event.ports[0].postMessage({ version: CACHE_NAME })
+}
+
+// Open IndexedDB for offline operations
+function openOfflineDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('MzimaOfflineDB', 1)
+
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve(request.result)
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result
+
+      if (!db.objectStoreNames.contains('operations')) {
+        const store = db.createObjectStore('operations', { keyPath: 'id' })
+        store.createIndex('timestamp', 'timestamp', { unique: false })
+        store.createIndex('url', 'url', { unique: false })
+      }
+    }
+  })
+}
+
+// Background sync event handler
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'offline-operations') {
+    console.log('SW: Processing offline operations...')
+    event.waitUntil(processOfflineOperations())
   }
 })
+
+// Process queued offline operations
+async function processOfflineOperations() {
+  try {
+    const db = await openOfflineDB()
+    const transaction = db.transaction(['operations'], 'readwrite')
+    const store = transaction.objectStore('operations')
+    const operations = await store.getAll()
+
+    for (const operation of operations) {
+      try {
+        const request = new Request(operation.url, {
+          method: operation.method,
+          headers: operation.headers,
+          body: operation.body
+        })
+
+        const response = await fetch(request)
+
+        if (response.ok) {
+          await store.delete(operation.id)
+          console.log('SW: Successfully synced offline operation:', operation.id)
+
+          // Notify clients
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                type: 'OFFLINE_OPERATION_SYNCED',
+                operation: operation
+              })
+            })
+          })
+        } else {
+          // Increment retry count
+          operation.retryCount = (operation.retryCount || 0) + 1
+          if (operation.retryCount < 3) {
+            await store.put(operation)
+          } else {
+            await store.delete(operation.id)
+            console.error('SW: Max retries reached for operation:', operation.id)
+          }
+        }
+      } catch (error) {
+        console.error('SW: Error processing offline operation:', operation.id, error)
+      }
+    }
+  } catch (error) {
+    console.error('SW: Failed to process offline operations:', error)
+  }
+}
+
+// Enhanced message handler
+self.addEventListener('message', (event) => {
+  console.log('Service Worker: Message received', event.data)
+
+  const { type, data } = event.data || {}
+
+  switch (type) {
+    case 'SKIP_WAITING':
+      self.skipWaiting()
+      break
+
+    case 'GET_VERSION':
+      event.ports[0].postMessage({ version: CACHE_NAME })
+      break
+
+    case 'CLEAR_CACHE':
+      Promise.all([
+        caches.delete(STATIC_CACHE),
+        caches.delete(DYNAMIC_CACHE),
+        caches.delete(API_CACHE)
+      ]).then(() => {
+        event.ports[0].postMessage({ success: true })
+      }).catch((error) => {
+        event.ports[0].postMessage({ success: false, error: error.message })
+      })
+      break
+
+    case 'GET_OFFLINE_QUEUE_SIZE':
+      getOfflineQueueSize().then((size) => {
+        event.ports[0].postMessage({ size })
+      }).catch((error) => {
+        event.ports[0].postMessage({ size: 0, error: error.message })
+      })
+      break
+  }
+})
+
+// Get offline queue size
+async function getOfflineQueueSize() {
+  try {
+    const db = await openOfflineDB()
+    const transaction = db.transaction(['operations'], 'readonly')
+    const store = transaction.objectStore('operations')
+    return await store.count()
+  } catch (error) {
+    console.error('SW: Failed to get offline queue size:', error)
+    return 0
+  }
+}

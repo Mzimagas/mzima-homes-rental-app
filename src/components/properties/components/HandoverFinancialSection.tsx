@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button, TextField, Select } from '../../ui'
+import { useToast } from '../../ui/Toast'
 import { HandoverFinancialsService } from '../services/handover-financials.service'
 import {
   HANDOVER_COST_TYPES,
@@ -42,6 +43,11 @@ export default function HandoverFinancialSection({
   const [editPrice, setEditPrice] = useState('')
   const [changeReason, setChangeReason] = useState('')
 
+  // Visual prefill highlight state
+  const [prefillApplied, setPrefillApplied] = useState<null | 'cost' | 'payment'>(null)
+  // Force a fresh mount of inputs after prefill for UI libs that cache internal state
+  const [prefillRenderKey, setPrefillRenderKey] = useState<string | null>(null)
+
   // Form states
   const [newCost, setNewCost] = useState({
     cost_type_id: '',
@@ -72,6 +78,169 @@ export default function HandoverFinancialSection({
     if (amount === null || amount === undefined) return 'KES 0'
     return `KES ${amount.toLocaleString()}`
   }
+
+  // Reset form states when property changes
+  useEffect(() => {
+    setShowAddCost(false)
+    setShowAddReceipt(false)
+    setShowEditPrice(false)
+    setShowPriceHistory(false)
+    setEditPrice('')
+    setChangeReason('')
+    setNewCost({
+      cost_type_id: '',
+      cost_category: '' as HandoverCostCategory,
+      amount_kes: '',
+      payment_reference: '',
+      payment_date: '',
+      notes: '',
+    })
+    setNewReceipt(prev => ({
+      ...prev,
+      amount_kes: '',
+      payment_date: '',
+      payment_reference: '',
+      payment_method: '' as 'CASH' | 'BANK_TRANSFER' | 'CHEQUE' | 'MOBILE_MONEY' | 'OTHER' | '',
+      notes: '',
+    }))
+  }, [propertyId])
+
+  // Idempotent prefill tracking
+  const lastAppliedPrefillRef = useRef<string | null>(null)
+
+  // Toast
+  const { show: showToast } = useToast()
+
+  // Listen for navigateToFinancial prefill events and also apply prefill on mount from URL
+  useEffect(() => {
+    let timeoutId: any
+
+    const applyCostPrefill = (params: URLSearchParams) => {
+      const subtab = params.get('subtab')
+      if (subtab !== 'handover_costs') return
+
+      const costTypeId = params.get('cost_type_id') || ''
+
+      // Find the cost type to get the category
+      const costType = HANDOVER_COST_TYPES.find(type => type.id === costTypeId)
+
+      console.log('🔍 HandoverFinancialSection applyCostPrefill:', {
+        subtab,
+        costTypeId,
+        costType,
+        amount: params.get('amount_kes'),
+        notes: params.get('notes')
+      })
+
+      const sig = JSON.stringify({
+        type: 'cost',
+        cost_type_id: costTypeId,
+        cost_category: costType?.category || '',
+        amount_kes: params.get('amount_kes') || '',
+        payment_date: params.get('payment_date') || new Date().toISOString().slice(0, 10),
+        notes: params.get('notes') || ''
+      })
+      if (lastAppliedPrefillRef.current === sig) return
+
+      // Ensure the Costs section is expanded and form visible
+      setCollapsedSections((prev) => ({ ...prev, costs: false }))
+      setShowAddCost(true)
+      setNewCost((prev) => ({
+        ...prev,
+        cost_type_id: costTypeId,
+        cost_category: costType?.category || ('' as HandoverCostCategory),
+        amount_kes: params.get('amount_kes') || '',
+        payment_date: params.get('payment_date') || new Date().toISOString().slice(0, 10),
+        notes: params.get('notes') || ''
+      }))
+      setPrefillApplied('cost')
+      setPrefillRenderKey(sig) // force inputs to re-render with new values
+      // Smooth scroll into view after the DOM updates
+      setTimeout(() => {
+        try {
+          document.getElementById(`handover-costs-${propertyId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        } catch {}
+      }, 50)
+      lastAppliedPrefillRef.current = sig
+    }
+
+    const applyPaymentPrefill = (params: URLSearchParams) => {
+      const subtab = params.get('subtab')
+      if (subtab !== 'payments') return
+
+      const sig = JSON.stringify({
+        type: 'payment',
+        amount_kes: params.get('payment_amount_kes') || params.get('amount_kes') || '',
+        payment_date: params.get('payment_date') || new Date().toISOString().slice(0, 10),
+        notes: params.get('payment_notes') || params.get('notes') || ''
+      })
+      if (lastAppliedPrefillRef.current === sig) return
+
+      setShowAddReceipt(true)
+      setNewReceipt((prev) => ({
+        ...prev,
+        amount_kes: params.get('payment_amount_kes') || params.get('amount_kes') || '',
+        payment_date: params.get('payment_date') || new Date().toISOString().slice(0, 10),
+        notes: params.get('payment_notes') || params.get('notes') || ''
+      }))
+      setPrefillApplied('payment')
+      lastAppliedPrefillRef.current = sig
+    }
+
+    // Apply prefill from current URL on mount (handles race when component mounts after event)
+    try {
+      const url = new URL(window.location.href)
+      const currentParams = url.searchParams
+      const subtab = currentParams.get('subtab')
+      if (subtab === 'handover_costs') {
+        applyCostPrefill(currentParams)
+      } else if (subtab === 'payments') {
+        applyPaymentPrefill(currentParams)
+      }
+    } catch {}
+
+    const navHandler = (event: Event) => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        const e = event as CustomEvent<any>
+        const detail = e.detail || {}
+
+        console.log('🔍 HandoverFinancialSection navHandler received:', {
+          tabName: detail?.tabName,
+          propertyId: detail?.propertyId,
+          subtab: detail?.subtab,
+          costTypeId: detail?.costTypeId,
+          amount: detail?.amount,
+          description: detail?.description,
+          matchesProperty: detail?.propertyId === propertyId
+        })
+
+        if (detail?.tabName === 'financial' && detail?.propertyId === propertyId) {
+          const params = new URLSearchParams()
+          if (detail?.subtab === 'handover_costs') {
+            if (detail.costTypeId) params.set('cost_type_id', detail.costTypeId)
+            if (typeof detail.amount === 'number') params.set('amount_kes', String(detail.amount))
+            if (detail.date) params.set('payment_date', detail.date)
+            if (detail.description) params.set('notes', detail.description)
+            params.set('subtab', 'handover_costs')
+            applyCostPrefill(params)
+          } else if (detail?.subtab === 'payments') {
+            if (typeof detail.amount === 'number') params.set('payment_amount_kes', String(detail.amount))
+            if (detail.date) params.set('payment_date', detail.date)
+            if (detail.description) params.set('payment_notes', detail.description)
+            params.set('subtab', 'payments')
+            applyPaymentPrefill(params)
+          }
+        }
+      }, 150)
+    }
+
+    window.addEventListener('navigateToFinancial', navHandler as EventListener, { passive: true })
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      window.removeEventListener('navigateToFinancial', navHandler as EventListener)
+    }
+  }, [propertyId])
 
   // Set next receipt number when component loads or data updates
   useEffect(() => {
@@ -115,9 +284,23 @@ export default function HandoverFinancialSection({
       setShowAddCost(false)
       onDataUpdate()
     } catch (error) {
-            alert('Failed to add cost: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      alert('Failed to add cost: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
+      // Success UX: toast + auto-scroll to costs section
+      showToast?.('Cost added successfully', { variant: 'success' } as any)
+      document.getElementById(`handover-costs-${propertyId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      // Clear prefill indicators and remove related URL params
+      lastAppliedPrefillRef.current = null
+      try {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('subtab')
+        url.searchParams.delete('cost_type_id')
+        url.searchParams.delete('amount_kes')
+        url.searchParams.delete('payment_date')
+        url.searchParams.delete('notes')
+        window.history.replaceState({}, '', url.toString())
+      } catch {}
     }
   }
 
@@ -139,7 +322,7 @@ export default function HandoverFinancialSection({
         amount_kes: parseFloat(newReceipt.amount_kes),
         payment_date: newReceipt.payment_date || undefined,
         payment_reference: newReceipt.payment_reference || undefined,
-        payment_method: newReceipt.payment_method || undefined,
+        payment_method: newReceipt.payment_method ? newReceipt.payment_method : undefined,
         notes: newReceipt.notes || undefined,
       })
 
@@ -156,9 +339,22 @@ export default function HandoverFinancialSection({
       setShowAddReceipt(false)
       onDataUpdate()
     } catch (error) {
-            alert('Failed to add receipt: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      alert('Failed to add receipt: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
+      // Success UX: toast + auto-scroll to deposits section
+      showToast?.('Payment recorded successfully', { variant: 'success' } as any)
+      document.getElementById(`handover-deposits-${propertyId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      // Clear prefill params for payments
+      try {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('subtab')
+        url.searchParams.delete('payment_amount_kes')
+        url.searchParams.delete('payment_date')
+        url.searchParams.delete('payment_notes')
+        window.history.replaceState({}, '', url.toString())
+      } catch {}
+      lastAppliedPrefillRef.current = null
     }
   }
 
@@ -486,7 +682,7 @@ export default function HandoverFinancialSection({
           <div className="mt-4">
             {/* Add Receipt Form */}
             {showAddReceipt && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 mb-4">
+              <div className={`bg-gray-50 border rounded-lg p-4 mt-4 mb-4 ${prefillApplied === 'payment' ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200'}`}>
                 <h5 className="font-medium text-gray-900 mb-3">Add Deposit/Installment Payment</h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -672,8 +868,15 @@ export default function HandoverFinancialSection({
           <div className="mt-4">
             {/* Add Cost Form */}
             {showAddCost && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 mb-4">
-                <h5 className="font-medium text-gray-900 mb-3">Add New Cost</h5>
+              <div className={`border rounded-lg p-4 mt-4 mb-4 ${prefillApplied === 'cost' ? 'border-emerald-300 bg-emerald-50' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <h5 className="font-medium text-gray-900">Add New Cost</h5>
+                  {prefillApplied === 'cost' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-300 rounded">
+                      Prefilled from Make Payment
+                    </span>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -827,31 +1030,7 @@ export default function HandoverFinancialSection({
         )}
       </div>
 
-      {/* Debug Information */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <details>
-          <summary className="text-sm font-medium text-gray-700 cursor-pointer">
-            Debug Information
-          </summary>
-          <div className="mt-2 text-xs text-gray-600">
-            <div>
-              <strong>Property ID:</strong> {propertyId}
-            </div>
-            <div>
-              <strong>Data Loaded:</strong> {financialSummary ? 'Yes' : 'No'}
-            </div>
-            <div>
-              <strong>Cost Entries:</strong> {cost_entries?.length || 0}
-            </div>
-            <div>
-              <strong>Payment Receipts:</strong> {payment_receipts?.length || 0}
-            </div>
-            <div>
-              <strong>Last Updated:</strong> {new Date().toLocaleString()}
-            </div>
-          </div>
-        </details>
-      </div>
+
     </div>
   )
 }

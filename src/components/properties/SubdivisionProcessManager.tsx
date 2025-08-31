@@ -9,6 +9,7 @@ import { Button, TextField, FormField } from '../ui'
 import Modal from '../ui/Modal'
 
 import ViewOnGoogleMapsButton from '../location/ViewOnGoogleMapsButton'
+import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './components/PropertyCard'
 import PropertySearch from './components/PropertySearch'
 import InlinePropertyView from './components/InlinePropertyView'
 import SubdivisionPlanConfirmationModal from './SubdivisionPlanConfirmationModal'
@@ -1109,65 +1110,71 @@ export default function SubdivisionProcessManager({
               ) : (
                 <div className="grid gap-6">
                   {filteredProperties.map((property) => (
-                    <div
+                    <PropertyCard
                       key={property.id}
-                      className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                      lifecycle={property.lifecycle_status}
+                      interactive={true}
+                      theme="subdivision"
+                      aria-label={`Subdivision property: ${property.name}`}
                     >
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mb-4">
-                        <div className="md:col-span-2">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{property.name}</h3>
-                            <span className="text-lg">🏗️</span>
-                            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                              Subdivision Process
-                            </span>
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
+                      <PropertyCardHeader>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                          <div className="md:col-span-2">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">{property.name}</h3>
+                              <span className="text-lg">🏗️</span>
+                              <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                                Subdivision Process
+                              </span>
+                              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
                               Sub-Division Started
                             </span>
+                            </div>
+                            <p className="text-gray-600 mb-2">{property.physical_address}</p>
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                              <span>
+                                Type: {property.property_type?.replace('_', ' ') || 'Unknown'}
+                              </span>
+                              {property.total_area_acres && (
+                                <span>Area: {property.total_area_acres} acres</span>
+                              )}
+                              {property.expected_rental_income_kes && (
+                                <span>
+                                  Expected Rent: KES{' '}
+                                  {property.expected_rental_income_kes.toLocaleString()}/month
+                                </span>
+                              )}
+                              {property.purchase_completion_date && (
+                                <span>
+                                  Purchased:{' '}
+                                  {new Date(property.purchase_completion_date).toLocaleDateString()}
+                                </span>
+                              )}
+                              {property.subdivision_date && (
+                                <span>
+                                  Subdivided:{' '}
+                                  {new Date(property.subdivision_date).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-gray-600 mb-2">{property.physical_address}</p>
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                            <span>
-                              Type: {property.property_type?.replace('_', ' ') || 'Unknown'}
-                            </span>
-                            {property.total_area_acres && (
-                              <span>Area: {property.total_area_acres} acres</span>
-                            )}
-                            {property.expected_rental_income_kes && (
-                              <span>
-                                Expected Rent: KES{' '}
-                                {property.expected_rental_income_kes.toLocaleString()}/month
-                              </span>
-                            )}
-                            {property.purchase_completion_date && (
-                              <span>
-                                Purchased:{' '}
-                                {new Date(property.purchase_completion_date).toLocaleDateString()}
-                              </span>
-                            )}
-                            {property.subdivision_date && (
-                              <span>
-                                Subdivided:{' '}
-                                {new Date(property.subdivision_date).toLocaleDateString()}
-                              </span>
-                            )}
+
+                          <div className="flex justify-end">
+                            <ViewOnGoogleMapsButton
+                              lat={property.lat ?? null}
+                              lng={property.lng ?? null}
+                              address={property.physical_address ?? property.name}
+                              propertyName={property.name}
+                              debug={process.env.NODE_ENV === 'development'}
+                              debugContext={`Subdivision Manager - ${property.name}`}
+                            />
                           </div>
                         </div>
+                      </PropertyCardHeader>
 
-                        <div className="flex justify-end">
-                          <ViewOnGoogleMapsButton
-                            lat={property.lat ?? null}
-                            lng={property.lng ?? null}
-                            address={property.physical_address ?? property.name}
-                            propertyName={property.name}
-                            debug={process.env.NODE_ENV === 'development'}
-                            debugContext={`Subdivision Manager - ${property.name}`}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-2 items-center justify-between">
+                      <PropertyCardFooter>
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-2 items-center justify-between">
                         <div className="flex space-x-2">
                           <Button
                             variant="secondary"
@@ -1242,7 +1249,8 @@ export default function SubdivisionProcessManager({
                             📋 View History
                           </Button>
                         </div>
-                      </div>
+                        </div>
+                      </PropertyCardFooter>
 
                       {/* Inline Property View */}
                       {viewingPropertyId === property.id && (
@@ -1253,7 +1261,7 @@ export default function SubdivisionProcessManager({
                           />
                         </div>
                       )}
-                    </div>
+                    </PropertyCard>
                   ))}
                 </div>
               )}
@@ -1372,7 +1380,7 @@ export default function SubdivisionProcessManager({
                             </h4>
                             <p className="text-sm text-blue-700 mb-2">
                               {subdivisionPlots.length} plots have been automatically created for
-                              this subdivision. Click "✏️ Edit Plot" on any plot to add size, value,
+                              this subdivision. Click &quot;✏️ Edit Plot&quot; on any plot to add size, value,
                               and other details.
                             </p>
                             <p className="text-xs text-blue-600">
@@ -1386,82 +1394,92 @@ export default function SubdivisionProcessManager({
 
                   <div className="grid gap-4">
                     {subdivisionPlots.map((plot) => (
-                      <div key={plot.id} className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h4 className="font-semibold text-gray-900">
-                                Plot {plot.plot_number}
-                              </h4>
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(plot.plot_status)}`}
-                              >
-                                {plot.plot_status.replace('_', ' ')}
-                              </span>
-                              {plot.plot_status === 'PLANNED' && (
-                                <span className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-full">
-                                  ✏️ Editable
+                      <PropertyCard
+                        key={plot.id}
+                        status={plot.plot_status}
+                        interactive={true}
+                        theme="subdivision"
+                        aria-label={`Plot ${plot.plot_number}`}
+                      >
+                        <PropertyCardHeader>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h4 className="font-semibold text-gray-900">
+                                  Plot {plot.plot_number}
+                                </h4>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(plot.plot_status)}`}
+                                >
+                                  {plot.plot_status.replace('_', ' ')}
                                 </span>
+                                {plot.plot_status === 'PLANNED' && (
+                                  <span className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-full">
+                                    ✏️ Editable
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-gray-600 mb-1">
+                                {plot.plot_size_sqm ? plot.plot_size_sqm.toLocaleString() : '0'} sqm (
+                                {plot.plot_size_acres ? plot.plot_size_acres.toFixed(4) : '0.0000'}{' '}
+                                acres)
+                              </p>
+                              {plot.estimated_value_kes && (
+                                <p className="text-sm text-gray-500 mb-1">
+                                  Estimated Value: KES {plot.estimated_value_kes.toLocaleString()}
+                                </p>
+                              )}
+                              {plot.plot_notes && (
+                                <p className="text-xs text-gray-400 italic">
+                                  Notes: {plot.plot_notes}
+                                </p>
                               )}
                             </div>
-                            <p className="text-gray-600 mb-1">
-                              {plot.plot_size_sqm ? plot.plot_size_sqm.toLocaleString() : '0'} sqm (
-                              {plot.plot_size_acres ? plot.plot_size_acres.toFixed(4) : '0.0000'}{' '}
-                              acres)
-                            </p>
-                            {plot.estimated_value_kes && (
-                              <p className="text-sm text-gray-500 mb-1">
-                                Estimated Value: KES {plot.estimated_value_kes.toLocaleString()}
-                              </p>
+                          </div>
+                        </PropertyCardHeader>
+
+                        <PropertyCardFooter>
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2 justify-end">
+                            {plot.plot_status === 'PLANNED' && (
+                              <>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => startEditPlot(plot)}
+                                >
+                                  ✏️ Edit Plot
+                                </Button>
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => createPropertyFromPlot(plot)}
+                                >
+                                  🏠 Create Property
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => permanentlyDeletePlot(plot)}
+                                  className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 hover:bg-red-50"
+                                >
+                                  🗑️ Delete Plot
+                                </Button>
+                              </>
                             )}
-                            {plot.plot_notes && (
-                              <p className="text-xs text-gray-400 italic">
-                                Notes: {plot.plot_notes}
-                              </p>
+                            {plot.plot_status === 'PROPERTY_CREATED' && (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => revertPropertyToPlot(plot)}
+                                className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
+                              >
+                                ↩️ Revert to Subdivision
+                              </Button>
                             )}
                           </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-2 justify-end">
-                          {plot.plot_status === 'PLANNED' && (
-                            <>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => startEditPlot(plot)}
-                              >
-                                ✏️ Edit Plot
-                              </Button>
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => createPropertyFromPlot(plot)}
-                              >
-                                🏠 Create Property
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => permanentlyDeletePlot(plot)}
-                                className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 hover:bg-red-50"
-                              >
-                                🗑️ Delete Plot
-                              </Button>
-                            </>
-                          )}
-                          {plot.plot_status === 'PROPERTY_CREATED' && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => revertPropertyToPlot(plot)}
-                              className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
-                            >
-                              ↩️ Revert to Subdivision
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+                        </PropertyCardFooter>
+                      </PropertyCard>
                     ))}
                   </div>
                 </>

@@ -1,14 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import PurchasePipelineManager from './PurchasePipelineManager'
 import SubdivisionProcessManager from './SubdivisionProcessManager'
 import WorkflowNavigation from './components/WorkflowNavigation'
 import PropertiesTab from './components/PropertiesTab'
 import HandoverPipelineManager from './components/HandoverPipelineManager'
-// Audit moved to standalone dashboard route
-// import AuditTrailDashboard from './components/AuditTrailDashboard'
+
 
 import { RoleManagementService } from '../../lib/auth/role-management.service'
 
@@ -41,8 +40,14 @@ export default function PropertyManagementTabs({
   // User role for security features
   const [userRole, setUserRole] = useState<string>('property_manager')
 
+  // Guard against StrictMode double-invocation
+  const didInitialize = useRef(false)
+
   // Load properties and user role on component mount
   useEffect(() => {
+    if (didInitialize.current) return
+    didInitialize.current = true
+
     loadProperties()
     loadUserRole()
   }, [])
@@ -52,7 +57,17 @@ export default function PropertyManagementTabs({
       const role = await RoleManagementService.getCurrentUserRole()
       setUserRole(role)
     } catch (error) {
-            setUserRole('viewer')     }
+      console.error('Error loading user role:', error)
+
+      // Check if it's a server error
+      if (error instanceof Error && error.message.includes('Server error:')) {
+        console.warn('Server error detected, showing limited access mode')
+        // Could show a toast notification here
+        setUserRole('viewer') // Limited access mode
+      } else {
+        setUserRole('property_manager') // Default fallback
+      }
+    }
   }
 
   const loadProperties = async () => {
