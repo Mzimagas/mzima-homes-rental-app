@@ -3,14 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
-import HandoverFinancialSection from './HandoverFinancialSection'
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import { HandoverItem } from '../types/property-management.types'
 import { initializeHandoverPipelineStages } from '../utils/property-management.utils'
-import {
-  HandoverFinancialsService,
-  HandoverFinancialSummary,
-} from '../services/handover-financials.service'
+
 import { useTabState, TabNavigation, TabContent, HANDOVER_TABS, useTabNavigation } from '../utils/tab-utils'
 
 import HandoverDocumentsV2 from './HandoverDocumentsV2'
@@ -42,33 +38,7 @@ export default function InlineHandoverView({
   // Listen for cross-component navigation (e.g., from "Make Payment" buttons)
   useTabNavigation(handover.property_id, setActiveTab)
 
-  const [financialSummary, setFinancialSummary] = useState<HandoverFinancialSummary | null>(null)
-  const [loadingFinancials, setLoadingFinancials] = useState(false)
-  const [financialError, setFinancialError] = useState<string | null>(null)
   const [currentStage, setCurrentStage] = useState<number>(handover.current_stage || 1)
-
-  // Load financial data when component mounts or when switching to financial tab
-  useEffect(() => {
-    if (activeTab === 'financial' && !financialSummary && !loadingFinancials) {
-      loadFinancialData()
-    }
-  }, [activeTab, handover.property_id])
-
-  const loadFinancialData = async () => {
-    setLoadingFinancials(true)
-    setFinancialError(null)
-
-    try {
-      const summary = await HandoverFinancialsService.getHandoverFinancialSummary(
-        handover.property_id
-      )
-      setFinancialSummary(summary)
-    } catch (error) {
-            setFinancialError(error instanceof Error ? error.message : 'Failed to load financial data')
-    } finally {
-      setLoadingFinancials(false)
-    }
-  }
 
   const getHandoverStatusColor = (status: string): string => {
     const colors = {
@@ -218,47 +188,19 @@ export default function InlineHandoverView({
 
         <TabContent activeTab={activeTab} tabId="financial">
           <div className="space-y-6">
-            {loadingFinancials ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-gray-500">Loading financial data...</div>
-              </div>
-            ) : financialError ? (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="text-red-800">
-                  <strong>Error loading financial data:</strong> {financialError}
-                </div>
-                <button
-                  onClick={loadFinancialData}
-                  className="mt-2 px-3 py-1 text-sm bg-red-100 text-red-800 rounded-md hover:bg-red-200"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Use PropertyAcquisitionFinancials for acquisition costs functionality */}
-                <PropertyAcquisitionFinancials
-                  property={{
-                    id: handover.property_id,
-                    name: handover.property_name,
-                    address: handover.property_address,
-                    property_type: handover.property_type,
-                    purchase_price_agreement_kes: handover.negotiated_price_kes || handover.asking_price_kes,
-                    // Add other required PropertyWithLifecycle fields with defaults
-                    created_at: handover.created_at,
-                    updated_at: handover.updated_at,
-                  } as any}
-                  onUpdate={() => loadFinancialData()}
-                />
-
-                {/* Keep HandoverFinancialSection for handover-specific features like payment receipts */}
-                <HandoverFinancialSection
-                  propertyId={handover.property_id}
-                  financialSummary={financialSummary}
-                  onDataUpdate={loadFinancialData}
-                />
-              </div>
-            )}
+            {/* Use PropertyAcquisitionFinancials for acquisition costs functionality */}
+            <PropertyAcquisitionFinancials
+              property={{
+                id: handover.property_id,
+                name: handover.property_name,
+                address: handover.property_address,
+                property_type: handover.property_type,
+                purchase_price_agreement_kes: handover.negotiated_price_kes || handover.asking_price_kes,
+                // Add other required PropertyWithLifecycle fields with defaults
+                created_at: handover.created_at,
+                updated_at: handover.updated_at,
+              } as any}
+            />
           </div>
         </TabContent>
       </div>
