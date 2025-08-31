@@ -543,7 +543,11 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
             {/* Direct Addition Documents V2 - render only when no active handover */}
             {property.property_source === 'DIRECT_ADDITION' && !hasActiveHandover && (
-              <DirectAdditionDocumentsV2 propertyId={property.id} propertyName={property.name} />
+              <DirectAdditionDocumentsV2
+                propertyId={property.id}
+                propertyName={property.name}
+                pipeline={property.subdivision_status === 'SUB_DIVISION_STARTED' ? 'subdivision' : 'direct_addition'}
+              />
             )}
 
             {/* Purchase Pipeline Interface - Only show for purchase pipeline properties */}

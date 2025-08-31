@@ -27,7 +27,7 @@ import FinancialStatusIndicator from './FinancialStatusIndicator'
 interface DirectAdditionDocumentsV2Props {
   propertyId: string
   propertyName: string
-  pipeline?: 'direct_addition' | 'handover'
+  pipeline?: 'direct_addition' | 'handover' | 'subdivision'
 }
 
 interface PropertyDocument {
