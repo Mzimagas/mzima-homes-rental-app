@@ -152,6 +152,8 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
         onClick={() => {
           const today = new Date().toISOString().slice(0, 10)
 
+          console.log('🔍 FinancialStatusIndicator paymentConfig:', paymentConfig)
+
           const navigationParams = {
             propertyId,
             stageNumber,

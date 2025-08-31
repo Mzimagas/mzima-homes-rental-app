@@ -133,6 +133,14 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
 
     const applyPrefillFromParams = (params: URLSearchParams) => {
       const subtab = params.get('subtab')
+      console.log('🔍 PropertyAcquisitionFinancials applyPrefillFromParams:', {
+        subtab,
+        cost_type_id: params.get('cost_type_id'),
+        amount_kes: params.get('amount_kes'),
+        notes: params.get('notes'),
+        allParams: Object.fromEntries(params.entries())
+      })
+
       if (subtab !== 'acquisition_costs') return
 
       // Create a stable signature for this prefill payload to avoid re-applying
@@ -143,7 +151,10 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         payment_date: params.get('payment_date') || new Date().toISOString().slice(0, 10),
         notes: params.get('notes') || ''
       })
-      if (lastAppliedPrefillRef.current === sig) return
+      if (lastAppliedPrefillRef.current === sig) {
+        console.log('🔍 PropertyAcquisitionFinancials skipping duplicate prefill')
+        return
+      }
 
       const cost_type_id = params.get('cost_type_id') || ''
       const amount_kes = params.get('amount_kes') || ''
@@ -206,6 +217,16 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       timeoutId = setTimeout(() => {
         const e = event as CustomEvent<any>
         const detail = e.detail || {}
+        console.log('🔍 PropertyAcquisitionFinancials navHandler received:', {
+          tabName: detail?.tabName,
+          propertyId: detail?.propertyId,
+          subtab: detail?.subtab,
+          costTypeId: detail?.costTypeId,
+          amount: detail?.amount,
+          description: detail?.description,
+          matchesProperty: detail?.propertyId === property.id
+        })
+
         if (detail?.tabName === 'financial' && detail?.propertyId === property.id) {
           const params = new URLSearchParams()
 
@@ -216,6 +237,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
             if (detail.date) params.set('payment_date', detail.date)
             if (detail.description) params.set('notes', detail.description)
             params.set('subtab', 'acquisition_costs')
+            console.log('🔍 PropertyAcquisitionFinancials calling applyPrefillFromParams with:', Object.fromEntries(params.entries()))
             applyPrefillFromParams(params)
           }
 
