@@ -88,11 +88,10 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
 
       // Handle case where payment is undefined
       if (!payment) {
-        // Use pipeline-specific subtab and cost mapping
-        const subtab = pipeline === 'handover' ? 'handover_costs' : 'acquisition_costs'
-        const costTypeId = pipeline === 'handover'
-          ? stageToHandoverCostMapping[stage]
-          : stageToAcquisitionCostMapping[stage]
+        // Use acquisition_costs for all pipelines (handover now uses PropertyAcquisitionFinancials)
+        const subtab = 'acquisition_costs'
+        // Use acquisition cost types for all pipelines
+        const costTypeId = stageToAcquisitionCostMapping[stage]
 
         return {
           subtab,
@@ -114,11 +113,9 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
           paymentType: payment.id === 'down_payment' ? 'deposit' : 'installment',
         }
       } else if (payment.category === 'fee' || payment.category === 'tax') {
-        // Costs (fees, taxes) - navigate to pipeline-specific costs section
-        const subtab = pipeline === 'handover' ? 'handover_costs' : 'acquisition_costs'
-        const costTypeId = pipeline === 'handover'
-          ? stageToHandoverCostMapping[stage]
-          : stageToAcquisitionCostMapping[stage]
+        // Costs (fees, taxes) - navigate to acquisition costs section
+        const subtab = 'acquisition_costs'
+        const costTypeId = stageToAcquisitionCostMapping[stage]
 
         return {
           subtab,
@@ -128,18 +125,16 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
           paymentType: payment.category === 'fee' ? 'fee' : 'tax',
         }
       } else {
-        // Default to pipeline-specific costs
-        const subtab = pipeline === 'handover' ? 'handover_costs' : 'acquisition_costs'
-        const costTypeId = pipeline === 'handover'
-          ? stageToHandoverCostMapping[stage]
-          : stageToAcquisitionCostMapping[stage]
+        // Default to acquisition costs
+        const subtab = 'acquisition_costs'
+        const costTypeId = stageToAcquisitionCostMapping[stage]
 
         return {
           subtab,
           costTypeId,
           amount: payment.amount,
           description: payment.description || `Stage ${stage} payment`,
-          paymentType: pipeline === 'handover' ? 'handover_cost' : 'acquisition_cost',
+          paymentType: 'acquisition_cost',
         }
       }
     }
