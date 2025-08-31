@@ -1,0 +1,46 @@
+[
+  {
+    "id": "8e7197f1-be7a-456a-add8-989c50a5a5ea",
+    "property_id": "bc424057-203c-477e-889d-d81cf0643fa0",
+    "previous_price_kes": 235000,
+    "new_price_kes": 236000,
+    "change_reason": "Negotiation outcome",
+    "changed_by": "16d2d9e9-accb-4a79-bb74-52a734169f12",
+    "changed_at": "2025-08-19T11:08:50.701884+00:00",
+    "created_at": "2025-08-19T11:08:50.701884+00:00",
+    "changed_by_name": null
+  },
+  {
+    "id": "bc8352b6-d1bd-4403-9df1-af2026915073",
+    "property_id": "00c1e975-e554-4f85-92e0-1b3a5cf3a72d",
+    "previous_price_kes": 2500000,
+    "new_price_kes": 2400000,
+    "change_reason": "Test price reduction after negotiation",
+    "changed_by": "16d2d9e9-accb-4a79-bb74-52a734169f12",
+    "changed_at": "2025-08-19T23:38:53.10277+00:00",
+    "created_at": "2025-08-19T23:38:53.10277+00:00",
+    "changed_by_name": null
+  },
+  {
+    "id": "6e3d27ae-726c-4fd6-9783-29b7feae4d0e",
+    "property_id": "00c1e975-e554-4f85-92e0-1b3a5cf3a72d",
+    "previous_price_kes": 900003,
+    "new_price_kes": 3000000,
+    "change_reason": "Market adjustment",
+    "changed_by": "16d2d9e9-accb-4a79-bb74-52a734169f12",
+    "changed_at": "2025-08-19T23:40:10.032182+00:00",
+    "created_at": "2025-08-19T23:40:10.032182+00:00",
+    "changed_by_name": null
+  },
+  {
+    "id": "1aed5dba-4b07-4cf0-b2d6-919a19d47558",
+    "property_id": "1d784c90-aacc-4f80-8532-ba1860bd3a1b",
+    "previous_price_kes": null,
+    "new_price_kes": 900000,
+    "change_reason": "Initial purchase price entry",
+    "changed_by": "16d2d9e9-accb-4a79-bb74-52a734169f12",
+    "changed_at": "2025-08-20T06:37:10.450776+00:00",
+    "created_at": "2025-08-20T06:37:10.450776+00:00",
+    "changed_by_name": null
+  }
+]

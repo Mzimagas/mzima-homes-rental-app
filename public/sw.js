@@ -3,15 +3,14 @@
  * Handles caching, offline functionality, and background sync
  */
 
-const CACHE_VERSION = 'v10' // Simplified - no API caching
+const CACHE_VERSION = 'v11' // Fixed caching issues
 const CACHE_NAME = `mzima-homes-${CACHE_VERSION}`
 const STATIC_CACHE = `mzima-static-${CACHE_VERSION}`
 const DYNAMIC_CACHE = `mzima-dynamic-${CACHE_VERSION}`
 const API_CACHE = `mzima-api-${CACHE_VERSION}`
 
-// Files to cache immediately
+// Files to cache immediately - NO HTML PAGES
 const STATIC_FILES = [
-  '/',
   '/offline',
   '/manifest.json',
   '/icons/icon-192x192.png',
@@ -154,14 +153,16 @@ async function handleNavigationRequest(request) {
   const cache = await caches.open(DYNAMIC_CACHE)
 
   try {
-    const netResp = await fetch(request)
+    // Always fetch fresh HTML with no-cache to prevent stale content
+    const netResp = await fetch(request, { cache: 'no-store' })
     // Clone BEFORE any body usage to prevent "already used" error
     const clone = netResp.clone()
-    // Don't block the response
+    // Cache for offline fallback only
     cache.put(request, clone).catch((err) => console.log('Cache put failed:', err))
     return netResp
   } catch (err) {
-    const cached = await cache.match(request, { ignoreSearch: true })
+    // REMOVED ignoreSearch: true to prevent URL collapsing
+    const cached = await cache.match(request)
     if (cached) return cached
     throw err
   }
@@ -172,10 +173,11 @@ async function handlePageRequest(request) {
   const cache = await caches.open(DYNAMIC_CACHE)
 
   try {
-    const netResp = await fetch(request)
+    // Always fetch fresh content with no-cache to prevent stale content
+    const netResp = await fetch(request, { cache: 'no-store' })
     // Clone BEFORE any body usage to prevent "already used" error
     const clone = netResp.clone()
-    // Don't block the response
+    // Cache for offline fallback only
     cache.put(request, clone).catch((err) => console.log('Cache put failed:', err))
     return netResp
   } catch (error) {

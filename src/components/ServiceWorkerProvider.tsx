@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { registerServiceWorker } from '../lib/serviceWorker'
 
 interface ServiceWorkerProviderProps {
   children: React.ReactNode
@@ -12,42 +11,9 @@ export default function ServiceWorkerProvider({ children }: ServiceWorkerProvide
   const [showUpdateNotification, setShowUpdateNotification] = useState(false)
 
   useEffect(() => {
-    // Register service worker on mount
-    const initServiceWorker = async () => {
-      try {
-        const registration = await registerServiceWorker()
-
-        if (registration) {
-          setIsRegistered(true)
-
-          if (process.env.NODE_ENV !== 'production') {
-            console.log('Service Worker registered successfully')
-          }
-
-          // Listen for updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  setShowUpdateNotification(true)
-
-                  // Dispatch custom event for other components
-                  window.dispatchEvent(new CustomEvent('sw-update-available'))
-                }
-              })
-            }
-          })
-        }
-      } catch (error) {
-        console.error('Service Worker registration failed:', error)
-      }
-    }
-
-    // Only register in browser environment
-    if (typeof window !== 'undefined') {
-      initServiceWorker()
-    }
+    // EMERGENCY: Completely disable service worker to fix endless loop
+    console.log('Service Worker completely disabled to fix endless loop issue')
+    // Early return - no service worker logic
   }, [])
 
   // Preload critical components when service worker is registered

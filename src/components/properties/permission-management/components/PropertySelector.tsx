@@ -160,7 +160,7 @@ export default function PropertySelector({
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Properties undergoing subdivision process
+                  Properties undergoing subdivision pipeline
                 </p>
               </button>
 
@@ -318,7 +318,7 @@ export default function PropertySelector({
                 {selectedProperty === 'purchase_pipeline'
                   ? `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in purchase pipeline`
                   : selectedProperty === 'subdivision'
-                    ? `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in subdivision process`
+                    ? `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in subdivision pipeline`
                     : selectedProperty === 'handover'
                       ? `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} in handover stages`
                       : `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'} available for permission assignment`}

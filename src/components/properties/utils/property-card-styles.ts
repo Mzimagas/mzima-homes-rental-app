@@ -61,14 +61,14 @@ export const PROPERTY_CARD_THEMES = {
     hover: "hover:border-gray-300"
   },
   'direct-addition': {
-    background: "bg-green-25",
-    border: "border-green-200",
-    hover: "hover:border-green-300"
-  },
-  'purchase-pipeline': {
     background: "bg-blue-25",
     border: "border-blue-200",
     hover: "hover:border-blue-300"
+  },
+  'purchase-pipeline': {
+    background: "bg-green-25",
+    border: "border-green-200",
+    hover: "hover:border-green-300"
   },
   subdivision: {
     background: "bg-orange-25",

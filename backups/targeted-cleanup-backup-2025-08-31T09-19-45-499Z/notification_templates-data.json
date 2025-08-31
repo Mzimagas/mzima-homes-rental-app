@@ -1,0 +1,49 @@
+[
+  {
+    "id": "8b1579bb-70ac-465f-afe9-93490e505ead",
+    "landlord_id": null,
+    "name": "Default Rent Due Email",
+    "type": "rent_due",
+    "channel": "email",
+    "subject": "Rent Payment Reminder - {{property_name}} {{unit_label}}",
+    "message": "Dear {{tenant_name}},\n\nThis is a friendly reminder that your rent payment for {{property_name}}, Unit {{unit_label}} is due on {{due_date}}.\n\nAmount Due: KES {{amount_due}}\nPayment Methods:\n- M-Pesa: {{mpesa_number}}\n- Bank Transfer: {{bank_details}}\n\nPlease ensure payment is made by the due date to avoid late fees.\n\nThank you,\n{{landlord_name}}",
+    "variables": [
+      "tenant_name",
+      "property_name",
+      "unit_label",
+      "due_date",
+      "amount_due",
+      "mpesa_number",
+      "bank_details",
+      "landlord_name"
+    ],
+    "is_default": true,
+    "created_at": "2025-07-23T01:20:53.760264+00:00",
+    "updated_at": "2025-07-23T01:20:53.760264+00:00"
+  },
+  {
+    "id": "48573e3e-6667-4ae1-b590-2e7eccdb3cbe",
+    "landlord_id": null,
+    "name": "Default Payment Overdue Email",
+    "type": "payment_overdue",
+    "channel": "email",
+    "subject": "URGENT: Overdue Payment - {{property_name}} {{unit_label}}",
+    "message": "Dear {{tenant_name}},\n\nYour rent payment for {{property_name}}, Unit {{unit_label}} is now {{days_overdue}} days overdue.\n\nOriginal Due Date: {{due_date}}\nAmount Due: KES {{amount_due}}\nLate Fee: KES {{late_fee}}\nTotal Amount: KES {{total_amount}}\n\nPlease make payment immediately to avoid further action.\n\nPayment Methods:\n- M-Pesa: {{mpesa_number}}\n- Bank Transfer: {{bank_details}}\n\nContact us immediately if you need to discuss payment arrangements.\n\n{{landlord_name}}",
+    "variables": [
+      "tenant_name",
+      "property_name",
+      "unit_label",
+      "days_overdue",
+      "due_date",
+      "amount_due",
+      "late_fee",
+      "total_amount",
+      "mpesa_number",
+      "bank_details",
+      "landlord_name"
+    ],
+    "is_default": true,
+    "created_at": "2025-07-23T01:20:53.760264+00:00",
+    "updated_at": "2025-07-23T01:20:53.760264+00:00"
+  }
+]

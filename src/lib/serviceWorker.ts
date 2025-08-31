@@ -40,6 +40,12 @@ class ServiceWorkerManager {
       return null
     }
 
+    // Skip service worker in development to prevent caching issues
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Service Worker disabled in development mode to prevent caching conflicts')
+      return null
+    }
+
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',

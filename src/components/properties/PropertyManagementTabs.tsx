@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import PurchasePipelineManager from './PurchasePipelineManager'
-import SubdivisionProcessManager from './SubdivisionProcessManager'
+import SubdivisionPipelineManager from './SubdivisionPipelineManager'
 import WorkflowNavigation from './components/WorkflowNavigation'
 import PropertiesTab from './components/PropertiesTab'
 import HandoverPipelineManager from './components/HandoverPipelineManager'
@@ -179,7 +179,8 @@ export default function PropertyManagementTabs({
         )}
 
         {activeTab === 'subdivision' && (
-          <SubdivisionProcessManager
+          <SubdivisionPipelineManager
+            properties={properties}
             onPropertyCreated={handlePropertyCreated}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}

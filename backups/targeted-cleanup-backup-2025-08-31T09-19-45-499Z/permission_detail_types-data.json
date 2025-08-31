@@ -1,0 +1,30 @@
+[
+  {
+    "id": "basic_info",
+    "name": "Basic Information",
+    "description": "Property basic details and metadata",
+    "icon": "ℹ️",
+    "sort_order": 1
+  },
+  {
+    "id": "location",
+    "name": "Location Details",
+    "description": "Property location and geographic information",
+    "icon": "📍",
+    "sort_order": 2
+  },
+  {
+    "id": "documents",
+    "name": "Documents",
+    "description": "Property documents and file management",
+    "icon": "📄",
+    "sort_order": 3
+  },
+  {
+    "id": "financial",
+    "name": "Financial Information",
+    "description": "Property financial data and transactions",
+    "icon": "💰",
+    "sort_order": 4
+  }
+]

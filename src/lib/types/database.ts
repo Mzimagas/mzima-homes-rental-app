@@ -3,16 +3,15 @@
 
 export interface Payment {
   id: string
-  tenant_id?: string | null
+  tenant_id: string
   unit_id?: string | null
-  property_id?: string | null
   amount_kes: number
-  method?: string | null
+  payment_method: string
   payment_date: string
-  created_at?: string
-  // Common optional fields referenced in UI
-  tx_ref?: string | null
+  transaction_reference?: string | null
   notes?: string | null
+  created_at?: string
+  created_by?: string | null
 }
 
 export interface Unit {

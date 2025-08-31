@@ -70,15 +70,20 @@ async function fetchDashboardBatch(supabase: any, options: DashboardBatchRequest
           `
           id,
           name,
-          address,
+          physical_address,
           property_type,
-          total_units,
-          status,
           created_at,
-          tenants:tenants(
+          units(
             id,
-            status,
-            monthly_rent
+            unit_label,
+            tenancy_agreements(
+              id,
+              tenants(
+                id,
+                full_name,
+                status
+              )
+            )
           )
         `
         )
@@ -92,39 +97,42 @@ async function fetchDashboardBatch(supabase: any, options: DashboardBatchRequest
         id,
         full_name,
         email,
+        phone,
         status,
-        monthly_rent,
-        lease_start_date,
-        lease_end_date,
-        property_id,
-        unit_number
+        created_at,
+        tenancy_agreements(
+          id,
+          monthly_rent_kes,
+          start_date,
+          end_date,
+          status
+        )
       `)
 
     if (filters.tenant_status) {
       tenantQuery = tenantQuery.eq('status', filters.tenant_status)
     }
 
-    if (filters.property_ids && filters.property_ids.length > 0) {
-      tenantQuery = tenantQuery.in('property_id', filters.property_ids)
-    }
-
     queryMap.tenants = queries.length
     queries.push(tenantQuery.then((result: any) => ({ type: 'tenants', ...result })))
   }
 
-  // Payments query
+  // Payments query (using new rental_payments table)
   if (include.includes('payments') || include.includes('stats') || include.includes('alerts')) {
-    let paymentQuery = supabase.from('payments').select(`
+    let paymentQuery = supabase.from('rental_payments').select(`
         id,
-        amount,
+        amount_kes,
         payment_date,
-        due_date,
-        status,
         payment_method,
-        payment_type,
+        transaction_reference,
         tenant_id,
-        property_id,
-        late_fee
+        unit_id,
+        notes,
+        created_at,
+        tenants(
+          id,
+          full_name
+        )
       `)
 
     // Default to last 90 days if no time range specified
@@ -133,14 +141,6 @@ async function fetchDashboardBatch(supabase: any, options: DashboardBatchRequest
     const endDate = timeRange.end || new Date().toISOString()
 
     paymentQuery = paymentQuery.gte('payment_date', startDate).lte('payment_date', endDate)
-
-    if (filters.payment_status) {
-      paymentQuery = paymentQuery.eq('status', filters.payment_status)
-    }
-
-    if (filters.property_ids && filters.property_ids.length > 0) {
-      paymentQuery = paymentQuery.in('property_id', filters.property_ids)
-    }
 
     queryMap.payments = queries.length
     queries.push(paymentQuery.then((result: any) => ({ type: 'payments', ...result })))
@@ -198,11 +198,17 @@ function calculateDashboardStats(properties: any[], tenants: any[], payments: an
   const vacantUnits = totalUnits - occupiedUnits
   const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0
 
-  // Rent stats
-  const monthlyRentPotential = tenants.reduce((sum, t) => sum + (t.monthly_rent || 0), 0)
-  const monthlyRentActual = activeTenants.reduce((sum, t) => sum + (t.monthly_rent || 0), 0)
+  // Rent stats - get from tenancy agreements
+  const monthlyRentPotential = tenants.reduce((sum, t) => {
+    const activeAgreement = t.tenancy_agreements?.find((a: any) => a.status === 'active')
+    return sum + (activeAgreement?.monthly_rent_kes || 0)
+  }, 0)
+  const monthlyRentActual = activeTenants.reduce((sum, t) => {
+    const activeAgreement = t.tenancy_agreements?.find((a: any) => a.status === 'active')
+    return sum + (activeAgreement?.monthly_rent_kes || 0)
+  }, 0)
 
-  // Payment stats
+  // Payment stats - using new rental_payments structure
   const thisMonth = new Date()
   const thisMonthPayments = payments.filter((p) => {
     const paymentDate = new Date(p.payment_date)
@@ -212,15 +218,14 @@ function calculateDashboardStats(properties: any[], tenants: any[], payments: an
     )
   })
 
-  const paidPayments = payments.filter((p) => p.status === 'paid')
-  const overduePayments = payments.filter((p) => p.status === 'overdue')
-  const pendingPayments = payments.filter((p) => p.status === 'pending')
+  // All payments in rental_payments are considered 'paid' since they're completed transactions
+  const paidPayments = payments // All payments are completed
+  const overduePayments: any[] = [] // No overdue concept in rental_payments
+  const pendingPayments: any[] = [] // No pending concept in rental_payments
 
-  const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
-  const thisMonthRevenue = thisMonthPayments
-    .filter((p) => p.status === 'paid')
-    .reduce((sum, p) => sum + (p.amount || 0), 0)
-  const overdueAmount = overduePayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+  const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount_kes || 0), 0)
+  const thisMonthRevenue = thisMonthPayments.reduce((sum, p) => sum + (p.amount_kes || 0), 0)
+  const overdueAmount = 0 // No overdue concept in rental_payments
 
   return {
     properties: {
@@ -256,24 +261,14 @@ function generateDashboardAlerts(properties: any[], tenants: any[], payments: an
   const alerts = []
   const now = new Date()
 
-  // Overdue payments alert
-  const overduePayments = payments.filter((p) => p.status === 'overdue')
-  if (overduePayments.length > 0) {
-    alerts.push({
-      type: 'overdue_payments',
-      severity: 'high',
-      title: `${overduePayments.length} Overdue Payments`,
-      description: `Total overdue amount: $${overduePayments.reduce((sum, p) => sum + (p.amount || 0), 0).toLocaleString()}`,
-      count: overduePayments.length,
-      action: 'View Overdue Payments',
-    })
-  }
+  // Note: No overdue payments alert since rental_payments only contains completed payments
 
-  // Lease expiration alerts
+  // Lease expiration alerts - check tenancy agreements
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
   const expiringLeases = tenants.filter((t) => {
-    if (!t.lease_end_date) return false
-    const endDate = new Date(t.lease_end_date)
+    const activeAgreement = t.tenancy_agreements?.find((a: any) => a.status === 'active')
+    if (!activeAgreement?.end_date) return false
+    const endDate = new Date(activeAgreement.end_date)
     return endDate <= thirtyDaysFromNow && endDate >= now
   })
 

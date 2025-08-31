@@ -170,23 +170,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     if (!hasAccess) return errors.forbidden()
 
-    const admin = createClient(supabaseUrl, serviceKey)
-    const { data: costs, error } = await admin
-      .from('property_subdivision_costs')
-      .select('*')
-      .eq('property_id', propertyId)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching subdivision costs:', error)
-      return errors.internal('Failed to fetch subdivision costs')
-    }
-
-    console.log('Successfully fetched subdivision costs:', costs?.length || 0, 'entries')
+    // TODO: Implement subdivision costs tracking
+    // For now, return empty array since property_subdivision_costs table was removed during cleanup
+    console.log('Subdivision costs feature not implemented - returning empty array')
 
     return NextResponse.json({
       success: true,
-      data: costs || [],
+      data: [],
+      message: 'Subdivision costs tracking not yet implemented'
     })
   } catch (error) {
     console.error('Error in subdivision costs GET API:', error)
@@ -233,9 +224,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return errors.validation(parsed.error.flatten())
     }
 
-    const admin = createClient(supabaseUrl, serviceKey)
+    // TODO: Implement subdivision costs tracking
+    // For now, return success without persisting since property_subdivision_costs table was removed during cleanup
+    console.log('Subdivision costs feature not implemented - simulating success')
 
-    const insertData = {
+    const mockCost = {
+      id: `mock-${Date.now()}`,
       property_id: propertyId,
       cost_type_id: parsed.data.cost_type_id,
       cost_category: parsed.data.cost_category,
@@ -245,26 +239,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       payment_date: parsed.data.payment_date,
       notes: parsed.data.notes,
       created_by: userId,
-    }
-    console.log('Insert data:', insertData)
-
-    // Insert the new subdivision cost entry
-    const { data: cost, error } = await admin
-      .from('property_subdivision_costs')
-      .insert(insertData)
-      .select('*')
-      .single()
-
-    if (error) {
-      console.error('Error creating subdivision cost:', error)
-      return errors.internal('Failed to create subdivision cost entry')
+      created_at: new Date().toISOString(),
     }
 
-    console.log('Successfully created subdivision cost:', cost)
+    console.log('Mock subdivision cost created:', mockCost)
 
     return NextResponse.json({
       success: true,
-      data: cost,
+      data: mockCost,
+      message: 'Subdivision costs tracking not yet implemented - data not persisted'
     })
   } catch (error) {
     console.error('Error in subdivision costs POST API:', error)

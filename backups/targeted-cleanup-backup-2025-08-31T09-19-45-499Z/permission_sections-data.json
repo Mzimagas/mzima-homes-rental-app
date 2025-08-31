@@ -1,0 +1,72 @@
+[
+  {
+    "id": "direct_addition",
+    "name": "Direct Addition",
+    "description": "Add properties directly to the system",
+    "icon": "🏠",
+    "sort_order": 1,
+    "is_active": true,
+    "available_details": [
+      "basic_info",
+      "location",
+      "documents",
+      "financial"
+    ],
+    "created_at": "2025-08-23T04:15:15.086264+00:00"
+  },
+  {
+    "id": "purchase_pipeline",
+    "name": "Purchase Pipeline",
+    "description": "Manage property acquisition process",
+    "icon": "🏢",
+    "sort_order": 2,
+    "is_active": true,
+    "available_details": [
+      "basic_info",
+      "location",
+      "documents",
+      "financial"
+    ],
+    "created_at": "2025-08-23T04:15:15.086264+00:00"
+  },
+  {
+    "id": "subdivision_process",
+    "name": "Subdivision Process",
+    "description": "Handle property subdivision workflows",
+    "icon": "🏗️",
+    "sort_order": 3,
+    "is_active": true,
+    "available_details": [
+      "basic_info",
+      "location",
+      "documents",
+      "financial"
+    ],
+    "created_at": "2025-08-23T04:15:15.086264+00:00"
+  },
+  {
+    "id": "property_handover",
+    "name": "Property Handover",
+    "description": "Manage property transfer and handover",
+    "icon": "📋",
+    "sort_order": 4,
+    "is_active": true,
+    "available_details": [
+      "basic_info",
+      "location",
+      "documents",
+      "financial"
+    ],
+    "created_at": "2025-08-23T04:15:15.086264+00:00"
+  },
+  {
+    "id": "audit_trail",
+    "name": "Audit Trail",
+    "description": "View system audit logs and changes",
+    "icon": "🔍",
+    "sort_order": 5,
+    "is_active": true,
+    "available_details": [],
+    "created_at": "2025-08-23T04:15:15.086264+00:00"
+  }
+]

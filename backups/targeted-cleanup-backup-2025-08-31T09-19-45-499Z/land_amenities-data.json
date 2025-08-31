@@ -1,0 +1,110 @@
+[
+  {
+    "id": "8675c847-9936-443f-9f0d-ef38c6b588a7",
+    "code": "ELECTRICITY_GRID",
+    "label": "Grid Electricity Available",
+    "category": "UTILITIES"
+  },
+  {
+    "id": "c4fea238-2f14-4437-9e9c-88cc5ed0b001",
+    "code": "WATER_BOREHOLE",
+    "label": "Borehole Water",
+    "category": "UTILITIES"
+  },
+  {
+    "id": "11e33f1c-596c-4b35-8125-6a49f121ff88",
+    "code": "WATER_MUNICIPAL",
+    "label": "Municipal Water",
+    "category": "UTILITIES"
+  },
+  {
+    "id": "e49ada81-8135-4dfc-8aae-ba15064fdbf5",
+    "code": "SEWER_CONNECTION",
+    "label": "Sewer Connection",
+    "category": "UTILITIES"
+  },
+  {
+    "id": "11648402-275d-46f6-bd14-6151b187f525",
+    "code": "INTERNET_FIBER",
+    "label": "Fiber Internet",
+    "category": "UTILITIES"
+  },
+  {
+    "id": "26411b6d-8201-4fe1-bbb7-f390612a4ef9",
+    "code": "MOBILE_COVERAGE",
+    "label": "Mobile Network Coverage",
+    "category": "UTILITIES"
+  },
+  {
+    "id": "6549aaf0-5028-40b6-96f5-24a5ae1ba39a",
+    "code": "TARMAC_ROAD",
+    "label": "Tarmac Road Access",
+    "category": "ACCESS"
+  },
+  {
+    "id": "d8cd1cae-dfcd-43b2-b26c-7502568f6517",
+    "code": "MURRAM_ROAD",
+    "label": "Murram Road Access",
+    "category": "ACCESS"
+  },
+  {
+    "id": "c32d90e6-6013-4d0b-8ea8-0a7efc501344",
+    "code": "PUBLIC_TRANSPORT",
+    "label": "Public Transport Nearby",
+    "category": "ACCESS"
+  },
+  {
+    "id": "0a8c0f32-ab02-496d-bc54-414aefc1fa96",
+    "code": "HIGHWAY_ACCESS",
+    "label": "Highway Access",
+    "category": "ACCESS"
+  },
+  {
+    "id": "93a3d057-55b0-4bca-836d-3294509c61d6",
+    "code": "RIVER_FRONTAGE",
+    "label": "River Frontage",
+    "category": "ENVIRONMENT"
+  },
+  {
+    "id": "3e7d082b-8c53-4838-94c2-83ffc85c61dc",
+    "code": "FOREST_ADJACENT",
+    "label": "Adjacent to Forest",
+    "category": "ENVIRONMENT"
+  },
+  {
+    "id": "d765618e-1432-4a68-9af9-51c55e342a61",
+    "code": "SCENIC_VIEWS",
+    "label": "Scenic Views",
+    "category": "ENVIRONMENT"
+  },
+  {
+    "id": "29fbfa76-d932-4cde-aa34-30a72b971fb8",
+    "code": "QUIET_AREA",
+    "label": "Quiet Residential Area",
+    "category": "ENVIRONMENT"
+  },
+  {
+    "id": "bd024479-b2c9-4f9f-a823-cacbc2f4d7ae",
+    "code": "SUBDIVISION_READY",
+    "label": "Ready for Subdivision",
+    "category": "DEVELOPMENT"
+  },
+  {
+    "id": "4e598209-781f-4063-8e73-829d8a13d681",
+    "code": "BUILDING_APPROVED",
+    "label": "Building Plans Approved",
+    "category": "DEVELOPMENT"
+  },
+  {
+    "id": "aacf9771-4740-4b24-8ce5-a047a91764c5",
+    "code": "COMMERCIAL_ZONED",
+    "label": "Commercial Zoning",
+    "category": "DEVELOPMENT"
+  },
+  {
+    "id": "07e1b11e-5ecf-4163-a67e-b03b6c3f77ef",
+    "code": "RESIDENTIAL_ZONED",
+    "label": "Residential Zoning",
+    "category": "DEVELOPMENT"
+  }
+]

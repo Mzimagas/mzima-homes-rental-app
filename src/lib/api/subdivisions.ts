@@ -2,13 +2,8 @@
  * Subdivisions API module for managing subdivision and plot operations
  */
 
-import { createClient } from '@supabase/supabase-js'
+import supabase from '../supabase-client'
 import { Database } from '../types/database'
-
-const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 // Types
 export interface Plot {

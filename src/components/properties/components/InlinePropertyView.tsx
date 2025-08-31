@@ -18,7 +18,6 @@ import PurchasePipelineDocuments from './PurchasePipelineDocuments'
 import DirectAdditionDocumentsV2 from './DirectAdditionDocumentsV2'
 import HandoverDocumentsV2 from './HandoverDocumentsV2'
 
-import SubdivisionProgressTracker from './SubdivisionProgressTracker'
 import SubdivisionStageModal from './SubdivisionStageModal'
 import { PurchaseItem } from '../types/purchase-pipeline.types'
 import { SubdivisionPipelineStageData } from '../types/property-management.types'
@@ -33,9 +32,6 @@ import {
   initializeSubdivisionPipelineStages,
   calculateSubdivisionOverallProgress,
   getCurrentSubdivisionStage,
-  mapSubdivisionStatusToStages,
-  getCurrentSubdivisionStageFromStatus,
-  calculateSubdivisionProgressFromStatus,
 } from '../utils/subdivision-pipeline.utils'
 
 interface InlinePropertyViewProps {
@@ -200,7 +196,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     try {
       setSubdivisionLoading(true)
 
-      // Only load if property came from subdivision process
+      // Only load if property came from subdivision pipeline
       if (property.property_source !== 'SUBDIVISION_PROCESS') {
         setSubdivisionData(null)
         return
@@ -674,7 +670,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
               </div>
             )}
 
-            {/* Subdivision Pipeline Interface - Only show for subdivision process properties */}
+            {/* Subdivision Pipeline Interface - Only show for subdivision pipeline properties */}
             {property.property_source === 'SUBDIVISION_PROCESS' && (
               <div>
                 {subdivisionLoading ? (
@@ -684,17 +680,25 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                   </div>
                 ) : subdivisionData ? (
                   <div className="space-y-6">
-                    {/* Subdivision Progress Tracker */}
-                    <SubdivisionProgressTracker
-                      currentStage={subdivisionData.current_stage || 1}
-                      stageData={
-                        subdivisionData.pipeline_stages || initializeSubdivisionPipelineStages()
-                      }
-                      onStageClick={handleSubdivisionStageClick}
-                      overallProgress={subdivisionData.overall_progress || 0}
-                      subdivisionId={subdivisionData.id}
-                      onStageUpdate={handleSubdivisionStageUpdate}
-                    />
+                    {/* Subdivision Information */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                      <div className="flex items-center mb-4">
+                        <span className="text-2xl mr-3">🏗️</span>
+                        <h3 className="text-lg font-semibold text-blue-900">Subdivision Information</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p><span className="font-medium">Subdivision Name:</span> {subdivisionData.subdivision_name || 'Not specified'}</p>
+                          <p><span className="font-medium">Total Plots Planned:</span> {subdivisionData.total_plots_planned || 'Not specified'}</p>
+                          <p><span className="font-medium">Status:</span> {subdivisionData.subdivision_status || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <p><span className="font-medium">Current Stage:</span> {subdivisionData.current_stage || 1}</p>
+                          <p><span className="font-medium">Overall Progress:</span> {subdivisionData.overall_progress || 0}%</p>
+                          <p><span className="font-medium">Plots Created:</span> {subdivisionData.total_plots_created || 0}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -703,7 +707,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                       Subdivision Data Not Found
                     </h3>
                     <p className="text-gray-600">
-                      This property was marked as coming from a subdivision process, but the
+                      This property was marked as coming from a subdivision pipeline, but the
                       subdivision data could not be loaded.
                     </p>
                   </div>

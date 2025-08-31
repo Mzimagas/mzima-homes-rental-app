@@ -1,0 +1,53 @@
+[
+  {
+    "id": "1a043908-63c3-4a9c-854e-377f1769a36c",
+    "landlord_id": "16d2d9e9-accb-4a79-bb74-52a734169f12",
+    "type": "rent_due",
+    "name": "Rent Due Reminder",
+    "description": "Notify tenants 3 days before rent is due",
+    "enabled": true,
+    "trigger_days": 3,
+    "channels": [
+      "email",
+      "sms"
+    ],
+    "template_id": null,
+    "conditions": {},
+    "created_at": "2025-07-30T07:10:48.261849+00:00",
+    "updated_at": "2025-07-30T07:10:48.261849+00:00"
+  },
+  {
+    "id": "18b86130-87ce-4333-b7ad-f1450b7ba5d7",
+    "landlord_id": "16d2d9e9-accb-4a79-bb74-52a734169f12",
+    "type": "payment_overdue",
+    "name": "Overdue Payment Alert",
+    "description": "Alert when payment is 7 days overdue",
+    "enabled": true,
+    "trigger_days": 7,
+    "channels": [
+      "email",
+      "sms",
+      "in_app"
+    ],
+    "template_id": null,
+    "conditions": {},
+    "created_at": "2025-07-30T07:10:49.392459+00:00",
+    "updated_at": "2025-07-30T07:10:49.392459+00:00"
+  },
+  {
+    "id": "73d6caf0-6a58-40e6-8241-3d8595a5a876",
+    "landlord_id": "16d2d9e9-accb-4a79-bb74-52a734169f12",
+    "type": "lease_expiring",
+    "name": "Lease Expiry Notification",
+    "description": "Notify 30 days before lease expires",
+    "enabled": true,
+    "trigger_days": 30,
+    "channels": [
+      "email"
+    ],
+    "template_id": null,
+    "conditions": {},
+    "created_at": "2025-08-13T17:37:14.60083+00:00",
+    "updated_at": "2025-08-25T20:53:03.225398+00:00"
+  }
+]

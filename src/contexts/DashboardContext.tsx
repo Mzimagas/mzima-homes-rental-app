@@ -48,7 +48,6 @@ export interface DashboardState {
   propertiesCache: Property[]
   tenantsCache: Tenant[]
   unitsCache: Unit[]
-  paymentsCache: Payment[]
 
   // UI state
   sidebarCollapsed: boolean
@@ -72,7 +71,7 @@ export type DashboardAction =
   | { type: 'ADD_RECENT_ACTION'; payload: Action }
   | {
       type: 'UPDATE_CACHE'
-      payload: { type: 'properties' | 'tenants' | 'units' | 'payments'; data: any[] }
+      payload: { type: 'properties' | 'tenants' | 'units'; data: any[] }
     }
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'TOGGLE_QUICK_ACTIONS' }
@@ -100,7 +99,6 @@ const initialState: DashboardState = {
   propertiesCache: [],
   tenantsCache: [],
   unitsCache: [],
-  paymentsCache: [],
   sidebarCollapsed: false,
   quickActionsVisible: true,
   lastUpdated: new Date(),
@@ -212,7 +210,6 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
         propertiesCache: state.propertiesCache, // Preserve cache
         tenantsCache: state.tenantsCache,
         unitsCache: state.unitsCache,
-        paymentsCache: state.paymentsCache,
         cacheExpiry: state.cacheExpiry,
       }
 

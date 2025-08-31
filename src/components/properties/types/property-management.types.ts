@@ -721,7 +721,7 @@ export const SUBDIVISION_PIPELINE_STAGES: SubdivisionPipelineStage[] = [
   {
     id: 7,
     name: 'Completed',
-    description: 'Subdivision process completed and ready for sale',
+    description: 'Subdivision pipeline completed and ready for sale',
     statusOptions: ['Not Started', 'Completed', 'Finalized'],
     estimatedDays: 5,
   },
@@ -737,20 +737,7 @@ export interface SubdivisionPipelineStageData {
   documents?: any[]
 }
 
-// Subdivision Progress Tracker Props
-export interface SubdivisionProgressTrackerProps {
-  currentStage: number
-  stageData: SubdivisionPipelineStageData[]
-  onStageClick: (stageId: number) => void
-  overallProgress: number
-  subdivisionId: string
-  onStageUpdate: (
-    subdivisionId: string,
-    stageId: number,
-    newStatus: string,
-    notes?: string
-  ) => Promise<void>
-}
+
 
 // Predefined subdivision cost types
 export const SUBDIVISION_COST_TYPES: SubdivisionCostType[] = [

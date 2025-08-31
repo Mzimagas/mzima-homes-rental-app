@@ -339,18 +339,65 @@ export class RentalManagementService {
     }
   }
 
-  // Payment methods (placeholder implementations)
-  static async getPayments(): Promise<any[]> {
-    // TODO: Implement when payments table is ready
-    return []
+  // Payment methods
+  static async getPayments(): Promise<PaymentRecord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('rental_payments')
+        .select(`
+          *,
+          tenants(full_name),
+          units(unit_label, properties(name))
+        `)
+        .order('payment_date', { ascending: false })
+
+      if (error) throw error
+
+      return data?.map(payment => ({
+        id: payment.id,
+        tenant_id: payment.tenant_id,
+        amount: payment.amount_kes,
+        payment_date: payment.payment_date,
+        payment_method: payment.payment_method as any,
+        reference_number: payment.transaction_reference,
+        status: 'COMPLETED' as any,
+        notes: payment.notes
+      })) || []
+    } catch (error) {
+      throw new Error('Failed to load payments')
+    }
   }
 
-  static async createPayment(paymentData: any): Promise<any> {
+  static async createPayment(paymentData: any): Promise<PaymentRecord> {
     try {
-      // TODO: Implement when payments table is ready
-            return { id: 'temp-id', ...paymentData }
+      const { data, error } = await supabase
+        .from('rental_payments')
+        .insert({
+          tenant_id: paymentData.tenant_id,
+          unit_id: paymentData.unit_id,
+          amount_kes: paymentData.amount,
+          payment_date: paymentData.payment_date,
+          payment_method: paymentData.payment_method,
+          transaction_reference: paymentData.reference_number,
+          notes: paymentData.notes
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return {
+        id: data.id,
+        tenant_id: data.tenant_id,
+        amount: data.amount_kes,
+        payment_date: data.payment_date,
+        payment_method: data.payment_method as any,
+        reference_number: data.transaction_reference,
+        status: 'COMPLETED' as any,
+        notes: data.notes
+      }
     } catch (error) {
-            throw new Error('Failed to create payment')
+      throw new Error('Failed to create payment')
     }
   }
 

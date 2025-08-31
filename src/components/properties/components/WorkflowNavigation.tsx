@@ -19,24 +19,24 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
           onClick={() => onTabChange('properties')}
           className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
             activeTab === 'properties'
-              ? 'from-green-100 to-emerald-100 border-green-400 shadow-md ring-2 ring-green-300 ring-opacity-50 scale-102'
-              : 'from-green-50 to-emerald-50 border-green-200 hover:shadow-md hover:from-green-100 hover:to-emerald-100'
+              ? 'from-blue-100 to-cyan-100 border-blue-400 shadow-md ring-2 ring-blue-300 ring-opacity-50 scale-102'
+              : 'from-blue-50 to-cyan-50 border-blue-200 hover:shadow-md hover:from-blue-100 hover:to-cyan-100'
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'properties' ? 'bg-green-200' : 'bg-green-100'}`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'properties' ? 'bg-blue-200' : 'bg-blue-100'}`}
             >
               🏠
             </div>
             <div>
               <h3
-                className={`font-bold text-base transition-colors ${activeTab === 'properties' ? 'text-green-900' : 'text-green-800'}`}
+                className={`font-bold text-base transition-colors ${activeTab === 'properties' ? 'text-blue-900' : 'text-blue-800'}`}
               >
                 Direct Addition
               </h3>
               <p
-                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'properties' ? 'text-green-700' : 'text-green-600'}`}
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'properties' ? 'text-blue-700' : 'text-blue-600'}`}
               >
                 Manually create properties with full details and coordinates
               </p>
@@ -49,24 +49,24 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
           onClick={() => onTabChange('purchase')}
           className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
             activeTab === 'purchase'
-              ? 'from-blue-100 to-cyan-100 border-blue-400 shadow-md ring-2 ring-blue-300 ring-opacity-50 scale-102'
-              : 'from-blue-50 to-cyan-50 border-blue-200 hover:shadow-md hover:from-blue-100 hover:to-cyan-100'
+              ? 'from-green-100 to-emerald-100 border-green-400 shadow-md ring-2 ring-green-300 ring-opacity-50 scale-102'
+              : 'from-green-50 to-emerald-50 border-green-200 hover:shadow-md hover:from-green-100 hover:to-emerald-100'
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-1">
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'purchase' ? 'bg-blue-200' : 'bg-blue-100'}`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'purchase' ? 'bg-green-200' : 'bg-green-100'}`}
             >
               🏢
             </div>
             <div>
               <h3
-                className={`font-bold text-base transition-colors ${activeTab === 'purchase' ? 'text-blue-900' : 'text-blue-800'}`}
+                className={`font-bold text-base transition-colors ${activeTab === 'purchase' ? 'text-green-900' : 'text-green-800'}`}
               >
                 Purchase Pipeline
               </h3>
               <p
-                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'purchase' ? 'text-blue-700' : 'text-blue-600'}`}
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'purchase' ? 'text-green-700' : 'text-green-600'}`}
               >
                 Track acquisitions and transfer completed purchases to properties
               </p>
@@ -74,7 +74,7 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
           </div>
         </button>
 
-        {/* Subdivision Process */}
+        {/* Subdivision Pipeline */}
         <button
           onClick={() => onTabChange('subdivision')}
           className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
@@ -93,7 +93,7 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
               <h3
                 className={`font-bold text-base transition-colors ${activeTab === 'subdivision' ? 'text-orange-900' : 'text-orange-800'}`}
               >
-                Subdivision Process
+                Subdivision Pipeline
               </h3>
               <p
                 className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'subdivision' ? 'text-orange-700' : 'text-orange-600'}`}

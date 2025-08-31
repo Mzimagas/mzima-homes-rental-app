@@ -1,0 +1,226 @@
+[
+  {
+    "id": "ad10905d-bcd1-4c86-99a0-a1d024a49bcc",
+    "template_name": "admin",
+    "display_name": "Administrator",
+    "description": "Full system access with edit permissions across all sections",
+    "icon": "👑",
+    "role_template": "admin",
+    "default_scope": "global",
+    "section_permissions": {
+      "audit_trail": {
+        "level": "edit",
+        "details": {}
+      },
+      "direct_addition": {
+        "level": "edit",
+        "details": {
+          "location": "edit",
+          "documents": "edit",
+          "financial": "edit",
+          "basic_info": "edit"
+        }
+      },
+      "property_handover": {
+        "level": "edit",
+        "details": {
+          "location": "edit",
+          "documents": "edit",
+          "financial": "edit",
+          "basic_info": "edit"
+        }
+      },
+      "purchase_pipeline": {
+        "level": "edit",
+        "details": {
+          "location": "edit",
+          "documents": "edit",
+          "financial": "edit",
+          "basic_info": "edit"
+        }
+      },
+      "subdivision_process": {
+        "level": "edit",
+        "details": {
+          "location": "edit",
+          "documents": "edit",
+          "financial": "edit",
+          "basic_info": "edit"
+        }
+      }
+    },
+    "is_system_template": true,
+    "is_active": true,
+    "created_at": "2025-08-23T04:15:15.086264+00:00",
+    "updated_at": "2025-08-23T04:15:15.086264+00:00",
+    "created_by": null
+  },
+  {
+    "id": "b0343c13-b8f6-4f88-aba2-1ea7e09a4e4f",
+    "template_name": "supervisor",
+    "display_name": "Supervisor",
+    "description": "View-only access across all sections for oversight and monitoring",
+    "icon": "👁️",
+    "role_template": "supervisor",
+    "default_scope": "global",
+    "section_permissions": {
+      "audit_trail": {
+        "level": "view",
+        "details": {}
+      },
+      "direct_addition": {
+        "level": "view",
+        "details": {
+          "location": "view",
+          "documents": "view",
+          "financial": "view",
+          "basic_info": "view"
+        }
+      },
+      "property_handover": {
+        "level": "view",
+        "details": {
+          "location": "view",
+          "documents": "view",
+          "financial": "view",
+          "basic_info": "view"
+        }
+      },
+      "purchase_pipeline": {
+        "level": "view",
+        "details": {
+          "location": "view",
+          "documents": "view",
+          "financial": "view",
+          "basic_info": "view"
+        }
+      },
+      "subdivision_process": {
+        "level": "view",
+        "details": {
+          "location": "view",
+          "documents": "view",
+          "financial": "view",
+          "basic_info": "view"
+        }
+      }
+    },
+    "is_system_template": true,
+    "is_active": true,
+    "created_at": "2025-08-23T04:15:15.086264+00:00",
+    "updated_at": "2025-08-23T04:15:15.086264+00:00",
+    "created_by": null
+  },
+  {
+    "id": "c818c8ed-cf5a-4d5c-8070-79eddea1a031",
+    "template_name": "staff",
+    "display_name": "Staff",
+    "description": "Edit access to Direct Addition and Property Handover, view access to other sections",
+    "icon": "📝",
+    "role_template": "staff",
+    "default_scope": "property",
+    "section_permissions": {
+      "audit_trail": {
+        "level": "none",
+        "details": {}
+      },
+      "direct_addition": {
+        "level": "edit",
+        "details": {
+          "location": "edit",
+          "documents": "edit",
+          "financial": "view",
+          "basic_info": "edit"
+        }
+      },
+      "property_handover": {
+        "level": "edit",
+        "details": {
+          "location": "edit",
+          "documents": "edit",
+          "financial": "view",
+          "basic_info": "edit"
+        }
+      },
+      "purchase_pipeline": {
+        "level": "view",
+        "details": {
+          "location": "view",
+          "documents": "view",
+          "financial": "none",
+          "basic_info": "view"
+        }
+      },
+      "subdivision_process": {
+        "level": "none",
+        "details": {
+          "location": "none",
+          "documents": "none",
+          "financial": "none",
+          "basic_info": "none"
+        }
+      }
+    },
+    "is_system_template": true,
+    "is_active": true,
+    "created_at": "2025-08-23T04:15:15.086264+00:00",
+    "updated_at": "2025-08-23T04:15:15.086264+00:00",
+    "created_by": null
+  },
+  {
+    "id": "8f85b6c4-a05a-4bf0-8fa4-94615a1124ea",
+    "template_name": "member",
+    "display_name": "Member",
+    "description": "Limited view access excluding Direct Addition and Audit Trail",
+    "icon": "👤",
+    "role_template": "member",
+    "default_scope": "property",
+    "section_permissions": {
+      "audit_trail": {
+        "level": "none",
+        "details": {}
+      },
+      "direct_addition": {
+        "level": "none",
+        "details": {
+          "location": "none",
+          "documents": "none",
+          "financial": "none",
+          "basic_info": "none"
+        }
+      },
+      "property_handover": {
+        "level": "view",
+        "details": {
+          "location": "view",
+          "documents": "none",
+          "financial": "none",
+          "basic_info": "view"
+        }
+      },
+      "purchase_pipeline": {
+        "level": "view",
+        "details": {
+          "location": "view",
+          "documents": "none",
+          "financial": "none",
+          "basic_info": "view"
+        }
+      },
+      "subdivision_process": {
+        "level": "view",
+        "details": {
+          "location": "view",
+          "documents": "none",
+          "financial": "none",
+          "basic_info": "view"
+        }
+      }
+    },
+    "is_system_template": true,
+    "is_active": true,
+    "created_at": "2025-08-23T04:15:15.086264+00:00",
+    "updated_at": "2025-08-23T04:15:15.086264+00:00",
+    "created_by": null
+  }
+]

@@ -1,0 +1,261 @@
+[
+  {
+    "field_name": "asking_price_kes",
+    "security_level": "CONFIDENTIAL",
+    "requires_reason": true,
+    "requires_approval": true,
+    "allowed_roles": [
+      "admin",
+      "finance_manager"
+    ],
+    "max_changes_per_day": 3,
+    "lock_after_stage": 6
+  },
+  {
+    "field_name": "negotiated_price_kes",
+    "security_level": "CONFIDENTIAL",
+    "requires_reason": true,
+    "requires_approval": true,
+    "allowed_roles": [
+      "admin",
+      "finance_manager"
+    ],
+    "max_changes_per_day": 3,
+    "lock_after_stage": 6
+  },
+  {
+    "field_name": "deposit_paid_kes",
+    "security_level": "CONFIDENTIAL",
+    "requires_reason": true,
+    "requires_approval": true,
+    "allowed_roles": [
+      "admin",
+      "finance_manager"
+    ],
+    "max_changes_per_day": 5,
+    "lock_after_stage": 7
+  },
+  {
+    "field_name": "contract_reference",
+    "security_level": "RESTRICTED",
+    "requires_reason": true,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "legal",
+      "property_manager"
+    ],
+    "max_changes_per_day": 2,
+    "lock_after_stage": 7
+  },
+  {
+    "field_name": "title_deed_status",
+    "security_level": "RESTRICTED",
+    "requires_reason": true,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "legal"
+    ],
+    "max_changes_per_day": 3,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "legal_representative",
+    "security_level": "RESTRICTED",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "legal",
+      "property_manager"
+    ],
+    "max_changes_per_day": 5,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "property_name",
+    "security_level": "RESTRICTED",
+    "requires_reason": true,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "property_manager"
+    ],
+    "max_changes_per_day": 2,
+    "lock_after_stage": 5
+  },
+  {
+    "field_name": "property_address",
+    "security_level": "RESTRICTED",
+    "requires_reason": true,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "property_manager"
+    ],
+    "max_changes_per_day": 2,
+    "lock_after_stage": 5
+  },
+  {
+    "field_name": "property_type",
+    "security_level": "RESTRICTED",
+    "requires_reason": true,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "property_manager"
+    ],
+    "max_changes_per_day": 1,
+    "lock_after_stage": 4
+  },
+  {
+    "field_name": "seller_name",
+    "security_level": "RESTRICTED",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "property_manager"
+    ],
+    "max_changes_per_day": 3,
+    "lock_after_stage": 6
+  },
+  {
+    "field_name": "seller_contact",
+    "security_level": "RESTRICTED",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "property_manager"
+    ],
+    "max_changes_per_day": 5,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "seller_email",
+    "security_level": "RESTRICTED",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "property_manager"
+    ],
+    "max_changes_per_day": 5,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "purchase_status",
+    "security_level": "LOCKED",
+    "requires_reason": true,
+    "requires_approval": true,
+    "allowed_roles": [
+      "admin",
+      "workflow_manager"
+    ],
+    "max_changes_per_day": 10,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "current_stage",
+    "security_level": "LOCKED",
+    "requires_reason": true,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "workflow_manager"
+    ],
+    "max_changes_per_day": 20,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "risk_assessment",
+    "security_level": "RESTRICTED",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "risk_manager",
+      "property_manager"
+    ],
+    "max_changes_per_day": 10,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "property_condition_notes",
+    "security_level": "PUBLIC",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "property_manager",
+      "inspector"
+    ],
+    "max_changes_per_day": 10,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "survey_status",
+    "security_level": "RESTRICTED",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "surveyor",
+      "property_manager"
+    ],
+    "max_changes_per_day": 5,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "target_completion_date",
+    "security_level": "RESTRICTED",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "project_manager",
+      "property_manager"
+    ],
+    "max_changes_per_day": 5,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "financing_source",
+    "security_level": "CONFIDENTIAL",
+    "requires_reason": true,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "finance_manager"
+    ],
+    "max_changes_per_day": 3,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "expected_rental_income_kes",
+    "security_level": "RESTRICTED",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "finance_manager",
+      "property_manager"
+    ],
+    "max_changes_per_day": 5,
+    "lock_after_stage": null
+  },
+  {
+    "field_name": "expected_roi_percentage",
+    "security_level": "RESTRICTED",
+    "requires_reason": false,
+    "requires_approval": false,
+    "allowed_roles": [
+      "admin",
+      "finance_manager"
+    ],
+    "max_changes_per_day": 5,
+    "lock_after_stage": null
+  }
+]

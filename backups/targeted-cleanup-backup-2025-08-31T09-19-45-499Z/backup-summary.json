@@ -1,0 +1,455 @@
+{
+  "timestamp": "2025-08-31T09-19-45-499Z",
+  "backupType": "targeted-cleanup-pre-removal",
+  "activeTables": [
+    {
+      "name": "properties",
+      "rowCount": 98,
+      "fileName": "properties-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "units",
+      "rowCount": 8,
+      "fileName": "units-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "tenants",
+      "rowCount": 11,
+      "fileName": "tenants-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "tenancy_agreements",
+      "rowCount": 8,
+      "fileName": "tenancy_agreements-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "property_users",
+      "rowCount": 98,
+      "fileName": "property_users-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "property_document_status",
+      "rowCount": 28,
+      "fileName": "property_document_status-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "property_documents",
+      "rowCount": 9,
+      "fileName": "property_documents-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "property_acquisition_costs",
+      "rowCount": 9,
+      "fileName": "property_acquisition_costs-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "property_payment_installments",
+      "rowCount": 10,
+      "fileName": "property_payment_installments-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "property_purchase_price_history",
+      "rowCount": 4,
+      "fileName": "property_purchase_price_history-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "property_subdivisions",
+      "rowCount": 2,
+      "fileName": "property_subdivisions-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "notification_rules",
+      "rowCount": 3,
+      "fileName": "notification_rules-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "notification_templates",
+      "rowCount": 2,
+      "fileName": "notification_templates-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "permission_sections",
+      "rowCount": 5,
+      "fileName": "permission_sections-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "permission_templates",
+      "rowCount": 4,
+      "fileName": "permission_templates-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "permission_detail_types",
+      "rowCount": 4,
+      "fileName": "permission_detail_types-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "land_amenities",
+      "rowCount": 18,
+      "fileName": "land_amenities-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "purchase_pipeline_field_security",
+      "rowCount": 21,
+      "fileName": "purchase_pipeline_field_security-data.json",
+      "status": "backed_up"
+    },
+    {
+      "name": "purchase_pipeline_audit_log",
+      "rowCount": 254,
+      "fileName": "purchase_pipeline_audit_log-data.json",
+      "status": "backed_up"
+    }
+  ],
+  "tablesToRemove": [
+    {
+      "name": "activities_audit",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "agents",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "amenities",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "approvals",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "bank_mpesa_recons",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "clients",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "commissions",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "data_access_logs",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "disputes_logs",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "encumbrances",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "expenses",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "in_app_notifications",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "invoices",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "land_details",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "land_media",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "land_property_amenities",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "land_rates",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "listings",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "maintenance_requests",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "maintenance_tickets",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "marketing_leads",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "meter_readings",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "mpesa_transactions",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "notification_history",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "notification_settings",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "offers_reservations",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "owners",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "parcel_owners",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "parcels",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "payment_allocations",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "payment_plans",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "payments",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "permission_audit_log",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "plots",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "pricing_zones",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "property_audit_log",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "property_handover_costs",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "property_payment_records",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "property_sale_info",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "property_sale_status_history",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "property_subdivision_costs",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "purchase_pipeline_change_approvals",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "purchase_pipeline_costs",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "receipts",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "rent_invoices",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "reservation_requests",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "sale_agreements",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "security_events",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "shared_meters",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "subdivision_plots",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "subdivisions",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "surveys",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "tasks_reminders",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "transfers_titles",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "unit_amenities",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "unit_shared_meters",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "units_media",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "user_activities",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "user_invitations",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "user_next_of_kin",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "user_permissions",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "user_profiles",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "utility_accounts",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "utility_ledger",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "value_add_projects",
+      "rowCount": 0,
+      "safeToRemove": true
+    },
+    {
+      "name": "wayleaves_easements",
+      "rowCount": 0,
+      "safeToRemove": true
+    }
+  ],
+  "totalTablesWithData": 19,
+  "totalEmptyTables": 66,
+  "errors": []
+}

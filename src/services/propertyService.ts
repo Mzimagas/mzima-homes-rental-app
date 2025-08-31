@@ -280,7 +280,7 @@ export async function getPropertiesByLifecycleStage(
         break
 
       case 'subdivision':
-        // Properties that are in subdivision process (not "NOT_STARTED")
+        // Properties that are in subdivision pipeline (not "NOT_STARTED")
         query = query.neq('subdivision_status', 'NOT_STARTED').not('subdivision_status', 'is', null)
         break
 
@@ -330,7 +330,7 @@ export async function getPurchasePipelineProperties(): Promise<Property[]> {
 }
 
 /**
- * Get properties in subdivision process
+ * Get properties in subdivision pipeline
  */
 export async function getSubdivisionProperties(): Promise<Property[]> {
   return getPropertiesByLifecycleStage('subdivision')

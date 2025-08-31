@@ -140,7 +140,11 @@ export default function PaymentHistory({ onRecordPayment }: PaymentHistoryProps)
       setIsLoadingPayments(true)
       setError(null)
 
-      let query = supabase.from('payments').select('*').order('payment_date', { ascending: false })
+      let query = supabase.from('rental_payments').select(`
+        *,
+        tenants(full_name, phone),
+        units(unit_label, properties(name))
+      `).order('payment_date', { ascending: false })
 
       if (selectedTenant) {
         query = query.eq('tenant_id', selectedTenant)
