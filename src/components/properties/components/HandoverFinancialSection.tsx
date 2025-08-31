@@ -879,7 +879,9 @@ export default function HandoverFinancialSection({
           <div className="mt-4">
             {/* Add Cost Form */}
             {showAddCost && (
-              <div className={`border rounded-lg p-4 mt-4 mb-4 ${prefillApplied === 'cost' ? 'border-emerald-300 bg-emerald-50' : 'bg-gray-50 border-gray-200'}`}>
+              <div
+                key={prefillRenderKey || 'cost-form'}
+                className={`border rounded-lg p-4 mt-4 mb-4 ${prefillApplied === 'cost' ? 'border-emerald-300 bg-emerald-50' : 'bg-gray-50 border-gray-200'}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <h5 className="font-medium text-gray-900">Add New Cost</h5>
                   {prefillApplied === 'cost' && (
