@@ -35,9 +35,9 @@ CREATE TABLE IF NOT EXISTS property_subdivision_costs (
       'lcb_normal_fee', 'lcb_special_fee', 'board_application_fee',
       
       -- Survey & Planning Fees
-      'scheme_plan_preparation', 'mutation_drawing', 'mutation_checking',
+      'scheme_plan_preparation', 'mutation_drawing',
       'surveyor_professional_fees', 'map_amendment', 'rim_update',
-      'new_parcel_numbers',
+      'new_parcel_numbers', 'beaconing',
       
       -- Registration & Title Fees
       'new_title_registration', 'registrar_fees', 'title_printing',

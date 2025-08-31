@@ -3,14 +3,24 @@
 import { useState, useEffect } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
-import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
+import PropertyCard, {
+  PropertyCardHeader,
+  PropertyCardContent,
+  PropertyCardFooter,
+} from './PropertyCard'
 import { PropertyWithLifecycle } from '../types/property-management.types'
 import {
   getSourceIcon,
   getSourceLabel,
   getLifecycleStatusColor,
 } from '../utils/property-management.utils'
-import { useTabState, TabNavigation, TabContent, PROPERTY_TABS, useTabNavigation } from '../utils/tab-utils'
+import {
+  useTabState,
+  TabNavigation,
+  TabContent,
+  PROPERTY_TABS,
+  useTabNavigation,
+} from '../utils/tab-utils'
 import supabase from '../../../lib/supabase-client'
 
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
@@ -62,7 +72,7 @@ type TabType = 'details' | 'financial' | 'documents'
 export default function InlinePropertyView({ property, onClose }: InlinePropertyViewProps) {
   const { activeTab, setActiveTab } = useTabState({
     defaultTab: 'details',
-    persistKey: `property-${property.id}`
+    persistKey: `property-${property.id}`,
   })
   const [documents, setDocuments] = useState<PropertyDocument[]>([])
   const [pipelineDocuments, setPipelineDocuments] = useState<PurchasePipelineDocument[]>([])
@@ -78,6 +88,10 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
   const [showSubdivisionStageModal, setShowSubdivisionStageModal] = useState(false)
   const [selectedSubdivisionStageId, setSelectedSubdivisionStageId] = useState<number | null>(null)
   const [subdivisionLoading, setSubdivisionLoading] = useState(false)
+
+  // Determine if handover is active (takes priority over direct addition docs)
+  // Consider any defined handover_status as active (PENDING, IN_PROGRESS, COMPLETED)
+  const hasActiveHandover = Boolean(property.handover_status)
 
   useEffect(() => {
     loadDocuments()
@@ -427,10 +441,6 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
     // This could trigger a refresh of the property data if needed
   }
 
-
-
-
-
   // Listen for cross-component navigation
   useTabNavigation(property.id, setActiveTab)
 
@@ -526,23 +536,14 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
         <TabContent activeTab={activeTab} tabId="documents">
           <div className="space-y-6">
-            {/* Direct Addition Documents V2 - New Expandable Card System */}
-            {property.property_source === 'DIRECT_ADDITION' && (
-              <DirectAdditionDocumentsV2 propertyId={property.id} propertyName={property.name} />
+            {/* Handover Documents V2 takes priority when handover is active */}
+            {hasActiveHandover && (
+              <HandoverDocumentsV2 propertyId={property.id} propertyName={property.name} />
             )}
 
-            {/* Handover Documents V2 - For handover properties */}
-            {(property.handover_status === 'IN_PROGRESS' ||
-              property.handover_status === 'COMPLETED' ||
-              property.handover_status === 'PENDING' ||
-              property.handover_status === 'IDENTIFIED' ||
-              property.handover_status === 'NEGOTIATING' ||
-              property.handover_status === 'UNDER_CONTRACT' ||
-              property.handover_status === 'DUE_DILIGENCE' ||
-              property.handover_status === 'FINANCING' ||
-              property.handover_status === 'CLOSING' ||
-              (property.handover_status && property.handover_status !== 'NOT_STARTED' && property.handover_status !== 'CANCELLED')) && (
-              <HandoverDocumentsV2 propertyId={property.id} propertyName={property.name} />
+            {/* Direct Addition Documents V2 - render only when no active handover */}
+            {property.property_source === 'DIRECT_ADDITION' && !hasActiveHandover && (
+              <DirectAdditionDocumentsV2 propertyId={property.id} propertyName={property.name} />
             )}
 
             {/* Purchase Pipeline Interface - Only show for purchase pipeline properties */}
@@ -684,18 +685,38 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <div className="flex items-center mb-4">
                         <span className="text-2xl mr-3">🏗️</span>
-                        <h3 className="text-lg font-semibold text-blue-900">Subdivision Information</h3>
+                        <h3 className="text-lg font-semibold text-blue-900">
+                          Subdivision Information
+                        </h3>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p><span className="font-medium">Subdivision Name:</span> {subdivisionData.subdivision_name || 'Not specified'}</p>
-                          <p><span className="font-medium">Total Plots Planned:</span> {subdivisionData.total_plots_planned || 'Not specified'}</p>
-                          <p><span className="font-medium">Status:</span> {subdivisionData.subdivision_status || 'Not specified'}</p>
+                          <p>
+                            <span className="font-medium">Subdivision Name:</span>{' '}
+                            {subdivisionData.subdivision_name || 'Not specified'}
+                          </p>
+                          <p>
+                            <span className="font-medium">Total Plots Planned:</span>{' '}
+                            {subdivisionData.total_plots_planned || 'Not specified'}
+                          </p>
+                          <p>
+                            <span className="font-medium">Status:</span>{' '}
+                            {subdivisionData.subdivision_status || 'Not specified'}
+                          </p>
                         </div>
                         <div>
-                          <p><span className="font-medium">Current Stage:</span> {subdivisionData.current_stage || 1}</p>
-                          <p><span className="font-medium">Overall Progress:</span> {subdivisionData.overall_progress || 0}%</p>
-                          <p><span className="font-medium">Plots Created:</span> {subdivisionData.total_plots_created || 0}</p>
+                          <p>
+                            <span className="font-medium">Current Stage:</span>{' '}
+                            {subdivisionData.current_stage || 1}
+                          </p>
+                          <p>
+                            <span className="font-medium">Overall Progress:</span>{' '}
+                            {subdivisionData.overall_progress || 0}%
+                          </p>
+                          <p>
+                            <span className="font-medium">Plots Created:</span>{' '}
+                            {subdivisionData.total_plots_created || 0}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -759,26 +780,19 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
             )}
 
             {/* Fallback message when no document components render */}
-            {!(property.property_source === 'DIRECT_ADDITION') &&
-             !(property.handover_status === 'IN_PROGRESS' ||
-               property.handover_status === 'COMPLETED' ||
-               property.handover_status === 'PENDING' ||
-               property.handover_status === 'IDENTIFIED' ||
-               property.handover_status === 'NEGOTIATING' ||
-               property.handover_status === 'UNDER_CONTRACT' ||
-               property.handover_status === 'DUE_DILIGENCE' ||
-               property.handover_status === 'FINANCING' ||
-               property.handover_status === 'CLOSING' ||
-               (property.handover_status && property.handover_status !== 'NOT_STARTED' && property.handover_status !== 'CANCELLED')) &&
-             !(property.property_source === 'PURCHASE_PIPELINE') &&
-             !(property.property_source === 'SUBDIVISION_PROCESS') && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-                <div className="text-gray-600">
-                  <p className="text-lg font-medium">No documents available</p>
-                  <p className="mt-2">Document management is not available for this property type at this time.</p>
+            {!hasActiveHandover &&
+              property.property_source !== 'DIRECT_ADDITION' &&
+              property.property_source !== 'PURCHASE_PIPELINE' &&
+              property.property_source !== 'SUBDIVISION_PROCESS' && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                  <div className="text-gray-600">
+                    <p className="text-lg font-medium">No documents available</p>
+                    <p className="mt-2">
+                      Document management is not available for this property type at this time.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </TabContent>
       </div>

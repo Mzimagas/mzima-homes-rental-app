@@ -155,26 +155,94 @@ export const STAGE_PAYMENT_REQUIREMENTS: Record<
     ],
   },
   11: {
-    // Purchase Completion - Final payments
+    // Minutes/Decision to Subdivide - No payments required
     required: [],
+    optional: [],
+  },
+  12: {
+    // Search Certificate (Subdivision) - Search fee required
+    required: [
+      {
+        id: 'search_fee_subdivision',
+        name: 'Search Fee (Subdivision)',
+        description: 'Property search fee for subdivision',
+        amount: 1050,
+        currency: 'KES',
+        isRequired: true,
+        category: 'fee',
+      },
+    ],
+    optional: [],
+  },
+  13: {
+    // LCB Consent (Subdivision) - LCB consent fees required
+    required: [
+      {
+        id: 'lcb_normal_fee_subdivision',
+        name: 'Subdivision Consent (LCB Normal)',
+        description: 'Land Control Board consent for subdivision',
+        amount: 16000,
+        currency: 'KES',
+        isRequired: true,
+        category: 'fee',
+      },
+    ],
     optional: [
       {
-        id: 'balance_purchase_payment',
-        name: 'Balance Purchase Payment',
-        description: 'Any remaining balance on the purchase price',
-        currency: 'KES',
-        isRequired: false,
-        category: 'payment',
-      },
-      {
-        id: 'completion_costs',
-        name: 'Property Completion Costs',
-        description: 'Final costs associated with property acquisition completion',
+        id: 'lcb_special_fee_subdivision',
+        name: 'Subdivision Consent (LCB Special)',
+        description: 'Special Land Control Board consent for subdivision',
+        amount: 20000,
         currency: 'KES',
         isRequired: false,
         category: 'fee',
       },
     ],
+  },
+  14: {
+    // Mutation Forms - Mutation costs required
+    required: [
+      {
+        id: 'mutation_costs',
+        name: 'Mutation Costs',
+        description: 'Drawing of mutation plans',
+        amount: 5000,
+        currency: 'KES',
+        isRequired: true,
+        category: 'fee',
+      },
+    ],
+    optional: [],
+  },
+  15: {
+    // Beaconing - Beaconing costs required
+    required: [
+      {
+        id: 'beaconing_costs',
+        name: 'Beaconing',
+        description: 'Survey beaconing and demarcation costs',
+        amount: 2500,
+        currency: 'KES',
+        isRequired: true,
+        category: 'fee',
+      },
+    ],
+    optional: [],
+  },
+  16: {
+    // Title Registration (Subdivision) - Registration costs required
+    required: [
+      {
+        id: 'title_registration_subdivision',
+        name: 'Registration of Titles',
+        description: 'Registration of new subdivision titles',
+        amount: 5500,
+        currency: 'KES',
+        isRequired: true,
+        category: 'fee',
+      },
+    ],
+    optional: [],
   },
 }
 

@@ -272,6 +272,7 @@ export const FinancialManagementModal: React.FC<FinancialManagementModalProps> =
                     stageNumber={payment.stageNumber}
                     payment={payment}
                     currentStatus="pending"
+                    pipeline={pipeline}
                     compact={false}
                   />
                 ))

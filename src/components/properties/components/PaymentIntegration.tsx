@@ -22,6 +22,7 @@ interface PaymentIntegrationProps {
   currentStatus: 'pending' | 'completed' | 'failed'
   onPaymentUpdate?: (paymentId: string, status: 'pending' | 'completed' | 'failed') => void
   compact?: boolean
+  pipeline?: string // Add pipeline prop to determine payment table
 }
 
 interface PaymentMethod {
@@ -63,6 +64,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
   currentStatus,
   onPaymentUpdate,
   compact = false,
+  pipeline = 'purchase_pipeline',
 }) => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [selectedMethod, setSelectedMethod] = useState<string>('')
@@ -140,7 +142,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
         // Simulate API call delay
         await new Promise((resolve) => setTimeout(resolve, 2000))
 
-        // Create payment record in appropriate table based on payment type
+        // Create payment record in appropriate table based on payment type and pipeline
         // Note: This is a simplified implementation - in production, this should use the proper API endpoints
         let error = null
 
@@ -156,8 +158,33 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
             notes: payment.description,
           })
           error = receiptError
+        } else if (stageNumber >= 12 && stageNumber <= 16) {
+          // For subdivision stages (12-16), use subdivision costs table
+          // Map payment IDs to subdivision cost type IDs
+          const paymentToSubdivisionCostMap: Record<string, string> = {
+            'search_fee_subdivision': 'search_fee',
+            'lcb_normal_fee_subdivision': 'lcb_normal_fee',
+            'lcb_special_fee_subdivision': 'lcb_special_fee',
+            'mutation_costs': 'mutation_drawing',
+            'beaconing_costs': 'beaconing',
+            'title_registration_subdivision': 'new_title_registration',
+          }
+
+          const subdivisionCostTypeId = paymentToSubdivisionCostMap[payment.id] || payment.id
+
+          const { error: subdivisionError } = await supabase.from('property_subdivision_costs').insert({
+            property_id: propertyId,
+            cost_type_id: subdivisionCostTypeId,
+            cost_category: 'SURVEY_PLANNING_FEES',
+            amount_kes: paymentDetails.amount,
+            payment_status: 'PAID',
+            payment_date: new Date().toISOString().split('T')[0],
+            payment_reference: paymentDetails.reference,
+            notes: payment.description,
+          })
+          error = subdivisionError
         } else {
-          // For fees/taxes, use handover costs table
+          // For other fees/taxes, use handover costs table
           const { error: costError } = await supabase.from('property_handover_costs').insert({
             property_id: propertyId,
             cost_type_id: payment.id,

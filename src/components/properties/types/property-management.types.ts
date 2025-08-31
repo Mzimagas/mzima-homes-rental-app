@@ -743,20 +743,6 @@ export interface SubdivisionPipelineStageData {
 export const SUBDIVISION_COST_TYPES: SubdivisionCostType[] = [
   // Statutory & Board Fees
   {
-    id: 'lcb_normal_fee',
-    category: 'STATUTORY_BOARD_FEES',
-    label: 'Land Control Board (Normal)',
-    description: 'Standard LCB processing fee',
-    default_amount_kes: 4050,
-  },
-  {
-    id: 'lcb_special_fee',
-    category: 'STATUTORY_BOARD_FEES',
-    label: 'Land Control Board (Special)',
-    description: 'Special LCB processing fee',
-    default_amount_kes: 10000,
-  },
-  {
     id: 'board_application_fee',
     category: 'STATUTORY_BOARD_FEES',
     label: 'Board Application Fee',
@@ -764,27 +750,62 @@ export const SUBDIVISION_COST_TYPES: SubdivisionCostType[] = [
     default_amount_kes: 3050,
   },
 
-  // Survey & Planning Fees
+  // Subdivision Costs (reordered to follow workflow sequence)
+  {
+    id: 'search_fee',
+    category: 'SURVEY_PLANNING_FEES',
+    label: 'Search',
+    description: 'Property search fee for subdivision',
+    default_amount_kes: 1050,
+  },
+  {
+    id: 'lcb_normal_fee',
+    category: 'SURVEY_PLANNING_FEES',
+    label: 'Subdivision Consent (LCB Normal)',
+    description: 'Land Control Board consent for subdivision',
+    default_amount_kes: 16000,
+  },
+  {
+    id: 'lcb_special_fee',
+    category: 'SURVEY_PLANNING_FEES',
+    label: 'Subdivision Consent (LCB Special)',
+    description: 'Special Land Control Board consent for subdivision',
+    default_amount_kes: 20000,
+  },
+  {
+    id: 'mutation_drawing',
+    category: 'SURVEY_PLANNING_FEES',
+    label: 'Mutation Costs',
+    description: 'Drawing of mutation plans',
+    default_amount_kes: 5000,
+  },
+  {
+    id: 'new_parcel_numbers',
+    category: 'SURVEY_PLANNING_FEES',
+    label: 'New Parcel Numbers',
+    description: 'Cost per portion for new parcel numbers',
+    default_amount_kes: 1000,
+  },
+  {
+    id: 'beaconing',
+    category: 'SURVEY_PLANNING_FEES',
+    label: 'Beaconing',
+    description: 'Survey beaconing and demarcation costs',
+    default_amount_kes: 2500,
+  },
+  {
+    id: 'new_title_registration',
+    category: 'SURVEY_PLANNING_FEES',
+    label: 'Registration of Titles',
+    description: 'Registration of new subdivision titles',
+    default_amount_kes: 5500,
+  },
   {
     id: 'scheme_plan_preparation',
     category: 'SURVEY_PLANNING_FEES',
     label: 'Scheme Plan Preparation',
     description: 'Cost per portion for scheme plan',
     default_amount_kes: 1000,
-  },
-  {
-    id: 'mutation_drawing',
-    category: 'SURVEY_PLANNING_FEES',
-    label: 'Mutation Drawing',
-    description: 'Drawing of mutation plans',
-    default_amount_kes: 5000,
-  },
-  {
-    id: 'mutation_checking',
-    category: 'SURVEY_PLANNING_FEES',
-    label: 'Mutation Checking',
-    description: 'Cost per portion for mutation checking',
-    default_amount_kes: 500,
   },
   {
     id: 'surveyor_professional_fees',
@@ -807,22 +828,8 @@ export const SUBDIVISION_COST_TYPES: SubdivisionCostType[] = [
     description: 'Cost per portion for RIM updates',
     default_amount_kes: 1000,
   },
-  {
-    id: 'new_parcel_numbers',
-    category: 'SURVEY_PLANNING_FEES',
-    label: 'New Parcel Numbers',
-    description: 'Cost per portion for new parcel numbers',
-    default_amount_kes: 1000,
-  },
 
   // Registration & Title Fees
-  {
-    id: 'new_title_registration',
-    category: 'REGISTRATION_TITLE_FEES',
-    label: 'New Title Registration',
-    description: 'Cost per portion for new title registration',
-    default_amount_kes: 3550,
-  },
   {
     id: 'registrar_fees',
     category: 'REGISTRATION_TITLE_FEES',
@@ -860,13 +867,7 @@ export const SUBDIVISION_COST_TYPES: SubdivisionCostType[] = [
     description: 'Cost per portion for admin costs',
     default_amount_kes: 250,
   },
-  {
-    id: 'search_fee',
-    category: 'LEGAL_COMPLIANCE',
-    label: 'Search Fee',
-    description: 'Property search fee',
-    default_amount_kes: 1050,
-  },
+
   {
     id: 'land_rates_clearance',
     category: 'LEGAL_COMPLIANCE',
@@ -909,7 +910,7 @@ export const SUBDIVISION_COST_TYPES: SubdivisionCostType[] = [
 // Subdivision cost category labels for display
 export const SUBDIVISION_COST_CATEGORY_LABELS: Record<SubdivisionCostCategory, string> = {
   STATUTORY_BOARD_FEES: 'Statutory & Board Fees',
-  SURVEY_PLANNING_FEES: 'Survey & Planning Fees',
+  SURVEY_PLANNING_FEES: 'Subdivision Costs',
   REGISTRATION_TITLE_FEES: 'Registration & Title Fees',
   LEGAL_COMPLIANCE: 'Legal & Compliance',
   OTHER_CHARGES: 'Other Charges',

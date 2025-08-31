@@ -221,8 +221,8 @@ export class SubdivisionCostsService {
 
       // Survey & Planning Fees
       scheme_plan_preparation: 'Scheme Plan Preparation',
-      mutation_drawing: 'Mutation Drawing',
-      mutation_checking: 'Mutation Checking',
+      mutation_drawing: 'Mutation Costs',
+      beaconing: 'Beaconing',
       surveyor_professional_fees: 'Surveyor Professional Fees',
       map_amendment: 'Map Amendment',
       rim_update: 'RIM Update',
