@@ -3,7 +3,7 @@
  * Handles caching, offline functionality, and background sync
  */
 
-const CACHE_VERSION = 'v8' // Bumped to clear old cache
+const CACHE_VERSION = 'v10' // Simplified - no API caching
 const CACHE_NAME = `mzima-homes-${CACHE_VERSION}`
 const STATIC_CACHE = `mzima-static-${CACHE_VERSION}`
 const DYNAMIC_CACHE = `mzima-dynamic-${CACHE_VERSION}`
@@ -15,7 +15,7 @@ const STATIC_FILES = [
   '/offline',
   '/manifest.json',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icons/icon-512x512.png',
 ]
 
 // API endpoints to cache
@@ -26,7 +26,7 @@ const API_ENDPOINTS = [
   '/api/purchase-pipeline',
   '/api/property-subdivisions',
   '/api/property-handovers',
-  '/api/property-documents'
+  '/api/property-documents',
 ]
 
 // Offline operations queue name
@@ -35,9 +35,10 @@ const OFFLINE_QUEUE_NAME = 'offline-operations'
 // Install event - cache static files
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Installing...')
-  
+
   event.waitUntil(
-    caches.open(STATIC_CACHE)
+    caches
+      .open(STATIC_CACHE)
       .then((cache) => {
         console.log('Service Worker: Caching static files')
         return cache.addAll(STATIC_FILES)
@@ -55,25 +56,30 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Activating...')
-  
-  event.waitUntil((async () => {
-    const keys = await caches.keys()
-    await Promise.all(keys
-      .filter(k => ![STATIC_CACHE, DYNAMIC_CACHE, API_CACHE].includes(k))
-      .map(k => {
-        console.log('Service Worker: Deleting old cache', k)
-        return caches.delete(k)
-      }))
-    console.log('Service Worker: Activated')
-    await self.clients.claim()
-  })())
+
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys()
+      await Promise.all(
+        keys
+          .filter((k) => ![STATIC_CACHE, DYNAMIC_CACHE, API_CACHE].includes(k))
+          .map((k) => {
+            console.log('Service Worker: Deleting old cache', k)
+            return caches.delete(k)
+          })
+      )
+      console.log('Service Worker: Activated')
+      await self.clients.claim()
+    })()
+  )
 })
 
-// Don't cache Supabase/API responses to prevent stale data
+// Don't cache any API responses to prevent stale data
 const shouldBypass = (url) =>
   url.includes('supabase.co') ||
   url.includes('/rest/v1/') ||
-  url.includes('/auth/v1/')
+  url.includes('/auth/v1/') ||
+  url.includes('/api/')
 
 // Fetch event - handle requests with caching strategy
 self.addEventListener('fetch', (event) => {
@@ -85,7 +91,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Bypass Supabase and API endpoints completely
+  // Bypass API endpoints completely - no caching for dynamic data
   if (shouldBypass(url.href)) {
     return
   }
@@ -97,10 +103,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Handle different types of requests
-  if (url.pathname.startsWith('/api/')) {
-    // API requests - Network First with cache fallback
-    event.respondWith(handleApiRequest(request))
-  } else if (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2)$/)) {
+  if (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2)$/)) {
     // Static assets - Cache First
     event.respondWith(handleStaticAssets(request))
   } else {
@@ -109,56 +112,16 @@ self.addEventListener('fetch', (event) => {
   }
 })
 
-// API request handler - Network First
-async function handleApiRequest(request) {
-  const cacheName = API_CACHE
-  
-  try {
-    // Try network first
-    const netResp = await fetch(request)
-
-    if (netResp.ok) {
-      // Cache successful responses
-      const cache = await caches.open(cacheName)
-      // Clone BEFORE any body usage to prevent "already used" error
-      const clone = netResp.clone()
-      cache.put(request, clone).catch(err => console.log('Cache put failed:', err))
-    }
-
-    return netResp
-  } catch (error) {
-    console.log('Service Worker: Network failed, trying cache for API request')
-    
-    // Fallback to cache
-    const cachedResponse = await caches.match(request)
-    if (cachedResponse) {
-      return cachedResponse
-    }
-    
-    // Return offline response for API requests
-    return new Response(
-      JSON.stringify({
-        error: 'Offline',
-        message: 'This data is not available offline'
-      }),
-      {
-        status: 503,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    )
-  }
-}
-
 // Static assets handler - Cache First
 async function handleStaticAssets(request) {
   const cacheName = STATIC_CACHE
-  
+
   // Try cache first
   const cachedResponse = await caches.match(request)
   if (cachedResponse) {
     return cachedResponse
   }
-  
+
   try {
     // Fallback to network
     const netResp = await fetch(request)
@@ -167,13 +130,13 @@ async function handleStaticAssets(request) {
       const cache = await caches.open(cacheName)
       // Clone BEFORE any body usage to prevent "already used" error
       const clone = netResp.clone()
-      cache.put(request, clone).catch(err => console.log('Cache put failed:', err))
+      cache.put(request, clone).catch((err) => console.log('Cache put failed:', err))
     }
 
     return netResp
   } catch (error) {
     console.log('Service Worker: Failed to fetch static asset', request.url)
-    
+
     // Return placeholder for images
     if (request.url.match(/\.(png|jpg|jpeg|gif|svg)$/)) {
       return new Response(
@@ -181,7 +144,7 @@ async function handleStaticAssets(request) {
         { headers: { 'Content-Type': 'image/svg+xml' } }
       )
     }
-    
+
     throw error
   }
 }
@@ -195,7 +158,7 @@ async function handleNavigationRequest(request) {
     // Clone BEFORE any body usage to prevent "already used" error
     const clone = netResp.clone()
     // Don't block the response
-    cache.put(request, clone).catch(err => console.log('Cache put failed:', err))
+    cache.put(request, clone).catch((err) => console.log('Cache put failed:', err))
     return netResp
   } catch (err) {
     const cached = await cache.match(request, { ignoreSearch: true })
@@ -213,19 +176,19 @@ async function handlePageRequest(request) {
     // Clone BEFORE any body usage to prevent "already used" error
     const clone = netResp.clone()
     // Don't block the response
-    cache.put(request, clone).catch(err => console.log('Cache put failed:', err))
+    cache.put(request, clone).catch((err) => console.log('Cache put failed:', err))
     return netResp
   } catch (error) {
     console.log('Service Worker: Page request failed, trying cache')
     const cached = await cache.match(request)
     if (cached) return cached
-    
+
     // Show offline page
     const offlineResponse = await caches.match('/offline')
     if (offlineResponse) {
       return offlineResponse
     }
-    
+
     // Fallback offline response
     return new Response(
       `<!DOCTYPE html>
@@ -247,7 +210,7 @@ async function handlePageRequest(request) {
         </body>
       </html>`,
       {
-        headers: { 'Content-Type': 'text/html' }
+        headers: { 'Content-Type': 'text/html' },
       }
     )
   }
@@ -256,7 +219,7 @@ async function handlePageRequest(request) {
 // Background sync for offline actions
 self.addEventListener('sync', (event) => {
   console.log('Service Worker: Background sync triggered', event.tag)
-  
+
   if (event.tag === 'background-sync-commands') {
     event.waitUntil(syncOfflineCommands())
   }
@@ -267,16 +230,16 @@ async function syncOfflineCommands() {
   try {
     // Get offline commands from IndexedDB
     const offlineCommands = await getOfflineCommands()
-    
+
     for (const command of offlineCommands) {
       try {
         // Execute command
         const response = await fetch('/api/commands', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(command)
+          body: JSON.stringify(command),
         })
-        
+
         if (response.ok) {
           // Remove from offline storage
           await removeOfflineCommand(command.id)
@@ -294,29 +257,29 @@ async function syncOfflineCommands() {
 // Push notification handler
 self.addEventListener('push', (event) => {
   console.log('Service Worker: Push notification received')
-  
+
   const options = {
     body: 'You have new updates in Mzima Homes',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/badge-72x72.png',
     vibrate: [200, 100, 200],
     data: {
-      url: '/'
+      url: '/',
     },
     actions: [
       {
         action: 'view',
         title: 'View',
-        icon: '/icons/action-view.png'
+        icon: '/icons/action-view.png',
       },
       {
         action: 'dismiss',
         title: 'Dismiss',
-        icon: '/icons/action-dismiss.png'
-      }
-    ]
+        icon: '/icons/action-dismiss.png',
+      },
+    ],
   }
-  
+
   if (event.data) {
     try {
       const payload = event.data.json()
@@ -326,24 +289,22 @@ self.addEventListener('push', (event) => {
       console.error('Service Worker: Error parsing push payload', error)
     }
   }
-  
-  event.waitUntil(
-    self.registration.showNotification('Mzima Homes', options)
-  )
+
+  event.waitUntil(self.registration.showNotification('Mzima Homes', options))
 })
 
 // Notification click handler
 self.addEventListener('notificationclick', (event) => {
   console.log('Service Worker: Notification clicked', event.action)
-  
+
   event.notification.close()
-  
+
   if (event.action === 'dismiss') {
     return
   }
-  
+
   const url = event.notification.data?.url || '/'
-  
+
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((clientList) => {
       // Check if app is already open
@@ -352,7 +313,7 @@ self.addEventListener('notificationclick', (event) => {
           return client.focus()
         }
       }
-      
+
       // Open new window
       if (clients.openWindow) {
         return clients.openWindow(url)
@@ -382,7 +343,7 @@ async function queueOfflineOperation(request) {
       headers: Object.fromEntries(request.headers.entries()),
       body: request.method !== 'GET' ? await request.text() : null,
       timestamp: Date.now(),
-      retryCount: 0
+      retryCount: 0,
     }
 
     const db = await openOfflineDB()
@@ -442,7 +403,7 @@ async function processOfflineOperations() {
         const request = new Request(operation.url, {
           method: operation.method,
           headers: operation.headers,
-          body: operation.body
+          body: operation.body,
         })
 
         const response = await fetch(request)
@@ -452,11 +413,11 @@ async function processOfflineOperations() {
           console.log('SW: Successfully synced offline operation:', operation.id)
 
           // Notify clients
-          self.clients.matchAll().then(clients => {
-            clients.forEach(client => {
+          self.clients.matchAll().then((clients) => {
+            clients.forEach((client) => {
               client.postMessage({
                 type: 'OFFLINE_OPERATION_SYNCED',
-                operation: operation
+                operation: operation,
               })
             })
           })
@@ -498,20 +459,24 @@ self.addEventListener('message', (event) => {
       Promise.all([
         caches.delete(STATIC_CACHE),
         caches.delete(DYNAMIC_CACHE),
-        caches.delete(API_CACHE)
-      ]).then(() => {
-        event.ports[0].postMessage({ success: true })
-      }).catch((error) => {
-        event.ports[0].postMessage({ success: false, error: error.message })
-      })
+        caches.delete(API_CACHE),
+      ])
+        .then(() => {
+          event.ports[0].postMessage({ success: true })
+        })
+        .catch((error) => {
+          event.ports[0].postMessage({ success: false, error: error.message })
+        })
       break
 
     case 'GET_OFFLINE_QUEUE_SIZE':
-      getOfflineQueueSize().then((size) => {
-        event.ports[0].postMessage({ size })
-      }).catch((error) => {
-        event.ports[0].postMessage({ size: 0, error: error.message })
-      })
+      getOfflineQueueSize()
+        .then((size) => {
+          event.ports[0].postMessage({ size })
+        })
+        .catch((error) => {
+          event.ports[0].postMessage({ size: 0, error: error.message })
+        })
       break
   }
 })
