@@ -299,7 +299,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
                 amount: paymentConfig.amount,
                 description: paymentConfig.description,
                 pipeline: 'handover',
-                paymentType: paymentConfig.paymentType,
+                paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost' | 'subdivision_cost',
               })
             }}
             className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors"
@@ -460,7 +460,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
                 amount: paymentConfig.amount,
                 description: paymentConfig.description,
                 pipeline: pipeline as 'direct_addition' | 'purchase_pipeline' | 'handover' | 'subdivision',
-                paymentType: paymentConfig.paymentType,
+                paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost' | 'subdivision_cost',
               })
             }}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"

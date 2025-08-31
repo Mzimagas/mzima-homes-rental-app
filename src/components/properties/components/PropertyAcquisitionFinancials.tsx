@@ -7,6 +7,8 @@ import {
   ACQUISITION_COST_TYPES,
   ACQUISITION_COST_CATEGORY_LABELS,
   AcquisitionCostCategory,
+  SUBDIVISION_COST_TYPES,
+  SUBDIVISION_COST_CATEGORY_LABELS,
 } from '../types/property-management.types'
 import { AcquisitionFinancialsService } from '../services/acquisition-financials.service'
 import EnhancedPurchasePriceManager from './EnhancedPurchasePriceManager'
@@ -141,12 +143,20 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         allParams: Object.fromEntries(params.entries())
       })
 
-      if (subtab !== 'acquisition_costs') return
+      // Handle both acquisition_costs and subdivision_costs subtabs
+      if (subtab !== 'acquisition_costs' && subtab !== 'subdivision_costs') return
+
+      let cost_type_id = params.get('cost_type_id') || ''
+
+      // If this is a subdivision_costs subtab, prefix the cost type ID
+      if (subtab === 'subdivision_costs' && cost_type_id && !cost_type_id.startsWith('subdivision_')) {
+        cost_type_id = `subdivision_${cost_type_id}`
+      }
 
       // Create a stable signature for this prefill payload to avoid re-applying
       const sig = JSON.stringify({
         type: 'cost',
-        cost_type_id: params.get('cost_type_id') || '',
+        cost_type_id,
         amount_kes: params.get('amount_kes') || '',
         payment_date: params.get('payment_date') || new Date().toISOString().slice(0, 10),
         notes: params.get('notes') || ''
@@ -156,7 +166,6 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         return
       }
 
-      const cost_type_id = params.get('cost_type_id') || ''
       const amount_kes = params.get('amount_kes') || ''
       const payment_date = params.get('payment_date') || new Date().toISOString().slice(0, 10)
       const notes = params.get('notes') || ''
@@ -238,6 +247,17 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
             if (detail.description) params.set('notes', detail.description)
             params.set('subtab', 'acquisition_costs')
             console.log('🔍 PropertyAcquisitionFinancials calling applyPrefillFromParams with:', Object.fromEntries(params.entries()))
+            applyPrefillFromParams(params)
+          }
+
+          // Handle subdivision costs prefill
+          else if (detail?.subtab === 'subdivision_costs') {
+            if (detail.costTypeId) params.set('cost_type_id', detail.costTypeId)
+            if (typeof detail.amount === 'number') params.set('amount_kes', String(detail.amount))
+            if (detail.date) params.set('payment_date', detail.date)
+            if (detail.description) params.set('notes', detail.description)
+            params.set('subtab', 'subdivision_costs')
+            console.log('🔍 PropertyAcquisitionFinancials calling applyPrefillFromParams for subdivision with:', Object.fromEntries(params.entries()))
             applyPrefillFromParams(params)
           }
 
@@ -392,23 +412,54 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     setError(null)
 
     try {
-      // Find the cost type to get the category
-      const costType = ACQUISITION_COST_TYPES.find((type) => type.id === newCost.cost_type_id)
-      if (!costType) {
-        throw new Error('Invalid cost type selected')
+      // Check if this is a subdivision cost type
+      if (newCost.cost_type_id.startsWith('subdivision_')) {
+        // Handle subdivision cost
+        const subdivisionCostTypeId = newCost.cost_type_id.replace('subdivision_', '')
+        const subdivisionCostType = SUBDIVISION_COST_TYPES.find((type) => type.id === subdivisionCostTypeId)
+
+        if (!subdivisionCostType) {
+          throw new Error('Invalid subdivision cost type selected')
+        }
+
+        // Import subdivision service dynamically
+        const { SubdivisionCostsService } = await import('../services/subdivision-costs.service')
+
+        // Create subdivision cost entry
+        const subdivisionCostEntry = await SubdivisionCostsService.createSubdivisionCost(property.id, {
+          cost_type_id: subdivisionCostTypeId,
+          cost_category: subdivisionCostType.category,
+          amount_kes: parseFloat(newCost.amount_kes),
+          payment_status: 'PAID',
+          payment_reference: newCost.payment_reference || undefined,
+          payment_date: newCost.payment_date || new Date().toISOString().split('T')[0],
+          notes: newCost.notes || undefined,
+        })
+
+        // Update subdivision costs summary
+        await handleSubdivisionCostsUpdate(property.id)
+
+        showToast('Subdivision cost added successfully', { variant: 'success' })
+      } else {
+        // Handle regular acquisition cost
+        const costType = ACQUISITION_COST_TYPES.find((type) => type.id === newCost.cost_type_id)
+        if (!costType) {
+          throw new Error('Invalid cost type selected')
+        }
+
+        // Create cost entry via API
+        const costEntry = await AcquisitionFinancialsService.createAcquisitionCost(property.id, {
+          cost_type_id: newCost.cost_type_id,
+          cost_category: costType.category,
+          amount_kes: parseFloat(newCost.amount_kes),
+          payment_reference: newCost.payment_reference || undefined,
+          payment_date: newCost.payment_date || undefined,
+          notes: newCost.notes || undefined,
+        })
+
+        setCostEntries((prev) => [...prev, costEntry])
+        showToast('Cost added successfully', { variant: 'success' })
       }
-
-      // Create cost entry via API
-      const costEntry = await AcquisitionFinancialsService.createAcquisitionCost(property.id, {
-        cost_type_id: newCost.cost_type_id,
-        cost_category: costType.category,
-        amount_kes: parseFloat(newCost.amount_kes),
-        payment_reference: newCost.payment_reference || undefined,
-        payment_date: newCost.payment_date || undefined,
-        notes: newCost.notes || undefined,
-      })
-
-      setCostEntries((prev) => [...prev, costEntry])
       setNewCost({
         cost_type_id: '',
         amount_kes: '',
@@ -429,9 +480,6 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
 
       setShowAddCost(false)
       onUpdate?.(property.id)
-
-      // Successful add toast and auto-scroll to the new entry after refresh
-      showToast('Cost added successfully', { variant: 'success' })
 
       // Refresh data from server to ensure consistency
       setTimeout(async () => {
@@ -550,6 +598,11 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   }
 
   const getCostTypeLabel = (costTypeId: string) => {
+    // Check if it's a subdivision cost type
+    if (costTypeId.startsWith('subdivision_')) {
+      const subdivisionCostTypeId = costTypeId.replace('subdivision_', '')
+      return SUBDIVISION_COST_TYPES.find((type) => type.id === subdivisionCostTypeId)?.label || 'Unknown Subdivision Cost'
+    }
     return ACQUISITION_COST_TYPES.find((type) => type.id === costTypeId)?.label || 'Unknown'
   }
 
@@ -904,6 +957,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                         }
                       >
                         <option value="">Select cost type...</option>
+                        {/* Acquisition Cost Categories */}
                         {Object.entries(ACQUISITION_COST_CATEGORY_LABELS).map(
                           ([category, label]) => (
                             <optgroup key={category} label={label}>
@@ -917,6 +971,16 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                             </optgroup>
                           )
                         )}
+                        {/* Subdivision Costs Section */}
+                        <optgroup label="Subdivision Costs">
+                          {SUBDIVISION_COST_TYPES.filter(type =>
+                            ['search_fee', 'lcb_normal_fee', 'lcb_special_fee', 'mutation_drawing', 'beaconing', 'new_title_registration'].includes(type.id)
+                          ).map((type) => (
+                            <option key={`subdivision_${type.id}`} value={`subdivision_${type.id}`}>
+                              {type.label}
+                            </option>
+                          ))}
+                        </optgroup>
                       </Select>
                     </div>
                     <div>
