@@ -71,6 +71,102 @@ export default function PropertySubdivisionCosts({
     loadSubdivisionCosts()
   }, [property.id])
 
+  // Handle prefill from navigation events
+  useEffect(() => {
+    const lastAppliedPrefillRef = { current: '' }
+
+    const applySubdivisionCostPrefill = (params: URLSearchParams) => {
+      const subtab = params.get('subtab')
+      if (subtab !== 'subdivision_costs') return
+
+      const costTypeId = params.get('cost_type_id') || ''
+      const amount = params.get('amount_kes') || ''
+      const paymentDate = params.get('payment_date') || new Date().toISOString().slice(0, 10)
+      const notes = params.get('notes') || ''
+
+      console.log('🔍 PropertySubdivisionCosts applySubdivisionCostPrefill:', {
+        subtab,
+        costTypeId,
+        amount,
+        paymentDate,
+        notes
+      })
+
+      // Create a stable signature for this prefill payload to avoid re-applying
+      const sig = JSON.stringify({
+        type: 'subdivision_cost',
+        cost_type_id: costTypeId,
+        amount_kes: amount,
+        payment_date: paymentDate,
+        notes
+      })
+      if (lastAppliedPrefillRef.current === sig) {
+        console.log('🔍 PropertySubdivisionCosts skipping duplicate prefill')
+        return
+      }
+
+      // Find the cost type to get the category
+      const costType = SUBDIVISION_COST_TYPES.find(type => type.id === costTypeId)
+
+      // Batch state updates for better performance
+      requestAnimationFrame(() => {
+        setCollapsedSubdivisionCosts(false)
+        setShowAddCost(true)
+        setNewCost((prev) => ({
+          ...prev,
+          cost_type_id: costTypeId,
+          amount_kes: amount,
+          payment_date: paymentDate,
+          notes,
+        }))
+        lastAppliedPrefillRef.current = sig
+      })
+    }
+
+    // Handle navigation events
+    const navHandler = (event: CustomEvent) => {
+      const detail = event.detail
+      console.log('🔍 PropertySubdivisionCosts navigateToFinancial event:', detail)
+
+      if (detail?.tabName === 'financial' && detail?.propertyId === property.id) {
+        const params = new URLSearchParams()
+
+        // Handle subdivision costs prefill
+        if (detail?.subtab === 'subdivision_costs') {
+          if (detail.costTypeId) params.set('cost_type_id', detail.costTypeId)
+          if (typeof detail.amount === 'number') params.set('amount_kes', String(detail.amount))
+          if (detail.date) params.set('payment_date', detail.date)
+          if (detail.description) params.set('notes', detail.description)
+          params.set('subtab', 'subdivision_costs')
+          console.log('🔍 PropertySubdivisionCosts calling applySubdivisionCostPrefill with:', Object.fromEntries(params.entries()))
+          applySubdivisionCostPrefill(params)
+        }
+      }
+    }
+
+    // Apply prefill from current URL on mount (handles race when component mounts after event)
+    try {
+      const url = new URL(window.location.href)
+      const currentParams = url.searchParams
+      const subtab = currentParams.get('subtab')
+      console.log('🔍 PropertySubdivisionCosts URL prefill check:', {
+        url: url.href,
+        subtab,
+        cost_type_id: currentParams.get('cost_type_id'),
+        amount_kes: currentParams.get('amount_kes'),
+        notes: currentParams.get('notes')
+      })
+      if (subtab === 'subdivision_costs') {
+        applySubdivisionCostPrefill(currentParams)
+      }
+    } catch {}
+
+    window.addEventListener('navigateToFinancial', navHandler as EventListener, { passive: true })
+    return () => {
+      window.removeEventListener('navigateToFinancial', navHandler as EventListener)
+    }
+  }, [property.id])
+
   const loadSubdivisionCosts = async () => {
     setInitialLoading(true)
     setError(null)
