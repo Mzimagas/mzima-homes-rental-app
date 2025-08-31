@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
 import HandoverFinancialSection from './HandoverFinancialSection'
+import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import { HandoverItem } from '../types/property-management.types'
 import { initializeHandoverPipelineStages } from '../utils/property-management.utils'
 import {
@@ -234,14 +235,29 @@ export default function InlineHandoverView({
                 </button>
               </div>
             ) : (
-              <HandoverFinancialSection
-                propertyId={handover.property_id}
-                financialSummary={financialSummary}
-                onDataUpdate={loadFinancialData}
+              <div className="space-y-6">
+                {/* Use PropertyAcquisitionFinancials for acquisition costs functionality */}
+                <PropertyAcquisitionFinancials
+                  property={{
+                    id: handover.property_id,
+                    name: handover.property_name,
+                    address: handover.property_address,
+                    property_type: handover.property_type,
+                    purchase_price_agreement_kes: handover.negotiated_price_kes || handover.asking_price_kes,
+                    // Add other required PropertyWithLifecycle fields with defaults
+                    created_at: handover.created_at,
+                    updated_at: handover.updated_at,
+                  } as any}
+                  onUpdate={() => loadFinancialData()}
+                />
 
-
-
-              />
+                {/* Keep HandoverFinancialSection for handover-specific features like payment receipts */}
+                <HandoverFinancialSection
+                  propertyId={handover.property_id}
+                  financialSummary={financialSummary}
+                  onDataUpdate={loadFinancialData}
+                />
+              </div>
             )}
           </div>
         </TabContent>
