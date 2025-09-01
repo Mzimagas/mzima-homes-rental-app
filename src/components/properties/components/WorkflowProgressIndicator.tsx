@@ -24,8 +24,9 @@ interface WorkflowProgressIndicatorProps {
 /**
  * Workflow-aware progress indicator that calculates completion based on filtered document types
  * Automatically adjusts progress calculation based on workflow type:
- * - Regular workflows: Progress out of stages 1-10 documents
- * - Subdivision workflow: Progress out of stages 10-16 documents (displayed as 1-7)
+ * - Regular workflows: Progress out of 14 documents (stages 1-10, including optional documents)
+ * - Subdivision workflow: Progress out of 7 documents (stages 10-16, displayed as 1-7)
+ * Optional documents can be marked as N/A and count toward completion
  */
 export default function WorkflowProgressIndicator({
   propertyId,
@@ -86,7 +87,7 @@ export default function WorkflowProgressIndicator({
             <div className="text-lg sm:text-xl font-semibold text-gray-700">
               {stats.completed}/{stats.total}
             </div>
-            <div className="text-xs sm:text-sm text-gray-600">Required</div>
+            <div className="text-xs sm:text-sm text-gray-600">Documents</div>
           </div>
         </div>
       </div>
@@ -105,7 +106,7 @@ export default function WorkflowProgressIndicator({
           <>
             <span className={`text-${workflowColor}-600`}>✅</span>
             <span className={`text-${workflowColor}-700 font-medium`}>
-              All required documents uploaded!
+              All documents completed!
             </span>
           </>
         ) : (

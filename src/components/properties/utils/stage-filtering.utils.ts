@@ -222,24 +222,26 @@ export function isDocTypeAllowedForWorkflow(docTypeKey: DocTypeKey, workflowType
 
 /**
  * Calculate workflow-aware document completion statistics
- * Uses filtered document types based on workflow instead of all DOC_TYPES
+ * Uses filtered document types based on workflow, including ALL documents (required + optional)
+ * Optional documents can be marked as N/A and count toward completion
  */
 export function calculateWorkflowProgress(
   documentStates: Record<string, any>,
   workflowType: WorkflowType
 ): { completed: number; total: number; percentage: number } {
   const filteredDocTypes = getFilteredDocTypes(workflowType)
-  const requiredDocs = filteredDocTypes.filter((dt) => dt.required)
+  // Include ALL documents (required + optional) since optional can be marked N/A
+  const allDocs = filteredDocTypes
 
-  const completedDocs = requiredDocs.filter((dt) => {
+  const completedDocs = allDocs.filter((dt) => {
     const state = documentStates[dt.key]
     return state?.status?.is_na || (state?.documents?.length || 0) > 0
   })
 
   return {
     completed: completedDocs.length,
-    total: requiredDocs.length,
-    percentage: requiredDocs.length > 0 ? Math.round((completedDocs.length / requiredDocs.length) * 100) : 0,
+    total: allDocs.length,
+    percentage: allDocs.length > 0 ? Math.round((completedDocs.length / allDocs.length) * 100) : 0,
   }
 }
 

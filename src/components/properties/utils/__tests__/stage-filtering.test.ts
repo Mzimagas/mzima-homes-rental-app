@@ -305,14 +305,15 @@ describe('Stage Filtering Utils', () => {
       'minutes_decision_subdivision': { status: { is_na: false }, documents: [{ id: '3' }] }, // completed (subdivision-only)
     }
 
-    it('should calculate progress for regular workflows excluding subdivision-only docs', () => {
+    it('should calculate progress for regular workflows including all documents (required + optional)', () => {
       const workflows: WorkflowType[] = ['direct_addition', 'purchase_pipeline', 'handover']
 
       workflows.forEach(workflow => {
         const progress = calculateWorkflowProgress(mockDocumentStates, workflow)
 
-        // Should only count documents that are in the filtered doc types for this workflow
-        expect(progress.total).toBeGreaterThan(0)
+        // Should count ALL documents (required + optional) in the filtered doc types for this workflow
+        // Regular workflows should have 14 total documents (stages 1-10)
+        expect(progress.total).toBe(14) // All documents in stages 1-10
         expect(progress.completed).toBeGreaterThanOrEqual(0)
         expect(progress.completed).toBeLessThanOrEqualTo(progress.total)
         expect(progress.percentage).toBeGreaterThanOrEqual(0)
@@ -323,8 +324,8 @@ describe('Stage Filtering Utils', () => {
     it('should calculate progress for subdivision workflow including only subdivision docs', () => {
       const progress = calculateWorkflowProgress(mockDocumentStates, 'subdivision')
 
-      // Should only count subdivision documents
-      expect(progress.total).toBe(SUBDIVISION_DOC_KEYS.length) // All subdivision docs are required
+      // Should only count subdivision documents (7 total: stages 10-16)
+      expect(progress.total).toBe(7) // All subdivision docs (stages 10-16)
       expect(progress.completed).toBeGreaterThanOrEqual(0)
       expect(progress.completed).toBeLessThanOrEqualTo(progress.total)
       expect(progress.percentage).toBeGreaterThanOrEqual(0)
@@ -335,20 +336,21 @@ describe('Stage Filtering Utils', () => {
       const progress = calculateWorkflowProgress({}, 'direct_addition')
 
       expect(progress.completed).toBe(0)
-      expect(progress.total).toBeGreaterThan(0)
+      expect(progress.total).toBe(14) // Regular workflows have 14 documents
       expect(progress.percentage).toBe(0)
     })
 
     it('should count N/A documents as completed', () => {
       const statesWithNA = {
         'title_copy': { status: { is_na: true }, documents: [] },
-        'seller_id': { status: { is_na: true }, documents: [] },
+        'spouse_id_kra': { status: { is_na: true }, documents: [] }, // Optional document marked N/A
       }
 
       const progress = calculateWorkflowProgress(statesWithNA, 'direct_addition')
 
       // Both documents should count as completed due to N/A status
       expect(progress.completed).toBeGreaterThanOrEqual(2)
+      expect(progress.total).toBe(14) // Total should still be 14 for regular workflows
     })
   })
 })
