@@ -27,6 +27,7 @@ import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import PurchasePipelineDocuments from './PurchasePipelineDocuments'
 import DirectAdditionDocumentsV2 from './DirectAdditionDocumentsV2'
 import HandoverDocumentsV2 from './HandoverDocumentsV2'
+import FilteredDocumentsV2 from './FilteredDocumentsV2'
 
 import SubdivisionStageModal from './SubdivisionStageModal'
 import { PurchaseItem } from '../types/purchase-pipeline.types'
@@ -536,19 +537,13 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
         <TabContent activeTab={activeTab} tabId="documents">
           <div className="space-y-6">
-            {/* Handover Documents V2 takes priority when handover is active */}
-            {hasActiveHandover && (
-              <HandoverDocumentsV2 propertyId={property.id} propertyName={property.name} />
-            )}
-
-            {/* Direct Addition Documents V2 - render only when no active handover */}
-            {property.property_source === 'DIRECT_ADDITION' && !hasActiveHandover && (
-              <DirectAdditionDocumentsV2
-                propertyId={property.id}
-                propertyName={property.name}
-                pipeline={property.subdivision_status === 'SUB_DIVISION_STARTED' ? 'subdivision' : 'direct_addition'}
-              />
-            )}
+            {/* Use FilteredDocumentsV2 for automatic stage filtering based on property type */}
+            <FilteredDocumentsV2
+              propertyId={property.id}
+              propertyName={property.name}
+              property={property}
+              showFilteringInfo={false}
+            />
 
             {/* Purchase Pipeline Interface - Only show for purchase pipeline properties */}
             {property.property_source === 'PURCHASE_PIPELINE' && (

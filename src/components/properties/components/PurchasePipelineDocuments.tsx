@@ -18,6 +18,11 @@ import {
   generateUniqueFilename,
   getFileIcon,
 } from '../../../lib/constants/document-types'
+import {
+  getFilteredDocTypes,
+  SUBDIVISION_DOC_KEYS,
+  REGULAR_DOC_KEYS
+} from '../utils/stage-filtering.utils'
 import { useFinancialStatus } from '../../../hooks/useFinancialStatus'
 import { useFinancialSync } from '../../../hooks/useFinancialSync'
 import { useEnhancedWorkflow } from '../../../hooks/useEnhancedWorkflow'
@@ -148,11 +153,14 @@ export default function PurchasePipelineDocuments({
     const stages: DocumentStageInfo[] = []
     let stageNumber = 1
 
+    // Apply stage filtering for purchase pipeline (stages 1-10 only)
+    const filteredDocTypes = DOC_TYPES.filter(docType => !SUBDIVISION_DOC_KEYS.includes(docType.key))
+
     // Stages that require payment before proceeding with documents
     const paymentFirstStages = new Set([3, 6, 9, 10])
 
-    for (let index = 0; index < DOC_TYPES.length; index++) {
-      const docType = DOC_TYPES[index]
+    for (let index = 0; index < filteredDocTypes.length; index++) {
+      const docType = filteredDocTypes[index]
 
       // Skip agreement documents except the first one (we'll group them)
       if (

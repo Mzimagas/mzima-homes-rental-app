@@ -8,7 +8,14 @@ interface HandoverDocumentsV2Props {
 }
 
 export default function HandoverDocumentsV2({ propertyId, propertyName }: HandoverDocumentsV2Props) {
-  // Mirror image of DirectAdditionDocumentsV2, only pipeline changes
-  return <DirectAdditionDocumentsV2 propertyId={propertyId} propertyName={propertyName} pipeline="handover" />
+  // Mirror image of DirectAdditionDocumentsV2, with handover pipeline and stage filtering
+  return (
+    <DirectAdditionDocumentsV2
+      propertyId={propertyId}
+      propertyName={propertyName}
+      pipeline="handover"
+      stageFilter="stages_1_10"
+    />
+  )
 }
 

@@ -22,6 +22,11 @@ import {
   getFilteredDocTypes,
   getWorkflowType,
   getDisplayStageNumber,
+  getStageConfig,
+  isDocTypeAllowedForWorkflow,
+  getPipelineName,
+  SUBDIVISION_DOC_KEYS,
+  REGULAR_DOC_KEYS,
   type WorkflowType
 } from '../utils/stage-filtering.utils'
 import { useFinancialStatus } from '../../../hooks/useFinancialStatus'
@@ -149,46 +154,45 @@ export default function DirectAdditionDocumentsV2({
   ]
 
   // Get filtered document types based on workflow and stage filter
-  const getFilteredDocTypes = useCallback(() => {
+  const getFilteredDocTypesForComponent = useCallback(() => {
     let filteredTypes = DOC_TYPES
 
     // Apply stage filtering if specified
     if (stageFilter === 'stages_1_10') {
-      // Show only stages 1-10 (regular documents)
-      const subdivisionDocKeys: DocTypeKey[] = [
-        'minutes_decision_subdivision',
-        'search_certificate_subdivision',
-        'lcb_consent_subdivision',
-        'mutation_forms',
-        'beaconing_docs',
-        'title_registration_subdivision'
-      ]
-      filteredTypes = DOC_TYPES.filter(docType => !subdivisionDocKeys.includes(docType.key))
+      // Show only stages 1-10 (regular documents) - STRICT ENFORCEMENT
+      filteredTypes = DOC_TYPES.filter(docType => !SUBDIVISION_DOC_KEYS.includes(docType.key))
     } else if (stageFilter === 'stages_11_16') {
-      // Show only stages 11-16 (subdivision documents)
-      const subdivisionDocKeys: DocTypeKey[] = [
-        'minutes_decision_subdivision',
-        'search_certificate_subdivision',
-        'lcb_consent_subdivision',
-        'mutation_forms',
-        'beaconing_docs',
-        'title_registration_subdivision'
-      ]
-      filteredTypes = DOC_TYPES.filter(docType => subdivisionDocKeys.includes(docType.key))
+      // Show only stages 11-16 (subdivision documents) - STRICT ENFORCEMENT
+      filteredTypes = DOC_TYPES.filter(docType => SUBDIVISION_DOC_KEYS.includes(docType.key))
     } else if (property) {
-      // Auto-detect workflow type from property
+      // Auto-detect workflow type from property and apply strict filtering
       const workflowType = getWorkflowType(property)
       filteredTypes = getFilteredDocTypes(workflowType)
+
+      // Log filtering for debugging
+      console.log(`🎯 Stage Filtering Applied:`, {
+        workflowType,
+        totalDocs: DOC_TYPES.length,
+        filteredDocs: filteredTypes.length,
+        hiddenDocs: DOC_TYPES.length - filteredTypes.length
+      })
+    } else {
+      // Fallback: determine from pipeline prop
+      if (pipeline === 'subdivision') {
+        filteredTypes = DOC_TYPES.filter(docType => SUBDIVISION_DOC_KEYS.includes(docType.key))
+      } else {
+        filteredTypes = DOC_TYPES.filter(docType => !SUBDIVISION_DOC_KEYS.includes(docType.key))
+      }
     }
 
     return filteredTypes
-  }, [stageFilter, property])
+  }, [stageFilter, property, pipeline])
 
   // Calculate document progression stages with multi-document agreement stage
   const calculateDocumentStages = useCallback((): DocumentStageInfo[] => {
     const stages: DocumentStageInfo[] = []
     let stageNumber = 1
-    const filteredDocTypes = getFilteredDocTypes()
+    const filteredDocTypes = getFilteredDocTypesForComponent()
 
     for (let index = 0; index < filteredDocTypes.length; index++) {
       const docType = filteredDocTypes[index]
@@ -253,7 +257,7 @@ export default function DirectAdditionDocumentsV2({
     }
 
     return stages
-  }, [documentStates, getFilteredDocTypes])
+  }, [documentStates, getFilteredDocTypesForComponent])
 
   // Update document stages when document states change
   useEffect(() => {
