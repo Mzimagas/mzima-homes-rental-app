@@ -9,6 +9,7 @@ import {
   AcquisitionCostCategory,
   SUBDIVISION_COST_TYPES,
   SUBDIVISION_COST_CATEGORY_LABELS,
+  SubdivisionCostCategory,
 } from '../types/property-management.types'
 import { AcquisitionFinancialsService } from '../services/acquisition-financials.service'
 import EnhancedPurchasePriceManager from './EnhancedPurchasePriceManager'
@@ -44,7 +45,14 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
 }: PropertyAcquisitionFinancialsProps) {
   const [costEntries, setCostEntries] = useState<AcquisitionCostEntry[]>([])
   const [paymentInstallments, setPaymentInstallments] = useState<PaymentInstallment[]>([])
-
+  const [subdivisionCostsByCategory, setSubdivisionCostsByCategory] = useState<Record<SubdivisionCostCategory, number>>({
+    STATUTORY_BOARD_FEES: 0,
+    SURVEY_PLANNING_FEES: 0,
+    REGISTRATION_TITLE_FEES: 0,
+    LEGAL_COMPLIANCE: 0,
+    OTHER_CHARGES: 0,
+  })
+  const [totalSubdivisionCosts, setTotalSubdivisionCosts] = useState<number>(0)
   const [totalPurchasePrice, setTotalPurchasePrice] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
@@ -303,6 +311,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   // Load existing financial data
   useEffect(() => {
     loadFinancialData()
+    loadSubdivisionCostsSummary()
   }, [property.id])
 
   const loadFinancialData = async () => {
@@ -350,16 +359,46 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     }
   }
 
+  const loadSubdivisionCostsSummary = async () => {
+    try {
+      // Import the service dynamically to avoid circular dependencies
+      const { SubdivisionCostsService } = await import('../services/subdivision-costs.service')
+      const costs = await SubdivisionCostsService.getSubdivisionCosts(property.id)
+
+      const categoryTotals: Record<SubdivisionCostCategory, number> = {
+        STATUTORY_BOARD_FEES: 0,
+        SURVEY_PLANNING_FEES: 0,
+        REGISTRATION_TITLE_FEES: 0,
+        LEGAL_COMPLIANCE: 0,
+        OTHER_CHARGES: 0,
+      }
+      let total = 0
+
+      costs.forEach((entry) => {
+        const costType = SUBDIVISION_COST_TYPES.find((type) => type.id === entry.cost_type_id)
+        if (costType) {
+          categoryTotals[costType.category] += entry.amount_kes
+          total += entry.amount_kes
+        }
+      })
+
+      setSubdivisionCostsByCategory(categoryTotals)
+      setTotalSubdivisionCosts(total)
+    } catch (error) {
+      // Don't set error state for subdivision costs as they're optional
+    }
+  }
 
 
-  // Calculate totals
+
+  // Calculate totals including subdivision costs
   const calculateTotals = () => {
     const totalCosts = costEntries.reduce((sum, entry) => sum + entry.amount_kes, 0)
     const totalPayments = paymentInstallments.reduce((sum, payment) => sum + payment.amount_kes, 0)
     const purchasePrice = parseFloat(totalPurchasePrice) || 0
     const remainingBalance = purchasePrice - totalPayments
 
-    // Calculate costs by category
+    // Calculate acquisition costs by category
     const costsByCategory: Record<AcquisitionCostCategory, number> = {
       PRE_PURCHASE: 0,
       AGREEMENT_LEGAL: 0,
@@ -381,8 +420,10 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       totalPayments,
       purchasePrice,
       remainingBalance,
-      totalAcquisitionCost: totalCosts + purchasePrice,
+      totalAcquisitionCost: totalCosts + purchasePrice + totalSubdivisionCosts,
       costsByCategory,
+      subdivisionCostsByCategory,
+      totalSubdivisionCosts,
     }
   }
 
@@ -407,7 +448,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         const { SubdivisionCostsService } = await import('../services/subdivision-costs.service')
 
         // Create subdivision cost entry
-        const subdivisionCostEntry = await SubdivisionCostsService.createSubdivisionCost(property.id, {
+        await SubdivisionCostsService.createSubdivisionCost(property.id, {
           cost_type_id: subdivisionCostTypeId,
           cost_category: subdivisionCostType.category,
           amount_kes: parseFloat(newCost.amount_kes),
@@ -417,7 +458,8 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
           notes: newCost.notes || undefined,
         })
 
-
+        // Refresh subdivision costs summary
+        await loadSubdivisionCostsSummary()
 
         showToast('Subdivision cost added successfully', { variant: 'success' })
       } else {
@@ -664,7 +706,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       {/* Financial Summary */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <h4 className="text-lg font-semibold text-green-900 mb-3">Financial Summary</h4>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
           <div>
             <div className="text-sm text-green-700">Agreement Price</div>
             <div className="font-bold text-green-900">{formatCurrency(totals.purchasePrice)}</div>
@@ -673,7 +715,10 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
             <div className="text-sm text-green-700">Acquisition Costs</div>
             <div className="font-bold text-green-900">{formatCurrency(totals.totalCosts)}</div>
           </div>
-
+          <div>
+            <div className="text-sm text-green-700">Subdivision Costs</div>
+            <div className="font-bold text-green-900">{formatCurrency(totalSubdivisionCosts)}</div>
+          </div>
           <div>
             <div className="text-sm text-green-700">Paid Purchase Price</div>
             <div className="font-bold text-green-900">{formatCurrency(totals.totalPayments)}</div>
@@ -1075,17 +1120,37 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         <div id={`breakdown-section-${property.id}`} aria-hidden={collapsedBreakdown}>
           {!collapsedBreakdown && (
             <div className="space-y-3 mt-4">
-              {Object.entries(ACQUISITION_COST_CATEGORY_LABELS).map(([category, label]) => (
-                <div key={category} className="flex justify-between items-center">
-                  <span className="text-gray-700">{label}</span>
-                  <span className="font-medium text-gray-900">
-                    {formatCurrency(totals.costsByCategory[category as AcquisitionCostCategory])}
-                  </span>
+              {/* Acquisition Cost Categories */}
+              <div className="mb-4">
+                <h5 className="text-sm font-semibold text-gray-800 mb-2">Acquisition Costs</h5>
+                {Object.entries(ACQUISITION_COST_CATEGORY_LABELS).map(([category, label]) => (
+                  <div key={category} className="flex justify-between items-center py-1">
+                    <span className="text-gray-700 text-sm pl-2">{label}</span>
+                    <span className="font-medium text-gray-900">
+                      {formatCurrency(totals.costsByCategory[category as AcquisitionCostCategory])}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Subdivision Cost Categories */}
+              {totalSubdivisionCosts > 0 && (
+                <div className="mb-4">
+                  <h5 className="text-sm font-semibold text-gray-800 mb-2">Subdivision Costs</h5>
+                  {Object.entries(SUBDIVISION_COST_CATEGORY_LABELS).map(([category, label]) => (
+                    <div key={category} className="flex justify-between items-center py-1">
+                      <span className="text-gray-700 text-sm pl-2">{label}</span>
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(subdivisionCostsByCategory[category as SubdivisionCostCategory])}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
               <div className="border-t border-gray-200 pt-3 mt-3">
                 <div className="flex justify-between items-center font-bold text-lg">
-                  <span className="text-gray-900">Total Acquisition Cost</span>
+                  <span className="text-gray-900">Total Investment Cost</span>
                   <span className="text-gray-900">
                     {formatCurrency(totals.totalAcquisitionCost)}
                   </span>
