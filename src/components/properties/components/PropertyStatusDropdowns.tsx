@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 import {
   getPendingSubdivisionValue,
@@ -35,6 +35,11 @@ export default function PropertyStatusDropdowns({
   onHandoverChange,
   onRefresh,
 }: PropertyStatusDropdownsProps) {
+  // State for confirmation dialogs
+  const [pendingSubdivisionChange, setPendingSubdivisionChange] = useState<string | null>(null)
+  const [pendingHandoverChange, setPendingHandoverChange] = useState<string | null>(null)
+  const [showSubdivisionConfirm, setShowSubdivisionConfirm] = useState(false)
+  const [showHandoverConfirm, setShowHandoverConfirm] = useState(false)
   // Get mutual exclusivity state
   const {
     subdivisionDisabled,
@@ -45,9 +50,9 @@ export default function PropertyStatusDropdowns({
     validateHandoverChange,
   } = usePropertyMutualExclusivity(property.id)
 
-  // Enhanced change handlers with validation and direct API calls
+  // Enhanced change handlers with confirmation before saving
   const handleSubdivisionChange = useCallback(
-    async (value: string) => {
+    (value: string) => {
       const validation = validateSubdivisionChange(value)
 
       if (!validation.allowed) {
@@ -55,11 +60,22 @@ export default function PropertyStatusDropdowns({
         return
       }
 
-      // Use the new status update service instead of the property management service
+      // Show confirmation dialog instead of immediately saving
+      setPendingSubdivisionChange(value)
+      setShowSubdivisionConfirm(true)
+    },
+    [validateSubdivisionChange]
+  )
+
+  // Actual subdivision save function
+  const confirmSubdivisionChange = useCallback(
+    async () => {
+      if (!pendingSubdivisionChange) return
+
       try {
         const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
           property.id,
-          value,
+          pendingSubdivisionChange,
           undefined
         )
 
@@ -72,11 +88,11 @@ export default function PropertyStatusDropdowns({
           console.log('Subdivision update warnings:', result.warnings)
         }
 
-        // Don't call onSubdivisionChange since we've already handled the API call
-        // The old system would trigger another API call which causes the 403 error
-        // onSubdivisionChange(property.id, value)
+        // Close confirmation dialog
+        setShowSubdivisionConfirm(false)
+        setPendingSubdivisionChange(null)
 
-        // Instead, trigger a refresh to update the UI with the new data
+        // Refresh the UI
         if (onRefresh) {
           onRefresh()
         } else {
@@ -87,11 +103,11 @@ export default function PropertyStatusDropdowns({
         alert('Failed to update subdivision status. Please try again.')
       }
     },
-    [property.id, validateSubdivisionChange, onSubdivisionChange]
+    [property.id, pendingSubdivisionChange, onRefresh]
   )
 
   const handleHandoverChange = useCallback(
-    async (value: string) => {
+    (value: string) => {
       const validation = validateHandoverChange(value)
 
       if (!validation.allowed) {
@@ -99,12 +115,23 @@ export default function PropertyStatusDropdowns({
         return
       }
 
-      // Use the new status update service instead of the property management service
+      // Show confirmation dialog instead of immediately saving
+      setPendingHandoverChange(value)
+      setShowHandoverConfirm(true)
+    },
+    [validateHandoverChange]
+  )
+
+  // Actual handover save function
+  const confirmHandoverChange = useCallback(
+    async () => {
+      if (!pendingHandoverChange) return
+
       try {
         const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
           property.id,
           undefined,
-          value
+          pendingHandoverChange
         )
 
         if (!result.success) {
@@ -120,11 +147,11 @@ export default function PropertyStatusDropdowns({
           }
         }
 
-        // Don't call onHandoverChange since we've already handled the API call
-        // The old system would trigger another API call which causes the 403 error
-        // onHandoverChange(property.id, value)
+        // Close confirmation dialog
+        setShowHandoverConfirm(false)
+        setPendingHandoverChange(null)
 
-        // Instead, trigger a refresh to update the UI with the new data
+        // Refresh the UI
         if (onRefresh) {
           onRefresh()
         } else {
@@ -135,7 +162,7 @@ export default function PropertyStatusDropdowns({
         alert('Failed to update handover status. Please try again.')
       }
     },
-    [property.id, validateHandoverChange, onHandoverChange]
+    [property.id, pendingHandoverChange, onRefresh]
   )
 
   // Calculate if dropdowns should be disabled
@@ -210,6 +237,72 @@ export default function PropertyStatusDropdowns({
           <div className="text-xs text-amber-600 mt-1">{handoverDisabledReason}</div>
         )}
       </div>
+
+      {/* Subdivision Confirmation Dialog */}
+      {showSubdivisionConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Confirm Subdivision Status Change</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to change the subdivision status to{' '}
+              <strong>"{pendingSubdivisionChange}"</strong>?
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              This action will update the property status and may affect related processes.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowSubdivisionConfirm(false)
+                  setPendingSubdivisionChange(null)
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSubdivisionChange}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Confirm Change
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Handover Confirmation Dialog */}
+      {showHandoverConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Confirm Handover Status Change</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to change the handover status to{' '}
+              <strong>"{pendingHandoverChange}"</strong>?
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              This action will update the property status and may affect related processes.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowHandoverConfirm(false)
+                  setPendingHandoverChange(null)
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmHandoverChange}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Confirm Change
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -224,6 +317,7 @@ export function PropertyStatusDropdownsCompact({
   propertiesWithPipelineIssues,
   onSubdivisionChange,
   onHandoverChange,
+  onRefresh,
 }: PropertyStatusDropdownsProps) {
   return (
     <div className="space-y-2">
@@ -234,6 +328,7 @@ export function PropertyStatusDropdownsCompact({
         propertiesWithPipelineIssues={propertiesWithPipelineIssues}
         onSubdivisionChange={onSubdivisionChange}
         onHandoverChange={onHandoverChange}
+        onRefresh={onRefresh}
       />
     </div>
   )
