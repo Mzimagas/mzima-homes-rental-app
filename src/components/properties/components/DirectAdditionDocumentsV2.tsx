@@ -25,6 +25,7 @@ import {
   getStageConfig,
   isDocTypeAllowedForWorkflow,
   getPipelineName,
+  calculateWorkflowProgress,
   SUBDIVISION_DOC_KEYS,
   REGULAR_DOC_KEYS,
   type WorkflowType
@@ -34,6 +35,7 @@ import { useFinancialSync } from '../../../hooks/useFinancialSync'
 import { useEnhancedWorkflow } from '../../../hooks/useEnhancedWorkflow'
 import { stageHasFinancialRequirements } from '../../../lib/constants/financial-stage-requirements'
 import FinancialStatusIndicator from './FinancialStatusIndicator'
+import WorkflowProgressIndicator from './WorkflowProgressIndicator'
 
 interface DirectAdditionDocumentsV2Props {
   propertyId: string
@@ -733,16 +735,24 @@ export default function DirectAdditionDocumentsV2({
   }
 
   const getCompletionStats = () => {
-    const requiredDocs = DOC_TYPES.filter((dt) => dt.required)
-    const completedDocs = requiredDocs.filter((dt) => {
-      const state = documentStates[dt.key]
-      return state?.status?.is_na || (state?.documents.length || 0) > 0
-    })
+    // Use workflow-aware progress calculation utility
+    if (property) {
+      const workflowType = getWorkflowType(property)
+      return calculateWorkflowProgress(documentStates, workflowType)
+    } else {
+      // Fallback: Use filtered document types based on pipeline prop
+      const filteredDocTypes = getFilteredDocTypesForComponent()
+      const requiredDocs = filteredDocTypes.filter((dt) => dt.required)
+      const completedDocs = requiredDocs.filter((dt) => {
+        const state = documentStates[dt.key]
+        return state?.status?.is_na || (state?.documents.length || 0) > 0
+      })
 
-    return {
-      completed: completedDocs.length,
-      total: requiredDocs.length,
-      percentage: Math.round((completedDocs.length / requiredDocs.length) * 100),
+      return {
+        completed: completedDocs.length,
+        total: requiredDocs.length,
+        percentage: requiredDocs.length > 0 ? Math.round((completedDocs.length / requiredDocs.length) * 100) : 0,
+      }
     }
   }
 
@@ -776,55 +786,15 @@ export default function DirectAdditionDocumentsV2({
 
   return (
     <div className="space-y-4">
-      {/* Progress Header */}
-      <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border border-emerald-200 rounded-xl p-4 sm:p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
-              📄 Property Documents
-            </h3>
-            <p className="text-sm text-gray-600">{propertyName}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-emerald-600">
-                {stats.percentage}%
-              </div>
-              <div className="text-xs sm:text-sm text-gray-600">Complete</div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg sm:text-xl font-semibold text-gray-700">
-                {stats.completed}/{stats.total}
-              </div>
-              <div className="text-xs sm:text-sm text-gray-600">Required</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-          <div
-            className="bg-gradient-to-r from-emerald-500 to-teal-500 h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
-            style={{ width: `${stats.percentage}%` }}
-          ></div>
-        </div>
-
-        <div className="flex items-center gap-2 text-sm">
-          {stats.percentage === 100 ? (
-            <>
-              <span className="text-emerald-600">✅</span>
-              <span className="text-emerald-700 font-medium">All required documents uploaded!</span>
-            </>
-          ) : (
-            <>
-              <span className="text-blue-500">⏳</span>
-              <span className="text-gray-600">
-                {stats.total - stats.completed} more document
-                {stats.total - stats.completed !== 1 ? 's' : ''} needed
-              </span>
-            </>
-          )}
-        </div>
-      </div>
+      {/* Workflow-Aware Progress Header */}
+      <WorkflowProgressIndicator
+        propertyId={propertyId}
+        propertyName={propertyName}
+        property={property}
+        workflowType={property ? getWorkflowType(property) : (pipeline === 'subdivision' ? 'subdivision' : 'direct_addition')}
+        documentStates={documentStates}
+        showDetails={true}
+      />
 
       {/* Consolidated Document Progression Cards */}
       <div className="space-y-4">

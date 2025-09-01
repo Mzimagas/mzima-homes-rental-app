@@ -20,6 +20,7 @@ import {
 } from '../../../lib/constants/document-types'
 import {
   getFilteredDocTypes,
+  calculateWorkflowProgress,
   SUBDIVISION_DOC_KEYS,
   REGULAR_DOC_KEYS
 } from '../utils/stage-filtering.utils'
@@ -762,22 +763,10 @@ export default function PurchasePipelineDocuments({
     [propertyId]
   )
 
-  // Calculate progress statistics
+  // Calculate progress statistics using workflow-aware progress calculation
   const calculateStats = useCallback(() => {
-    const requiredTypes = DOC_TYPES.filter((dt) => dt.required)
-    const completed = requiredTypes.filter((dt) => {
-      const state = documentStates[dt.key]
-      return state?.status?.is_na || (state?.documents && state.documents.length > 0)
-    }).length
-
-    const percentage =
-      requiredTypes.length > 0 ? Math.round((completed / requiredTypes.length) * 100) : 0
-
-    return {
-      completed,
-      total: requiredTypes.length,
-      percentage,
-    }
+    // Use purchase_pipeline workflow type for consistent filtering
+    return calculateWorkflowProgress(documentStates, 'purchase_pipeline')
   }, [documentStates])
 
   // Calculate stats and update purchase pipeline progress when document stats change

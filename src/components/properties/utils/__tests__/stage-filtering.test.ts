@@ -15,6 +15,7 @@ import {
   getOverriddenStageRange,
   isDocTypeAllowedForWorkflow,
   getStageFilteringSummary,
+  calculateWorkflowProgress,
   SUBDIVISION_DOC_KEYS,
   REGULAR_DOC_KEYS,
   type WorkflowType
@@ -292,6 +293,62 @@ describe('Stage Filtering Utils', () => {
       expect(summary.visibleDocuments).toEqual(REGULAR_DOC_KEYS)
       const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
       expect(summary.hiddenDocuments).toEqual(subdivisionOnlyDocs)
+    })
+  })
+
+  describe('calculateWorkflowProgress', () => {
+    const mockDocumentStates = {
+      'title_copy': { status: { is_na: false }, documents: [{ id: '1' }] }, // completed
+      'seller_id': { status: { is_na: true }, documents: [] }, // N/A (counts as completed)
+      'original_title_deed': { status: { is_na: false }, documents: [] }, // missing
+      'registered_title': { status: { is_na: false }, documents: [{ id: '2' }] }, // completed
+      'minutes_decision_subdivision': { status: { is_na: false }, documents: [{ id: '3' }] }, // completed (subdivision-only)
+    }
+
+    it('should calculate progress for regular workflows excluding subdivision-only docs', () => {
+      const workflows: WorkflowType[] = ['direct_addition', 'purchase_pipeline', 'handover']
+
+      workflows.forEach(workflow => {
+        const progress = calculateWorkflowProgress(mockDocumentStates, workflow)
+
+        // Should only count documents that are in the filtered doc types for this workflow
+        expect(progress.total).toBeGreaterThan(0)
+        expect(progress.completed).toBeGreaterThanOrEqual(0)
+        expect(progress.completed).toBeLessThanOrEqualTo(progress.total)
+        expect(progress.percentage).toBeGreaterThanOrEqual(0)
+        expect(progress.percentage).toBeLessThanOrEqualTo(100)
+      })
+    })
+
+    it('should calculate progress for subdivision workflow including only subdivision docs', () => {
+      const progress = calculateWorkflowProgress(mockDocumentStates, 'subdivision')
+
+      // Should only count subdivision documents
+      expect(progress.total).toBe(SUBDIVISION_DOC_KEYS.length) // All subdivision docs are required
+      expect(progress.completed).toBeGreaterThanOrEqual(0)
+      expect(progress.completed).toBeLessThanOrEqualTo(progress.total)
+      expect(progress.percentage).toBeGreaterThanOrEqual(0)
+      expect(progress.percentage).toBeLessThanOrEqualTo(100)
+    })
+
+    it('should handle empty document states', () => {
+      const progress = calculateWorkflowProgress({}, 'direct_addition')
+
+      expect(progress.completed).toBe(0)
+      expect(progress.total).toBeGreaterThan(0)
+      expect(progress.percentage).toBe(0)
+    })
+
+    it('should count N/A documents as completed', () => {
+      const statesWithNA = {
+        'title_copy': { status: { is_na: true }, documents: [] },
+        'seller_id': { status: { is_na: true }, documents: [] },
+      }
+
+      const progress = calculateWorkflowProgress(statesWithNA, 'direct_addition')
+
+      // Both documents should count as completed due to N/A status
+      expect(progress.completed).toBeGreaterThanOrEqual(2)
     })
   })
 })

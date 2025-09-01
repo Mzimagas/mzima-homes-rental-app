@@ -221,6 +221,29 @@ export function isDocTypeAllowedForWorkflow(docTypeKey: DocTypeKey, workflowType
 }
 
 /**
+ * Calculate workflow-aware document completion statistics
+ * Uses filtered document types based on workflow instead of all DOC_TYPES
+ */
+export function calculateWorkflowProgress(
+  documentStates: Record<string, any>,
+  workflowType: WorkflowType
+): { completed: number; total: number; percentage: number } {
+  const filteredDocTypes = getFilteredDocTypes(workflowType)
+  const requiredDocs = filteredDocTypes.filter((dt) => dt.required)
+
+  const completedDocs = requiredDocs.filter((dt) => {
+    const state = documentStates[dt.key]
+    return state?.status?.is_na || (state?.documents?.length || 0) > 0
+  })
+
+  return {
+    completed: completedDocs.length,
+    total: requiredDocs.length,
+    percentage: requiredDocs.length > 0 ? Math.round((completedDocs.length / requiredDocs.length) * 100) : 0,
+  }
+}
+
+/**
  * Get stage filtering summary for debugging/logging
  */
 export function getStageFilteringSummary(property: PropertyWithLifecycle): {
