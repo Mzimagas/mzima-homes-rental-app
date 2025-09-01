@@ -7,7 +7,7 @@ import { z } from 'zod'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Validation schema for subdivision cost entries
+// Validation schema for subdivision cost entries (matching property_acquisition_costs table structure)
 const subdivisionCostSchema = z.object({
   cost_type_id: z.string().min(1, 'Cost type is required'),
   cost_category: z.enum([
@@ -18,10 +18,11 @@ const subdivisionCostSchema = z.object({
     'OTHER_CHARGES',
   ]),
   amount_kes: z.number().positive('Amount must be positive'),
-  payment_status: z.enum(['PENDING', 'PAID', 'PARTIALLY_PAID']),
   payment_reference: z.string().optional(),
   payment_date: z.string().optional(),
   notes: z.string().optional(),
+  // payment_status is not in property_acquisition_costs table, so we ignore it
+  payment_status: z.enum(['PENDING', 'PAID', 'PARTIALLY_PAID']).optional(),
 })
 
 // Simple error responses
@@ -250,6 +251,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       payment_date: parsed.data.payment_date,
       notes: parsed.data.notes,
       created_by: userId,
+      // payment_status is not stored in property_acquisition_costs table
     }
 
     console.log('Saving subdivision cost to property_acquisition_costs:', costData)
