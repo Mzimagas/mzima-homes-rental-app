@@ -69,6 +69,21 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     breakdown: 'acqfin:collapsed:breakdown',
   } as const
 
+
+  // Normalize cost_type_id to match Select options regardless of subtab
+  const normalizeCostTypeId = (subtab: string | null, rawId: string | null) => {
+    if (!rawId) return ''
+    const id = String(rawId).trim()
+    if (id.startsWith('subdivision_')) return id
+
+    const isSubdivisionShortId = SUBDIVISION_COST_TYPES.some((t) => t.id === id)
+    const isAcqId = ACQUISITION_COST_TYPES.some((t) => t.id === id)
+
+    if (isSubdivisionShortId) return `subdivision_${id}`
+    if (isAcqId) return id
+    return id
+  }
+
   useEffect(() => {
     try {
       const p = localStorage.getItem(LS_KEYS.payments)
@@ -79,7 +94,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       if (b !== null) setCollapsedBreakdown(b === 'true')
     } catch {}
 
-    // Reset form states when property changes
+  // Reset form states when property changes
     setShowAddCost(false)
     setShowAddPayment(false)
     setError(null)
@@ -143,15 +158,10 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         allParams: Object.fromEntries(params.entries())
       })
 
-      // Handle both acquisition_costs and subdivision_costs subtabs
-      if (subtab !== 'acquisition_costs' && subtab !== 'subdivision_costs') return
+      // Handle acquisition_costs subtab (includes subdivision costs)
+      if (subtab !== 'acquisition_costs') return
 
-      let cost_type_id = params.get('cost_type_id') || ''
-
-      // If this is a subdivision_costs subtab, prefix the cost type ID
-      if (subtab === 'subdivision_costs' && cost_type_id && !cost_type_id.startsWith('subdivision_')) {
-        cost_type_id = `subdivision_${cost_type_id}`
-      }
+      let cost_type_id = normalizeCostTypeId(subtab, params.get('cost_type_id'))
 
       // Create a stable signature for this prefill payload to avoid re-applying
       const sig = JSON.stringify({
@@ -170,18 +180,20 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       const payment_date = params.get('payment_date') || new Date().toISOString().slice(0, 10)
       const notes = params.get('notes') || ''
 
-      // Batch state updates for better performance
+      // Two-phase update to ensure the Select is mounted before setting its value
       requestAnimationFrame(() => {
         setCollapsedCosts(false)
         setShowAddCost(true)
-        setNewCost((prev) => ({
-          ...prev,
-          cost_type_id,
-          amount_kes,
-          payment_date,
-          notes,
-        }))
-        lastAppliedPrefillRef.current = sig
+        setTimeout(() => {
+          setNewCost((prev) => ({
+            ...prev,
+            cost_type_id,
+            amount_kes,
+            payment_date,
+            notes,
+          }))
+          lastAppliedPrefillRef.current = sig
+        }, 0)
       })
     }
 
@@ -241,7 +253,10 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
 
           // Handle acquisition costs prefill
           if (detail?.subtab === 'acquisition_costs') {
-            if (detail.costTypeId) params.set('cost_type_id', detail.costTypeId)
+            let cid = String(detail.costTypeId || '').trim()
+            cid = normalizeCostTypeId('acquisition_costs', cid)
+
+            if (cid) params.set('cost_type_id', cid)
             if (typeof detail.amount === 'number') params.set('amount_kes', String(detail.amount))
             if (detail.date) params.set('payment_date', detail.date)
             if (detail.description) params.set('notes', detail.description)
@@ -250,16 +265,6 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
             applyPrefillFromParams(params)
           }
 
-          // Handle subdivision costs prefill
-          else if (detail?.subtab === 'subdivision_costs') {
-            if (detail.costTypeId) params.set('cost_type_id', detail.costTypeId)
-            if (typeof detail.amount === 'number') params.set('amount_kes', String(detail.amount))
-            if (detail.date) params.set('payment_date', detail.date)
-            if (detail.description) params.set('notes', detail.description)
-            params.set('subtab', 'subdivision_costs')
-            console.log('🔍 PropertyAcquisitionFinancials calling applyPrefillFromParams for subdivision with:', Object.fromEntries(params.entries()))
-            applyPrefillFromParams(params)
-          }
 
           // Handle payment installments prefill
           else if (detail?.subtab === 'payments') {
@@ -974,7 +979,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                         {/* Subdivision Costs Section */}
                         <optgroup label="Subdivision Costs">
                           {SUBDIVISION_COST_TYPES.filter(type =>
-                            ['search_fee', 'lcb_normal_fee', 'lcb_special_fee', 'mutation_drawing', 'beaconing', 'new_title_registration'].includes(type.id)
+                            ['search_fee', 'lcb_normal_fee', 'lcb_special_fee', 'mutation_drawing', 'new_parcel_numbers', 'beaconing', 'new_title_registration'].includes(type.id)
                           ).map((type) => (
                             <option key={`subdivision_${type.id}`} value={`subdivision_${type.id}`}>
                               {type.label}

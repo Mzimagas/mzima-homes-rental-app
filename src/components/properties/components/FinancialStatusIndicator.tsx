@@ -323,7 +323,7 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                         const subdivisionCostTypeId = paymentToSubdivisionCostMap[payment?.id || ''] || payment?.id
 
                         return {
-                          subtab: 'subdivision_costs',
+                          subtab: 'acquisition_costs',
                           costTypeId: subdivisionCostTypeId,
                           amount: payment?.amount,
                           description: payment?.description || `Stage ${stage} subdivision payment`,
@@ -357,12 +357,12 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                       stageNumber,
                       action: 'pay',
                       subtab: paymentConfig.subtab,
-                      costTypeId: paymentConfig.costTypeId,
+                      costTypeId: paymentConfig.costTypeId?.trim(),
                       amount: paymentConfig.amount,
                       date: today,
                       description: paymentConfig.description,
-                      pipeline: pipeline as 'direct_addition' | 'purchase_pipeline' | 'handover',
-                      paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost',
+                      pipeline: pipeline as 'direct_addition' | 'purchase_pipeline' | 'handover' | 'subdivision',
+                      paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost' | 'subdivision_cost',
                     })
                   }}
                   className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-400 rounded-lg hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-md transition-all duration-200"

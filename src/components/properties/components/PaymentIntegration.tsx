@@ -105,7 +105,7 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
       const subdivisionCostTypeId = paymentToSubdivisionCostMap[payment.id] || payment.id
 
       return {
-        subtab: 'subdivision_costs',
+        subtab: 'acquisition_costs',
         costTypeId: subdivisionCostTypeId,
         amount: payment.amount,
         description: payment.description || `Stage ${stage} subdivision payment`,
