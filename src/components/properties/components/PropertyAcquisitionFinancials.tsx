@@ -12,7 +12,7 @@ import {
 } from '../types/property-management.types'
 import { AcquisitionFinancialsService } from '../services/acquisition-financials.service'
 import EnhancedPurchasePriceManager from './EnhancedPurchasePriceManager'
-import PropertySubdivisionCosts from './PropertySubdivisionCosts'
+
 
 import { useToast } from '../../ui/Toast'
 
@@ -44,11 +44,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
 }: PropertyAcquisitionFinancialsProps) {
   const [costEntries, setCostEntries] = useState<AcquisitionCostEntry[]>([])
   const [paymentInstallments, setPaymentInstallments] = useState<PaymentInstallment[]>([])
-  const [subdivisionCostsSummary, setSubdivisionCostsSummary] = useState({
-    totalSubdivisionCosts: 0,
-    paidSubdivisionCosts: 0,
-    pendingSubdivisionCosts: 0,
-  })
+
   const [totalPurchasePrice, setTotalPurchasePrice] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
@@ -307,7 +303,6 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   // Load existing financial data
   useEffect(() => {
     loadFinancialData()
-    loadSubdivisionCostsSummary()
   }, [property.id])
 
   const loadFinancialData = async () => {
@@ -355,22 +350,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     }
   }
 
-  const loadSubdivisionCostsSummary = async () => {
-    try {
-      // Import the service dynamically to avoid circular dependencies
-      const { SubdivisionCostsService } = await import('../services/subdivision-costs.service')
-      const costs = await SubdivisionCostsService.getSubdivisionCosts(property.id)
-      const summary = SubdivisionCostsService.calculateSubdivisionSummary(costs)
 
-      setSubdivisionCostsSummary({
-        totalSubdivisionCosts: summary.totalSubdivisionCosts,
-        paidSubdivisionCosts: summary.paidSubdivisionCosts,
-        pendingSubdivisionCosts: summary.pendingSubdivisionCosts,
-      })
-    } catch (error) {
-      // Don't set error state for subdivision costs as they're optional
-    }
-  }
 
   // Calculate totals
   const calculateTotals = () => {
@@ -401,11 +381,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       totalPayments,
       purchasePrice,
       remainingBalance,
-      totalAcquisitionCost:
-        totalCosts + purchasePrice + subdivisionCostsSummary.totalSubdivisionCosts,
-      totalSubdivisionCosts: subdivisionCostsSummary.totalSubdivisionCosts,
-      paidSubdivisionCosts: subdivisionCostsSummary.paidSubdivisionCosts,
-      pendingSubdivisionCosts: subdivisionCostsSummary.pendingSubdivisionCosts,
+      totalAcquisitionCost: totalCosts + purchasePrice,
       costsByCategory,
     }
   }
@@ -441,8 +417,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
           notes: newCost.notes || undefined,
         })
 
-        // Update subdivision costs summary
-        await handleSubdivisionCostsUpdate(property.id)
+
 
         showToast('Subdivision cost added successfully', { variant: 'success' })
       } else {
@@ -611,23 +586,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     return ACQUISITION_COST_TYPES.find((type) => type.id === costTypeId)?.label || 'Unknown'
   }
 
-  // Handle subdivision costs updates
-  const handleSubdivisionCostsUpdate = async (propertyId: string) => {
-    try {
-      // Import the service dynamically to avoid circular dependencies
-      const { SubdivisionCostsService } = await import('../services/subdivision-costs.service')
-      const costs = await SubdivisionCostsService.getSubdivisionCosts(propertyId)
-      const summary = SubdivisionCostsService.calculateSubdivisionSummary(costs)
 
-      setSubdivisionCostsSummary({
-        totalSubdivisionCosts: summary.totalSubdivisionCosts,
-        paidSubdivisionCosts: summary.paidSubdivisionCosts,
-        pendingSubdivisionCosts: summary.pendingSubdivisionCosts,
-      })
-
-      onUpdate?.(propertyId)
-    } catch (error) {}
-  }
 
   const totals = calculateTotals()
 
@@ -714,12 +673,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
             <div className="text-sm text-green-700">Acquisition Costs</div>
             <div className="font-bold text-green-900">{formatCurrency(totals.totalCosts)}</div>
           </div>
-          <div>
-            <div className="text-sm text-green-700">Subdivision Costs</div>
-            <div className="font-bold text-green-900">
-              {formatCurrency(totals.totalSubdivisionCosts)}
-            </div>
-          </div>
+
           <div>
             <div className="text-sm text-green-700">Paid Purchase Price</div>
             <div className="font-bold text-green-900">{formatCurrency(totals.totalPayments)}</div>
@@ -1102,8 +1056,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         </div>
       </div>
 
-      {/* Subdivision Costs */}
-      <PropertySubdivisionCosts property={property} onUpdate={handleSubdivisionCostsUpdate} />
+
 
       {/* Cost Breakdown by Category */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
