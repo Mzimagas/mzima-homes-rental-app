@@ -384,7 +384,14 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
 
       setSubdivisionCostsByCategory(categoryTotals)
       setTotalSubdivisionCosts(total)
+
+      console.log('🔍 Subdivision costs loaded:', {
+        total,
+        categoryTotals,
+        costsCount: costs.length
+      })
     } catch (error) {
+      console.log('🔍 Error loading subdivision costs:', error)
       // Don't set error state for subdivision costs as they're optional
     }
   }
@@ -1133,15 +1140,22 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                 ))}
               </div>
 
+              {/* Debug Info - Remove after testing */}
+              <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                <div>Total Subdivision Costs: {totalSubdivisionCosts}</div>
+                <div>Has Subdivision Costs: {Object.values(subdivisionCostsByCategory).some(amount => amount > 0) ? 'Yes' : 'No'}</div>
+                <div>Category Totals: {JSON.stringify(subdivisionCostsByCategory)}</div>
+              </div>
+
               {/* Subdivision Cost Categories */}
-              {totalSubdivisionCosts > 0 && (
+              {(totalSubdivisionCosts > 0 || Object.values(subdivisionCostsByCategory).some(amount => amount > 0)) && (
                 <div className="mb-4">
                   <h5 className="text-sm font-semibold text-gray-800 mb-2">Subdivision Costs</h5>
                   {Object.entries(SUBDIVISION_COST_CATEGORY_LABELS).map(([category, label]) => (
                     <div key={category} className="flex justify-between items-center py-1">
                       <span className="text-gray-700 text-sm pl-2">{label}</span>
                       <span className="font-medium text-gray-900">
-                        {formatCurrency(subdivisionCostsByCategory[category as SubdivisionCostCategory])}
+                        {formatCurrency(subdivisionCostsByCategory[category as SubdivisionCostCategory] || 0)}
                       </span>
                     </div>
                   ))}
