@@ -154,7 +154,9 @@ export default function PurchasePipelineDocuments({
     let stageNumber = 1
 
     // Apply stage filtering for purchase pipeline (stages 1-10 only)
-    const filteredDocTypes = DOC_TYPES.filter(docType => !SUBDIVISION_DOC_KEYS.includes(docType.key))
+    // Exclude subdivision-only docs but keep registered_title for purchase pipeline
+    const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
+    const filteredDocTypes = DOC_TYPES.filter(docType => !subdivisionOnlyDocs.includes(docType.key))
 
     // Stages that require payment before proceeding with documents
     const paymentFirstStages = new Set([3, 6, 9, 10])

@@ -160,9 +160,11 @@ export default function DirectAdditionDocumentsV2({
     // Apply stage filtering if specified
     if (stageFilter === 'stages_1_10') {
       // Show only stages 1-10 (regular documents) - STRICT ENFORCEMENT
-      filteredTypes = DOC_TYPES.filter(docType => !SUBDIVISION_DOC_KEYS.includes(docType.key))
+      // Exclude subdivision-only docs but keep registered_title for both workflows
+      const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
+      filteredTypes = DOC_TYPES.filter(docType => !subdivisionOnlyDocs.includes(docType.key))
     } else if (stageFilter === 'stages_11_16') {
-      // Show only stages 11-16 (subdivision documents) - STRICT ENFORCEMENT
+      // Show only stages 10-16 (subdivision documents) - STRICT ENFORCEMENT
       filteredTypes = DOC_TYPES.filter(docType => SUBDIVISION_DOC_KEYS.includes(docType.key))
     } else if (property) {
       // Auto-detect workflow type from property and apply strict filtering
@@ -181,7 +183,9 @@ export default function DirectAdditionDocumentsV2({
       if (pipeline === 'subdivision') {
         filteredTypes = DOC_TYPES.filter(docType => SUBDIVISION_DOC_KEYS.includes(docType.key))
       } else {
-        filteredTypes = DOC_TYPES.filter(docType => !SUBDIVISION_DOC_KEYS.includes(docType.key))
+        // Exclude subdivision-only docs but keep registered_title for regular workflows
+        const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
+        filteredTypes = DOC_TYPES.filter(docType => !subdivisionOnlyDocs.includes(docType.key))
       }
     }
 
