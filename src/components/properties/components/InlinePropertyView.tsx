@@ -14,6 +14,7 @@ import {
   getSourceLabel,
   getLifecycleStatusColor,
 } from '../utils/property-management.utils'
+import { PropertyStateDetailed } from './PropertyStateIndicator'
 import {
   useTabState,
   TabNavigation,
@@ -528,6 +529,12 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                 <p className="text-gray-700 italic">{property.acquisition_notes}</p>
               </div>
             )}
+
+            {/* Property State Indicator */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Property Status</h4>
+              <PropertyStateDetailed propertyId={property.id} />
+            </div>
           </div>
         </TabContent>
 

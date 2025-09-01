@@ -5,7 +5,11 @@ import { useState, useCallback, useMemo, memo } from 'react'
 import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
 import InlinePropertyView from './InlinePropertyView'
-import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
+import PropertyCard, {
+  PropertyCardHeader,
+  PropertyCardContent,
+  PropertyCardFooter,
+} from './PropertyCard'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 import {
   getSourceIcon,
@@ -15,6 +19,8 @@ import {
   getPendingSubdivisionValue,
   getPendingHandoverValue,
 } from '../utils/property-management.utils'
+import PropertyStatusDropdowns from './PropertyStatusDropdowns'
+import { PropertyStateCompact } from './PropertyStateIndicator'
 
 interface PropertyListProps {
   properties: PropertyWithLifecycle[]
@@ -65,19 +71,40 @@ const PropertyItem = memo(function PropertyItem({
   onPipelineStatusChange,
 }: PropertyItemProps) {
   // Memoize computed values
-  const hasChanges = useMemo(() => hasPendingChanges(property.id, pendingChanges), [property.id, pendingChanges])
+  const hasChanges = useMemo(
+    () => hasPendingChanges(property.id, pendingChanges),
+    [property.id, pendingChanges]
+  )
   const isSaving = useMemo(() => savingChanges[property.id], [savingChanges, property.id])
-  const subdivisionValue = useMemo(() => getPendingSubdivisionValue(property, pendingChanges), [property, pendingChanges])
-  const handoverValue = useMemo(() => getPendingHandoverValue(property, pendingChanges), [property, pendingChanges])
+  const subdivisionValue = useMemo(
+    () => getPendingSubdivisionValue(property, pendingChanges),
+    [property, pendingChanges]
+  )
+  const handoverValue = useMemo(
+    () => getPendingHandoverValue(property, pendingChanges),
+    [property, pendingChanges]
+  )
 
   // Memoized handlers
   const handleEdit = useCallback(() => onEditProperty(property), [onEditProperty, property])
   const handleView = useCallback(() => onViewProperty(property.id), [onViewProperty, property.id])
-  const handleSubdivisionChange = useCallback((value: string) => onSubdivisionChange(property.id, value), [onSubdivisionChange, property.id])
-  const handleHandoverChange = useCallback((value: string) => onHandoverChange(property.id, value), [onHandoverChange, property.id])
+  const handleSubdivisionChange = useCallback(
+    (value: string) => onSubdivisionChange(property.id, value),
+    [onSubdivisionChange, property.id]
+  )
+  const handleHandoverChange = useCallback(
+    (value: string) => onHandoverChange(property.id, value),
+    [onHandoverChange, property.id]
+  )
   const handleSave = useCallback(() => onSaveChanges(property.id), [onSaveChanges, property.id])
-  const handleCancel = useCallback(() => onCancelChanges(property.id), [onCancelChanges, property.id])
-  const handleDelete = useCallback(() => onDeleteProperty?.(property.id), [onDeleteProperty, property.id])
+  const handleCancel = useCallback(
+    () => onCancelChanges(property.id),
+    [onCancelChanges, property.id]
+  )
+  const handleDelete = useCallback(
+    () => onDeleteProperty?.(property.id),
+    [onDeleteProperty, property.id]
+  )
 
   return (
     <PropertyCard
@@ -196,10 +223,13 @@ export default function PropertyList({
                 <p className="text-gray-600 mb-2">{property.physical_address}</p>
                 <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                   <span>Type: {property.property_type?.replace('_', ' ') || 'Unknown'}</span>
-                  {property.total_area_acres && <span>Area: {property.total_area_acres} acres</span>}
+                  {property.total_area_acres && (
+                    <span>Area: {property.total_area_acres} acres</span>
+                  )}
                   {property.expected_rental_income_kes && (
                     <span>
-                      Expected Rent: KES {property.expected_rental_income_kes.toLocaleString()}/month
+                      Expected Rent: KES {property.expected_rental_income_kes.toLocaleString()}
+                      /month
                     </span>
                   )}
                   {property.purchase_completion_date && (
@@ -215,7 +245,10 @@ export default function PropertyList({
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-between items-center">
+                {/* Property State Indicator */}
+                <PropertyStateCompact propertyId={property.id} />
+
                 <ViewOnGoogleMapsButton
                   lat={(property as any).lat ?? null}
                   lng={(property as any).lng ?? null}
@@ -229,69 +262,29 @@ export default function PropertyList({
           </PropertyCardHeader>
 
           <PropertyCardContent>
-            {/* Status Dropdowns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Subdivision Status */}
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">
-                  Subdivision Status
-                  {propertiesWithPipelineIssues.has(property.id) && (
-                    <span className="text-red-500 text-xs ml-1">(Disabled - Pipeline Issues)</span>
-                  )}
-                </label>
-                <select
-                  className={`text-sm border rounded px-2 py-1 w-full ${
-                    propertiesWithPipelineIssues.has(property.id)
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : ''
-                  }`}
-                  value={getPendingSubdivisionValue(property, pendingChanges)}
-                  onChange={(e) => onSubdivisionChange(property.id, e.target.value)}
-                  disabled={
-                    savingChanges[property.id] || propertiesWithPipelineIssues.has(property.id)
-                  }
-                >
-                  <option>Not Started</option>
-                  <option>Sub-Division Started</option>
-                  <option>Subdivided</option>
-                </select>
-                {property.subdivision_date && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    on {new Date(property.subdivision_date).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
+            {/* Enhanced Status Dropdowns with Mutual Exclusivity */}
+            <PropertyStatusDropdowns
+              property={property}
+              pendingChanges={pendingChanges}
+              savingChanges={savingChanges}
+              propertiesWithPipelineIssues={propertiesWithPipelineIssues}
+              onSubdivisionChange={onSubdivisionChange}
+              onHandoverChange={onHandoverChange}
+              onRefresh={onRefresh}
+            />
 
-              {/* Handover Status */}
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">
-                  Handover Status
-                  {propertiesWithPipelineIssues.has(property.id) && (
-                    <span className="text-red-500 text-xs ml-1">(Disabled - Pipeline Issues)</span>
-                  )}
-                </label>
-                <select
-                  className={`text-sm border rounded px-2 py-1 w-full ${
-                    propertiesWithPipelineIssues.has(property.id)
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : ''
-                  }`}
-                  value={getPendingHandoverValue(property, pendingChanges)}
-                  onChange={(e) => onHandoverChange(property.id, e.target.value)}
-                  disabled={
-                    savingChanges[property.id] || propertiesWithPipelineIssues.has(property.id)
-                  }
-                >
-                  <option>Not Started</option>
-                  <option>In Progress</option>
-                  <option>Handed Over</option>
-                </select>
-                {property.handover_date && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    on {new Date(property.handover_date).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
+            {/* Status Dates */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+              {property.subdivision_date && (
+                <div className="text-xs text-gray-500">
+                  Subdivision: {new Date(property.subdivision_date).toLocaleDateString()}
+                </div>
+              )}
+              {property.handover_date && (
+                <div className="text-xs text-gray-500">
+                  Handover: {new Date(property.handover_date).toLocaleDateString()}
+                </div>
+              )}
             </div>
 
             {/* Save/Cancel */}

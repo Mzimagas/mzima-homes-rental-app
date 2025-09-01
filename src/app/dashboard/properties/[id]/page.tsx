@@ -16,6 +16,7 @@ import { usePropertyAccess } from '../../../../hooks/usePropertyAccess'
 import ViewOnGoogleMapsButton from '../../../../components/location/ViewOnGoogleMapsButton'
 
 import { isLandProperty, getPropertyTypeLabel } from '../../../../lib/validation/property'
+import { PropertyStateDetailed } from '../../../../components/properties/components/PropertyStateIndicator'
 
 interface PropertyWithUnits extends Property {
   units: Unit[]
@@ -270,6 +271,12 @@ export default function PropertyDetailPage() {
             Property and unit management is handled through workflows
           </div>
         </div>
+      </div>
+
+      {/* Property State Indicator */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Property Status</h3>
+        <PropertyStateDetailed propertyId={propertyId} />
       </div>
 
       {/* Property Statistics */}

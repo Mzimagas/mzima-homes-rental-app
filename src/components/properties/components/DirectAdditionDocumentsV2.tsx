@@ -18,6 +18,7 @@ import {
   generateUniqueFilename,
   getFileIcon,
 } from '../../../lib/constants/document-types'
+import ReadOnlyDocumentWrapper, { useDocumentReadOnlyStatus } from './ReadOnlyDocumentWrapper'
 import {
   getFilteredDocTypes,
   getWorkflowType,
@@ -28,7 +29,7 @@ import {
   calculateWorkflowProgress,
   SUBDIVISION_DOC_KEYS,
   REGULAR_DOC_KEYS,
-  type WorkflowType
+  type WorkflowType,
 } from '../utils/stage-filtering.utils'
 import { useFinancialStatus } from '../../../hooks/useFinancialStatus'
 import { useFinancialSync } from '../../../hooks/useFinancialSync'
@@ -124,6 +125,10 @@ export default function DirectAdditionDocumentsV2({
     loading: financialLoading,
   } = useFinancialStatus(propertyId, pipeline)
 
+  // Read-only status for completed properties
+  const { isReadOnly, readOnlyReason, canUpload, canDelete, checkAction } =
+    useDocumentReadOnlyStatus(propertyId)
+
   // Enhanced workflow integration
   const {
     workflowStages,
@@ -148,34 +153,37 @@ export default function DirectAdditionDocumentsV2({
 
   // Define agreement stage grouping with sequential locking order
   const AGREEMENT_STAGE_DOCUMENTS: DocTypeKey[] = [
-    'original_title_deed',    // Sub-stage 1: Must be completed first
-    'seller_id_passport',     // Sub-stage 2: Requires sub-stage 1
-    'spousal_consent',        // Sub-stage 3: Requires sub-stages 1-2
-    'spouse_id_kra',          // Sub-stage 4: Requires sub-stages 1-3
-    'signed_lra33',           // Sub-stage 5: Requires sub-stages 1-4
+    'original_title_deed', // Sub-stage 1: Must be completed first
+    'seller_id_passport', // Sub-stage 2: Requires sub-stage 1
+    'spousal_consent', // Sub-stage 3: Requires sub-stages 1-2
+    'spouse_id_kra', // Sub-stage 4: Requires sub-stages 1-3
+    'signed_lra33', // Sub-stage 5: Requires sub-stages 1-4
   ]
 
   // Check if a sub-stage within agreement documents is locked
-  const isAgreementSubStageLocked = useCallback((docKey: DocTypeKey): boolean => {
-    if (!AGREEMENT_STAGE_DOCUMENTS.includes(docKey)) return false
+  const isAgreementSubStageLocked = useCallback(
+    (docKey: DocTypeKey): boolean => {
+      if (!AGREEMENT_STAGE_DOCUMENTS.includes(docKey)) return false
 
-    const currentIndex = AGREEMENT_STAGE_DOCUMENTS.indexOf(docKey)
-    if (currentIndex === 0) return false // First sub-stage is never locked
+      const currentIndex = AGREEMENT_STAGE_DOCUMENTS.indexOf(docKey)
+      if (currentIndex === 0) return false // First sub-stage is never locked
 
-    // Check if all previous sub-stages are completed
-    for (let i = 0; i < currentIndex; i++) {
-      const prevDocKey = AGREEMENT_STAGE_DOCUMENTS[i]
-      const prevState = documentStates[prevDocKey]
-      const hasFiles = prevState?.documents?.length > 0
-      const isNA = prevState?.status?.is_na || false
+      // Check if all previous sub-stages are completed
+      for (let i = 0; i < currentIndex; i++) {
+        const prevDocKey = AGREEMENT_STAGE_DOCUMENTS[i]
+        const prevState = documentStates[prevDocKey]
+        const hasFiles = prevState?.documents?.length > 0
+        const isNA = prevState?.status?.is_na || false
 
-      if (!hasFiles && !isNA) {
-        return true // Previous sub-stage not completed, so current is locked
+        if (!hasFiles && !isNA) {
+          return true // Previous sub-stage not completed, so current is locked
+        }
       }
-    }
 
-    return false // All previous sub-stages completed
-  }, [documentStates])
+      return false // All previous sub-stages completed
+    },
+    [documentStates]
+  )
 
   // Get the next required sub-stage in agreement documents
   const getNextRequiredAgreementSubStage = useCallback((): DocTypeKey | null => {
@@ -199,11 +207,11 @@ export default function DirectAdditionDocumentsV2({
     if (stageFilter === 'stages_1_10') {
       // Show only stages 1-10 (regular documents) - STRICT ENFORCEMENT
       // Exclude subdivision-only docs but keep registered_title for both workflows
-      const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
-      filteredTypes = DOC_TYPES.filter(docType => !subdivisionOnlyDocs.includes(docType.key))
+      const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter((key) => key !== 'registered_title')
+      filteredTypes = DOC_TYPES.filter((docType) => !subdivisionOnlyDocs.includes(docType.key))
     } else if (stageFilter === 'stages_11_16') {
       // Show only stages 10-16 (subdivision documents) - STRICT ENFORCEMENT
-      filteredTypes = DOC_TYPES.filter(docType => SUBDIVISION_DOC_KEYS.includes(docType.key))
+      filteredTypes = DOC_TYPES.filter((docType) => SUBDIVISION_DOC_KEYS.includes(docType.key))
     } else if (property) {
       // Auto-detect workflow type from property and apply strict filtering
       const workflowType = getWorkflowType(property)
@@ -214,16 +222,16 @@ export default function DirectAdditionDocumentsV2({
         workflowType,
         totalDocs: DOC_TYPES.length,
         filteredDocs: filteredTypes.length,
-        hiddenDocs: DOC_TYPES.length - filteredTypes.length
+        hiddenDocs: DOC_TYPES.length - filteredTypes.length,
       })
     } else {
       // Fallback: determine from pipeline prop
       if (pipeline === 'subdivision') {
-        filteredTypes = DOC_TYPES.filter(docType => SUBDIVISION_DOC_KEYS.includes(docType.key))
+        filteredTypes = DOC_TYPES.filter((docType) => SUBDIVISION_DOC_KEYS.includes(docType.key))
       } else {
         // Exclude subdivision-only docs but keep registered_title for regular workflows
-        const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
-        filteredTypes = DOC_TYPES.filter(docType => !subdivisionOnlyDocs.includes(docType.key))
+        const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter((key) => key !== 'registered_title')
+        filteredTypes = DOC_TYPES.filter((docType) => !subdivisionOnlyDocs.includes(docType.key))
       }
     }
 
@@ -350,7 +358,7 @@ export default function DirectAdditionDocumentsV2({
       // Validate propertyId format (should be UUID)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       if (!uuidRegex.test(propertyId)) {
-                setLoading(false)
+        setLoading(false)
         return
       }
 
@@ -403,9 +411,9 @@ export default function DirectAdditionDocumentsV2({
         return newStates
       })
     } catch (error) {
-            // Provide user feedback for loading errors
+      // Provide user feedback for loading errors
       if (error instanceof Error) {
-              }
+      }
     } finally {
       setLoading(false)
     }
@@ -426,6 +434,11 @@ export default function DirectAdditionDocumentsV2({
   }
 
   const handleFileUpload = async (docTypeKey: DocTypeKey, files: FileList) => {
+    // Check read-only status
+    if (!checkAction('upload')) {
+      return
+    }
+
     const docType = DOC_TYPES.find((dt) => dt.key === docTypeKey)
     if (!docType) return
 
@@ -495,7 +508,7 @@ export default function DirectAdditionDocumentsV2({
       // Reload documents to get updated state
       await loadDocuments()
     } catch (error) {
-            let errorMessage = 'Failed to upload files'
+      let errorMessage = 'Failed to upload files'
       if (error instanceof Error) {
         errorMessage = error.message
       } else if (typeof error === 'object' && error !== null) {
@@ -531,7 +544,7 @@ export default function DirectAdditionDocumentsV2({
       // Reload documents
       await loadDocuments()
     } catch (error) {
-            alert('Failed to delete file')
+      alert('Failed to delete file')
     }
   }
 
@@ -550,7 +563,7 @@ export default function DirectAdditionDocumentsV2({
       const { url } = await response.json()
       window.open(url, '_blank')
     } catch (error) {
-            alert('Failed to open file')
+      alert('Failed to open file')
     }
   }
 
@@ -560,7 +573,7 @@ export default function DirectAdditionDocumentsV2({
     note?: string
   ) => {
     try {
-            // Validate propertyId format (should be UUID)
+      // Validate propertyId format (should be UUID)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       if (!uuidRegex.test(propertyId)) {
         throw new Error(`Invalid property ID format: ${propertyId}. Expected UUID format.`)
@@ -586,7 +599,7 @@ export default function DirectAdditionDocumentsV2({
 
       if (selectError && selectError.code !== 'PGRST116') {
         // PGRST116 is "not found" error, which is fine
-                throw selectError
+        throw selectError
       }
 
       let result
@@ -614,23 +627,23 @@ export default function DirectAdditionDocumentsV2({
       }
 
       if (result.error) {
-                // Log the full error details for debugging
-                // Handle unique constraint violations specifically
+        // Log the full error details for debugging
+        // Handle unique constraint violations specifically
         if (
           result.error.code === '23505' ||
           result.error.message?.includes('duplicate key') ||
           result.error.message?.includes('unique constraint')
         ) {
-                              await loadDocuments()
+          await loadDocuments()
 
           // Don't throw an error for constraint violations - just log and continue
-                    return
+          return
         }
 
         throw new Error(`Database error: ${result.error.message || 'Unknown database error'}`)
       }
 
-            // Update local state instead of reloading all documents
+      // Update local state instead of reloading all documents
       setDocumentStates((prev) => ({
         ...prev,
         [docTypeKey]: {
@@ -648,7 +661,7 @@ export default function DirectAdditionDocumentsV2({
         },
       }))
     } catch (error) {
-            // Provide user feedback
+      // Provide user feedback
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       alert(`Failed to update document status: ${errorMessage}`)
     }
@@ -787,7 +800,10 @@ export default function DirectAdditionDocumentsV2({
       return {
         completed: completedDocs.length,
         total: requiredDocs.length,
-        percentage: requiredDocs.length > 0 ? Math.round((completedDocs.length / requiredDocs.length) * 100) : 0,
+        percentage:
+          requiredDocs.length > 0
+            ? Math.round((completedDocs.length / requiredDocs.length) * 100)
+            : 0,
       }
     }
   }
@@ -811,7 +827,9 @@ export default function DirectAdditionDocumentsV2({
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
           <div className="text-gray-600">
             <p className="text-lg font-medium">No documents available</p>
-            <p className="mt-2 text-sm">Document management is not available for this property at this time.</p>
+            <p className="mt-2 text-sm">
+              Document management is not available for this property at this time.
+            </p>
           </div>
         </div>
       </div>
@@ -821,28 +839,394 @@ export default function DirectAdditionDocumentsV2({
   const stats = getCompletionStats()
 
   return (
-    <div className="space-y-4">
-      {/* Workflow-Aware Progress Header */}
-      <WorkflowProgressIndicator
-        propertyId={propertyId}
-        propertyName={propertyName}
-        property={property}
-        workflowType={property ? getWorkflowType(property) : (pipeline === 'subdivision' ? 'subdivision' : 'direct_addition')}
-        documentStates={documentStates}
-        showDetails={true}
-      />
-
-      {/* Consolidated Document Progression Cards */}
+    <ReadOnlyDocumentWrapper propertyId={propertyId}>
       <div className="space-y-4">
-        {documentStages.map((stage) => {
-          const docType = stage.docType
-          const isDocLocked = stage.isLocked
+        {/* Workflow-Aware Progress Header */}
+        <WorkflowProgressIndicator
+          propertyId={propertyId}
+          propertyName={propertyName}
+          property={property}
+          workflowType={
+            property
+              ? getWorkflowType(property)
+              : pipeline === 'subdivision'
+                ? 'subdivision'
+                : 'direct_addition'
+          }
+          documentStates={documentStates}
+          showDetails={true}
+        />
 
-          // For multi-document stages, we'll render differently
-          if (stage.isMultiDocument && stage.groupedDocuments) {
+        {/* Consolidated Document Progression Cards */}
+        <div className="space-y-4">
+          {documentStages.map((stage) => {
+            const docType = stage.docType
+            const isDocLocked = stage.isLocked
+
+            // For multi-document stages, we'll render differently
+            if (stage.isMultiDocument && stage.groupedDocuments) {
+              return (
+                <div
+                  key={`stage-${stage.stageNumber}`}
+                  className={`border rounded-xl bg-white shadow-sm transition-all duration-200 ${
+                    isDocLocked
+                      ? 'border-gray-200 opacity-60'
+                      : stage.isActive
+                        ? 'border-blue-200 shadow-md'
+                        : stage.isCompleted
+                          ? 'border-green-200'
+                          : 'border-gray-200 hover:shadow-md'
+                  }`}
+                >
+                  {/* Multi-Document Stage Header */}
+                  <div
+                    className={`flex items-center justify-between p-4 transition-all duration-200 ${
+                      stage.isActive
+                        ? 'bg-blue-50'
+                        : stage.isCompleted
+                          ? 'bg-green-50'
+                          : 'bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Stage Number + Status Icon */}
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 ${
+                          stage.isCompleted
+                            ? 'bg-green-500 text-white'
+                            : stage.isActive
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-400 text-white'
+                        }`}
+                      >
+                        {stage.isCompleted ? (
+                          <CheckCircleIconSolid className="h-6 w-6" />
+                        ) : stage.isActive ? (
+                          <ClockIcon className="h-6 w-6" />
+                        ) : stage.isLocked ? (
+                          <LockClosedIcon className="h-6 w-6" />
+                        ) : (
+                          stage.stageNumber
+                        )}
+                      </div>
+
+                      {/* Document Icon */}
+                      <div className="text-2xl flex-shrink-0">{docType.icon}</div>
+
+                      {/* Stage Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3
+                            className={`font-semibold text-sm sm:text-base truncate ${
+                              stage.isActive
+                                ? 'text-blue-900'
+                                : stage.isCompleted
+                                  ? 'text-green-900'
+                                  : 'text-gray-700'
+                            }`}
+                          >
+                            Step {stage.stageNumber}: {docType.label}
+                          </h3>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full font-medium ${
+                              stage.isCompleted
+                                ? 'bg-green-100 text-green-800'
+                                : stage.isActive
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : stage.isLocked
+                                    ? 'bg-gray-100 text-gray-600'
+                                    : 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            {stage.isCompleted
+                              ? 'Completed'
+                              : stage.isActive
+                                ? 'Active'
+                                : stage.isLocked
+                                  ? 'Locked'
+                                  : 'Pending'}
+                          </span>
+
+                          {/* Horizontal Payment Button */}
+                          {!financialLoading && (
+                            <FinancialStatusIndicator
+                              propertyId={propertyId}
+                              stageNumber={stage.stageNumber}
+                              financialStatus={getStageFinancialStatus(stage.stageNumber)}
+                              getPaymentStatus={getPaymentStatus}
+                              pipeline={pipeline}
+                              documentStates={documentStates}
+                              layout="horizontal"
+                              compact={true}
+                            />
+                          )}
+                        </div>
+                        <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
+                          {docType.description}
+                        </p>
+
+                        {/* Multi-document progress with sub-stage information */}
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-gray-600">
+                            {
+                              stage.groupedDocuments.filter((docKey) => {
+                                const docState = documentStates[docKey]
+                                const hasFiles = docState?.documents?.length > 0
+                                const isNA = docState?.status?.is_na || false
+                                return hasFiles || isNA
+                              }).length
+                            }{' '}
+                            of {stage.groupedDocuments.length} sub-stages completed
+                          </span>
+
+                          {stage.isLocked && (
+                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                              <LockClosedIcon className="h-3 w-3" />
+                              Complete previous step first
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Next required sub-stage indicator */}
+                        {!stage.isLocked &&
+                          (() => {
+                            const nextSubStage = getNextRequiredAgreementSubStage()
+                            if (nextSubStage) {
+                              const nextDocType = DOC_TYPES.find((dt) => dt.key === nextSubStage)
+                              const subStageIndex = AGREEMENT_STAGE_DOCUMENTS.indexOf(nextSubStage)
+                              return (
+                                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                                  <span className="text-blue-700 font-medium">
+                                    📋 Next: Sub-stage {subStageIndex + 1} - {nextDocType?.label}
+                                  </span>
+                                </div>
+                              )
+                            }
+                            return null
+                          })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Multi-Document Cards */}
+                  <div className="border-t border-gray-100 p-4 space-y-3">
+                    {stage.groupedDocuments.map((docKey, subStageIndex) => {
+                      const groupedDocType = DOC_TYPES.find((dt) => dt.key === docKey)
+                      if (!groupedDocType) return null
+
+                      const state = documentStates[docKey]
+                      const isExpanded = state?.isExpanded || false
+                      const isUploading = state?.isUploading || false
+                      const documents = state?.documents || []
+
+                      // Apply sub-stage locking for agreement documents
+                      const isSubStageLocked = isAgreementSubStageLocked(docKey)
+                      const isDocumentLocked = isDocLocked || isSubStageLocked
+                      const nextRequiredSubStage = getNextRequiredAgreementSubStage()
+
+                      return (
+                        <div
+                          key={docKey}
+                          className={`border border-gray-200 rounded-lg ${
+                            isSubStageLocked ? 'bg-gray-100 opacity-75' : 'bg-gray-50'
+                          }`}
+                        >
+                          {/* Individual Document Header */}
+                          <div
+                            className={`flex items-center justify-between p-3 ${
+                              isDocumentLocked ? 'cursor-not-allowed' : 'cursor-pointer'
+                            }`}
+                            onClick={() => !isDocumentLocked && toggleExpanded(docKey)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="text-lg flex-shrink-0">{groupedDocType.icon}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-medium text-sm text-gray-900 truncate">
+                                    Sub-stage {subStageIndex + 1}: {groupedDocType.label}
+                                  </h4>
+                                  {isSubStageLocked && (
+                                    <LockClosedIcon className="h-3 w-3 text-gray-400" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-600 line-clamp-1">
+                                  {groupedDocType.description}
+                                </p>
+                                {isSubStageLocked && (
+                                  <p className="text-xs text-amber-600 mt-1">
+                                    Complete previous sub-stages first
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(docKey).className}`}
+                              >
+                                {getStatusBadge(docKey).text}
+                              </span>
+                              {isExpanded ? (
+                                <ChevronUpIcon className="h-4 w-4 text-gray-400" />
+                              ) : (
+                                <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Individual Document Expandable Content */}
+                          {isExpanded && (
+                            <div className="border-t border-gray-200 p-3 bg-white">
+                              {/* Sub-stage locked message */}
+                              {isSubStageLocked && (
+                                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                  <div className="flex items-center gap-2">
+                                    <LockClosedIcon className="h-4 w-4 text-amber-600" />
+                                    <span className="text-sm font-medium text-amber-800">
+                                      Sub-stage {subStageIndex + 1} is locked
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-amber-700 mt-1">
+                                    Complete the previous sub-stages in order before proceeding with
+                                    this document.
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* File Upload Section */}
+                              <div className="space-y-3">
+                                <div>
+                                  <label
+                                    className={`flex items-center gap-3 p-3 border-2 border-dashed rounded-lg transition-colors ${
+                                      isDocumentLocked
+                                        ? 'border-gray-200 cursor-not-allowed opacity-50'
+                                        : 'border-gray-300 hover:border-teal-400 cursor-pointer'
+                                    }`}
+                                  >
+                                    <div className="text-teal-600">
+                                      <svg
+                                        className="w-6 h-6"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {isUploading
+                                          ? 'Uploading...'
+                                          : `Upload ${groupedDocType.label}`}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {groupedDocType.accept.join(', ')} • Max 10MB each
+                                      </div>
+                                    </div>
+                                    <input
+                                      type="file"
+                                      multiple={groupedDocType.multiple}
+                                      accept={groupedDocType.accept.join(',')}
+                                      capture={(groupedDocType as any).capture}
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        if (e.target.files && e.target.files.length > 0) {
+                                          handleFileUpload(docKey, e.target.files)
+                                          e.target.value = ''
+                                        }
+                                      }}
+                                      disabled={isUploading || isDocumentLocked || isReadOnly}
+                                    />
+                                  </label>
+                                </div>
+
+                                {/* File Gallery */}
+                                {documents.length > 0 && (
+                                  <div className="space-y-2">
+                                    <h6 className="text-xs font-medium text-gray-700">
+                                      Uploaded Files ({documents.length})
+                                    </h6>
+                                    <div className="space-y-2">
+                                      {documents.map((doc) => (
+                                        <div
+                                          key={doc.id}
+                                          className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs"
+                                        >
+                                          <span className="text-lg">{groupedDocType.icon}</span>
+                                          <span className="flex-1 truncate">{doc.file_name}</span>
+                                          <button
+                                            onClick={() => handleViewFile(doc)}
+                                            className="text-teal-600 hover:text-teal-700"
+                                          >
+                                            View
+                                          </button>
+                                          <button
+                                            onClick={() => handleFileDelete(doc)}
+                                            className="text-red-600 hover:text-red-700"
+                                          >
+                                            Delete
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* N/A and Notes Section */}
+                                <div className="space-y-3 pt-3 border-t border-gray-200">
+                                  <div className="flex items-center gap-3">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={state?.status?.is_na || false}
+                                        onChange={(e) =>
+                                          updateDocumentStatus(docKey, e.target.checked)
+                                        }
+                                        className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                                        disabled={isDocumentLocked}
+                                      />
+                                      <span className="text-xs text-gray-700">Mark as N/A</span>
+                                    </label>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Notes
+                                    </label>
+                                    <textarea
+                                      value={localNotes[docKey] || ''}
+                                      onChange={(e) => handleNoteChange(docKey, e.target.value)}
+                                      placeholder="Add any additional notes..."
+                                      className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                                      rows={2}
+                                      disabled={isDocumentLocked}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            }
+
+            // Regular single document stage
+            const state = documentStates[docType.key]
+            const isExpanded = state?.isExpanded || false
+            const isUploading = state?.isUploading || false
+            const documents = state?.documents || []
+
             return (
               <div
-                key={`stage-${stage.stageNumber}`}
+                key={docType.key}
                 className={`border rounded-xl bg-white shadow-sm transition-all duration-200 ${
                   isDocLocked
                     ? 'border-gray-200 opacity-60'
@@ -853,14 +1237,17 @@ export default function DirectAdditionDocumentsV2({
                         : 'border-gray-200 hover:shadow-md'
                 }`}
               >
-                {/* Multi-Document Stage Header */}
+                {/* Consolidated Header */}
                 <div
                   className={`flex items-center justify-between p-4 transition-all duration-200 ${
+                    isDocLocked ? 'cursor-not-allowed' : 'cursor-pointer'
+                  } ${
                     stage.isActive ? 'bg-blue-50' : stage.isCompleted ? 'bg-green-50' : 'bg-gray-50'
                   }`}
+                  onClick={() => !isDocLocked && toggleExpanded(docType.key)}
                 >
                   <div className="flex items-center gap-4">
-                    {/* Stage Number + Status Icon */}
+                    {/* Combined Stage Number + Status Icon */}
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 ${
                         stage.isCompleted
@@ -884,7 +1271,7 @@ export default function DirectAdditionDocumentsV2({
                     {/* Document Icon */}
                     <div className="text-2xl flex-shrink-0">{docType.icon}</div>
 
-                    {/* Stage Info */}
+                    {/* Document Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3
@@ -936,18 +1323,12 @@ export default function DirectAdditionDocumentsV2({
                         {docType.description}
                       </p>
 
-                      {/* Multi-document progress with sub-stage information */}
+                      {/* File Status and Lock Message */}
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-gray-600">
-                          {
-                            stage.groupedDocuments.filter((docKey) => {
-                              const docState = documentStates[docKey]
-                              const hasFiles = docState?.documents?.length > 0
-                              const isNA = docState?.status?.is_na || false
-                              return hasFiles || isNA
-                            }).length
-                          }{' '}
-                          of {stage.groupedDocuments.length} sub-stages completed
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(docType.key).className}`}
+                        >
+                          {getStatusBadge(docType.key).text}
                         </span>
 
                         {stage.isLocked && (
@@ -957,369 +1338,24 @@ export default function DirectAdditionDocumentsV2({
                           </span>
                         )}
                       </div>
-
-                      {/* Next required sub-stage indicator */}
-                      {!stage.isLocked && (() => {
-                        const nextSubStage = getNextRequiredAgreementSubStage()
-                        if (nextSubStage) {
-                          const nextDocType = DOC_TYPES.find(dt => dt.key === nextSubStage)
-                          const subStageIndex = AGREEMENT_STAGE_DOCUMENTS.indexOf(nextSubStage)
-                          return (
-                            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-                              <span className="text-blue-700 font-medium">
-                                📋 Next: Sub-stage {subStageIndex + 1} - {nextDocType?.label}
-                              </span>
-                            </div>
-                          )
-                        }
-                        return null
-                      })()}
                     </div>
-                  </div>
-                </div>
 
-                {/* Multi-Document Cards */}
-                <div className="border-t border-gray-100 p-4 space-y-3">
-                  {stage.groupedDocuments.map((docKey, subStageIndex) => {
-                    const groupedDocType = DOC_TYPES.find((dt) => dt.key === docKey)
-                    if (!groupedDocType) return null
-
-                    const state = documentStates[docKey]
-                    const isExpanded = state?.isExpanded || false
-                    const isUploading = state?.isUploading || false
-                    const documents = state?.documents || []
-
-                    // Apply sub-stage locking for agreement documents
-                    const isSubStageLocked = isAgreementSubStageLocked(docKey)
-                    const isDocumentLocked = isDocLocked || isSubStageLocked
-                    const nextRequiredSubStage = getNextRequiredAgreementSubStage()
-
-                    return (
-                      <div key={docKey} className={`border border-gray-200 rounded-lg ${
-                        isSubStageLocked ? 'bg-gray-100 opacity-75' : 'bg-gray-50'
-                      }`}>
-                        {/* Individual Document Header */}
-                        <div
-                          className={`flex items-center justify-between p-3 ${
-                            isDocumentLocked ? 'cursor-not-allowed' : 'cursor-pointer'
-                          }`}
-                          onClick={() => !isDocumentLocked && toggleExpanded(docKey)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="text-lg flex-shrink-0">{groupedDocType.icon}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-medium text-sm text-gray-900 truncate">
-                                  Sub-stage {subStageIndex + 1}: {groupedDocType.label}
-                                </h4>
-                                {isSubStageLocked && (
-                                  <LockClosedIcon className="h-3 w-3 text-gray-400" />
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-600 line-clamp-1">
-                                {groupedDocType.description}
-                              </p>
-                              {isSubStageLocked && (
-                                <p className="text-xs text-amber-600 mt-1">
-                                  Complete previous sub-stages first
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(docKey).className}`}
-                            >
-                              {getStatusBadge(docKey).text}
-                            </span>
-                            {isExpanded ? (
-                              <ChevronUpIcon className="h-4 w-4 text-gray-400" />
-                            ) : (
-                              <ChevronDownIcon className="h-4 w-4 text-gray-400" />
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Individual Document Expandable Content */}
-                        {isExpanded && (
-                          <div className="border-t border-gray-200 p-3 bg-white">
-                            {/* Sub-stage locked message */}
-                            {isSubStageLocked && (
-                              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                                <div className="flex items-center gap-2">
-                                  <LockClosedIcon className="h-4 w-4 text-amber-600" />
-                                  <span className="text-sm font-medium text-amber-800">
-                                    Sub-stage {subStageIndex + 1} is locked
-                                  </span>
-                                </div>
-                                <p className="text-xs text-amber-700 mt-1">
-                                  Complete the previous sub-stages in order before proceeding with this document.
-                                </p>
-                              </div>
-                            )}
-
-                            {/* File Upload Section */}
-                            <div className="space-y-3">
-                              <div>
-                                <label className={`flex items-center gap-3 p-3 border-2 border-dashed rounded-lg transition-colors ${
-                                  isDocumentLocked
-                                    ? 'border-gray-200 cursor-not-allowed opacity-50'
-                                    : 'border-gray-300 hover:border-teal-400 cursor-pointer'
-                                }`}>
-                                  <div className="text-teal-600">
-                                    <svg
-                                      className="w-6 h-6"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                      />
-                                    </svg>
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="text-sm font-medium text-gray-900">
-                                      {isUploading
-                                        ? 'Uploading...'
-                                        : `Upload ${groupedDocType.label}`}
-                                    </div>
-                                    <div className="text-sm text-gray-500">
-                                      {groupedDocType.accept.join(', ')} • Max 10MB each
-                                    </div>
-                                  </div>
-                                  <input
-                                    type="file"
-                                    multiple={groupedDocType.multiple}
-                                    accept={groupedDocType.accept.join(',')}
-                                    capture={(groupedDocType as any).capture}
-                                    className="hidden"
-                                    onChange={(e) => {
-                                      if (e.target.files && e.target.files.length > 0) {
-                                        handleFileUpload(docKey, e.target.files)
-                                        e.target.value = ''
-                                      }
-                                    }}
-                                    disabled={isUploading || isDocumentLocked}
-                                  />
-                                </label>
-                              </div>
-
-                              {/* File Gallery */}
-                              {documents.length > 0 && (
-                                <div className="space-y-2">
-                                  <h6 className="text-xs font-medium text-gray-700">
-                                    Uploaded Files ({documents.length})
-                                  </h6>
-                                  <div className="space-y-2">
-                                    {documents.map((doc) => (
-                                      <div
-                                        key={doc.id}
-                                        className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs"
-                                      >
-                                        <span className="text-lg">{groupedDocType.icon}</span>
-                                        <span className="flex-1 truncate">{doc.file_name}</span>
-                                        <button
-                                          onClick={() => handleViewFile(doc)}
-                                          className="text-teal-600 hover:text-teal-700"
-                                        >
-                                          View
-                                        </button>
-                                        <button
-                                          onClick={() => handleFileDelete(doc)}
-                                          className="text-red-600 hover:text-red-700"
-                                        >
-                                          Delete
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* N/A and Notes Section */}
-                              <div className="space-y-3 pt-3 border-t border-gray-200">
-                                <div className="flex items-center gap-3">
-                                  <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={state?.status?.is_na || false}
-                                      onChange={(e) =>
-                                        updateDocumentStatus(docKey, e.target.checked)
-                                      }
-                                      className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                                      disabled={isDocumentLocked}
-                                    />
-                                    <span className="text-xs text-gray-700">Mark as N/A</span>
-                                  </label>
-                                </div>
-
-                                <div>
-                                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    Notes
-                                  </label>
-                                  <textarea
-                                    value={localNotes[docKey] || ''}
-                                    onChange={(e) => handleNoteChange(docKey, e.target.value)}
-                                    placeholder="Add any additional notes..."
-                                    className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-                                    rows={2}
-                                    disabled={isDocumentLocked}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          }
-
-          // Regular single document stage
-          const state = documentStates[docType.key]
-          const isExpanded = state?.isExpanded || false
-          const isUploading = state?.isUploading || false
-          const documents = state?.documents || []
-
-          return (
-            <div
-              key={docType.key}
-              className={`border rounded-xl bg-white shadow-sm transition-all duration-200 ${
-                isDocLocked
-                  ? 'border-gray-200 opacity-60'
-                  : stage.isActive
-                    ? 'border-blue-200 shadow-md'
-                    : stage.isCompleted
-                      ? 'border-green-200'
-                      : 'border-gray-200 hover:shadow-md'
-              }`}
-            >
-              {/* Consolidated Header */}
-              <div
-                className={`flex items-center justify-between p-4 transition-all duration-200 ${
-                  isDocLocked ? 'cursor-not-allowed' : 'cursor-pointer'
-                } ${
-                  stage.isActive ? 'bg-blue-50' : stage.isCompleted ? 'bg-green-50' : 'bg-gray-50'
-                }`}
-                onClick={() => !isDocLocked && toggleExpanded(docType.key)}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Combined Stage Number + Status Icon */}
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 ${
-                      stage.isCompleted
-                        ? 'bg-green-500 text-white'
-                        : stage.isActive
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-400 text-white'
-                    }`}
-                  >
-                    {stage.isCompleted ? (
-                      <CheckCircleIconSolid className="h-6 w-6" />
-                    ) : stage.isActive ? (
-                      <ClockIcon className="h-6 w-6" />
-                    ) : stage.isLocked ? (
-                      <LockClosedIcon className="h-6 w-6" />
+                    {/* Expand Icon */}
+                    {isExpanded ? (
+                      <ChevronUpIcon className="h-5 w-5 text-gray-400" />
                     ) : (
-                      stage.stageNumber
+                      <ChevronDownIcon className="h-5 w-5 text-gray-400" />
                     )}
                   </div>
-
-                  {/* Document Icon */}
-                  <div className="text-2xl flex-shrink-0">{docType.icon}</div>
-
-                  {/* Document Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3
-                        className={`font-semibold text-sm sm:text-base truncate ${
-                          stage.isActive
-                            ? 'text-blue-900'
-                            : stage.isCompleted
-                              ? 'text-green-900'
-                              : 'text-gray-700'
-                        }`}
-                      >
-                        Step {stage.stageNumber}: {docType.label}
-                      </h3>
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full font-medium ${
-                          stage.isCompleted
-                            ? 'bg-green-100 text-green-800'
-                            : stage.isActive
-                              ? 'bg-blue-100 text-blue-800'
-                              : stage.isLocked
-                                ? 'bg-gray-100 text-gray-600'
-                                : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {stage.isCompleted
-                          ? 'Completed'
-                          : stage.isActive
-                            ? 'Active'
-                            : stage.isLocked
-                              ? 'Locked'
-                              : 'Pending'}
-                      </span>
-
-                      {/* Horizontal Payment Button */}
-                      {!financialLoading && (
-                        <FinancialStatusIndicator
-                          propertyId={propertyId}
-                          stageNumber={stage.stageNumber}
-                          financialStatus={getStageFinancialStatus(stage.stageNumber)}
-                          getPaymentStatus={getPaymentStatus}
-                          pipeline={pipeline}
-                          documentStates={documentStates}
-                          layout="horizontal"
-                          compact={true}
-                        />
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
-                      {docType.description}
-                    </p>
-
-                    {/* File Status and Lock Message */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(docType.key).className}`}
-                      >
-                        {getStatusBadge(docType.key).text}
-                      </span>
-
-                      {stage.isLocked && (
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <LockClosedIcon className="h-3 w-3" />
-                          Complete previous step first
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Expand Icon */}
-                  {isExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-400" />
-                  )}
                 </div>
-              </div>
 
-              {/* Expandable Content */}
-              {isExpanded && (
-                <div className="border-t border-gray-100 p-4 space-y-4">
-                  {/* Upload Zone */}
-                  <div>
-                    <label
-                      className={`
+                {/* Expandable Content */}
+                {isExpanded && (
+                  <div className="border-t border-gray-100 p-4 space-y-4">
+                    {/* Upload Zone */}
+                    <div>
+                      <label
+                        className={`
                       block w-full p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200
                       ${
                         isUploading
@@ -1327,130 +1363,130 @@ export default function DirectAdditionDocumentsV2({
                           : 'border-gray-300 bg-gray-50 hover:border-teal-400 hover:bg-teal-50 hover:scale-[1.01]'
                       }
                     `}
-                    >
-                      {isUploading ? (
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-600 border-t-transparent"></div>
-                          <span className="text-sm font-medium text-teal-700">Uploading...</span>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="text-4xl">📎</div>
-                          <div>
-                            <span className="text-base font-medium text-gray-700 block">
-                              {docType.multiple ? 'Upload Files' : 'Upload File'}
-                            </span>
-                            <span className="text-sm text-gray-500 mt-1 block">
-                              {docType.accept.join(', ')} • Max 10MB each
-                            </span>
-                            {docType.multiple && (
-                              <span className="text-sm text-teal-600 font-medium block mt-1">
-                                Multiple files supported
+                      >
+                        {isUploading ? (
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-600 border-t-transparent"></div>
+                            <span className="text-sm font-medium text-teal-700">Uploading...</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="text-4xl">📎</div>
+                            <div>
+                              <span className="text-base font-medium text-gray-700 block">
+                                {docType.multiple ? 'Upload Files' : 'Upload File'}
                               </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      <input
-                        type="file"
-                        multiple={docType.multiple}
-                        accept={docType.accept.join(',')}
-                        capture={docType.capture as any}
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files.length > 0) {
-                            handleFileUpload(docType.key, e.target.files)
-                            e.target.value = ''
-                          }
-                        }}
-                        className="hidden"
-                        disabled={isUploading || isDocLocked}
-                      />
-                    </label>
-                  </div>
-
-                  {/* File Gallery */}
-                  {documents.length > 0 && (
-                    <div className="space-y-3">
-                      <h5 className="text-sm font-semibold text-gray-800">
-                        Uploaded Files ({documents.length})
-                      </h5>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {documents.map((doc) => (
-                          <div
-                            key={doc.id}
-                            className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-                          >
-                            <div className="flex-shrink-0">
-                              <div className="w-10 h-10 rounded-lg bg-white border flex items-center justify-center text-lg">
-                                {getFileIcon(doc.mime_type || '')}
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {doc.file_name}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <span>{(doc.file_size / 1024).toFixed(1)} KB</span>
-                                <span>•</span>
-                                <span>{new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleViewFile(doc)}
-                                className="px-2 py-1 text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded hover:bg-teal-100 transition-colors"
-                              >
-                                View
-                              </button>
-                              <button
-                                onClick={() => handleFileDelete(doc)}
-                                className="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors"
-                              >
-                                Delete
-                              </button>
+                              <span className="text-sm text-gray-500 mt-1 block">
+                                {docType.accept.join(', ')} • Max 10MB each
+                              </span>
+                              {docType.multiple && (
+                                <span className="text-sm text-teal-600 font-medium block mt-1">
+                                  Multiple files supported
+                                </span>
+                              )}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* N/A Toggle and Notes */}
-                  <div className="border-t border-gray-100 pt-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 cursor-pointer">
+                        )}
                         <input
-                          type="checkbox"
-                          checked={state?.status?.is_na || false}
-                          onChange={(e) => updateDocumentStatus(docType.key, e.target.checked)}
-                          className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                          type="file"
+                          multiple={docType.multiple}
+                          accept={docType.accept.join(',')}
+                          capture={docType.capture as any}
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                              handleFileUpload(docType.key, e.target.files)
+                              e.target.value = ''
+                            }
+                          }}
+                          className="hidden"
+                          disabled={isUploading || isDocLocked || isReadOnly}
+                        />
+                      </label>
+                    </div>
+
+                    {/* File Gallery */}
+                    {documents.length > 0 && (
+                      <div className="space-y-3">
+                        <h5 className="text-sm font-semibold text-gray-800">
+                          Uploaded Files ({documents.length})
+                        </h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {documents.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                            >
+                              <div className="flex-shrink-0">
+                                <div className="w-10 h-10 rounded-lg bg-white border flex items-center justify-center text-lg">
+                                  {getFileIcon(doc.mime_type || '')}
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {doc.file_name}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <span>{(doc.file_size / 1024).toFixed(1)} KB</span>
+                                  <span>•</span>
+                                  <span>{new Date(doc.uploaded_at).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleViewFile(doc)}
+                                  className="px-2 py-1 text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded hover:bg-teal-100 transition-colors"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => handleFileDelete(doc)}
+                                  className="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* N/A Toggle and Notes */}
+                    <div className="border-t border-gray-100 pt-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={state?.status?.is_na || false}
+                            onChange={(e) => updateDocumentStatus(docType.key, e.target.checked)}
+                            className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                            disabled={isDocLocked}
+                          />
+                          <span className="text-sm text-gray-700">Mark as N/A</span>
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Notes (optional)
+                        </label>
+                        <textarea
+                          value={localNotes[docType.key] || ''}
+                          onChange={(e) => handleNoteChange(docType.key, e.target.value)}
+                          placeholder="Add any additional notes about this document..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          rows={2}
                           disabled={isDocLocked}
                         />
-                        <span className="text-sm text-gray-700">Mark as N/A</span>
-                      </label>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Notes (optional)
-                      </label>
-                      <textarea
-                        value={localNotes[docType.key] || ''}
-                        onChange={(e) => handleNoteChange(docType.key, e.target.value)}
-                        placeholder="Add any additional notes about this document..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                        rows={2}
-                        disabled={isDocLocked}
-                      />
+                      </div>
                     </div>
                   </div>
-
-                </div>
-              )}
-            </div>
-          )
-        })}
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
-    </div>
+    </ReadOnlyDocumentWrapper>
   )
 }
