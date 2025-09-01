@@ -441,6 +441,12 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     setError(null)
 
     try {
+      console.log('🔍 handleAddCost called with:', {
+        cost_type_id: newCost.cost_type_id,
+        amount_kes: newCost.amount_kes,
+        startsWithSubdivision: newCost.cost_type_id.startsWith('subdivision_')
+      })
+
       // Check if this is a subdivision cost type
       if (newCost.cost_type_id.startsWith('subdivision_')) {
         // Handle subdivision cost
@@ -471,6 +477,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         showToast('Subdivision cost added successfully', { variant: 'success' })
       } else {
         // Handle regular acquisition cost
+        console.log('🔍 Saving as acquisition cost:', newCost.cost_type_id)
         const costType = ACQUISITION_COST_TYPES.find((type) => type.id === newCost.cost_type_id)
         if (!costType) {
           throw new Error('Invalid cost type selected')
