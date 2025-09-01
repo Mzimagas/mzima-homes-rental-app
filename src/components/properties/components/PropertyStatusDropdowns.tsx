@@ -200,7 +200,10 @@ export default function PropertyStatusDropdowns({
         >
           <option value="Not Started">Not Started</option>
           <option value="Sub-Division Started">Sub-Division Started</option>
-          <option value="Subdivided">Subdivided</option>
+          {/* Subdivided option removed - completion is automatic when tracker reaches 100% and plots are created */}
+          {property.subdivision_status === 'SUBDIVIDED' && (
+            <option value="Subdivided">Subdivided (Auto-completed)</option>
+          )}
         </select>
         {subdivisionDisabled && subdivisionDisabledReason && (
           <div className="text-xs text-amber-600 mt-1">{subdivisionDisabledReason}</div>
@@ -231,7 +234,10 @@ export default function PropertyStatusDropdowns({
         >
           <option value="Not Started">Not Started</option>
           <option value="In Progress">In Progress</option>
-          <option value="Handed Over">Handed Over</option>
+          {/* Handed Over option removed - completion is automatic when tracker reaches 100% */}
+          {property.handover_status === 'COMPLETED' && (
+            <option value="Handed Over">Handed Over (Auto-completed)</option>
+          )}
         </select>
         {handoverDisabled && handoverDisabledReason && (
           <div className="text-xs text-amber-600 mt-1">{handoverDisabledReason}</div>
