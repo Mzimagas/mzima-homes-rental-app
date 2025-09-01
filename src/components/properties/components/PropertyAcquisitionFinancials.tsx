@@ -78,13 +78,12 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   const normalizeCostTypeId = (subtab: string | null, rawId: string | null) => {
     if (!rawId) return ''
     const id = String(rawId).trim()
-    if (id.startsWith('subdivision_')) return id
 
-    const isSubdivisionShortId = SUBDIVISION_COST_TYPES.some((t) => t.id === id)
+    // Check if it's already a valid subdivision or acquisition cost type ID
+    const isSubdivisionId = SUBDIVISION_COST_TYPES.some((t) => t.id === id)
     const isAcqId = ACQUISITION_COST_TYPES.some((t) => t.id === id)
 
-    if (isSubdivisionShortId) return `subdivision_${id}`
-    if (isAcqId) return id
+    if (isSubdivisionId || isAcqId) return id
     return id
   }
 
@@ -384,14 +383,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
 
       setSubdivisionCostsByCategory(categoryTotals)
       setTotalSubdivisionCosts(total)
-
-      console.log('🔍 Subdivision costs loaded:', {
-        total,
-        categoryTotals,
-        costsCount: costs.length
-      })
     } catch (error) {
-      console.log('🔍 Error loading subdivision costs:', error)
       // Don't set error state for subdivision costs as they're optional
     }
   }
@@ -441,17 +433,10 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     setError(null)
 
     try {
-      console.log('🔍 handleAddCost called with:', {
-        cost_type_id: newCost.cost_type_id,
-        amount_kes: newCost.amount_kes,
-        startsWithSubdivision: newCost.cost_type_id.startsWith('subdivision_')
-      })
-
       // Check if this is a subdivision cost type
-      if (newCost.cost_type_id.startsWith('subdivision_')) {
+      const subdivisionCostType = SUBDIVISION_COST_TYPES.find((type) => type.id === newCost.cost_type_id)
+      if (subdivisionCostType) {
         // Handle subdivision cost
-        const subdivisionCostTypeId = newCost.cost_type_id.replace('subdivision_', '')
-        const subdivisionCostType = SUBDIVISION_COST_TYPES.find((type) => type.id === subdivisionCostTypeId)
 
         if (!subdivisionCostType) {
           throw new Error('Invalid subdivision cost type selected')
@@ -462,7 +447,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
 
         // Create subdivision cost entry
         await SubdivisionCostsService.createSubdivisionCost(property.id, {
-          cost_type_id: subdivisionCostTypeId,
+          cost_type_id: subdivisionCostType.id,
           cost_category: subdivisionCostType.category,
           amount_kes: parseFloat(newCost.amount_kes),
           payment_status: 'PAID',
@@ -477,7 +462,6 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
         showToast('Subdivision cost added successfully', { variant: 'success' })
       } else {
         // Handle regular acquisition cost
-        console.log('🔍 Saving as acquisition cost:', newCost.cost_type_id)
         const costType = ACQUISITION_COST_TYPES.find((type) => type.id === newCost.cost_type_id)
         if (!costType) {
           throw new Error('Invalid cost type selected')
@@ -992,9 +976,9 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                         {/* Subdivision Costs Section */}
                         <optgroup label="Subdivision Costs">
                           {SUBDIVISION_COST_TYPES.filter(type =>
-                            ['search_fee', 'lcb_normal_fee', 'lcb_special_fee', 'mutation_drawing', 'new_parcel_numbers', 'beaconing', 'new_title_registration'].includes(type.id)
+                            ['subdivision_search_fee', 'subdivision_lcb_normal_fee', 'subdivision_lcb_special_fee', 'subdivision_mutation_drawing', 'subdivision_new_parcel_numbers', 'subdivision_beaconing', 'subdivision_new_title_registration'].includes(type.id)
                           ).map((type) => (
-                            <option key={`subdivision_${type.id}`} value={`subdivision_${type.id}`}>
+                            <option key={type.id} value={type.id}>
                               {type.label}
                             </option>
                           ))}
@@ -1145,13 +1129,6 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                     </span>
                   </div>
                 ))}
-              </div>
-
-              {/* Debug Info - Remove after testing */}
-              <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                <div>Total Subdivision Costs: {totalSubdivisionCosts}</div>
-                <div>Has Subdivision Costs: {Object.values(subdivisionCostsByCategory).some(amount => amount > 0) ? 'Yes' : 'No'}</div>
-                <div>Category Totals: {JSON.stringify(subdivisionCostsByCategory)}</div>
               </div>
 
               {/* Subdivision Cost Categories */}

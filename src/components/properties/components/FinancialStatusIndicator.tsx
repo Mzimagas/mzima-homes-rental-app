@@ -71,12 +71,12 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
       if (stage >= 11 && stage <= 16) {
         // Map payment IDs to subdivision cost type IDs
         const paymentToSubdivisionCostMap: Record<string, string> = {
-          'search_fee_subdivision': 'search_fee',
-          'lcb_normal_fee_subdivision': 'lcb_normal_fee',
-          'lcb_special_fee_subdivision': 'lcb_special_fee',
-          'mutation_costs': 'mutation_drawing',
-          'beaconing_costs': 'beaconing',
-          'title_registration_subdivision': 'new_title_registration',
+          'search_fee_subdivision': 'subdivision_search_fee',
+          'lcb_normal_fee_subdivision': 'subdivision_lcb_normal_fee',
+          'lcb_special_fee_subdivision': 'subdivision_lcb_special_fee',
+          'mutation_costs': 'subdivision_mutation_drawing',
+          'beaconing_costs': 'subdivision_beaconing',
+          'title_registration_subdivision': 'subdivision_new_title_registration',
         }
 
         const subdivisionCostTypeId = paymentToSubdivisionCostMap[payment?.id || ''] || payment?.id
@@ -335,12 +335,12 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                       if (stage >= 11 && stage <= 16) {
                         // Map payment IDs to subdivision cost type IDs
                         const paymentToSubdivisionCostMap: Record<string, string> = {
-                          'search_fee_subdivision': 'search_fee',
-                          'lcb_normal_fee_subdivision': 'lcb_normal_fee',
-                          'lcb_special_fee_subdivision': 'lcb_special_fee',
-                          'mutation_costs': 'mutation_drawing',
-                          'beaconing_costs': 'beaconing',
-                          'title_registration_subdivision': 'new_title_registration',
+                          'search_fee_subdivision': 'subdivision_search_fee',
+                          'lcb_normal_fee_subdivision': 'subdivision_lcb_normal_fee',
+                          'lcb_special_fee_subdivision': 'subdivision_lcb_special_fee',
+                          'mutation_costs': 'subdivision_mutation_drawing',
+                          'beaconing_costs': 'subdivision_beaconing',
+                          'title_registration_subdivision': 'subdivision_new_title_registration',
                         }
 
                         const subdivisionCostTypeId = paymentToSubdivisionCostMap[payment?.id || ''] || payment?.id
