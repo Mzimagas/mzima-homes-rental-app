@@ -10,9 +10,11 @@ import { PropertyWithLifecycle } from '../types/property-management.types'
 export type WorkflowType = 'direct_addition' | 'purchase_pipeline' | 'handover' | 'subdivision'
 
 /**
- * Subdivision-specific document keys (stages 11-16)
+ * Subdivision-specific document keys (stages 10-16, displayed as 1-7)
+ * Stage 10 (registered title) is the prerequisite first step for subdivision
  */
 export const SUBDIVISION_DOC_KEYS: DocTypeKey[] = [
+  'registered_title',  // Stage 10 -> Display Stage 1 (PREREQUISITE: Must have title to subdivide)
   'minutes_decision_subdivision',
   'search_certificate_subdivision',
   'lcb_consent_subdivision',
@@ -23,9 +25,14 @@ export const SUBDIVISION_DOC_KEYS: DocTypeKey[] = [
 
 /**
  * Regular workflow document keys (stages 1-10)
+ * Note: registered_title (stage 10) appears in BOTH regular and subdivision workflows
  */
 export const REGULAR_DOC_KEYS: DocTypeKey[] = DOC_TYPES
-  .filter(docType => !SUBDIVISION_DOC_KEYS.includes(docType.key))
+  .filter(docType => {
+    // Exclude subdivision-only docs, but keep registered_title for both workflows
+    const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
+    return !subdivisionOnlyDocs.includes(docType.key)
+  })
   .map(docType => docType.key)
 
 /**
@@ -64,8 +71,8 @@ export function getStageRange(workflowType: WorkflowType): { min: number; max: n
       // STRICT: Always stages 1-10 regardless of existing constants
       return { min: 1, max: 10 }
     case 'subdivision':
-      // STRICT: Always stages 11-16 regardless of existing constants
-      return { min: 11, max: 16 }
+      // STRICT: Always stages 10-16 (includes title deed prerequisite) regardless of existing constants
+      return { min: 10, max: 16 }
     default:
       return { min: 1, max: 10 }
   }
@@ -74,14 +81,16 @@ export function getStageRange(workflowType: WorkflowType): { min: number; max: n
 /**
  * Filter document types based on workflow type
  * Enforces strict document filtering by stage ranges
+ * Note: registered_title (stage 10) appears in BOTH workflows
  */
 export function getFilteredDocTypes(workflowType: WorkflowType): typeof DOC_TYPES {
   if (workflowType === 'subdivision') {
-    // Return only subdivision-specific document types (stages 11-16)
+    // Return subdivision-specific document types (stages 10-16)
     return DOC_TYPES.filter(docType => SUBDIVISION_DOC_KEYS.includes(docType.key))
   } else {
-    // Return regular document types (stages 1-10) - hide subdivision docs
-    return DOC_TYPES.filter(docType => !SUBDIVISION_DOC_KEYS.includes(docType.key))
+    // Return regular document types (stages 1-10) - hide subdivision-only docs
+    const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
+    return DOC_TYPES.filter(docType => !subdivisionOnlyDocs.includes(docType.key))
   }
 }
 
@@ -102,12 +111,12 @@ export function isStageVisible(stageNumber: number, workflowType: WorkflowType):
 }
 
 /**
- * Map subdivision stage numbers to display numbers (11-16 → 1-6)
+ * Map subdivision stage numbers to display numbers (10-16 → 1-7)
  */
 export function getDisplayStageNumber(actualStage: number, workflowType: WorkflowType): number {
   if (workflowType === 'subdivision') {
-    // Map stages 11-16 to display as 1-6
-    return actualStage - 10
+    // Map stages 10-16 to display as 1-7
+    return actualStage - 9
   }
   return actualStage
 }
@@ -117,8 +126,8 @@ export function getDisplayStageNumber(actualStage: number, workflowType: Workflo
  */
 export function getActualStageNumber(displayStage: number, workflowType: WorkflowType): number {
   if (workflowType === 'subdivision') {
-    // Map display stages 1-6 back to actual stages 11-16
-    return displayStage + 10
+    // Map display stages 1-7 back to actual stages 10-16
+    return displayStage + 9
   }
   return displayStage
 }
@@ -142,7 +151,7 @@ export function getStageConfig(property: PropertyWithLifecycle): StageConfig {
   const stageNumbers = getStageNumbers(workflowType)
 
   const displayRange = workflowType === 'subdivision'
-    ? { min: 1, max: 6 }  // Display stages 11-16 as 1-6
+    ? { min: 1, max: 7 }  // Display stages 10-16 as 1-7
     : stageRange
 
   return {

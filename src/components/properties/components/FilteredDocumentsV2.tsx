@@ -68,8 +68,8 @@ export default function FilteredDocumentsV2({
               {WORKFLOW_LABELS[workflowType]} Documents
             </h3>
             <p className={`text-sm text-${WORKFLOW_COLORS[workflowType]}-700 mt-1`}>
-              {workflowType === 'subdivision' 
-                ? `Showing subdivision stages ${stageConfig.displayRange.min}-${stageConfig.displayRange.max} (${stageConfig.docTypes.length} document types)`
+              {workflowType === 'subdivision'
+                ? `Showing subdivision stages ${stageConfig.displayRange.min}-${stageConfig.displayRange.max} (${stageConfig.docTypes.length} document types) • Title deed prerequisite included`
                 : `Showing stages ${stageConfig.displayRange.min}-${stageConfig.displayRange.max} (${stageConfig.docTypes.length} document types)`
               }
             </p>
@@ -89,9 +89,9 @@ export default function FilteredDocumentsV2({
           <div className="flex items-center gap-2">
             <span className="font-medium">🎯 Stage Filtering Active:</span>
             <span>
-              {workflowType === 'subdivision' 
-                ? 'Only subdivision documents (stages 11-16) are shown. Regular documents (stages 1-10) are hidden.'
-                : 'Only regular documents (stages 1-10) are shown. Subdivision documents (stages 11-16) are hidden.'
+              {workflowType === 'subdivision'
+                ? 'Subdivision documents (stages 10-16) are shown. Stage 10 (title deed) is the prerequisite. Subdivision-only documents (stages 11-16) are included.'
+                : 'Regular documents (stages 1-10) are shown. Subdivision-only documents (stages 11-16) are hidden. Title deed (stage 10) remains visible.'
               }
             </span>
           </div>
@@ -135,8 +135,9 @@ export default function FilteredDocumentsV2({
           <div className="flex items-center gap-2">
             <span className="text-orange-600 font-medium">📋</span>
             <span className="text-sm text-orange-700">
-              <strong>Subdivision Process:</strong> Complete documents for stages 1-6 to progress through the subdivision workflow. 
-              These correspond to actual stages 11-16 in the system.
+              <strong>Subdivision Process:</strong> Complete documents for stages 1-7 to progress through the subdivision workflow.
+              <strong>Stage 1 (Title Deed) is mandatory</strong> - you cannot subdivide what you don't legally own.
+              These correspond to actual stages 10-16 in the system.
             </span>
           </div>
         </div>
@@ -147,8 +148,8 @@ export default function FilteredDocumentsV2({
           <div className="flex items-center gap-2">
             <span className={`text-${WORKFLOW_COLORS[workflowType]}-600 font-medium`}>📋</span>
             <span className={`text-sm text-${WORKFLOW_COLORS[workflowType]}-700`}>
-              <strong>{WORKFLOW_LABELS[workflowType]}:</strong> Complete documents for stages 1-10 to progress through the workflow. 
-              Subdivision documents are not applicable for this property type.
+              <strong>{WORKFLOW_LABELS[workflowType]}:</strong> Complete documents for stages 1-10 to progress through the workflow.
+              Stage 10 (title deed) completion enables future subdivision if needed.
             </span>
           </div>
         </div>

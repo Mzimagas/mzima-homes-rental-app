@@ -78,9 +78,9 @@ describe('Stage Filtering Utils', () => {
       expect(range).toEqual({ min: 1, max: 10 })
     })
 
-    it('should return 11-16 for subdivision', () => {
+    it('should return 10-16 for subdivision', () => {
       const range = getStageRange('subdivision')
-      expect(range).toEqual({ min: 11, max: 16 })
+      expect(range).toEqual({ min: 10, max: 16 })
     })
   })
 
@@ -104,7 +104,9 @@ describe('Stage Filtering Utils', () => {
 
     it('should maintain correct document count for regular workflows', () => {
       const filtered = getFilteredDocTypes('direct_addition')
-      const expectedCount = DOC_TYPES.length - SUBDIVISION_DOC_KEYS.length
+      // Regular workflows exclude subdivision-only docs but keep registered_title
+      const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
+      const expectedCount = DOC_TYPES.length - subdivisionOnlyDocs.length
       expect(filtered.length).toBe(expectedCount)
     })
   })
@@ -119,9 +121,9 @@ describe('Stage Filtering Utils', () => {
       })
     })
 
-    it('should return [11,12,13,14,15,16] for subdivision workflow', () => {
+    it('should return [10,11,12,13,14,15,16] for subdivision workflow', () => {
       const numbers = getStageNumbers('subdivision')
-      expect(numbers).toEqual([11, 12, 13, 14, 15, 16])
+      expect(numbers).toEqual([10, 11, 12, 13, 14, 15, 16])
     })
   })
 
@@ -135,21 +137,21 @@ describe('Stage Filtering Utils', () => {
           expect(isStageVisible(i, workflow)).toBe(true)
         }
         
-        // Stages 11-16 should be hidden
-        for (let i = 11; i <= 16; i++) {
+        // Stages 10-16 should be hidden
+        for (let i = 10; i <= 16; i++) {
           expect(isStageVisible(i, workflow)).toBe(false)
         }
       })
     })
 
-    it('should show stages 11-16 for subdivision workflow', () => {
-      // Stages 1-10 should be hidden
-      for (let i = 1; i <= 10; i++) {
+    it('should show stages 10-16 for subdivision workflow', () => {
+      // Stages 1-9 should be hidden
+      for (let i = 1; i <= 9; i++) {
         expect(isStageVisible(i, 'subdivision')).toBe(false)
       }
-      
-      // Stages 11-16 should be visible
-      for (let i = 11; i <= 16; i++) {
+
+      // Stages 10-16 should be visible
+      for (let i = 10; i <= 16; i++) {
         expect(isStageVisible(i, 'subdivision')).toBe(true)
       }
     })
@@ -166,11 +168,11 @@ describe('Stage Filtering Utils', () => {
       })
     })
 
-    it('should map 11-16 to 1-6 for subdivision workflow', () => {
+    it('should map 10-16 to 1-7 for subdivision workflow', () => {
       const mapping = [
-        [11, 1], [12, 2], [13, 3], [14, 4], [15, 5], [16, 6]
+        [10, 1], [11, 2], [12, 3], [13, 4], [14, 5], [15, 6], [16, 7]
       ]
-      
+
       mapping.forEach(([actual, display]) => {
         expect(getDisplayStageNumber(actual, 'subdivision')).toBe(display)
       })
@@ -188,11 +190,11 @@ describe('Stage Filtering Utils', () => {
       })
     })
 
-    it('should map 1-6 to 11-16 for subdivision workflow', () => {
+    it('should map 1-7 to 10-16 for subdivision workflow', () => {
       const mapping = [
-        [1, 11], [2, 12], [3, 13], [4, 14], [5, 15], [6, 16]
+        [1, 10], [2, 11], [3, 12], [4, 13], [5, 14], [6, 15], [7, 16]
       ]
-      
+
       mapping.forEach(([display, actual]) => {
         expect(getActualStageNumber(display, 'subdivision')).toBe(actual)
       })
@@ -205,9 +207,9 @@ describe('Stage Filtering Utils', () => {
       const config = getStageConfig(property)
       
       expect(config.workflowType).toBe('subdivision')
-      expect(config.stageRange).toEqual({ min: 11, max: 16 })
-      expect(config.displayRange).toEqual({ min: 1, max: 6 })
-      expect(config.visibleStageCount).toBe(6)
+      expect(config.stageRange).toEqual({ min: 10, max: 16 })
+      expect(config.displayRange).toEqual({ min: 1, max: 7 })
+      expect(config.visibleStageCount).toBe(7)
       expect(config.docTypes.length).toBe(SUBDIVISION_DOC_KEYS.length)
     })
 
@@ -233,12 +235,21 @@ describe('Stage Filtering Utils', () => {
       })
     })
 
-    it('should not allow subdivision docs for regular workflows', () => {
+    it('should not allow subdivision-only docs for regular workflows', () => {
       const workflows: WorkflowType[] = ['direct_addition', 'purchase_pipeline', 'handover']
-      const subdivisionDocKey = SUBDIVISION_DOC_KEYS[0]
-      
+      const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
+      const subdivisionOnlyDocKey = subdivisionOnlyDocs[0]
+
       workflows.forEach(workflow => {
-        expect(isDocTypeAllowedForWorkflow(subdivisionDocKey, workflow)).toBe(false)
+        expect(isDocTypeAllowedForWorkflow(subdivisionOnlyDocKey, workflow)).toBe(false)
+      })
+    })
+
+    it('should allow registered_title for both regular and subdivision workflows', () => {
+      const allWorkflows: WorkflowType[] = ['direct_addition', 'purchase_pipeline', 'handover', 'subdivision']
+
+      allWorkflows.forEach(workflow => {
+        expect(isDocTypeAllowedForWorkflow('registered_title', workflow)).toBe(true)
       })
     })
 
@@ -248,8 +259,9 @@ describe('Stage Filtering Utils', () => {
       })
     })
 
-    it('should not allow regular docs for subdivision workflow', () => {
-      REGULAR_DOC_KEYS.forEach(docKey => {
+    it('should not allow regular-only docs for subdivision workflow', () => {
+      const regularOnlyDocs = REGULAR_DOC_KEYS.filter(key => key !== 'registered_title')
+      regularOnlyDocs.forEach(docKey => {
         expect(isDocTypeAllowedForWorkflow(docKey, 'subdivision')).toBe(false)
       })
     })
@@ -261,11 +273,12 @@ describe('Stage Filtering Utils', () => {
       const summary = getStageFilteringSummary(property)
       
       expect(summary.workflowType).toBe('subdivision')
-      expect(summary.stageRange).toBe('11-16')
-      expect(summary.displayRange).toBe('1-6')
+      expect(summary.stageRange).toBe('10-16')
+      expect(summary.displayRange).toBe('1-7')
       expect(summary.documentCount).toBe(SUBDIVISION_DOC_KEYS.length)
       expect(summary.visibleDocuments).toEqual(SUBDIVISION_DOC_KEYS)
-      expect(summary.hiddenDocuments).toEqual(REGULAR_DOC_KEYS)
+      const regularOnlyDocs = REGULAR_DOC_KEYS.filter(key => key !== 'registered_title')
+      expect(summary.hiddenDocuments).toEqual(regularOnlyDocs)
     })
 
     it('should provide correct summary for regular property', () => {
@@ -277,7 +290,8 @@ describe('Stage Filtering Utils', () => {
       expect(summary.displayRange).toBe('1-10')
       expect(summary.documentCount).toBe(REGULAR_DOC_KEYS.length)
       expect(summary.visibleDocuments).toEqual(REGULAR_DOC_KEYS)
-      expect(summary.hiddenDocuments).toEqual(SUBDIVISION_DOC_KEYS)
+      const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
+      expect(summary.hiddenDocuments).toEqual(subdivisionOnlyDocs)
     })
   })
 })
