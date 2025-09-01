@@ -146,14 +146,50 @@ export default function DirectAdditionDocumentsV2({
     enableRealTimeSync: true,
   })
 
-  // Define agreement stage grouping
+  // Define agreement stage grouping with sequential locking order
   const AGREEMENT_STAGE_DOCUMENTS: DocTypeKey[] = [
-    'original_title_deed',
-    'seller_id_passport',
-    'spousal_consent',
-    'spouse_id_kra',
-    'signed_lra33',
+    'original_title_deed',    // Sub-stage 1: Must be completed first
+    'seller_id_passport',     // Sub-stage 2: Requires sub-stage 1
+    'spousal_consent',        // Sub-stage 3: Requires sub-stages 1-2
+    'spouse_id_kra',          // Sub-stage 4: Requires sub-stages 1-3
+    'signed_lra33',           // Sub-stage 5: Requires sub-stages 1-4
   ]
+
+  // Check if a sub-stage within agreement documents is locked
+  const isAgreementSubStageLocked = useCallback((docKey: DocTypeKey): boolean => {
+    if (!AGREEMENT_STAGE_DOCUMENTS.includes(docKey)) return false
+
+    const currentIndex = AGREEMENT_STAGE_DOCUMENTS.indexOf(docKey)
+    if (currentIndex === 0) return false // First sub-stage is never locked
+
+    // Check if all previous sub-stages are completed
+    for (let i = 0; i < currentIndex; i++) {
+      const prevDocKey = AGREEMENT_STAGE_DOCUMENTS[i]
+      const prevState = documentStates[prevDocKey]
+      const hasFiles = prevState?.documents?.length > 0
+      const isNA = prevState?.status?.is_na || false
+
+      if (!hasFiles && !isNA) {
+        return true // Previous sub-stage not completed, so current is locked
+      }
+    }
+
+    return false // All previous sub-stages completed
+  }, [documentStates])
+
+  // Get the next required sub-stage in agreement documents
+  const getNextRequiredAgreementSubStage = useCallback((): DocTypeKey | null => {
+    for (const docKey of AGREEMENT_STAGE_DOCUMENTS) {
+      const state = documentStates[docKey]
+      const hasFiles = state?.documents?.length > 0
+      const isNA = state?.status?.is_na || false
+
+      if (!hasFiles && !isNA) {
+        return docKey // This is the next required sub-stage
+      }
+    }
+    return null // All sub-stages completed
+  }, [documentStates])
 
   // Get filtered document types based on workflow and stage filter
   const getFilteredDocTypesForComponent = useCallback(() => {
@@ -900,7 +936,7 @@ export default function DirectAdditionDocumentsV2({
                         {docType.description}
                       </p>
 
-                      {/* Multi-document progress */}
+                      {/* Multi-document progress with sub-stage information */}
                       <div className="flex items-center gap-2 mt-2">
                         <span className="text-xs text-gray-600">
                           {
@@ -911,7 +947,7 @@ export default function DirectAdditionDocumentsV2({
                               return hasFiles || isNA
                             }).length
                           }{' '}
-                          of {stage.groupedDocuments.length} documents completed
+                          of {stage.groupedDocuments.length} sub-stages completed
                         </span>
 
                         {stage.isLocked && (
@@ -921,13 +957,30 @@ export default function DirectAdditionDocumentsV2({
                           </span>
                         )}
                       </div>
+
+                      {/* Next required sub-stage indicator */}
+                      {!stage.isLocked && (() => {
+                        const nextSubStage = getNextRequiredAgreementSubStage()
+                        if (nextSubStage) {
+                          const nextDocType = DOC_TYPES.find(dt => dt.key === nextSubStage)
+                          const subStageIndex = AGREEMENT_STAGE_DOCUMENTS.indexOf(nextSubStage)
+                          return (
+                            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                              <span className="text-blue-700 font-medium">
+                                📋 Next: Sub-stage {subStageIndex + 1} - {nextDocType?.label}
+                              </span>
+                            </div>
+                          )
+                        }
+                        return null
+                      })()}
                     </div>
                   </div>
                 </div>
 
                 {/* Multi-Document Cards */}
                 <div className="border-t border-gray-100 p-4 space-y-3">
-                  {stage.groupedDocuments.map((docKey) => {
+                  {stage.groupedDocuments.map((docKey, subStageIndex) => {
                     const groupedDocType = DOC_TYPES.find((dt) => dt.key === docKey)
                     if (!groupedDocType) return null
 
@@ -936,24 +989,41 @@ export default function DirectAdditionDocumentsV2({
                     const isUploading = state?.isUploading || false
                     const documents = state?.documents || []
 
+                    // Apply sub-stage locking for agreement documents
+                    const isSubStageLocked = isAgreementSubStageLocked(docKey)
+                    const isDocumentLocked = isDocLocked || isSubStageLocked
+                    const nextRequiredSubStage = getNextRequiredAgreementSubStage()
+
                     return (
-                      <div key={docKey} className="border border-gray-200 rounded-lg bg-gray-50">
+                      <div key={docKey} className={`border border-gray-200 rounded-lg ${
+                        isSubStageLocked ? 'bg-gray-100 opacity-75' : 'bg-gray-50'
+                      }`}>
                         {/* Individual Document Header */}
                         <div
                           className={`flex items-center justify-between p-3 ${
-                            isDocLocked ? 'cursor-not-allowed' : 'cursor-pointer'
+                            isDocumentLocked ? 'cursor-not-allowed' : 'cursor-pointer'
                           }`}
-                          onClick={() => !isDocLocked && toggleExpanded(docKey)}
+                          onClick={() => !isDocumentLocked && toggleExpanded(docKey)}
                         >
                           <div className="flex items-center gap-3">
                             <div className="text-lg flex-shrink-0">{groupedDocType.icon}</div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm text-gray-900 truncate">
-                                {groupedDocType.label}
-                              </h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium text-sm text-gray-900 truncate">
+                                  Sub-stage {subStageIndex + 1}: {groupedDocType.label}
+                                </h4>
+                                {isSubStageLocked && (
+                                  <LockClosedIcon className="h-3 w-3 text-gray-400" />
+                                )}
+                              </div>
                               <p className="text-xs text-gray-600 line-clamp-1">
                                 {groupedDocType.description}
                               </p>
+                              {isSubStageLocked && (
+                                <p className="text-xs text-amber-600 mt-1">
+                                  Complete previous sub-stages first
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -973,10 +1043,29 @@ export default function DirectAdditionDocumentsV2({
                         {/* Individual Document Expandable Content */}
                         {isExpanded && (
                           <div className="border-t border-gray-200 p-3 bg-white">
+                            {/* Sub-stage locked message */}
+                            {isSubStageLocked && (
+                              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                  <LockClosedIcon className="h-4 w-4 text-amber-600" />
+                                  <span className="text-sm font-medium text-amber-800">
+                                    Sub-stage {subStageIndex + 1} is locked
+                                  </span>
+                                </div>
+                                <p className="text-xs text-amber-700 mt-1">
+                                  Complete the previous sub-stages in order before proceeding with this document.
+                                </p>
+                              </div>
+                            )}
+
                             {/* File Upload Section */}
                             <div className="space-y-3">
                               <div>
-                                <label className="flex items-center gap-3 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-400 transition-colors cursor-pointer">
+                                <label className={`flex items-center gap-3 p-3 border-2 border-dashed rounded-lg transition-colors ${
+                                  isDocumentLocked
+                                    ? 'border-gray-200 cursor-not-allowed opacity-50'
+                                    : 'border-gray-300 hover:border-teal-400 cursor-pointer'
+                                }`}>
                                   <div className="text-teal-600">
                                     <svg
                                       className="w-6 h-6"
@@ -1014,7 +1103,7 @@ export default function DirectAdditionDocumentsV2({
                                         e.target.value = ''
                                       }
                                     }}
-                                    disabled={isUploading || isDocLocked}
+                                    disabled={isUploading || isDocumentLocked}
                                   />
                                 </label>
                               </div>
@@ -1062,7 +1151,7 @@ export default function DirectAdditionDocumentsV2({
                                         updateDocumentStatus(docKey, e.target.checked)
                                       }
                                       className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                                      disabled={isDocLocked}
+                                      disabled={isDocumentLocked}
                                     />
                                     <span className="text-xs text-gray-700">Mark as N/A</span>
                                   </label>
@@ -1078,7 +1167,7 @@ export default function DirectAdditionDocumentsV2({
                                     placeholder="Add any additional notes..."
                                     className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
                                     rows={2}
-                                    disabled={isDocLocked}
+                                    disabled={isDocumentLocked}
                                   />
                                 </div>
                               </div>

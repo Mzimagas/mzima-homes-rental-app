@@ -670,70 +670,7 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
               </div>
             )}
 
-            {/* Subdivision Pipeline Interface - Only show for subdivision pipeline properties */}
-            {property.property_source === 'SUBDIVISION_PROCESS' && (
-              <div>
-                {subdivisionLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Loading subdivision data...</p>
-                  </div>
-                ) : subdivisionData ? (
-                  <div className="space-y-6">
-                    {/* Subdivision Information */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                      <div className="flex items-center mb-4">
-                        <span className="text-2xl mr-3">🏗️</span>
-                        <h3 className="text-lg font-semibold text-blue-900">
-                          Subdivision Information
-                        </h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p>
-                            <span className="font-medium">Subdivision Name:</span>{' '}
-                            {subdivisionData.subdivision_name || 'Not specified'}
-                          </p>
-                          <p>
-                            <span className="font-medium">Total Plots Planned:</span>{' '}
-                            {subdivisionData.total_plots_planned || 'Not specified'}
-                          </p>
-                          <p>
-                            <span className="font-medium">Status:</span>{' '}
-                            {subdivisionData.subdivision_status || 'Not specified'}
-                          </p>
-                        </div>
-                        <div>
-                          <p>
-                            <span className="font-medium">Current Stage:</span>{' '}
-                            {subdivisionData.current_stage || 1}
-                          </p>
-                          <p>
-                            <span className="font-medium">Overall Progress:</span>{' '}
-                            {subdivisionData.overall_progress || 0}%
-                          </p>
-                          <p>
-                            <span className="font-medium">Plots Created:</span>{' '}
-                            {subdivisionData.total_plots_created || 0}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 bg-gray-50 rounded-lg">
-                    <div className="text-4xl mb-4">🏗️</div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Subdivision Data Not Found
-                    </h3>
-                    <p className="text-gray-600">
-                      This property was marked as coming from a subdivision pipeline, but the
-                      subdivision data could not be loaded.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Subdivision Pipeline Interface - Removed subdivision information section to declutter UI */}
 
             {/* Pipeline Documents - Only show for non-purchase pipeline properties */}
             {property.property_source !== 'PURCHASE_PIPELINE' && pipelineDocuments.length > 0 && (
