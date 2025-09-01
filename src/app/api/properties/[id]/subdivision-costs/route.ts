@@ -170,14 +170,27 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     if (!hasAccess) return errors.forbidden()
 
-    // TODO: Implement subdivision costs tracking
-    // For now, return empty array since property_subdivision_costs table was removed during cleanup
-    console.log('Subdivision costs feature not implemented - returning empty array')
+    // Fetch subdivision costs from property_acquisition_costs table
+    // Subdivision costs are identified by cost_type_id starting with 'subdivision_'
+    const admin = createClient(supabaseUrl, serviceKey)
+
+    const { data: subdivisionCosts, error } = await admin
+      .from('property_acquisition_costs')
+      .select('*')
+      .eq('property_id', propertyId)
+      .like('cost_type_id', 'subdivision_%')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching subdivision costs:', error)
+      return errors.internal('Failed to fetch subdivision costs')
+    }
+
+    console.log(`Found ${subdivisionCosts?.length || 0} subdivision costs`)
 
     return NextResponse.json({
       success: true,
-      data: [],
-      message: 'Subdivision costs tracking not yet implemented'
+      data: subdivisionCosts || []
     })
   } catch (error) {
     console.error('Error in subdivision costs GET API:', error)
@@ -224,30 +237,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return errors.validation(parsed.error.flatten())
     }
 
-    // TODO: Implement subdivision costs tracking
-    // For now, return success without persisting since property_subdivision_costs table was removed during cleanup
-    console.log('Subdivision costs feature not implemented - simulating success')
+    // Save subdivision cost to property_acquisition_costs table
+    // Subdivision costs are identified by cost_type_id starting with 'subdivision_'
+    const admin = createClient(supabaseUrl, serviceKey)
 
-    const mockCost = {
-      id: `mock-${Date.now()}`,
+    const costData = {
       property_id: propertyId,
       cost_type_id: parsed.data.cost_type_id,
       cost_category: parsed.data.cost_category,
       amount_kes: parsed.data.amount_kes,
-      payment_status: parsed.data.payment_status,
       payment_reference: parsed.data.payment_reference,
       payment_date: parsed.data.payment_date,
       notes: parsed.data.notes,
       created_by: userId,
-      created_at: new Date().toISOString(),
     }
 
-    console.log('Mock subdivision cost created:', mockCost)
+    console.log('Saving subdivision cost to property_acquisition_costs:', costData)
+
+    const { data: savedCost, error } = await admin
+      .from('property_acquisition_costs')
+      .insert(costData)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error saving subdivision cost:', error)
+      return errors.internal('Failed to save subdivision cost')
+    }
+
+    console.log('Subdivision cost saved successfully:', savedCost)
 
     return NextResponse.json({
       success: true,
-      data: mockCost,
-      message: 'Subdivision costs tracking not yet implemented - data not persisted'
+      data: savedCost
     })
   } catch (error) {
     console.error('Error in subdivision costs POST API:', error)
