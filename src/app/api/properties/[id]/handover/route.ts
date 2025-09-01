@@ -62,32 +62,35 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       )
     }
 
-    // Create supabase client for permission checking
-    const supabase = await createServerSupabaseClient()
+    // Skip permission checking for system user (temporary bypass)
+    if (userId !== 'system') {
+      // Create supabase client for permission checking
+      const supabase = await createServerSupabaseClient()
 
-    // Verify user has access to this property
-    const { data: propertyAccess, error: accessError } = await supabase
-      .from('property_users')
-      .select('role, status')
-      .eq('property_id', propertyId)
-      .eq('user_id', userId)
-      .eq('status', 'ACTIVE')
-      .single()
+      // Verify user has access to this property
+      const { data: propertyAccess, error: accessError } = await supabase
+        .from('property_users')
+        .select('role, status')
+        .eq('property_id', propertyId)
+        .eq('user_id', userId)
+        .eq('status', 'ACTIVE')
+        .single()
 
-    // Also check if user is the landlord
-    const { data: property, error: propertyError } = await supabase
-      .from('properties')
-      .select('landlord_id')
-      .eq('id', propertyId)
-      .single()
+      // Also check if user is the landlord
+      const { data: property, error: propertyError } = await supabase
+        .from('properties')
+        .select('landlord_id')
+        .eq('id', propertyId)
+        .single()
 
-    const hasAccess = propertyAccess || (property && property.landlord_id === userId)
+      const hasAccess = propertyAccess || (property && property.landlord_id === userId)
 
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions to update handover status' },
-        { status: 403 }
-      )
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Insufficient permissions to update handover status' },
+          { status: 403 }
+        )
+      }
     }
 
     // Use service role client for the actual update (bypasses RLS)
