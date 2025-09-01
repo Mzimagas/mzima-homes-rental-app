@@ -18,6 +18,12 @@ import {
   generateUniqueFilename,
   getFileIcon,
 } from '../../../lib/constants/document-types'
+import {
+  getFilteredDocTypes,
+  getWorkflowType,
+  getDisplayStageNumber,
+  type WorkflowType
+} from '../utils/stage-filtering.utils'
 import { useFinancialStatus } from '../../../hooks/useFinancialStatus'
 import { useFinancialSync } from '../../../hooks/useFinancialSync'
 import { useEnhancedWorkflow } from '../../../hooks/useEnhancedWorkflow'
@@ -28,6 +34,8 @@ interface DirectAdditionDocumentsV2Props {
   propertyId: string
   propertyName: string
   pipeline?: 'direct_addition' | 'handover' | 'subdivision'
+  property?: any // For workflow type detection
+  stageFilter?: 'all' | 'stages_1_10' | 'stages_11_16'
 }
 
 interface PropertyDocument {
@@ -86,6 +94,8 @@ export default function DirectAdditionDocumentsV2({
   propertyId,
   propertyName,
   pipeline = 'direct_addition',
+  property,
+  stageFilter,
 }: DirectAdditionDocumentsV2Props) {
   const [documentStates, setDocumentStates] = useState<Record<DocTypeKey, DocumentTypeState>>(
     {} as Record<DocTypeKey, DocumentTypeState>
@@ -138,13 +148,50 @@ export default function DirectAdditionDocumentsV2({
     'signed_lra33',
   ]
 
+  // Get filtered document types based on workflow and stage filter
+  const getFilteredDocTypes = useCallback(() => {
+    let filteredTypes = DOC_TYPES
+
+    // Apply stage filtering if specified
+    if (stageFilter === 'stages_1_10') {
+      // Show only stages 1-10 (regular documents)
+      const subdivisionDocKeys: DocTypeKey[] = [
+        'minutes_decision_subdivision',
+        'search_certificate_subdivision',
+        'lcb_consent_subdivision',
+        'mutation_forms',
+        'beaconing_docs',
+        'title_registration_subdivision'
+      ]
+      filteredTypes = DOC_TYPES.filter(docType => !subdivisionDocKeys.includes(docType.key))
+    } else if (stageFilter === 'stages_11_16') {
+      // Show only stages 11-16 (subdivision documents)
+      const subdivisionDocKeys: DocTypeKey[] = [
+        'minutes_decision_subdivision',
+        'search_certificate_subdivision',
+        'lcb_consent_subdivision',
+        'mutation_forms',
+        'beaconing_docs',
+        'title_registration_subdivision'
+      ]
+      filteredTypes = DOC_TYPES.filter(docType => subdivisionDocKeys.includes(docType.key))
+    } else if (property) {
+      // Auto-detect workflow type from property
+      const workflowType = getWorkflowType(property)
+      filteredTypes = getFilteredDocTypes(workflowType)
+    }
+
+    return filteredTypes
+  }, [stageFilter, property])
+
   // Calculate document progression stages with multi-document agreement stage
   const calculateDocumentStages = useCallback((): DocumentStageInfo[] => {
     const stages: DocumentStageInfo[] = []
     let stageNumber = 1
+    const filteredDocTypes = getFilteredDocTypes()
 
-    for (let index = 0; index < DOC_TYPES.length; index++) {
-      const docType = DOC_TYPES[index]
+    for (let index = 0; index < filteredDocTypes.length; index++) {
+      const docType = filteredDocTypes[index]
 
       // Skip agreement documents except the first one (we'll group them)
       if (
@@ -206,7 +253,7 @@ export default function DirectAdditionDocumentsV2({
     }
 
     return stages
-  }, [documentStates])
+  }, [documentStates, getFilteredDocTypes])
 
   // Update document stages when document states change
   useEffect(() => {
