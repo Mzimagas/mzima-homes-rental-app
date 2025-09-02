@@ -188,9 +188,4 @@ export interface PurchaseListProps {
   transferringId: string | null
 }
 
-export interface PurchaseFormProps {
-  isOpen: boolean
-  onClose: () => void
-  editingPurchase: PurchaseItem | null
-  onPurchaseCreated: () => void
-}
+
