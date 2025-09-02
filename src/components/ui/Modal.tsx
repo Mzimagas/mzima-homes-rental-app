@@ -9,9 +9,16 @@ export interface ModalProps {
   title?: string
   children: React.ReactNode
   initialFocusRef?: React.RefObject<HTMLElement>
+  size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
-export function Modal({ isOpen, onClose, title, children, initialFocusRef }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, initialFocusRef, size = 'md' }: ModalProps) {
+  const sizeClasses = {
+    sm: 'max-w-md',
+    md: 'max-w-2xl',
+    lg: 'max-w-4xl',
+    xl: 'max-w-6xl'
+  }
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog
@@ -43,7 +50,7 @@ export function Modal({ isOpen, onClose, title, children, initialFocusRef }: Mod
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-2xl max-h-[90vh] transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className={`w-full ${sizeClasses[size]} max-h-[90vh] transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all`}>
                 {title && (
                   <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <Dialog.Title as="h3" className="text-xl font-semibold leading-6 text-gray-900">
