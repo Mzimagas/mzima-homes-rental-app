@@ -313,11 +313,16 @@ export default function SecurePurchaseForm({
         isOpen={isOpen}
         onClose={onClose}
         title={editingPurchase ? 'Edit Purchase (Secure)' : 'New Purchase'}
+        size="lg"
       >
-        <form onSubmit={handleSubmit(handleSecureSubmit)} className="space-y-6">
-          {/* Property Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Property Information</h3>
+        <div className="p-8">
+          <form onSubmit={handleSubmit(handleSecureSubmit)} className="space-y-8">
+            {/* Property Information Section */}
+            <div className="space-y-6">
+              <div className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-medium text-gray-900">Property Information</h3>
+                <p className="text-sm text-gray-600 mt-1">Basic details about the property you're considering for purchase</p>
+              </div>
 
             {/* Property Selection Toggle */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -469,11 +474,14 @@ export default function SecurePurchaseForm({
             )}
           </div>
 
-          {/* Seller Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Seller Information</h3>
+            {/* Seller Information Section */}
+            <div className="space-y-6">
+              <div className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-medium text-gray-900">Seller Information</h3>
+                <p className="text-sm text-gray-600 mt-1">Contact details and information about the property seller</p>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {renderSecureField(
                 'sellerName',
                 <FormField name="sellerName" label="Seller Name" error={errors.sellerName?.message}>
@@ -533,11 +541,14 @@ export default function SecurePurchaseForm({
             )}
           </div>
 
-          {/* Financial Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Financial Information</h3>
+            {/* Financial Information Section */}
+            <div className="space-y-6">
+              <div className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-medium text-gray-900">Financial Information</h3>
+                <p className="text-sm text-gray-600 mt-1">Pricing details and financial terms for the purchase</p>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {renderSecureField(
                 'askingPrice',
                 <FormField
@@ -722,11 +733,14 @@ export default function SecurePurchaseForm({
             </div>
           </div>
 
-          {/* Additional Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Additional Information</h3>
+            {/* Legal & Administrative Section */}
+            <div className="space-y-6">
+              <div className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-medium text-gray-900">Legal & Administrative</h3>
+                <p className="text-sm text-gray-600 mt-1">Legal representation, documentation status, and administrative details</p>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {renderSecureField(
                 'contractReference',
                 <FormField
@@ -848,17 +862,28 @@ export default function SecurePurchaseForm({
                 )}
               </FormField>
             )}
-          </div>
+            </div>
 
-          <div className="flex justify-end space-x-3">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        </form>
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="px-6 py-2"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-6 py-2"
+              >
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </div>
       </Modal>
 
       {/* Approval Request Dialog */}
