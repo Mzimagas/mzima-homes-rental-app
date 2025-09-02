@@ -142,23 +142,16 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
         <div className="flex items-center space-x-2">
           {hasSubdivision && subdivision ? (
             <>
-              {canEdit ? (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleEditSubdivision}
-                >
-                  ✏️ Edit Subdivision Plan
-                </Button>
-              ) : (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled
-                >
-                  ✓ Plan Created
-                </Button>
-              )}
+              <Button
+                variant={canEdit ? "primary" : "secondary"}
+                size="sm"
+                onClick={canEdit ? handleEditSubdivision : undefined}
+                disabled={!canEdit}
+                className={!canEdit ? "opacity-50 cursor-not-allowed" : ""}
+                title={!canEdit ? "Subdivision is completed and cannot be edited" : "Edit subdivision plan"}
+              >
+                ✏️ Edit Subdivision Plan
+              </Button>
               
               <Button
                 variant="secondary"
