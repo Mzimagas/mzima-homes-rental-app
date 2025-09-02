@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Button } from '../../ui'
+import Modal from '../../ui/Modal'
 import PropertyList from './PropertyList'
 import PropertySearch from './PropertySearch'
 import PropertyForm from '../property-form'
@@ -78,10 +79,21 @@ export default function PropertiesTab({
   // State for property form modal
   const [showPropertyForm, setShowPropertyForm] = useState(false)
   const [editingProperty, setEditingProperty] = useState<PropertyWithLifecycle | null>(null)
+  const [showWorkflowWarning, setShowWorkflowWarning] = useState(false)
 
   const handleAddProperty = () => {
+    // Show workflow guidance modal first
+    setShowWorkflowWarning(true)
+  }
+
+  const proceedWithDirectAddition = () => {
+    setShowWorkflowWarning(false)
     setEditingProperty(null)
     setShowPropertyForm(true)
+  }
+
+  const cancelDirectAddition = () => {
+    setShowWorkflowWarning(false)
   }
 
   const handleEditProperty = (property: PropertyWithLifecycle) => {
@@ -100,6 +112,11 @@ export default function PropertiesTab({
     onPropertyCreated(propertyId)
   }
 
+  const handlePropertyFormClose = () => {
+    setShowPropertyForm(false)
+    setEditingProperty(null)
+  }
+
   return (
     <div className="space-y-6">
       {/* Properties Header */}
@@ -114,26 +131,7 @@ export default function PropertiesTab({
         </Button>
       </div>
 
-      {/* Important Notice */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-amber-800">
-              Recommended Property Creation Workflow
-            </h3>
-            <p className="text-sm text-amber-700 mt-1">
-              For new properties, we recommend using the <strong>Purchase Pipeline</strong> or <strong>Subdivision Pipeline</strong> tabs
-              for proper workflow management, documentation, and financial tracking. Direct addition should primarily be used
-              for managing existing properties or special cases requiring immediate entry.
-            </p>
-          </div>
-        </div>
-      </div>
+
 
       {/* Search */}
       <PropertySearch
@@ -166,6 +164,102 @@ export default function PropertiesTab({
         property={editingProperty}
         onSuccess={handlePropertyFormSuccess}
       />
+
+      {/* Workflow Warning Modal */}
+      <Modal
+        isOpen={showWorkflowWarning}
+        onClose={cancelDirectAddition}
+        title="Property Creation Workflow"
+        size="lg"
+      >
+        <div className="p-6 space-y-6">
+          {/* Warning Icon and Header */}
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <svg className="h-8 w-8 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-amber-800">
+                Recommended Property Creation Workflow
+              </h3>
+              <p className="text-sm text-amber-600 mt-1">
+                Please consider the recommended approach for new properties
+              </p>
+            </div>
+          </div>
+
+          {/* Recommended Workflows */}
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-900 mb-2">🏢 Purchase Pipeline</h4>
+              <p className="text-sm text-blue-700">
+                For properties being acquired through purchase. Includes comprehensive workflow management,
+                document tracking, financial management, and legal compliance.
+              </p>
+            </div>
+
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <h4 className="font-medium text-purple-900 mb-2">📐 Subdivision Pipeline</h4>
+              <p className="text-sm text-purple-700">
+                For properties created through land subdivision. Manages subdivision processes,
+                regulatory approvals, and proper documentation.
+              </p>
+            </div>
+          </div>
+
+          {/* Direct Addition Use Cases */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-2">✅ When to Use Direct Addition</h4>
+            <ul className="text-sm text-gray-700 space-y-1">
+              <li>• Managing existing properties already in your portfolio</li>
+              <li>• Properties inherited or gifted (not purchased)</li>
+              <li>• Emergency situations requiring immediate property entry</li>
+              <li>• Properties with completed acquisition processes</li>
+            </ul>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowWorkflowWarning(false)
+                  onNavigateToTabs('purchase')
+                }}
+              >
+                🏢 Use Purchase Pipeline
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowWorkflowWarning(false)
+                  onNavigateToTabs('subdivision')
+                }}
+              >
+                📐 Use Subdivision Pipeline
+              </Button>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                onClick={cancelDirectAddition}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={proceedWithDirectAddition}
+              >
+                Proceed with Direct Addition
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
