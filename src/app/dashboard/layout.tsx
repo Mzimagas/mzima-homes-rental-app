@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
+import { useNavigationOptimization } from '../../hooks/useNavigationOptimization'
 import { DashboardProvider } from '../../contexts/DashboardContext'
 import ContextualHeader from '../../components/dashboard/ContextualHeader'
 import EnhancedGlobalSearch from '../../components/dashboard/EnhancedGlobalSearch'
@@ -11,6 +12,7 @@ import MobileMenu from '../../components/mobile/MobileMenu'
 import MobileMenuButton from '../../components/mobile/MobileMenuButton'
 import MobileHeader from '../../components/mobile/MobileHeader'
 import ResponsiveContainer from '../../components/layout/ResponsiveContainer'
+import { SidebarNavLink, MobileNavLink } from '../../components/navigation/OptimizedNavLink'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -198,6 +200,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const router = useRouter()
 
+  // Navigation optimization for smooth transitions
+  const { preloadRoute, handleLinkHover, handleLinkLeave } = useNavigationOptimization({
+    enablePrefetch: true,
+    enablePreload: true,
+    preloadDelay: 100
+  })
+
   // Initialize search service
   useEffect(() => {
     const initializeSearch = async () => {
@@ -363,23 +372,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {navigation.map((item) => {
                   const isActive = pathname === item.href
                   return (
-                    <Link
+                    <MobileNavLink
                       key={item.name}
                       href={item.href}
+                      isActive={isActive}
+                      icon={icons[item.icon as keyof typeof icons]}
                       onClick={() => setSidebarOpen(false)}
-                      className={`${
-                        isActive
-                          ? 'bg-blue-100 text-blue-900 border-r-4 border-blue-500'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                      } group flex items-center px-4 py-4 text-base font-medium rounded-l-md transition-colors duration-200`}
-                      style={{ minHeight: '56px' }}
                     >
-                      <div className="flex items-center justify-center w-6 h-6 mr-4">
-                        {icons[item.icon as keyof typeof icons]}
-                      </div>
-                      <span className="flex-1">{item.name}</span>
-                      {isActive && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
-                    </Link>
+                      {item.name}
+                    </MobileNavLink>
                   )
                 })}
               </nav>
@@ -437,18 +438,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {navigation.map((item) => {
                     const isActive = pathname === item.href
                     return (
-                      <Link
+                      <SidebarNavLink
                         key={item.name}
                         href={item.href}
-                        className={`${
-                          isActive
-                            ? 'bg-blue-100 text-blue-900'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
+                        isActive={isActive}
+                        icon={icons[item.icon as keyof typeof icons]}
                       >
-                        {icons[item.icon as keyof typeof icons]}
-                        <span className="ml-3">{item.name}</span>
-                      </Link>
+                        {item.name}
+                      </SidebarNavLink>
                     )
                   })}
                 </nav>

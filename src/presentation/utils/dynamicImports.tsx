@@ -217,17 +217,89 @@ export const FeatureComponents = {
   })
 }
 
-// Utility for preloading components
+// Enhanced utility for preloading components with navigation optimization
 export class ComponentPreloader {
   private static preloadedComponents = new Set<string>()
+  private static preloadPromises = new Map<string, Promise<any>>()
 
-  static async preload(componentName: keyof typeof DynamicComponents | keyof typeof FeatureComponents) {
+  /**
+   * Preload a single component
+   */
+  static async preload(componentName: keyof typeof DynamicComponents | keyof typeof FeatureComponents | string): Promise<void> {
     if (this.preloadedComponents.has(componentName)) {
       return
     }
 
+    // Return existing promise if already preloading
+    if (this.preloadPromises.has(componentName)) {
+      return this.preloadPromises.get(componentName)
+    }
+
+    const preloadPromise = this.createPreloadPromise(componentName)
+    this.preloadPromises.set(componentName, preloadPromise)
+
     try {
-      // Preload the component
+      await preloadPromise
+      this.preloadedComponents.add(componentName)
+      console.log(`✅ Preloaded component: ${componentName}`)
+    } catch (error) {
+      console.warn(`❌ Failed to preload component ${componentName}:`, error)
+    } finally {
+      this.preloadPromises.delete(componentName)
+    }
+  }
+
+  /**
+   * Preload multiple components
+   */
+  static async preloadMultiple(componentNames: string[]): Promise<void> {
+    const promises = componentNames.map(name => this.preload(name))
+    await Promise.allSettled(promises)
+  }
+
+  /**
+   * Check if component is preloaded
+   */
+  static isPreloaded(componentName: string): boolean {
+    return this.preloadedComponents.has(componentName)
+  }
+
+  /**
+   * Create preload promise for a component
+   */
+  private static createPreloadPromise(componentName: string): Promise<any> {
+    // Handle route-specific components
+    switch (componentName) {
+      case 'Dashboard':
+        return import('../../components/dashboard/ResponsiveDashboardGrid')
+      case 'PropertyList':
+        return import('../../components/properties/components/PropertyList')
+      case 'PropertyForm':
+        return import('../../components/properties/property-form')
+      case 'PropertySearch':
+        return import('../../components/properties/components/PropertySearch')
+      case 'TenantList':
+        return import('../../components/tenants/tenant-list')
+      case 'TenantForm':
+        return import('../../components/tenants/tenant-form')
+      case 'LeaseManagement':
+        return import('../../components/rental-management/components/TenantManagement')
+      case 'ExpenseTracking':
+        return import('../../components/accounting/AccountingManagementTabs')
+      case 'IncomeTracking':
+        return import('../../components/accounting/AccountingManagementTabs')
+      case 'UserManagement':
+        return import('../../components/users/ComprehensiveUserManagement')
+      case 'Settings':
+        return import('../../components/notifications/notification-settings')
+      case 'NotificationCenter':
+        return import('../../components/notifications/notification-center')
+      case 'Analytics':
+        return import('../../components/reports/property-reports')
+      case 'PropertyReports':
+        return import('../../components/reports/property-reports')
+      default:
+        // Try to preload from existing dynamic components
       if (componentName in DynamicComponents) {
         await (DynamicComponents[componentName as keyof typeof DynamicComponents] as any).preload()
       } else if (componentName in FeatureComponents) {
