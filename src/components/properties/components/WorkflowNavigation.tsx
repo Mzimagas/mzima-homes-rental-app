@@ -104,7 +104,7 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
           </div>
         </button>
 
-        {/* Property Handover */}
+        {/* Handover Pipeline */}
         <button
           onClick={() => onTabChange('handover')}
           className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
@@ -123,7 +123,7 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
               <h3
                 className={`font-bold text-base transition-colors ${activeTab === 'handover' ? 'text-purple-900' : 'text-purple-800'}`}
               >
-                Property Handover
+                Handover Pipeline
               </h3>
               <p
                 className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'handover' ? 'text-purple-700' : 'text-purple-600'}`}

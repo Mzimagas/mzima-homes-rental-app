@@ -557,7 +557,7 @@ export default function HandoverPipelineManager({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Property Handover Pipeline</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Handover Pipeline</h2>
           <p className="text-gray-600">Manage property handover and sale processes</p>
         </div>
         <Button
