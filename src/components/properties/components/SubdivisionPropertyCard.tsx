@@ -6,6 +6,7 @@ import PropertyCard, { PropertyCardHeader, PropertyCardContent } from './Propert
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
 import InlinePropertyView from './InlinePropertyView'
 import InlineSubdivisionPlots from './InlineSubdivisionPlots'
+import { useAutoCloseWithCountdown } from '../../../hooks/useAutoClose'
 
 interface SubdivisionPropertyCardProps {
   property: Property
@@ -30,6 +31,42 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
   const [showPlots, setShowPlots] = useState(false)
 
   const hasSubdivision = Boolean(subdivision)
+
+  // Auto-close functionality for property details
+  const {
+    containerRef: detailsContainerRef,
+    formattedRemainingTime: detailsRemainingTime,
+    showCountdown: showDetailsCountdown,
+    resetTimer: resetDetailsTimer,
+  } = useAutoCloseWithCountdown(
+    showDetails,
+    () => setShowDetails(false),
+    {
+      delay: 15000, // 15 seconds
+      showCountdown: true,
+      onAutoClose: () => {
+        console.log('🔄 Auto-closing subdivision property details')
+      },
+    }
+  )
+
+  // Auto-close functionality for plots view
+  const {
+    containerRef: plotsContainerRef,
+    formattedRemainingTime: plotsRemainingTime,
+    showCountdown: showPlotsCountdown,
+    resetTimer: resetPlotsTimer,
+  } = useAutoCloseWithCountdown(
+    showPlots,
+    () => setShowPlots(false),
+    {
+      delay: 20000, // 20 seconds for plots (more complex view)
+      showCountdown: true,
+      onAutoClose: () => {
+        console.log('🔄 Auto-closing subdivision plots view')
+      },
+    }
+  )
 
   const handleStartSubdivision = () => {
     onStartSubdivision(property)
@@ -119,9 +156,26 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setShowDetails(!showDetails)}
+            onClick={() => {
+              const newShowDetails = !showDetails
+              setShowDetails(newShowDetails)
+              if (newShowDetails) {
+                resetDetailsTimer() // Reset timer when opening details
+              }
+            }}
           >
-            📋 {showDetails ? 'Hide Details' : 'View Details'}
+            📋 {showDetails ? (
+              <>
+                Hide Details
+                {showDetailsCountdown && (
+                  <span className="ml-2 text-xs text-amber-600 font-medium">
+                    ({detailsRemainingTime})
+                  </span>
+                )}
+              </>
+            ) : (
+              'View Details'
+            )}
           </Button>
         </div>
 
@@ -150,9 +204,26 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setShowPlots(!showPlots)}
+                onClick={() => {
+                  const newShowPlots = !showPlots
+                  setShowPlots(newShowPlots)
+                  if (newShowPlots) {
+                    resetPlotsTimer() // Reset timer when opening plots
+                  }
+                }}
               >
-                📐 {showPlots ? 'Hide Plots ▲' : 'View Plots ▼'}
+                📐 {showPlots ? (
+                  <>
+                    Hide Plots ▲
+                    {showPlotsCountdown && (
+                      <span className="ml-2 text-xs text-amber-600 font-medium">
+                        ({plotsRemainingTime})
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  'View Plots ▼'
+                )}
               </Button>
               
               <Button
@@ -180,27 +251,31 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
       {/* Expandable Details Section */}
       {showDetails && (
         <PropertyCardContent>
-          <InlinePropertyView
-            property={property}
-            canEdit={canEdit}
-            onPropertyUpdated={() => {
-              // Refresh property data if needed
-            }}
-          />
+          <div ref={detailsContainerRef}>
+            <InlinePropertyView
+              property={property}
+              canEdit={canEdit}
+              onPropertyUpdated={() => {
+                // Refresh property data if needed
+              }}
+            />
+          </div>
         </PropertyCardContent>
       )}
 
       {/* Expandable Plots Section */}
       {hasSubdivision && subdivision && showPlots && (
         <PropertyCardContent>
-          <InlineSubdivisionPlots
-            property={property}
-            subdivision={subdivision}
-            isExpanded={showPlots}
-            onToggle={() => setShowPlots(!showPlots)}
-            onPropertyCreated={onPropertyCreated}
-            canEdit={canEdit}
-          />
+          <div ref={plotsContainerRef}>
+            <InlineSubdivisionPlots
+              property={property}
+              subdivision={subdivision}
+              isExpanded={showPlots}
+              onToggle={() => setShowPlots(!showPlots)}
+              onPropertyCreated={onPropertyCreated}
+              canEdit={canEdit}
+            />
+          </div>
         </PropertyCardContent>
       )}
     </PropertyCard>

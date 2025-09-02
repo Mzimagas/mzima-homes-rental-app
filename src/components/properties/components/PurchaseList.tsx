@@ -9,6 +9,7 @@ import { initializePipelineStages, getPurchaseStatusColor } from '../utils/purch
 import { getSourceIcon, getSourceLabel } from '../utils/property-management.utils'
 import InlinePurchaseView from './InlinePurchaseView'
 import { useState, useEffect } from 'react'
+import { useAutoCloseWithCountdown } from '../../../hooks/useAutoClose'
 
 export default function PurchaseList({
   purchases,
@@ -22,6 +23,24 @@ export default function PurchaseList({
 }: PurchaseListProps) {
   const [openDetailsId, setOpenDetailsId] = useState<string | null>(null)
   const [updatedPurchases, setUpdatedPurchases] = useState<{ [key: string]: PurchaseItem }>({})
+
+  // Auto-close functionality for purchase details
+  const {
+    containerRef,
+    formattedRemainingTime,
+    showCountdown,
+    resetTimer,
+  } = useAutoCloseWithCountdown(
+    openDetailsId !== null,
+    () => setOpenDetailsId(null),
+    {
+      delay: 15000, // 15 seconds
+      showCountdown: true,
+      onAutoClose: () => {
+        console.log('🔄 Auto-closing purchase details')
+      },
+    }
+  )
 
   // Removed old event listener - using new direct navigation approach
 
@@ -151,12 +170,27 @@ export default function PurchaseList({
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() =>
-                      setOpenDetailsId(openDetailsId === purchase.id ? null : purchase.id)
-                    }
+                    onClick={() => {
+                      const newOpenId = openDetailsId === purchase.id ? null : purchase.id
+                      setOpenDetailsId(newOpenId)
+                      if (newOpenId) {
+                        resetTimer() // Reset timer when opening details
+                      }
+                    }}
                     data-purchase-details-btn={purchase.id}
                   >
-                    {openDetailsId === purchase.id ? 'Hide Details' : 'View Details'}
+                    {openDetailsId === purchase.id ? (
+                      <>
+                        Hide Details
+                        {showCountdown && openDetailsId === purchase.id && (
+                          <span className="ml-2 text-xs text-amber-600 font-medium">
+                            ({formattedRemainingTime})
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      'View Details'
+                    )}
                   </Button>
 
                   {(currentPurchase.purchase_status === 'COMPLETED' ||
@@ -197,7 +231,7 @@ export default function PurchaseList({
 
                 {/* Inline Purchase Details (mirrors Direct Purchase InlinePropertyView) */}
                 {openDetailsId === purchase.id && (
-                  <div className="mt-4">
+                  <div ref={containerRef} className="mt-4">
                     <InlinePurchaseView
                       purchase={currentPurchase}
                       onClose={() => setOpenDetailsId(null)}
