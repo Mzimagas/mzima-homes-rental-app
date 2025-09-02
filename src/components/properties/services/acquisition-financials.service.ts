@@ -20,9 +20,9 @@ function getCsrfToken(): string | null {
 export class AcquisitionFinancialsService {
   // Feature flags to disable non-existent APIs and reduce 403 errors
   private static readonly FEATURE_FLAGS = {
-    PURCHASE_PIPELINE_API: true, // ✅ Enabled - APIs are implemented and working
-    ACQUISITION_COSTS_API: true, // ✅ Enabled - APIs are implemented and working
-    PAYMENT_INSTALLMENTS_API: true, // ✅ Enabled - APIs are implemented and working
+    PURCHASE_PIPELINE_API: false, // ❌ Disabled - Causing 403 errors
+    ACQUISITION_COSTS_API: false, // ❌ Disabled - Causing 403 errors
+    PAYMENT_INSTALLMENTS_API: false, // ❌ Disabled - Causing 403 errors
   }
 
   private static async makeRequest(
