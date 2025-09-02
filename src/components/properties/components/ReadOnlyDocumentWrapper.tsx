@@ -9,6 +9,8 @@ interface ReadOnlyDocumentContextType {
   canUpload: boolean
   canEdit: boolean
   canDelete: boolean
+  documentsReadOnly: boolean
+  documentsReadOnlyReason: string | null
   checkAction: (action: 'upload' | 'edit' | 'delete') => boolean
 }
 
@@ -53,6 +55,8 @@ export default function ReadOnlyDocumentWrapper({
     canUpload: canUploadDocuments,
     canEdit: canEditDocuments,
     canDelete: canDeleteDocuments,
+    documentsReadOnly,
+    documentsReadOnlyReason,
     checkAction,
   }
 
@@ -131,6 +135,8 @@ export function useDocumentReadOnlyStatus(propertyId?: string) {
     canUpload: fallback.canUploadDocuments,
     canEdit: fallback.canEditDocuments,
     canDelete: fallback.canDeleteDocuments,
+    documentsReadOnly: fallback.documentsReadOnly,
+    documentsReadOnlyReason: fallback.documentsReadOnlyReason,
     checkAction: (action: 'upload' | 'edit' | 'delete') => {
       const validation = fallback.validateDocumentAction(action)
       if (!validation.allowed) {

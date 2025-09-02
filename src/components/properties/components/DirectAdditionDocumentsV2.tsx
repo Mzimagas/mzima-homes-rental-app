@@ -694,6 +694,12 @@ export default function DirectAdditionDocumentsV2({
   // Debounced version to prevent rapid-fire updates
   const updateDocumentStatus = useCallback(
     (docTypeKey: DocTypeKey, isNa: boolean, note?: string) => {
+      // Check surgical controls for completed properties
+      if (documentsReadOnly) {
+        alert(documentsReadOnlyReason || 'Document status changes are disabled for completed properties')
+        return
+      }
+
       // Check if document is locked due to progression
       if (isDocumentLocked(docTypeKey)) {
         alert('Please complete the previous steps before modifying this document.')

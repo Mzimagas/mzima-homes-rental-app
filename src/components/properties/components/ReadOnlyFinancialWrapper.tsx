@@ -9,6 +9,8 @@ interface ReadOnlyFinancialContextType {
   canAdd: boolean
   canEdit: boolean
   canDelete: boolean
+  financialsReadOnly: boolean
+  financialsReadOnlyReason: string | null
   checkAction: (action: 'add' | 'edit' | 'delete') => boolean
 }
 
@@ -53,6 +55,8 @@ export default function ReadOnlyFinancialWrapper({
     canAdd: canAddCosts,
     canEdit: canEditCosts,
     canDelete: canDeleteCosts,
+    financialsReadOnly,
+    financialsReadOnlyReason,
     checkAction,
   }
 
@@ -131,6 +135,8 @@ export function useFinancialReadOnlyStatus(propertyId?: string) {
     canAdd: fallback.canAddCosts,
     canEdit: fallback.canEditCosts,
     canDelete: fallback.canDeleteCosts,
+    financialsReadOnly: fallback.financialsReadOnly,
+    financialsReadOnlyReason: fallback.financialsReadOnlyReason,
     checkAction: (action: 'add' | 'edit' | 'delete') => {
       const validation = fallback.validateFinancialAction(action)
       if (!validation.allowed) {
