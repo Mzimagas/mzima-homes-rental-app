@@ -18,6 +18,7 @@ import {
   handoverPipelineSchema,
   PropertyWithLifecycle,
 } from '../types/property-management.types'
+import { useAutoCloseWithCountdown } from '../../../hooks/useAutoClose'
 import {
   initializeHandoverPipelineStages,
   calculateHandoverProgress,
@@ -47,6 +48,17 @@ export default function HandoverPipelineManager({
   const [selectedHandoverStageId, setSelectedHandoverStageId] = useState<number | null>(null)
   const [showHandoverStageModal, setShowHandoverStageModal] = useState(false)
   const [viewingHandoverId, setViewingHandoverId] = useState<string | null>(null)
+
+  // Click-outside functionality for handover details
+  const { containerRef } = useAutoCloseWithCountdown(
+    viewingHandoverId !== null,
+    () => setViewingHandoverId(null),
+    {
+      onClickOutside: () => {
+        console.log('🔄 Closing handover details (clicked outside)')
+      },
+    }
+  )
 
   // Filter handovers based on search term
   const filteredHandovers = useMemo(() => {
@@ -753,7 +765,7 @@ export default function HandoverPipelineManager({
 
                 {/* Inline Handover Details */}
                 {viewingHandoverId === handover.id && (
-                  <div className="mt-4">
+                  <div ref={containerRef} className="mt-4">
                     <InlineHandoverView
                       handover={handover}
                       onClose={() => setViewingHandoverId(null)}
