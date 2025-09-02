@@ -14,7 +14,7 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
         Property Management Workflows
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-        {/* Direct Addition */}
+        {/* Properties Repository */}
         <button
           onClick={() => onTabChange('properties')}
           className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
@@ -33,12 +33,12 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
               <h3
                 className={`font-bold text-base transition-colors ${activeTab === 'properties' ? 'text-blue-900' : 'text-blue-800'}`}
               >
-                Direct Addition
+                Properties
               </h3>
               <p
                 className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'properties' ? 'text-blue-700' : 'text-blue-600'}`}
               >
-                Manually create properties with full details and coordinates
+                Primary properties repository and management center
               </p>
             </div>
           </div>
