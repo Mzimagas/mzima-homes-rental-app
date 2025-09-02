@@ -24,20 +24,13 @@ export default function PurchaseList({
   const [openDetailsId, setOpenDetailsId] = useState<string | null>(null)
   const [updatedPurchases, setUpdatedPurchases] = useState<{ [key: string]: PurchaseItem }>({})
 
-  // Auto-close functionality for purchase details
-  const {
-    containerRef,
-    formattedRemainingTime,
-    showCountdown,
-    resetTimer,
-  } = useAutoCloseWithCountdown(
+  // Click-outside functionality for purchase details
+  const { containerRef } = useAutoCloseWithCountdown(
     openDetailsId !== null,
     () => setOpenDetailsId(null),
     {
-      delay: 15000, // 15 seconds
-      showCountdown: true,
-      onAutoClose: () => {
-        console.log('🔄 Auto-closing purchase details')
+      onClickOutside: () => {
+        console.log('🔄 Closing purchase details (clicked outside)')
       },
     }
   )
@@ -171,26 +164,11 @@ export default function PurchaseList({
                     variant="secondary"
                     size="sm"
                     onClick={() => {
-                      const newOpenId = openDetailsId === purchase.id ? null : purchase.id
-                      setOpenDetailsId(newOpenId)
-                      if (newOpenId) {
-                        resetTimer() // Reset timer when opening details
-                      }
+                      setOpenDetailsId(openDetailsId === purchase.id ? null : purchase.id)
                     }}
                     data-purchase-details-btn={purchase.id}
                   >
-                    {openDetailsId === purchase.id ? (
-                      <>
-                        Hide Details
-                        {showCountdown && openDetailsId === purchase.id && (
-                          <span className="ml-2 text-xs text-amber-600 font-medium">
-                            ({formattedRemainingTime})
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      'View Details'
-                    )}
+                    {openDetailsId === purchase.id ? 'Hide Details' : 'View Details'}
                   </Button>
 
                   {(currentPurchase.purchase_status === 'COMPLETED' ||

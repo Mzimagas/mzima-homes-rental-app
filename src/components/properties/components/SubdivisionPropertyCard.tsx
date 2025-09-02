@@ -32,38 +32,24 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
 
   const hasSubdivision = Boolean(subdivision)
 
-  // Auto-close functionality for property details
-  const {
-    containerRef: detailsContainerRef,
-    formattedRemainingTime: detailsRemainingTime,
-    showCountdown: showDetailsCountdown,
-    resetTimer: resetDetailsTimer,
-  } = useAutoCloseWithCountdown(
+  // Click-outside functionality for property details
+  const { containerRef: detailsContainerRef } = useAutoCloseWithCountdown(
     showDetails,
     () => setShowDetails(false),
     {
-      delay: 15000, // 15 seconds
-      showCountdown: true,
-      onAutoClose: () => {
-        console.log('🔄 Auto-closing subdivision property details')
+      onClickOutside: () => {
+        console.log('🔄 Closing subdivision property details (clicked outside)')
       },
     }
   )
 
-  // Auto-close functionality for plots view
-  const {
-    containerRef: plotsContainerRef,
-    formattedRemainingTime: plotsRemainingTime,
-    showCountdown: showPlotsCountdown,
-    resetTimer: resetPlotsTimer,
-  } = useAutoCloseWithCountdown(
+  // Click-outside functionality for plots view
+  const { containerRef: plotsContainerRef } = useAutoCloseWithCountdown(
     showPlots,
     () => setShowPlots(false),
     {
-      delay: 20000, // 20 seconds for plots (more complex view)
-      showCountdown: true,
-      onAutoClose: () => {
-        console.log('🔄 Auto-closing subdivision plots view')
+      onClickOutside: () => {
+        console.log('🔄 Closing subdivision plots view (clicked outside)')
       },
     }
   )
@@ -156,26 +142,9 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => {
-              const newShowDetails = !showDetails
-              setShowDetails(newShowDetails)
-              if (newShowDetails) {
-                resetDetailsTimer() // Reset timer when opening details
-              }
-            }}
+            onClick={() => setShowDetails(!showDetails)}
           >
-            📋 {showDetails ? (
-              <>
-                Hide Details
-                {showDetailsCountdown && (
-                  <span className="ml-2 text-xs text-amber-600 font-medium">
-                    ({detailsRemainingTime})
-                  </span>
-                )}
-              </>
-            ) : (
-              'View Details'
-            )}
+            📋 {showDetails ? 'Hide Details' : 'View Details'}
           </Button>
         </div>
 
@@ -204,26 +173,9 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => {
-                  const newShowPlots = !showPlots
-                  setShowPlots(newShowPlots)
-                  if (newShowPlots) {
-                    resetPlotsTimer() // Reset timer when opening plots
-                  }
-                }}
+                onClick={() => setShowPlots(!showPlots)}
               >
-                📐 {showPlots ? (
-                  <>
-                    Hide Plots ▲
-                    {showPlotsCountdown && (
-                      <span className="ml-2 text-xs text-amber-600 font-medium">
-                        ({plotsRemainingTime})
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  'View Plots ▼'
-                )}
+                📐 {showPlots ? 'Hide Plots ▲' : 'View Plots ▼'}
               </Button>
               
               <Button

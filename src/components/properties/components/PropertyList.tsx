@@ -138,20 +138,13 @@ export default function PropertyList({
 }: PropertyListProps) {
   const [viewingPropertyId, setViewingPropertyId] = useState<string | null>(null)
 
-  // Auto-close functionality for property details
-  const {
-    containerRef,
-    formattedRemainingTime,
-    showCountdown,
-    resetTimer,
-  } = useAutoCloseWithCountdown(
+  // Click-outside functionality for property details
+  const { containerRef } = useAutoCloseWithCountdown(
     viewingPropertyId !== null,
     () => setViewingPropertyId(null),
     {
-      delay: 15000, // 15 seconds
-      showCountdown: true,
-      onAutoClose: () => {
-        console.log('🔄 Auto-closing property details')
+      onClickOutside: () => {
+        console.log('🔄 Closing property details (clicked outside)')
       },
     }
   )
@@ -351,25 +344,10 @@ export default function PropertyList({
                   variant="secondary"
                   size="sm"
                   onClick={() => {
-                    const newViewingId = viewingPropertyId === property.id ? null : property.id
-                    setViewingPropertyId(newViewingId)
-                    if (newViewingId) {
-                      resetTimer() // Reset timer when opening details
-                    }
+                    setViewingPropertyId(viewingPropertyId === property.id ? null : property.id)
                   }}
                 >
-                  {viewingPropertyId === property.id ? (
-                    <>
-                      Hide Details
-                      {showCountdown && viewingPropertyId === property.id && (
-                        <span className="ml-2 text-xs text-amber-600 font-medium">
-                          ({formattedRemainingTime})
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    'View Details'
-                  )}
+                  {viewingPropertyId === property.id ? 'Hide Details' : 'View Details'}
                 </Button>
               </div>
 

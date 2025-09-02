@@ -1,259 +1,140 @@
 import { useEffect, useRef, useCallback } from 'react'
 
-interface UseAutoCloseOptions {
+interface UseClickOutsideOptions {
   /**
-   * Auto-close delay in milliseconds
-   * @default 10000 (10 seconds)
-   */
-  delay?: number
-  
-  /**
-   * Whether auto-close is enabled
+   * Whether click-outside is enabled
    * @default true
    */
   enabled?: boolean
-  
+
   /**
-   * Callback function to execute when auto-closing
+   * Callback function to execute when clicking outside
    */
-  onAutoClose?: () => void
-  
+  onClickOutside?: () => void
+
   /**
-   * Whether to pause auto-close on hover
+   * Array of refs to exclude from click-outside detection
+   * Useful for trigger buttons that should not close the content
+   */
+  excludeRefs?: React.RefObject<HTMLElement>[]
+
+  /**
+   * Whether to capture events during the capture phase
    * @default true
    */
-  pauseOnHover?: boolean
-  
-  /**
-   * Whether to reset timer on user interaction
-   * @default true
-   */
-  resetOnInteraction?: boolean
+  capture?: boolean
 }
 
-interface UseAutoCloseReturn {
+interface UseClickOutsideReturn {
   /**
    * Ref to attach to the container element
    */
   containerRef: React.RefObject<HTMLDivElement>
-  
+
   /**
-   * Manually reset the auto-close timer
+   * Manually trigger click-outside behavior
    */
-  resetTimer: () => void
-  
-  /**
-   * Manually trigger auto-close
-   */
-  triggerAutoClose: () => void
-  
-  /**
-   * Pause the auto-close timer
-   */
-  pauseTimer: () => void
-  
-  /**
-   * Resume the auto-close timer
-   */
-  resumeTimer: () => void
-  
-  /**
-   * Current remaining time in milliseconds
-   */
-  remainingTime: number
-  
-  /**
-   * Whether the timer is currently paused
-   */
-  isPaused: boolean
+  triggerClickOutside: () => void
 }
 
 /**
- * Custom hook for auto-closing expandable content
- * 
+ * Custom hook for click-outside auto-closing expandable content
+ *
  * Features:
- * - Configurable auto-close delay
- * - Pause on hover functionality
- * - Reset timer on user interaction
- * - Manual control methods
- * - Remaining time tracking
- * 
+ * - Click outside to close
+ * - Exclude specific elements from triggering close
+ * - Configurable event capture phase
+ * - Manual trigger method
+ *
  * @param isOpen - Whether the content is currently open
  * @param onClose - Function to call when closing
  * @param options - Configuration options
  */
-export function useAutoClose(
+export function useClickOutside(
   isOpen: boolean,
   onClose: () => void,
-  options: UseAutoCloseOptions = {}
-): UseAutoCloseReturn {
+  options: UseClickOutsideOptions = {}
+): UseClickOutsideReturn {
   const {
-    delay = 10000, // 10 seconds default
     enabled = true,
-    onAutoClose,
-    pauseOnHover = true,
-    resetOnInteraction = true,
+    onClickOutside,
+    excludeRefs = [],
+    capture = true,
   } = options
 
   const containerRef = useRef<HTMLDivElement>(null)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const startTimeRef = useRef<number>(0)
-  const remainingTimeRef = useRef<number>(delay)
-  const isPausedRef = useRef<boolean>(false)
 
-  // Clear timer utility
-  const clearTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
+  // Handle click outside
+  const handleClickOutside = useCallback((event: MouseEvent | TouchEvent) => {
+    if (!enabled || !isOpen) return
+
+    const target = event.target as Node
+    const container = containerRef.current
+
+    // Check if click is inside the container
+    if (container && container.contains(target)) {
+      return
     }
-  }, [])
 
-  // Start timer utility
-  const startTimer = useCallback((duration: number = delay) => {
-    clearTimer()
-    startTimeRef.current = Date.now()
-    remainingTimeRef.current = duration
-    isPausedRef.current = false
+    // Check if click is inside any excluded elements
+    const isInsideExcluded = excludeRefs.some(ref =>
+      ref.current && ref.current.contains(target)
+    )
 
-    timerRef.current = setTimeout(() => {
-      if (enabled && isOpen) {
-        onAutoClose?.()
-        onClose()
-      }
-    }, duration)
-  }, [delay, enabled, isOpen, onClose, onAutoClose, clearTimer])
-
-  // Reset timer
-  const resetTimer = useCallback(() => {
-    if (enabled && isOpen) {
-      startTimer(delay)
+    if (isInsideExcluded) {
+      return
     }
-  }, [enabled, isOpen, startTimer, delay])
 
-  // Trigger auto-close immediately
-  const triggerAutoClose = useCallback(() => {
-    clearTimer()
+    // Click is outside - trigger close
+    onClickOutside?.()
+    onClose()
+  }, [enabled, isOpen, onClose, onClickOutside, excludeRefs])
+
+  // Trigger click-outside manually
+  const triggerClickOutside = useCallback(() => {
     if (enabled && isOpen) {
-      onAutoClose?.()
+      onClickOutside?.()
       onClose()
     }
-  }, [enabled, isOpen, onClose, onAutoClose, clearTimer])
+  }, [enabled, isOpen, onClose, onClickOutside])
 
-  // Pause timer
-  const pauseTimer = useCallback(() => {
-    if (timerRef.current && !isPausedRef.current) {
-      clearTimer()
-      const elapsed = Date.now() - startTimeRef.current
-      remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed)
-      isPausedRef.current = true
-    }
-  }, [clearTimer])
-
-  // Resume timer
-  const resumeTimer = useCallback(() => {
-    if (isPausedRef.current && enabled && isOpen) {
-      startTimer(remainingTimeRef.current)
-    }
-  }, [enabled, isOpen, startTimer])
-
-  // Start timer when content opens
+  // Set up click-outside listeners
   useEffect(() => {
-    if (isOpen && enabled) {
-      startTimer()
-    } else {
-      clearTimer()
-    }
+    if (!enabled || !isOpen) return
 
-    return clearTimer
-  }, [isOpen, enabled, startTimer, clearTimer])
+    // Add event listeners for click and touch events
+    const events = ['mousedown', 'touchstart'] as const
 
-  // Set up hover listeners
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container || !pauseOnHover || !enabled) return
-
-    const handleMouseEnter = () => {
-      pauseTimer()
-    }
-
-    const handleMouseLeave = () => {
-      resumeTimer()
-    }
-
-    container.addEventListener('mouseenter', handleMouseEnter)
-    container.addEventListener('mouseleave', handleMouseLeave)
-
-    return () => {
-      container.removeEventListener('mouseenter', handleMouseEnter)
-      container.removeEventListener('mouseleave', handleMouseLeave)
-    }
-  }, [pauseOnHover, enabled, pauseTimer, resumeTimer])
-
-  // Set up interaction listeners
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container || !resetOnInteraction || !enabled) return
-
-    const handleInteraction = () => {
-      resetTimer()
-    }
-
-    // Listen for various interaction events
-    const events = ['click', 'keydown', 'scroll', 'touchstart']
-    
-    events.forEach(event => {
-      container.addEventListener(event, handleInteraction)
+    events.forEach(eventType => {
+      document.addEventListener(eventType, handleClickOutside, capture)
     })
 
     return () => {
-      events.forEach(event => {
-        container.removeEventListener(event, handleInteraction)
+      events.forEach(eventType => {
+        document.removeEventListener(eventType, handleClickOutside, capture)
       })
     }
-  }, [resetOnInteraction, enabled, resetTimer])
-
-  // Calculate current remaining time
-  const getCurrentRemainingTime = (): number => {
-    if (!isOpen || !enabled) return 0
-    if (isPausedRef.current) return remainingTimeRef.current
-    
-    const elapsed = Date.now() - startTimeRef.current
-    return Math.max(0, remainingTimeRef.current - elapsed)
-  }
+  }, [enabled, isOpen, handleClickOutside, capture])
 
   return {
     containerRef,
-    resetTimer,
-    triggerAutoClose,
-    pauseTimer,
-    resumeTimer,
-    remainingTime: getCurrentRemainingTime(),
-    isPaused: isPausedRef.current,
+    triggerClickOutside,
   }
 }
 
 /**
- * Hook for auto-close with visual countdown
+ * Simplified hook that just returns the container ref for click-outside behavior
+ * Useful when you don't need the manual trigger function
  */
-export function useAutoCloseWithCountdown(
+export function useClickOutsideRef(
   isOpen: boolean,
   onClose: () => void,
-  options: UseAutoCloseOptions & { showCountdown?: boolean } = {}
+  options: UseClickOutsideOptions = {}
 ) {
-  const { showCountdown = false, ...autoCloseOptions } = options
-  
-  const autoClose = useAutoClose(isOpen, onClose, autoCloseOptions)
-  
-  // Format remaining time for display
-  const formatRemainingTime = (ms: number): string => {
-    const seconds = Math.ceil(ms / 1000)
-    return `${seconds}s`
-  }
-
-  return {
-    ...autoClose,
-    formattedRemainingTime: formatRemainingTime(autoClose.remainingTime),
-    showCountdown: showCountdown && isOpen && autoClose.remainingTime > 0,
-  }
+  const { containerRef } = useClickOutside(isOpen, onClose, options)
+  return containerRef
 }
+
+// Export the main hook with a more intuitive name for backward compatibility
+export const useAutoClose = useClickOutside
+export const useAutoCloseWithCountdown = useClickOutside
