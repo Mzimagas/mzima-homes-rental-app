@@ -1120,10 +1120,22 @@ export default function DirectAdditionDocumentsV2({
 
                               {/* File Upload Section */}
                               <div className="space-y-3">
+                                {/* Upload Disabled Note */}
+                                {isUploadDisabled && (
+                                  <div className="p-2 bg-amber-50 border border-amber-200 rounded-md">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-amber-600">📄🔒</span>
+                                      <span className="text-xs text-amber-800 font-medium">
+                                        Document upload is disabled for completed properties
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+
                                 <div>
                                   <label
                                     className={`flex items-center gap-3 p-3 border-2 border-dashed rounded-lg transition-colors ${
-                                      isDocumentLocked
+                                      isDocumentLocked || isUploadDisabled
                                         ? 'border-gray-200 cursor-not-allowed opacity-50'
                                         : 'border-gray-300 hover:border-teal-400 cursor-pointer'
                                     }`}
@@ -1165,7 +1177,7 @@ export default function DirectAdditionDocumentsV2({
                                           e.target.value = ''
                                         }
                                       }}
-                                      disabled={isUploading || isDocumentLocked || isReadOnly}
+                                      disabled={isUploading || isDocumentLocked || isReadOnly || isUploadDisabled}
                                     />
                                   </label>
                                 </div>
@@ -1218,10 +1230,17 @@ export default function DirectAdditionDocumentsV2({
                                         onChange={(e) =>
                                           updateDocumentStatus(docKey, e.target.checked)
                                         }
-                                        className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                                        disabled={isDocumentLocked}
+                                        className={`rounded border-gray-300 focus:ring-teal-500 ${
+                                          isDocumentLocked || documentsReadOnly
+                                            ? 'text-gray-400 cursor-not-allowed'
+                                            : 'text-teal-600'
+                                        }`}
+                                        disabled={isDocumentLocked || documentsReadOnly}
+                                        title={documentsReadOnly ? 'Mark as N/A disabled for completed properties' : undefined}
                                       />
-                                      <span className="text-xs text-gray-700">Mark as N/A</span>
+                                      <span className={`text-xs ${
+                                        documentsReadOnly ? 'text-gray-400' : 'text-gray-700'
+                                      }`}>Mark as N/A</span>
                                     </label>
                                   </div>
 
@@ -1433,7 +1452,7 @@ export default function DirectAdditionDocumentsV2({
                             }
                           }}
                           className="hidden"
-                          disabled={isUploading || isDocLocked || isReadOnly}
+                          disabled={isUploading || isDocLocked || isReadOnly || isUploadDisabled}
                         />
                       </label>
                     </div>
@@ -1499,10 +1518,17 @@ export default function DirectAdditionDocumentsV2({
                             type="checkbox"
                             checked={state?.status?.is_na || false}
                             onChange={(e) => updateDocumentStatus(docType.key, e.target.checked)}
-                            className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                            disabled={isDocLocked}
+                            className={`rounded border-gray-300 focus:ring-teal-500 ${
+                              isDocLocked || documentsReadOnly
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-teal-600'
+                            }`}
+                            disabled={isDocLocked || documentsReadOnly}
+                            title={documentsReadOnly ? 'Mark as N/A disabled for completed properties' : undefined}
                           />
-                          <span className="text-sm text-gray-700">Mark as N/A</span>
+                          <span className={`text-sm ${
+                            documentsReadOnly ? 'text-gray-400' : 'text-gray-700'
+                          }`}>Mark as N/A</span>
                         </label>
                       </div>
 
