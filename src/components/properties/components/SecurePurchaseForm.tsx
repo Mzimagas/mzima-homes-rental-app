@@ -69,13 +69,29 @@ export default function SecurePurchaseForm({
   useEffect(() => {
     const loadFieldSecurity = async () => {
       if (isOpen) {
-        const fieldNames = Object.keys(purchasePipelineSchema.shape)
-        const security = await FieldSecurityService.getFieldSecuritySummary(
-          fieldNames,
-          userRole,
-          editingPurchase?.current_stage
-        )
-        setFieldSecurity(security)
+        try {
+          const fieldNames = Object.keys(purchasePipelineSchema.shape)
+          const security = await FieldSecurityService.getFieldSecuritySummary(
+            fieldNames,
+            userRole,
+            editingPurchase?.current_stage
+          )
+          setFieldSecurity(security)
+        } catch (error) {
+          console.error('Error loading field security:', error)
+          // Set safe defaults if field security loading fails
+          const fieldNames = Object.keys(purchasePipelineSchema.shape)
+          const defaultSecurity = fieldNames.reduce((acc, fieldName) => {
+            acc[fieldName] = {
+              canModify: true,
+              requiresReason: false,
+              requiresApproval: false,
+              isLocked: false,
+            }
+            return acc
+          }, {} as Record<string, any>)
+          setFieldSecurity(defaultSecurity)
+        }
       }
     }
     loadFieldSecurity()

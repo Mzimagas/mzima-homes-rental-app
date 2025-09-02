@@ -256,6 +256,12 @@ export class FieldSecurityService {
   // Check if field is currently locked
   static async isFieldLocked(fieldName: string, currentStage?: number): Promise<boolean> {
     try {
+      // Validate input parameters
+      if (!fieldName || typeof fieldName !== 'string') {
+        console.warn('Invalid fieldName provided to isFieldLocked:', fieldName)
+        return false
+      }
+
       const { data: config, error } = await supabase
         .from('purchase_pipeline_field_security')
         .select('security_level, lock_after_stage')
@@ -263,7 +269,19 @@ export class FieldSecurityService {
         .single()
 
       if (error) {
-        console.error('Error checking field lock status:', error)
+        // Improved error logging with more context
+        if (error.code === 'PGRST116') {
+          // No rows found - this is expected for fields without security config
+          return false
+        }
+
+        console.error('Error checking field lock status:', {
+          fieldName,
+          currentStage,
+          error: error.message || error,
+          errorCode: error.code,
+          errorDetails: error.details
+        })
         return false // Default to unlocked if we can't determine
       }
 
@@ -283,7 +301,12 @@ export class FieldSecurityService {
 
       return false
     } catch (error) {
-      console.error('Error in isFieldLocked:', error)
+      console.error('Error in isFieldLocked:', {
+        fieldName,
+        currentStage,
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      })
       return false // Default to unlocked on error
     }
   }
@@ -301,22 +324,53 @@ export class FieldSecurityService {
   > {
     const summary: Record<string, any> = {}
 
-    for (const fieldName of fieldNames) {
-      const canModify = await this.canModifyField(fieldName, userRole, currentStage)
-      const isLocked = await this.isFieldLocked(fieldName, currentStage)
-
-      const { data: config } = await supabase
-        .from('purchase_pipeline_field_security')
-        .select('requires_reason, requires_approval')
-        .eq('field_name', fieldName)
-        .single()
-
-      summary[fieldName] = {
-        canModify: canModify.canModify,
-        requiresReason: config?.requires_reason || false,
-        requiresApproval: config?.requires_approval || false,
-        isLocked,
+    try {
+      // Validate input parameters
+      if (!Array.isArray(fieldNames)) {
+        console.warn('Invalid fieldNames provided to getFieldSecuritySummary:', fieldNames)
+        return summary
       }
+
+      for (const fieldName of fieldNames) {
+        try {
+          const canModify = await this.canModifyField(fieldName, userRole, currentStage)
+          const isLocked = await this.isFieldLocked(fieldName, currentStage)
+
+          const { data: config, error } = await supabase
+            .from('purchase_pipeline_field_security')
+            .select('requires_reason, requires_approval')
+            .eq('field_name', fieldName)
+            .single()
+
+          // Log error but don't fail the entire operation
+          if (error && error.code !== 'PGRST116') {
+            console.warn('Error fetching field config for', fieldName, ':', error.message || error)
+          }
+
+          summary[fieldName] = {
+            canModify: canModify.canModify,
+            requiresReason: config?.requires_reason || false,
+            requiresApproval: config?.requires_approval || false,
+            isLocked,
+          }
+        } catch (fieldError) {
+          console.error('Error processing field security for', fieldName, ':', fieldError)
+          // Provide safe defaults for this field
+          summary[fieldName] = {
+            canModify: true,
+            requiresReason: false,
+            requiresApproval: false,
+            isLocked: false,
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in getFieldSecuritySummary:', {
+        fieldNames,
+        userRole,
+        currentStage,
+        error: error instanceof Error ? error.message : error
+      })
     }
 
     return summary
