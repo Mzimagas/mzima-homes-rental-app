@@ -220,7 +220,7 @@ export default function PropertyStatusDropdowns({
         {property.subdivision_status === 'SUB_DIVISION_STARTED' && onNavigateToTabs && (
           <button
             onClick={() => onNavigateToTabs('subdivision')}
-            className="mt-2 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded border border-blue-200 transition-colors duration-200 flex items-center gap-1"
+            className="mt-2 text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-2 py-1 rounded border border-orange-200 transition-colors duration-200 flex items-center gap-1"
             title="Go to Subdivision Pipeline to manage this property"
           >
             🏗️ Manage in Pipeline
@@ -270,7 +270,7 @@ export default function PropertyStatusDropdowns({
         {property.handover_status === 'IN_PROGRESS' && onNavigateToTabs && (
           <button
             onClick={() => onNavigateToTabs('handover')}
-            className="mt-2 text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-2 py-1 rounded border border-orange-200 transition-colors duration-200 flex items-center gap-1"
+            className="mt-2 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 transition-colors duration-200 flex items-center gap-1"
             title="Go to Handover Pipeline to manage this property"
           >
             🤝 Manage in Pipeline
