@@ -94,7 +94,7 @@ const SubdivisionPipelineManager: React.FC<SubdivisionPipelineProps> = ({
   }, [loadSubdivisions])
 
   /**
-   * Filter properties with subdivision status
+   * Filter properties with subdivision status (both active and completed)
    */
   const filteredProperties = useMemo(() => {
     // Guard against undefined properties
@@ -107,7 +107,10 @@ const SubdivisionPipelineManager: React.FC<SubdivisionPipelineProps> = ({
         property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         property.physical_address.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const hasSubdivisionStatus = property.subdivision_status === 'SUB_DIVISION_STARTED'
+      // Include both active and completed subdivisions
+      const hasSubdivisionStatus =
+        property.subdivision_status === 'SUB_DIVISION_STARTED' ||
+        property.subdivision_status === 'SUBDIVIDED'
 
       return matchesSearch && hasSubdivisionStatus
     })
@@ -237,7 +240,7 @@ const SubdivisionPipelineManager: React.FC<SubdivisionPipelineProps> = ({
           Subdivision Pipeline
         </h2>
         <p className="text-gray-600 mt-1">
-          Manage properties with subdivision in progress. Use the inline plots management to create and manage individual plots.
+          Manage properties with active or completed subdivisions. Use the inline plots management to create and manage individual plots.
         </p>
       </div>
 
