@@ -200,13 +200,18 @@ export default function PropertyStatusDropdowns({
         >
           <option value="Not Started">Not Started</option>
           <option value="Sub-Division Started">Sub-Division Started</option>
-          {/* Subdivided option removed - completion is automatic when tracker reaches 100% and plots are created */}
+          {/* Subdivided option only shown if already completed - prevents manual completion */}
           {property.subdivision_status === 'SUBDIVIDED' && (
-            <option value="Subdivided">Subdivided (Auto-completed)</option>
+            <option value="Subdivided">Subdivided</option>
           )}
         </select>
         {subdivisionDisabled && subdivisionDisabledReason && (
           <div className="text-xs text-amber-600 mt-1">{subdivisionDisabledReason}</div>
+        )}
+        {property.subdivision_status === 'SUB_DIVISION_STARTED' && (
+          <div className="text-xs text-blue-600 mt-1">
+            ℹ️ Completion will be automatic when all requirements are met
+          </div>
         )}
       </div>
 
@@ -234,13 +239,18 @@ export default function PropertyStatusDropdowns({
         >
           <option value="Not Started">Not Started</option>
           <option value="In Progress">In Progress</option>
-          {/* Handed Over option removed - completion is automatic when tracker reaches 100% */}
+          {/* Completed option only shown if already completed - prevents manual completion */}
           {property.handover_status === 'COMPLETED' && (
-            <option value="Handed Over">Handed Over (Auto-completed)</option>
+            <option value="Handed Over">Handed Over</option>
           )}
         </select>
         {handoverDisabled && handoverDisabledReason && (
           <div className="text-xs text-amber-600 mt-1">{handoverDisabledReason}</div>
+        )}
+        {property.handover_status === 'IN_PROGRESS' && (
+          <div className="text-xs text-blue-600 mt-1">
+            ℹ️ Completion will be automatic when all requirements are met
+          </div>
         )}
       </div>
 

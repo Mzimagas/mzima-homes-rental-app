@@ -20,7 +20,6 @@ import {
   getPendingHandoverValue,
 } from '../utils/property-management.utils'
 import PropertyStatusDropdowns from './PropertyStatusDropdowns'
-import ProcessCompletionMonitor from './ProcessCompletionMonitor'
 import { PropertyStateCompact } from './PropertyStateIndicator'
 
 interface PropertyListProps {
@@ -272,12 +271,6 @@ export default function PropertyList({
               onSubdivisionChange={onSubdivisionChange}
               onHandoverChange={onHandoverChange}
               onRefresh={onRefresh}
-            />
-
-            {/* Process Completion Monitor */}
-            <ProcessCompletionMonitor
-              property={property}
-              onProcessCompleted={onRefresh}
             />
 
             {/* Status Dates */}

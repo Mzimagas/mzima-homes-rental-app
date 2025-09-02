@@ -95,6 +95,33 @@ export class PropertyStatusUpdateService {
     handoverDate?: string
   ): Promise<StatusUpdateResult> {
     try {
+      // For handover completion, use the dedicated completion endpoint
+      if (status === 'COMPLETED') {
+        const response = await fetch(`/api/properties/${propertyId}/handover/complete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'same-origin',
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          return {
+            success: false,
+            error: errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+          }
+        }
+
+        const result = await response.json()
+        return {
+          success: true,
+          warnings: result.warnings || [],
+          new_state: result.new_state,
+        }
+      }
+
+      // For other handover status changes, use the handover endpoint
       const response = await fetch(`/api/properties/${propertyId}/handover`, {
         method: 'PATCH',
         headers: {

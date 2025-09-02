@@ -182,9 +182,6 @@ export default function InlineSubdivisionPlots({
           console.warn('Could not update subdivision plot count:', updateError)
         }
         alert('Plot created successfully!')
-
-        // Check if subdivision can be auto-completed
-        await checkSubdivisionAutoCompletion()
       }
 
       setShowPlotForm(false)
@@ -200,36 +197,6 @@ export default function InlineSubdivisionPlots({
     } catch (error) {
       console.error('Error saving plot:', error)
       alert('Failed to save plot')
-    }
-  }
-
-  const checkSubdivisionAutoCompletion = async () => {
-    if (!subdivision) return
-
-    try {
-      // Check if subdivision can be auto-completed
-      const response = await fetch(`/api/properties/${subdivision.original_property_id}/subdivision/auto-complete`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.canComplete) {
-          const confirmComplete = confirm(
-            'All subdivision requirements are now met! Would you like to automatically complete the subdivision process?'
-          )
-          if (confirmComplete) {
-            const completeResponse = await fetch(
-              `/api/properties/${subdivision.original_property_id}/subdivision/auto-complete`,
-              { method: 'POST' }
-            )
-            const result = await completeResponse.json()
-            if (result.success) {
-              alert('Subdivision completed automatically!')
-              onPlotUpdate?.() // Refresh the parent component
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error checking subdivision auto-completion:', error)
     }
   }
 
