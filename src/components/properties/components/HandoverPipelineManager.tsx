@@ -257,88 +257,26 @@ export default function HandoverPipelineManager({
 
   const startHandoverProcess = async (property: any) => {
     try {
-      // Validate property parameter
-      if (!property || !property.id) {
-        console.error('Invalid property provided to startHandoverProcess:', property)
-        alert('Invalid property selected. Please try again.')
-        return
-      }
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        alert('Please log in to start handover process')
-        return
-      }
-
-      // Create handover directly with minimal required data
-      const handoverData = {
-        property_id: property.id,
-        buyer_name: '',
-        buyer_contact: '',
-        buyer_email: '',
-        buyer_address: '',
-        asking_price_kes: null,
-        negotiated_price_kes: null,
-        deposit_received_kes: null,
-        target_completion_date: null,
-        legal_representative: '',
-        risk_assessment: '',
-        property_condition_notes: '',
-        expected_profit_kes: null,
-        expected_profit_percentage: null,
-        pipeline_stages: initializeHandoverPipelineStages(),
-        handover_status: 'IDENTIFIED',
-        created_by: user.id,
-      }
-
-      const { data, error } = await supabase
-        .from('handover_pipeline')
-        .insert([handoverData])
-        .select()
-        .single()
-
-      if (error) {
-        if (error.code === '42P01') {
-          alert('Handover pipeline table does not exist. Please run database migrations first.')
-          return
-        }
-        throw error
-      }
-
-      // Update property status
-      await supabase
-        .from('properties')
-        .update({ handover_status: 'IN_PROGRESS' })
-        .eq('id', property.id)
-
-      // Reload data
-      loadHandovers()
-      loadAvailableProperties()
-      onHandoverCreated?.()
-
-      alert('Handover process started successfully! You can now edit the details and manage the pipeline stages.')
-    } catch (error) {
-      console.error('Error starting handover process:', {
-        error: error instanceof Error ? error.message : error,
-        stack: error instanceof Error ? error.stack : undefined,
-        propertyId: property?.id,
-        errorCode: error?.code,
-        errorDetails: error?.details
+      resetHandover({
+        propertyId: property.id,
+        buyerName: '',
+        buyerContact: '',
+        buyerEmail: '',
+        buyerAddress: '',
+        askingPrice: undefined,
+        negotiatedPrice: undefined,
+        depositReceived: undefined,
+        targetCompletionDate: '',
+        legalRepresentative: '',
+        riskAssessment: '',
+        propertyConditionNotes: '',
+        expectedProfit: undefined,
+        expectedProfitPercentage: undefined,
       })
-
-      // Provide more specific error messages
-      let errorMessage = 'Failed to start handover process'
-      if (error?.code === '42P01') {
-        errorMessage = 'Handover pipeline table does not exist. Please run database migrations first.'
-      } else if (error?.code === '23505') {
-        errorMessage = 'A handover process already exists for this property.'
-      } else if (error?.message) {
-        errorMessage = `Failed to start handover process: ${error.message}`
-      }
-
-      alert(errorMessage)
+      setEditingHandover(null)
+      setShowHandoverForm(true)
+    } catch (error) {
+      alert('Failed to start handover process')
     }
   }
 
@@ -713,7 +651,7 @@ export default function HandoverPipelineManager({
           ) : (
             <div>
               <p className="text-gray-600 mb-4">
-                Start tracking properties you&apos;re preparing for handover by using the "Start Handover" button on properties that are ready for handover.
+                Start tracking properties you&apos;re preparing for handover.
               </p>
             </div>
           )}
@@ -817,8 +755,8 @@ export default function HandoverPipelineManager({
         </div>
       )}
 
-      {/* Handover Edit Form Modal */}
-      {showHandoverForm && editingHandover && (
+      {/* Handover Form Modal */}
+      {showHandoverForm && (
         <Modal
           isOpen={showHandoverForm}
           onClose={() => {
@@ -826,7 +764,7 @@ export default function HandoverPipelineManager({
             setEditingHandover(null)
             resetHandover()
           }}
-          title="Edit Handover Details"
+          title={editingHandover ? 'Edit Handover Opportunity' : 'Add Handover Opportunity'}
         >
           <form onSubmit={handleHandoverSubmit(onHandoverSubmit)} className="space-y-6">
             {/* Property Selection */}
@@ -1089,7 +1027,11 @@ export default function HandoverPipelineManager({
                 Cancel
               </Button>
               <Button type="submit" variant="primary" disabled={isHandoverSubmitting}>
-                {isHandoverSubmitting ? 'Saving...' : 'Update Handover'}
+                {isHandoverSubmitting
+                  ? 'Saving...'
+                  : editingHandover
+                    ? 'Update Handover'
+                    : 'Create Handover'}
               </Button>
             </div>
           </form>
