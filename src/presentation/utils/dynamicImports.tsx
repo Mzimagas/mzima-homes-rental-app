@@ -300,26 +300,21 @@ export class ComponentPreloader {
         return import('../../components/reports/property-reports')
       default:
         // Try to preload from existing dynamic components
-      if (componentName in DynamicComponents) {
-        await (DynamicComponents[componentName as keyof typeof DynamicComponents] as any).preload()
-      } else if (componentName in FeatureComponents) {
-        await (FeatureComponents[componentName as keyof typeof FeatureComponents] as any).preload()
-      }
-      
-      this.preloadedComponents.add(componentName)
-      console.log(`Preloaded component: ${componentName}`)
-    } catch (error) {
-      console.warn(`Failed to preload component ${componentName}:`, error)
+        if (componentName in DynamicComponents) {
+          return (DynamicComponents[componentName as keyof typeof DynamicComponents] as any).preload?.() || Promise.resolve()
+        } else if (componentName in FeatureComponents) {
+          return (FeatureComponents[componentName as keyof typeof FeatureComponents] as any).preload?.() || Promise.resolve()
+        }
+        return Promise.resolve()
     }
   }
 
-  static preloadMultiple(componentNames: string[]) {
-    return Promise.all(
-      componentNames.map(name => this.preload(name as any))
-    )
+  static async preloadMultiple(componentNames: string[]): Promise<void> {
+    const promises = componentNames.map(name => this.preload(name))
+    await Promise.allSettled(promises)
   }
 
-  static preloadByRoute(route: string) {
+  static async preloadByRoute(route: string): Promise<void> {
     const routePreloadMap: Record<string, string[]> = {
       '/properties': ['PropertyList', 'PropertyForm', 'PropertySearch'],
       '/tenants': ['TenantList', 'TenantForm', 'LeaseManagement'],
@@ -328,7 +323,7 @@ export class ComponentPreloader {
     }
 
     const componentsToPreload = routePreloadMap[route] || []
-    return this.preloadMultiple(componentsToPreload)
+    await this.preloadMultiple(componentsToPreload)
   }
 
   static getPreloadedComponents(): string[] {
