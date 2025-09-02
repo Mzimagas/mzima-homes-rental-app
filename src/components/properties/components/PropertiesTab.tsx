@@ -112,11 +112,6 @@ export default function PropertiesTab({
     onPropertyCreated(propertyId)
   }
 
-  const handlePropertyFormClose = () => {
-    setShowPropertyForm(false)
-    setEditingProperty(null)
-  }
-
   return (
     <div className="space-y-6">
       {/* Properties Header */}
