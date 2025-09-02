@@ -257,6 +257,13 @@ export default function HandoverPipelineManager({
 
   const startHandoverProcess = async (property: any) => {
     try {
+      // Validate property parameter
+      if (!property || !property.id) {
+        console.error('Invalid property provided to startHandoverProcess:', property)
+        alert('Invalid property selected. Please try again.')
+        return
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -313,8 +320,25 @@ export default function HandoverPipelineManager({
 
       alert('Handover process started successfully! You can now edit the details and manage the pipeline stages.')
     } catch (error) {
-      console.error('Error starting handover process:', error)
-      alert('Failed to start handover process')
+      console.error('Error starting handover process:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        propertyId: property?.id,
+        errorCode: error?.code,
+        errorDetails: error?.details
+      })
+
+      // Provide more specific error messages
+      let errorMessage = 'Failed to start handover process'
+      if (error?.code === '42P01') {
+        errorMessage = 'Handover pipeline table does not exist. Please run database migrations first.'
+      } else if (error?.code === '23505') {
+        errorMessage = 'A handover process already exists for this property.'
+      } else if (error?.message) {
+        errorMessage = `Failed to start handover process: ${error.message}`
+      }
+
+      alert(errorMessage)
     }
   }
 
