@@ -20,6 +20,7 @@ interface PropertyStatusDropdownsProps {
   onSubdivisionChange: (propertyId: string, value: string) => void
   onHandoverChange: (propertyId: string, value: string) => void
   onRefresh?: () => void
+  onNavigateToTabs?: (tab: string) => void
 }
 
 /**
@@ -34,6 +35,7 @@ export default function PropertyStatusDropdowns({
   onSubdivisionChange,
   onHandoverChange,
   onRefresh,
+  onNavigateToTabs,
 }: PropertyStatusDropdownsProps) {
   // State for confirmation dialogs
   const [pendingSubdivisionChange, setPendingSubdivisionChange] = useState<string | null>(null)
@@ -213,6 +215,17 @@ export default function PropertyStatusDropdowns({
             ℹ️ Completion will be automatic when all requirements are met
           </div>
         )}
+
+        {/* Navigation button for active subdivision */}
+        {property.subdivision_status === 'SUB_DIVISION_STARTED' && onNavigateToTabs && (
+          <button
+            onClick={() => onNavigateToTabs('subdivision')}
+            className="mt-2 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded border border-blue-200 transition-colors duration-200 flex items-center gap-1"
+            title="Go to Subdivision Pipeline to manage this property"
+          >
+            🏗️ Manage in Pipeline
+          </button>
+        )}
       </div>
 
       {/* Handover Status */}
@@ -251,6 +264,17 @@ export default function PropertyStatusDropdowns({
           <div className="text-xs text-blue-600 mt-1">
             ℹ️ Completion will be automatic when all requirements are met
           </div>
+        )}
+
+        {/* Navigation button for active handover */}
+        {property.handover_status === 'IN_PROGRESS' && onNavigateToTabs && (
+          <button
+            onClick={() => onNavigateToTabs('handover')}
+            className="mt-2 text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-2 py-1 rounded border border-orange-200 transition-colors duration-200 flex items-center gap-1"
+            title="Go to Handover Pipeline to manage this property"
+          >
+            🤝 Manage in Pipeline
+          </button>
         )}
       </div>
 
@@ -334,6 +358,7 @@ export function PropertyStatusDropdownsCompact({
   onSubdivisionChange,
   onHandoverChange,
   onRefresh,
+  onNavigateToTabs,
 }: PropertyStatusDropdownsProps) {
   return (
     <div className="space-y-2">
@@ -345,6 +370,7 @@ export function PropertyStatusDropdownsCompact({
         onSubdivisionChange={onSubdivisionChange}
         onHandoverChange={onHandoverChange}
         onRefresh={onRefresh}
+        onNavigateToTabs={onNavigateToTabs}
       />
     </div>
   )

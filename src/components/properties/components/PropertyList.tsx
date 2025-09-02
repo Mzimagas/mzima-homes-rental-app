@@ -278,6 +278,7 @@ export default function PropertyList({
               onSubdivisionChange={onSubdivisionChange}
               onHandoverChange={onHandoverChange}
               onRefresh={onRefresh}
+              onNavigateToTabs={onNavigateToTabs}
             />
 
             {/* Status Dates */}
