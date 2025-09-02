@@ -61,6 +61,20 @@ export class PropertyStateService {
    */
   static async getPropertyState(propertyId: string): Promise<PropertyState | null> {
     try {
+      // Validate input
+      if (!propertyId || typeof propertyId !== 'string') {
+        console.error('Invalid propertyId provided to getPropertyState:', propertyId)
+        return null
+      }
+
+      // Validate supabase client
+      if (!supabase) {
+        console.error('Supabase client not initialized')
+        return null
+      }
+
+      console.log('Getting property state for:', propertyId)
+
       const { data, error } = await supabase
         .from('properties')
         .select('id, name, subdivision_status, handover_status')
@@ -68,7 +82,14 @@ export class PropertyStateService {
         .single()
 
       if (error) {
-        console.error('Error getting property state:', error)
+        console.error('Error getting property state:', {
+          error,
+          propertyId,
+          message: error?.message || 'Unknown error',
+          details: error?.details || 'No details available',
+          hint: error?.hint || 'No hint available',
+          code: error?.code || 'No code available'
+        })
         return null
       }
 
@@ -119,7 +140,12 @@ export class PropertyStateService {
         state_conflicts: stateConflicts,
       }
     } catch (error) {
-      console.error('Error in getPropertyState:', error)
+      console.error('Unexpected error in getPropertyState:', {
+        error,
+        propertyId,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error type',
+        errorStack: error instanceof Error ? error.stack : 'No stack trace available'
+      })
       return null
     }
   }
