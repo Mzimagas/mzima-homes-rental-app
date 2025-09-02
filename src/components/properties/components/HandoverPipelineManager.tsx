@@ -257,25 +257,63 @@ export default function HandoverPipelineManager({
 
   const startHandoverProcess = async (property: any) => {
     try {
-      resetHandover({
-        propertyId: property.id,
-        buyerName: '',
-        buyerContact: '',
-        buyerEmail: '',
-        buyerAddress: '',
-        askingPrice: undefined,
-        negotiatedPrice: undefined,
-        depositReceived: undefined,
-        targetCompletionDate: '',
-        legalRepresentative: '',
-        riskAssessment: '',
-        propertyConditionNotes: '',
-        expectedProfit: undefined,
-        expectedProfitPercentage: undefined,
-      })
-      setEditingHandover(null)
-      setShowHandoverForm(true)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        alert('Please log in to start handover process')
+        return
+      }
+
+      // Create handover directly with minimal required data
+      const handoverData = {
+        property_id: property.id,
+        buyer_name: '',
+        buyer_contact: '',
+        buyer_email: '',
+        buyer_address: '',
+        asking_price_kes: null,
+        negotiated_price_kes: null,
+        deposit_received_kes: null,
+        target_completion_date: null,
+        legal_representative: '',
+        risk_assessment: '',
+        property_condition_notes: '',
+        expected_profit_kes: null,
+        expected_profit_percentage: null,
+        pipeline_stages: initializeHandoverPipelineStages(),
+        handover_status: 'IDENTIFIED',
+        created_by: user.id,
+      }
+
+      const { data, error } = await supabase
+        .from('handover_pipeline')
+        .insert([handoverData])
+        .select()
+        .single()
+
+      if (error) {
+        if (error.code === '42P01') {
+          alert('Handover pipeline table does not exist. Please run database migrations first.')
+          return
+        }
+        throw error
+      }
+
+      // Update property status
+      await supabase
+        .from('properties')
+        .update({ handover_status: 'IN_PROGRESS' })
+        .eq('id', property.id)
+
+      // Reload data
+      loadHandovers()
+      loadAvailableProperties()
+      onHandoverCreated?.()
+
+      alert('Handover process started successfully! You can now edit the details and manage the pipeline stages.')
     } catch (error) {
+      console.error('Error starting handover process:', error)
       alert('Failed to start handover process')
     }
   }
@@ -560,16 +598,6 @@ export default function HandoverPipelineManager({
           <h2 className="text-2xl font-bold text-gray-900">Handover Pipeline</h2>
           <p className="text-gray-600">Manage property handover and sale processes</p>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => {
-            setEditingHandover(null)
-            resetHandover()
-            setShowHandoverForm(true)
-          }}
-        >
-          Add Handover Opportunity
-        </Button>
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -661,18 +689,8 @@ export default function HandoverPipelineManager({
           ) : (
             <div>
               <p className="text-gray-600 mb-4">
-                Start tracking properties you&apos;re preparing for handover.
+                Start tracking properties you&apos;re preparing for handover by using the "Start Handover" button on properties that are ready for handover.
               </p>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setEditingHandover(null)
-                  resetHandover()
-                  setShowHandoverForm(true)
-                }}
-              >
-                Add First Handover
-              </Button>
             </div>
           )}
         </div>
@@ -775,8 +793,8 @@ export default function HandoverPipelineManager({
         </div>
       )}
 
-      {/* Handover Form Modal */}
-      {showHandoverForm && (
+      {/* Handover Edit Form Modal */}
+      {showHandoverForm && editingHandover && (
         <Modal
           isOpen={showHandoverForm}
           onClose={() => {
@@ -784,7 +802,7 @@ export default function HandoverPipelineManager({
             setEditingHandover(null)
             resetHandover()
           }}
-          title={editingHandover ? 'Edit Handover Opportunity' : 'Add Handover Opportunity'}
+          title="Edit Handover Details"
         >
           <form onSubmit={handleHandoverSubmit(onHandoverSubmit)} className="space-y-6">
             {/* Property Selection */}
@@ -1047,11 +1065,7 @@ export default function HandoverPipelineManager({
                 Cancel
               </Button>
               <Button type="submit" variant="primary" disabled={isHandoverSubmitting}>
-                {isHandoverSubmitting
-                  ? 'Saving...'
-                  : editingHandover
-                    ? 'Update Handover'
-                    : 'Create Handover'}
+                {isHandoverSubmitting ? 'Saving...' : 'Update Handover'}
               </Button>
             </div>
           </form>
