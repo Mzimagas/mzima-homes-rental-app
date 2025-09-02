@@ -765,29 +765,38 @@ export default function HandoverPipelineManager({
             resetHandover()
           }}
           title={editingHandover ? 'Edit Handover Opportunity' : 'Add Handover Opportunity'}
+          size="lg"
         >
-          <form onSubmit={handleHandoverSubmit(onHandoverSubmit)} className="space-y-6">
-            {/* Property Selection */}
-            <FormField
-              name="propertyId"
-              label="Property"
-              error={handoverErrors.propertyId?.message}
-            >
-              {({ id }) => (
-                <select
-                  id={id}
-                  {...registerHandover('propertyId')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div className="p-8">
+            <form onSubmit={handleHandoverSubmit(onHandoverSubmit)} className="space-y-8">
+              {/* Property Information Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Property Information</h3>
+                  <p className="text-sm text-gray-600 mt-1">Select the property you're preparing for handover</p>
+                </div>
+
+                {/* Property Selection */}
+                <FormField
+                  name="propertyId"
+                  label="Property"
+                  error={handoverErrors.propertyId?.message}
                 >
-                  <option value="">Select a property</option>
-                  {availableProperties.map((property) => (
-                    <option key={property.id} value={property.id}>
-                      {(property as any).name} - {(property as any).physical_address}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </FormField>
+                  {({ id }) => (
+                    <select
+                      id={id}
+                      {...registerHandover('propertyId')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select a property</option>
+                      {availableProperties.map((property) => (
+                        <option key={property.id} value={property.id}>
+                          {(property as any).name} - {(property as any).physical_address}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </FormField>
 
             {/* Selected Property Map Preview */}
             {selectedHandoverProperty && (
@@ -814,227 +823,278 @@ export default function HandoverPipelineManager({
                 </div>
               </div>
             )}
+              </div>
 
-            {/* Buyer Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                name="buyerName"
-                label="Buyer Name"
-                error={handoverErrors.buyerName?.message}
-              >
-                {({ id }) => (
-                  <TextField
-                    id={id}
-                    {...registerHandover('buyerName')}
-                    placeholder="Enter buyer's full name"
-                  />
-                )}
-              </FormField>
-              <FormField
-                name="buyerContact"
-                label="Buyer Contact"
-                error={handoverErrors.buyerContact?.message}
-              >
-                {({ id }) => (
-                  <TextField
-                    id={id}
-                    {...registerHandover('buyerContact')}
-                    placeholder="Phone number"
-                  />
-                )}
-              </FormField>
-            </div>
+              {/* Buyer Information Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Buyer Information</h3>
+                  <p className="text-sm text-gray-600 mt-1">Contact details and information about the property buyer</p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                name="buyerEmail"
-                label="Buyer Email"
-                error={handoverErrors.buyerEmail?.message}
-              >
-                {({ id }) => (
-                  <TextField
-                    id={id}
-                    {...registerHandover('buyerEmail')}
-                    type="email"
-                    placeholder="buyer@example.com"
-                  />
-                )}
-              </FormField>
-              <FormField
-                name="targetCompletionDate"
-                label="Target Completion Date"
-                error={handoverErrors.targetCompletionDate?.message}
-              >
-                {({ id }) => (
-                  <TextField id={id} {...registerHandover('targetCompletionDate')} type="date" />
-                )}
-              </FormField>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    name="buyerName"
+                    label="Buyer Name"
+                    error={handoverErrors.buyerName?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('buyerName')}
+                        placeholder="Enter buyer's full name"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                  <FormField
+                    name="buyerContact"
+                    label="Buyer Contact"
+                    error={handoverErrors.buyerContact?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('buyerContact')}
+                        placeholder="+254712345678"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                </div>
 
-            <FormField
-              name="buyerAddress"
-              label="Buyer Address"
-              error={handoverErrors.buyerAddress?.message}
-            >
-              {({ id }) => (
-                <TextField
-                  id={id}
-                  {...registerHandover('buyerAddress')}
-                  placeholder="Buyer's address"
-                />
-              )}
-            </FormField>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    name="buyerEmail"
+                    label="Buyer Email"
+                    error={handoverErrors.buyerEmail?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('buyerEmail')}
+                        type="email"
+                        placeholder="buyer@example.com"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                  <FormField
+                    name="buyerAddress"
+                    label="Buyer Address"
+                    error={handoverErrors.buyerAddress?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('buyerAddress')}
+                        placeholder="Enter buyer's address"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                </div>
+              </div>
 
-            {/* Financial Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                name="askingPrice"
-                label="Asking Price (KES)"
-                error={handoverErrors.askingPrice?.message}
-              >
-                {({ id }) => (
-                  <TextField
-                    id={id}
-                    {...registerHandover('askingPrice', { valueAsNumber: true })}
-                    type="number"
-                    placeholder="0"
-                  />
-                )}
-              </FormField>
-              <FormField
-                name="negotiatedPrice"
-                label="Negotiated Price (KES)"
-                error={handoverErrors.negotiatedPrice?.message}
-              >
-                {({ id }) => (
-                  <TextField
-                    id={id}
-                    {...registerHandover('negotiatedPrice', { valueAsNumber: true })}
-                    type="number"
-                    placeholder="0"
-                  />
-                )}
-              </FormField>
-            </div>
+              {/* Financial Information Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Financial Information</h3>
+                  <p className="text-sm text-gray-600 mt-1">Pricing details and financial terms for the handover</p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                name="depositReceived"
-                label="Deposit Received (KES)"
-                error={handoverErrors.depositReceived?.message}
-              >
-                {({ id }) => (
-                  <TextField
-                    id={id}
-                    {...registerHandover('depositReceived', { valueAsNumber: true })}
-                    type="number"
-                    placeholder="0"
-                  />
-                )}
-              </FormField>
-              <FormField
-                name="legalRepresentative"
-                label="Legal Representative"
-                error={handoverErrors.legalRepresentative?.message}
-              >
-                {({ id }) => (
-                  <TextField
-                    id={id}
-                    {...registerHandover('legalRepresentative')}
-                    placeholder="Lawyer/Legal firm name"
-                  />
-                )}
-              </FormField>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    name="askingPrice"
+                    label="Asking Price (KES)"
+                    error={handoverErrors.askingPrice?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('askingPrice', { valueAsNumber: true })}
+                        type="number"
+                        placeholder="Enter asking price"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                  <FormField
+                    name="negotiatedPrice"
+                    label="Negotiated Price (KES)"
+                    error={handoverErrors.negotiatedPrice?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('negotiatedPrice', { valueAsNumber: true })}
+                        type="number"
+                        placeholder="Enter negotiated price"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
 
-            {/* Additional Information */}
-            <FormField
-              name="riskAssessment"
-              label="Risk Assessment"
-              error={handoverErrors.riskAssessment?.message}
-            >
-              {({ id }) => (
-                <textarea
-                  id={id}
-                  {...registerHandover('riskAssessment')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Identify potential risks and mitigation strategies"
-                />
-              )}
-            </FormField>
+                  <FormField
+                    name="depositReceived"
+                    label="Deposit Received (KES)"
+                    error={handoverErrors.depositReceived?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('depositReceived', { valueAsNumber: true })}
+                        type="number"
+                        placeholder="Enter deposit amount"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                  <FormField
+                    name="targetCompletionDate"
+                    label="Target Completion Date"
+                    error={handoverErrors.targetCompletionDate?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('targetCompletionDate')}
+                        type="date"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                </div>
+              </div>
+              {/* Legal & Administrative Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Legal & Administrative</h3>
+                  <p className="text-sm text-gray-600 mt-1">Legal representation and administrative details</p>
+                </div>
 
-            <FormField
-              name="propertyConditionNotes"
-              label="Property Condition Notes"
-              error={handoverErrors.propertyConditionNotes?.message}
-            >
-              {({ id }) => (
-                <textarea
-                  id={id}
-                  {...registerHandover('propertyConditionNotes')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Current condition and any required improvements"
-                />
-              )}
-            </FormField>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    name="legalRepresentative"
+                    label="Legal Representative"
+                    error={handoverErrors.legalRepresentative?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('legalRepresentative')}
+                        placeholder="Lawyer/Legal firm name"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                </div>
+              </div>
 
-            {/* Expected Profit */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                name="expectedProfit"
-                label="Expected Profit (KES)"
-                error={handoverErrors.expectedProfit?.message}
-              >
-                {({ id }) => (
-                  <TextField
-                    id={id}
-                    {...registerHandover('expectedProfit', { valueAsNumber: true })}
-                    type="number"
-                    placeholder="0"
-                  />
-                )}
-              </FormField>
-              <FormField
-                name="expectedProfitPercentage"
-                label="Expected Profit (%)"
-                error={handoverErrors.expectedProfitPercentage?.message}
-              >
-                {({ id }) => (
-                  <TextField
-                    id={id}
-                    {...registerHandover('expectedProfitPercentage', { valueAsNumber: true })}
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="0"
-                  />
-                )}
-              </FormField>
-            </div>
+              {/* Investment Analysis Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Investment Analysis</h3>
+                  <p className="text-sm text-gray-600 mt-1">Financial projections and investment assessment</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    name="expectedProfit"
+                    label="Expected Profit (KES)"
+                    error={handoverErrors.expectedProfit?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('expectedProfit', { valueAsNumber: true })}
+                        type="number"
+                        placeholder="Enter expected profit"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                  <FormField
+                    name="expectedProfitPercentage"
+                    label="Expected Profit (%)"
+                    error={handoverErrors.expectedProfitPercentage?.message}
+                  >
+                    {({ id }) => (
+                      <TextField
+                        id={id}
+                        {...registerHandover('expectedProfitPercentage', { valueAsNumber: true })}
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="Enter expected profit percentage"
+                        className="w-full"
+                      />
+                    )}
+                  </FormField>
+                </div>
 
-            <div className="flex justify-end space-x-3">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setShowHandoverForm(false)
-                  setEditingHandover(null)
-                  resetHandover()
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" disabled={isHandoverSubmitting}>
-                {isHandoverSubmitting
-                  ? 'Saving...'
-                  : editingHandover
-                    ? 'Update Handover'
-                    : 'Create Handover'}
-              </Button>
-            </div>
-          </form>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    name="riskAssessment"
+                    label="Risk Assessment"
+                    error={handoverErrors.riskAssessment?.message}
+                  >
+                    {({ id }) => (
+                      <textarea
+                        id={id}
+                        {...registerHandover('riskAssessment')}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        rows={4}
+                        placeholder="Identify potential risks and mitigation strategies..."
+                      />
+                    )}
+                  </FormField>
+                  <FormField
+                    name="propertyConditionNotes"
+                    label="Property Condition Notes"
+                    error={handoverErrors.propertyConditionNotes?.message}
+                  >
+                    {({ id }) => (
+                      <textarea
+                        id={id}
+                        {...registerHandover('propertyConditionNotes')}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        rows={4}
+                        placeholder="Current condition and any required improvements..."
+                      />
+                    )}
+                  </FormField>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowHandoverForm(false)
+                    setEditingHandover(null)
+                    resetHandover()
+                  }}
+                  className="px-6 py-2"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={isHandoverSubmitting}
+                  className="px-6 py-2"
+                >
+                  {isHandoverSubmitting
+                    ? 'Saving...'
+                    : editingHandover
+                      ? 'Update Handover'
+                      : 'Create Handover'}
+                </Button>
+              </div>
+            </form>
+          </div>
         </Modal>
       )}
 
