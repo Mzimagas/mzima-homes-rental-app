@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Button, TextField, Select } from '../../ui'
 import { useToast } from '../../ui/Toast'
 import { HandoverFinancialsService } from '../services/handover-financials.service'
+import { useFinancialReadOnlyStatus } from './ReadOnlyFinancialWrapper'
 import {
   HANDOVER_COST_TYPES,
   HANDOVER_COST_CATEGORY_LABELS,
@@ -27,6 +28,19 @@ export default function HandoverFinancialSection({
   financialSummary,
   onDataUpdate,
 }: HandoverFinancialSectionProps) {
+  // Surgical read-only status for completed properties
+  const {
+    isReadOnly,
+    readOnlyReason,
+    canAdd,
+    canEdit,
+    canDelete,
+    checkAction
+  } = useFinancialReadOnlyStatus(propertyId)
+
+  // Surgical controls - disable specific functions when processes are completed
+  const isAddDisabled = isReadOnly || !canAdd
+  const isDeleteDisabled = isReadOnly || !canDelete
   const [collapsedSections, setCollapsedSections] = useState({
     summary: false,
     deposits: false,
@@ -682,7 +696,8 @@ export default function HandoverFinancialSection({
               variant="primary"
               size="sm"
               onClick={() => setShowAddReceipt(true)}
-              disabled={loading}
+              disabled={loading || isAddDisabled}
+              title={isAddDisabled ? readOnlyReason || 'Add disabled for completed properties' : 'Add new deposit or installment payment'}
             >
               + Add Deposit/Installment
             </Button>

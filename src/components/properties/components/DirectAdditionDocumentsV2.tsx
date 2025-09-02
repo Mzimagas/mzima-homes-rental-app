@@ -125,9 +125,21 @@ export default function DirectAdditionDocumentsV2({
     loading: financialLoading,
   } = useFinancialStatus(propertyId, pipeline)
 
-  // Read-only status for completed properties
-  const { isReadOnly, readOnlyReason, canUpload, canDelete, checkAction } =
-    useDocumentReadOnlyStatus(propertyId)
+  // Surgical read-only status for completed properties
+  const {
+    isReadOnly,
+    readOnlyReason,
+    canUpload,
+    canDelete,
+    checkAction,
+    documentsReadOnly,
+    documentsReadOnlyReason
+  } = useDocumentReadOnlyStatus(propertyId)
+
+  // Surgical controls - disable specific functions when processes are completed
+  const isUploadDisabled = documentsReadOnly || !canUpload
+  const isDeleteDisabled = documentsReadOnly || !canDelete
+  const isPaymentDisabled = documentsReadOnly // Disable payment buttons when completed
 
   // Enhanced workflow integration
   const {
@@ -434,6 +446,12 @@ export default function DirectAdditionDocumentsV2({
   }
 
   const handleFileUpload = async (docTypeKey: DocTypeKey, files: FileList) => {
+    // Check surgical upload controls
+    if (isUploadDisabled) {
+      alert(documentsReadOnlyReason || 'Document upload is disabled for completed properties')
+      return
+    }
+
     // Check read-only status
     if (!checkAction('upload')) {
       return
@@ -525,6 +543,12 @@ export default function DirectAdditionDocumentsV2({
   }
 
   const handleFileDelete = async (document: PropertyDocument) => {
+    // Check surgical delete controls
+    if (isDeleteDisabled) {
+      alert(documentsReadOnlyReason || 'Document deletion is disabled for completed properties')
+      return
+    }
+
     if (!confirm('Are you sure you want to delete this file?')) return
 
     try {
@@ -958,6 +982,8 @@ export default function DirectAdditionDocumentsV2({
                               documentStates={documentStates}
                               layout="horizontal"
                               compact={true}
+                              disabled={isPaymentDisabled}
+                              disabledReason={documentsReadOnlyReason || 'Payments disabled for completed properties'}
                             />
                           )}
                         </div>
@@ -1166,7 +1192,13 @@ export default function DirectAdditionDocumentsV2({
                                           </button>
                                           <button
                                             onClick={() => handleFileDelete(doc)}
-                                            className="text-red-600 hover:text-red-700"
+                                            disabled={isDeleteDisabled}
+                                            className={`${
+                                              isDeleteDisabled
+                                                ? 'text-gray-400 cursor-not-allowed'
+                                                : 'text-red-600 hover:text-red-700'
+                                            }`}
+                                            title={isDeleteDisabled ? 'Delete disabled for completed properties' : 'Delete document'}
                                           >
                                             Delete
                                           </button>
@@ -1316,6 +1348,8 @@ export default function DirectAdditionDocumentsV2({
                             documentStates={documentStates}
                             layout="horizontal"
                             compact={true}
+                            disabled={isPaymentDisabled}
+                            disabledReason={documentsReadOnlyReason || 'Payments disabled for completed properties'}
                           />
                         )}
                       </div>
@@ -1440,7 +1474,13 @@ export default function DirectAdditionDocumentsV2({
                                 </button>
                                 <button
                                   onClick={() => handleFileDelete(doc)}
-                                  className="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors"
+                                  disabled={isDeleteDisabled}
+                                  className={`px-2 py-1 text-xs font-medium border rounded transition-colors ${
+                                    isDeleteDisabled
+                                      ? 'text-gray-400 bg-gray-50 border-gray-200 cursor-not-allowed'
+                                      : 'text-red-700 bg-red-50 border-red-200 hover:bg-red-100'
+                                  }`}
+                                  title={isDeleteDisabled ? 'Delete disabled for completed properties' : 'Delete document'}
                                 >
                                   Delete
                                 </button>

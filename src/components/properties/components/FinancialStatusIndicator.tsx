@@ -29,6 +29,8 @@ interface FinancialStatusIndicatorProps {
   pipeline?: string
   documentStates?: Record<string, any>
   layout?: 'vertical' | 'horizontal' // New prop for layout control
+  disabled?: boolean // Surgical control for completed properties
+  disabledReason?: string // Reason for disabling
 }
 
 export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> = ({
@@ -40,7 +42,9 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
   compact = false,
   pipeline = 'purchase_pipeline',
   documentStates = {},
-  layout = 'vertical'
+  layout = 'vertical',
+  disabled = false,
+  disabledReason = 'Payment functionality is disabled'
 }) => {
   const { requiredPayments, optionalPayments, isFinanciallyComplete, pendingAmount } =
     financialStatus
@@ -168,6 +172,11 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
     return (
       <button
         onClick={() => {
+          if (disabled) {
+            alert(disabledReason)
+            return
+          }
+
           const today = new Date().toISOString().slice(0, 10)
 
           console.log('🔍 FinancialStatusIndicator paymentConfig:', paymentConfig)
@@ -189,7 +198,13 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
 
           navigateToFinancial(navigationParams)
         }}
-        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-400 rounded-md hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-sm transition-all duration-200"
+        disabled={disabled}
+        className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-md transition-all duration-200 ${
+          disabled
+            ? 'text-gray-400 bg-gray-50 border-gray-200 cursor-not-allowed'
+            : 'text-emerald-700 bg-emerald-50 border-emerald-400 hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-sm'
+        }`}
+        title={disabled ? disabledReason : 'Make payment for this stage'}
       >
         <CurrencyDollarIcon className="h-3 w-3" />
         Make Payment
@@ -326,6 +341,11 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
               {!isFinanciallyComplete && requiredPayments.length > 0 && (
                 <button
                   onClick={() => {
+                    if (disabled) {
+                      alert(disabledReason)
+                      return
+                    }
+
                     const payment = requiredPayments[0]
                     const today = new Date().toISOString().slice(0, 10)
 
@@ -388,7 +408,13 @@ export const FinancialStatusIndicator: React.FC<FinancialStatusIndicatorProps> =
                       paymentType: paymentConfig.paymentType as 'deposit' | 'installment' | 'fee' | 'tax' | 'acquisition_cost' | 'subdivision_cost',
                     })
                   }}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-400 rounded-lg hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-md transition-all duration-200"
+                  disabled={disabled}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium border rounded-lg transition-all duration-200 ${
+                    disabled
+                      ? 'text-gray-400 bg-gray-50 border-gray-200 cursor-not-allowed'
+                      : 'text-emerald-700 bg-emerald-50 border-emerald-400 hover:bg-emerald-100 hover:border-emerald-500 hover:shadow-md'
+                  }`}
+                  title={disabled ? disabledReason : 'Make payment for this stage'}
                 >
                   <CheckCircleIcon className="h-4 w-4" />
                   Make Payment

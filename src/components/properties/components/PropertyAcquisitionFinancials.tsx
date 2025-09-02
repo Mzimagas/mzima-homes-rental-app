@@ -43,9 +43,21 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   property,
   onUpdate,
 }: PropertyAcquisitionFinancialsProps) {
-  // Read-only status for completed properties
-  const { isReadOnly, readOnlyReason, canAdd, canEdit, canDelete, checkAction } =
-    useFinancialReadOnlyStatus(property.id)
+  // Surgical read-only status for completed properties
+  const {
+    isReadOnly,
+    readOnlyReason,
+    canAdd,
+    canEdit,
+    canDelete,
+    checkAction,
+    financialsReadOnly,
+    financialsReadOnlyReason
+  } = useFinancialReadOnlyStatus(property.id)
+
+  // Surgical controls - disable specific functions when processes are completed
+  const isAddDisabled = financialsReadOnly || !canAdd
+  const isDeleteDisabled = financialsReadOnly || !canDelete
 
   const [costEntries, setCostEntries] = useState<AcquisitionCostEntry[]>([])
   const [paymentInstallments, setPaymentInstallments] = useState<PaymentInstallment[]>([])
@@ -431,6 +443,12 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   }
 
   const handleAddCost = async () => {
+    // Check surgical add controls
+    if (isAddDisabled) {
+      alert(financialsReadOnlyReason || 'Adding costs is disabled for completed properties')
+      return
+    }
+
     if (!newCost.cost_type_id || !newCost.amount_kes) return
 
     setLoading(true)
@@ -526,6 +544,12 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   }
 
   const handleAddPayment = async () => {
+    // Check surgical add controls
+    if (isAddDisabled) {
+      alert(financialsReadOnlyReason || 'Adding payments is disabled for completed properties')
+      return
+    }
+
     if (!newPayment.amount_kes) return
 
     setLoading(true)
@@ -580,6 +604,12 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   }
 
   const handleDeleteCost = async (costId: string) => {
+    // Check surgical delete controls
+    if (isDeleteDisabled) {
+      alert(financialsReadOnlyReason || 'Deleting costs is disabled for completed properties')
+      return
+    }
+
     if (!confirm('Are you sure you want to delete this cost entry?')) return
 
     setLoading(true)
@@ -602,6 +632,12 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   }
 
   const handleDeletePayment = async (paymentId: string) => {
+    // Check surgical delete controls
+    if (isDeleteDisabled) {
+      alert(financialsReadOnlyReason || 'Deleting payments is disabled for completed properties')
+      return
+    }
+
     if (!confirm('Are you sure you want to delete this payment?')) return
 
     setLoading(true)
@@ -776,7 +812,8 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                 variant="primary"
                 size="sm"
                 onClick={() => setShowAddPayment(true)}
-                disabled={loading}
+                disabled={loading || isAddDisabled}
+                title={isAddDisabled ? financialsReadOnlyReason || 'Add disabled for completed properties' : 'Add new deposit or installment payment'}
               >
                 + Add Deposit/Installment
               </Button>
@@ -951,7 +988,8 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                 variant="primary"
                 size="sm"
                 onClick={() => setShowAddCost(true)}
-                disabled={loading}
+                disabled={loading || isAddDisabled}
+                title={isAddDisabled ? financialsReadOnlyReason || 'Add disabled for completed properties' : 'Add new acquisition cost'}
               >
                 + Add Cost
               </Button>
