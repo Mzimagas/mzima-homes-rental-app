@@ -141,12 +141,7 @@ export default function PropertyList({
   // Click-outside functionality for property details
   const { containerRef } = useAutoCloseWithCountdown(
     viewingPropertyId !== null,
-    () => setViewingPropertyId(null),
-    {
-      onClickOutside: () => {
-        console.log('🔄 Closing property details (clicked outside)')
-      },
-    }
+    () => setViewingPropertyId(null)
   )
   const [propertiesWithPipelineIssues, setPropertiesWithPipelineIssues] = useState<Set<string>>(
     new Set()

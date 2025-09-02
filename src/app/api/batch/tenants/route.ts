@@ -162,7 +162,7 @@ async function fetchTenantsBatch(supabase: any, options: BatchTenantsRequest) {
     throw error
   }
 
-  let result: any = {
+  const result: any = {
     tenants: tenants || [],
     total: count,
   }

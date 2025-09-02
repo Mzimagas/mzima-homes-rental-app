@@ -92,7 +92,6 @@ export async function checkServiceWorkerConflicts(): Promise<{
       registrations: regInfo
     }
   } catch (error) {
-    console.error('Failed to check service worker conflicts:', error)
     return { hasConflicts: false, registrations: [] }
   }
 }
@@ -105,27 +104,19 @@ export async function developmentCacheDiagnostics(): Promise<void> {
     return
   }
 
-  console.group('🔍 Cache Diagnostics')
-  
   try {
     // Check service worker status
     const swStatus = await checkServiceWorkerConflicts()
-    console.log('Service Worker Status:', swStatus)
 
     // Check cache contents
     if ('caches' in window) {
       const cacheNames = await caches.keys()
-      console.log('Active Caches:', cacheNames)
-      
+
       for (const cacheName of cacheNames) {
         const cache = await caches.open(cacheName)
         const keys = await cache.keys()
-        console.log(`Cache "${cacheName}":`, keys.map(req => req.url))
       }
     }
-
-    // Check localStorage
-    console.log('LocalStorage keys:', Object.keys(localStorage))
     
   } catch (error) {
     console.error('Diagnostics failed:', error)

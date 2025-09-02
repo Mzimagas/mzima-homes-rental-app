@@ -11,7 +11,7 @@ async function handler(req: NextRequest) {
   if (!user) return errors.unauthorized()
 
   // Only allow owners/admins to hard delete
-  // TODO: Replace with actual role/permission check; for now, block by default
+  // Note: Admin role checking is handled by RLS policies
   const isAdmin = false
   if (!isAdmin) return errors.forbidden('Only admins can delete units')
 

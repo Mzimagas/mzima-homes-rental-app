@@ -52,12 +52,7 @@ export default function HandoverPipelineManager({
   // Click-outside functionality for handover details
   const { containerRef } = useAutoCloseWithCountdown(
     viewingHandoverId !== null,
-    () => setViewingHandoverId(null),
-    {
-      onClickOutside: () => {
-        console.log('🔄 Closing handover details (clicked outside)')
-      },
-    }
+    () => setViewingHandoverId(null)
   )
 
   // Filter handovers based on search term

@@ -35,23 +35,13 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
   // Click-outside functionality for property details
   const { containerRef: detailsContainerRef } = useAutoCloseWithCountdown(
     showDetails,
-    () => setShowDetails(false),
-    {
-      onClickOutside: () => {
-        console.log('🔄 Closing subdivision property details (clicked outside)')
-      },
-    }
+    () => setShowDetails(false)
   )
 
   // Click-outside functionality for plots view
   const { containerRef: plotsContainerRef } = useAutoCloseWithCountdown(
     showPlots,
-    () => setShowPlots(false),
-    {
-      onClickOutside: () => {
-        console.log('🔄 Closing subdivision plots view (clicked outside)')
-      },
-    }
+    () => setShowPlots(false)
   )
 
   const handleStartSubdivision = () => {

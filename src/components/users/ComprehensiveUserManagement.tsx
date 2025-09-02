@@ -109,7 +109,7 @@ export default function ComprehensiveUserManagement({
 
   // Filter and sort users
   const filteredAndSortedUsers = useCallback(() => {
-    let filtered = users.filter((user) => {
+    const filtered = users.filter((user) => {
       const matchesSearch =
         !searchTerm ||
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

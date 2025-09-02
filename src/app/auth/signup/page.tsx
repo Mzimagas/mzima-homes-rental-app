@@ -118,10 +118,7 @@ export default function SignupPage() {
     }
 
     try {
-      console.log('🔐 Enhanced signup process starting...')
-
       // Step 1: Pre-flight email verification
-      console.log('🔍 Performing pre-flight email verification...')
       const preflightResult = await preflightEmailCheck(formData.email)
 
       if (!preflightResult.canProceed) {
@@ -145,7 +142,6 @@ export default function SignupPage() {
       })
 
       if (signUpError) {
-        console.error('❌ Signup error:', signUpError)
 
         // Log the email failure for monitoring
         if (
@@ -179,14 +175,14 @@ export default function SignupPage() {
         return
       }
 
-      console.log('✅ User created:', signUpData.user?.email)
+
 
       // Log successful email sending for monitoring
       logEmailSuccess(formData.email, 'signup')
 
       // Step 2: Auto-confirm user in development
       if (!signUpData.user?.email_confirmed_at) {
-        console.log('🔧 Auto-confirming user for development...')
+
 
         try {
           // Use API endpoint to confirm user (with CSRF header)
@@ -208,7 +204,6 @@ export default function SignupPage() {
           })
 
           if (response.ok) {
-            console.log('✅ User auto-confirmed')
 
             // Step 3: Sign in the user immediately
             const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword(
@@ -219,19 +214,15 @@ export default function SignupPage() {
             )
 
             if (signInError) {
-              console.error('❌ Auto sign-in failed:', signInError)
               setError('Account created but auto sign-in failed. Please try logging in.')
             } else {
-              console.log('✅ User auto-signed in, redirecting to dashboard...')
               // The auth context will handle the redirect
               return
             }
           } else {
-            console.log('⚠️ Auto-confirmation failed, showing email confirmation message')
             setSuccess(true)
           }
         } catch (err) {
-          console.error('❌ Auto-confirmation error:', err)
           setSuccess(true) // Fall back to email confirmation
         }
       } else {
@@ -247,7 +238,6 @@ export default function SignupPage() {
         // If successful, auth context will handle redirect
       }
     } catch (err) {
-      console.error('❌ Enhanced signup error:', err)
       setError('An unexpected error occurred during registration.')
     }
 

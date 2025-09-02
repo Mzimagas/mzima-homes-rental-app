@@ -27,12 +27,7 @@ export default function PurchaseList({
   // Click-outside functionality for purchase details
   const { containerRef } = useAutoCloseWithCountdown(
     openDetailsId !== null,
-    () => setOpenDetailsId(null),
-    {
-      onClickOutside: () => {
-        console.log('🔄 Closing purchase details (clicked outside)')
-      },
-    }
+    () => setOpenDetailsId(null)
   )
 
   // Removed old event listener - using new direct navigation approach

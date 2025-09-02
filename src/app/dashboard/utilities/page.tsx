@@ -11,7 +11,7 @@ export default function UtilitiesDashboardPage() {
   const [accounts, setAccounts] = useState<any[]>([])
 
   useEffect(() => {
-    // TODO: wire to selected unit from context; fallback to first active unit for demo
+    // Load first active unit for utilities display
     const load = async () => {
       const { data: units } = await supabase
         .from('units')

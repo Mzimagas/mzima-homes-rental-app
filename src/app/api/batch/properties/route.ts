@@ -154,7 +154,7 @@ async function fetchPropertiesBatch(supabase: any, options: BatchPropertiesReque
     throw error
   }
 
-  let result: any = {
+  const result: any = {
     properties: properties || [],
     total: count,
   }

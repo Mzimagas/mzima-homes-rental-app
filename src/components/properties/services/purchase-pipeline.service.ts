@@ -36,7 +36,7 @@ export class PurchasePipelineService {
         .map((purchase) => purchase.property_id)
         .filter((id) => id != null && id !== '')
 
-            let propertiesMap = new Map()
+            const propertiesMap = new Map()
 
       // If we have property IDs, try to fetch the corresponding property data
       if (propertyIds.length > 0) {

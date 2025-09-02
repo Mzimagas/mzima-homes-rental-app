@@ -1,15 +1,15 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import EnhancedPaymentForm from '../components/payments/enhanced-payment-form'
 import { PaymentService } from '../lib/services/payment-service'
 
 // Mock dependencies
-jest.mock('../lib/services/payment-service')
-jest.mock('../lib/supabase-client')
+vi.mock('../lib/services/payment-service')
+vi.mock('../lib/supabase-client')
 
-const mockPaymentService = PaymentService as jest.Mocked<typeof PaymentService>
+const mockPaymentService = PaymentService as any
 
 describe('EnhancedPaymentForm', () => {
   const defaultProps = {

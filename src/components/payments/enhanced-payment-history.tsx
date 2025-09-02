@@ -128,7 +128,7 @@ export default function EnhancedPaymentHistory({
 
   // Filter and sort payments
   const filteredAndSortedPayments = useMemo(() => {
-    let filtered = payments.filter((payment) => {
+    const filtered = payments.filter((payment) => {
       // Search term filter
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase()

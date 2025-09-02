@@ -38,7 +38,7 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
+    const { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       console.error('checkPropertyAccess - RPC error:', error)
@@ -85,7 +85,7 @@ async function checkPropertyEditAccess(userId: string, propertyId: string): Prom
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Try the newer function signature first
-    let { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
+    const { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
     if (error) {
       console.error('checkPropertyEditAccess - RPC error:', error)
