@@ -8,7 +8,7 @@ import {
   getRoleDescription,
   type UserRole,
 } from '../../hooks/usePropertyAccess'
-import { PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, TrashIcon, PencilIcon } from '../ui/icons/OptimizedIcons'
 import { UserManagementDenied } from '../common/PermissionDenied'
 
 interface PropertyUser {

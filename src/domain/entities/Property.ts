@@ -9,9 +9,33 @@ import { DomainEvent } from '../events/DomainEvent'
 import { PropertyCreatedEvent } from '../events/PropertyCreatedEvent'
 import { PropertyStatusChangedEvent } from '../events/PropertyStatusChangedEvent'
 
-export type PropertyType = 'APARTMENT' | 'HOUSE' | 'COMMERCIAL' | 'LAND' | 'TOWNHOUSE'
-export type PropertyStatus = 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'INACTIVE'
-export type LifecycleStatus = 'ACQUISITION' | 'SUBDIVISION' | 'HANDOVER' | 'RENTAL_READY' | 'DISPOSED'
+// Import types from shared module to prevent circular dependencies
+import type {
+  PropertyType,
+  PropertyStatus,
+  LifecycleStatus,
+  PropertyLocation,
+  PropertyFinancials,
+  PropertyDimensions,
+  PropertyDates,
+  PropertyMetadata,
+  CreatePropertyData,
+  UpdatePropertyData
+} from '../types/PropertyTypes'
+
+// Re-export for backward compatibility
+export type {
+  PropertyType,
+  PropertyStatus,
+  LifecycleStatus,
+  PropertyLocation,
+  PropertyFinancials,
+  PropertyDimensions,
+  PropertyDates,
+  PropertyMetadata,
+  CreatePropertyData,
+  UpdatePropertyData
+}
 
 export interface PropertyProps {
   id: string

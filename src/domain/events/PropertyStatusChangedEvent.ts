@@ -4,7 +4,7 @@
  */
 
 import { DomainEvent } from './DomainEvent'
-import { PropertyStatus } from '../entities/Property'
+import { PropertyStatus } from '../types/PropertyTypes'
 
 export class PropertyStatusChangedEvent extends DomainEvent {
   constructor(
