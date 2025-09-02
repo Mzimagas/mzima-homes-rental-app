@@ -286,7 +286,10 @@ const SubdivisionPipelineManager: React.FC<SubdivisionPipelineProps> = ({
           <div className="space-y-4">
             {filteredProperties.map((property) => {
               const subdivision = getSubdivisionForProperty(property.id)
-              const canEdit = canEditProperty(property.id)
+              const hasUserPermission = canEditProperty(property.id)
+
+              // Disable editing for completed subdivisions
+              const canEdit = hasUserPermission && property.subdivision_status !== 'SUBDIVIDED'
 
               // Create wrapper functions to match component signatures
               const handleEditForProperty = (subdivisionToEdit: SubdivisionItem) => {
