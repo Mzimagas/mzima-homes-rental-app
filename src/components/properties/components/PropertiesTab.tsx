@@ -7,9 +7,7 @@ import PropertyList from './PropertyList'
 import PropertySearch from './PropertySearch'
 import PropertyForm from '../property-form'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
-import getSupabaseClient from '../../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../../../lib/supabase-client'
 
 interface PropertiesTabProps {
   properties: PropertyWithLifecycle[]

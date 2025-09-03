@@ -3,10 +3,8 @@
  * Optimizes subdivision property card loading by prefetching related data
  */
 
-import getSupabaseClient from '../supabase-client'
+import supabase from '../supabase-client'
 import { SubdivisionService } from './subdivision'
-
-const supabase = getSupabaseClient()
 
 interface PrefetchCache {
   [key: string]: {

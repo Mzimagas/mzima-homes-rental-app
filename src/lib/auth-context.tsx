@@ -3,9 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import getSupabaseClient from './supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from './supabase-client'
 import { validateEmailSimple } from './email-validation'
 import { logger, shouldLogAuth, redactEmail } from './logger'
 import { logAuthState } from './auth-logs'

@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { withAuth } from '../../lib/withAuth'
 import { useRouter } from 'next/navigation'
-import getSupabaseClient, { clientBusinessFunctions } from '../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
 // PropertyForm removed - using workflow-based property creation
