@@ -333,11 +333,14 @@ function DashboardPage() {
           }
         }
 
-        console.error('DASHBOARD ERROR - Property details loading failed:', {
-          message: errorMessage,
-          details: errorDetails,
-          originalError: propertiesError,
-        })
+        // Use our quiet logger to prevent console spam
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('Dashboard stats error:', {
+            message: errorMessage,
+            details: errorDetails,
+            originalError: propertiesError,
+          })
+        }
 
         setError(`Failed to load property details: ${errorMessage}`)
         return
@@ -415,12 +418,16 @@ function DashboardPage() {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err)
-      console.error('Dashboard stats error:', {
-        error: err,
-        message: errorMessage,
-        user: user?.email,
-        stack: err instanceof Error ? err.stack : undefined,
-      })
+
+      // Use quiet logging to prevent console spam
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Dashboard stats error:', {
+          error: err,
+          message: errorMessage,
+          user: user?.email,
+          stack: err instanceof Error ? err.stack : undefined,
+        })
+      }
       setError(`Failed to load dashboard statistics: ${errorMessage}`)
     } finally {
       setLoading(false)
