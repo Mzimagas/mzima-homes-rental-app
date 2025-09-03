@@ -1,4 +1,6 @@
-import { supabase } from '../lib/supabase'
+import getSupabaseClient from '../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import AuditTrailService from './audit-trail.service'
 import ConflictResolutionService from './conflict-resolution.service'
 

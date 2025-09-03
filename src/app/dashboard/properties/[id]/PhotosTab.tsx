@@ -1,7 +1,9 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../../../../lib/auth-context'
-import supabase from '../../../../lib/supabase-client'
+import getSupabaseClient from '../../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 
 type Photo = {
   id: string

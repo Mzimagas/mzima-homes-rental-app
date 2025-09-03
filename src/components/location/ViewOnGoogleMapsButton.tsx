@@ -12,6 +12,9 @@ interface ViewOnGoogleMapsButtonProps {
   debugContext?: string
 }
 
+// Cache for logged contexts to prevent duplicate logs
+const loggedContexts = new Set<string>()
+
 function buildGoogleMapsUrl(
   lat?: number | null,
   lng?: number | null,
@@ -19,8 +22,14 @@ function buildGoogleMapsUrl(
   debug?: boolean,
   context?: string
 ): string | null {
-  // Only log in development and avoid duplicate logging
-  if (debug && process.env.NODE_ENV !== 'production') {
+  // Only log once per unique context in development
+  const logKey = `${context || 'default'}-${lat}-${lng}-${address}`
+  const shouldLog = debug &&
+    process.env.NODE_ENV === 'development' &&
+    !loggedContexts.has(logKey)
+
+  if (shouldLog) {
+    loggedContexts.add(logKey)
     console.group(`🗺️ Google Maps URL Generation${context ? ` - ${context}` : ''}`)
     console.log('🔍 Coordinate validation:', {
       latValid: lat != null && !Number.isNaN(lat),
@@ -35,8 +44,8 @@ function buildGoogleMapsUrl(
   if (lat != null && lng != null && !Number.isNaN(lat) && !Number.isNaN(lng)) {
     // Use lat/lng directly for more precise location
     const url = `https://www.google.com/maps?q=${lat},${lng}`
-    if (debug) {
-            console.groupEnd()
+    if (shouldLog) {
+      console.groupEnd()
     }
     return url
   }
@@ -44,14 +53,14 @@ function buildGoogleMapsUrl(
   const q = (address ?? '').trim()
   if (q.length > 0) {
     const url = `https://www.google.com/maps/search/${encodeURIComponent(q)}`
-    if (debug) {
-            console.groupEnd()
+    if (shouldLog) {
+      console.groupEnd()
     }
     return url
   }
 
-  if (debug) {
-        console.groupEnd()
+  if (shouldLog) {
+    console.groupEnd()
   }
   return null
 }

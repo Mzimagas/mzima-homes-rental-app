@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
-import supabase from '../../lib/supabase-client'
+import getSupabaseClient from '../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { LoadingStats } from '../ui/loading'
 import { ErrorCard } from '../ui/error'
 import EnhancedPaymentHistory from './enhanced-payment-history'

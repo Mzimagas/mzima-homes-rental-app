@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, Suspense } from 'react'
 import { Property, SubdivisionItem } from '../../../types/subdivision'
 import { formatKES, formatDate } from '../../../lib/utils/subdivision'
 import { Button } from '../../ui'
@@ -7,6 +7,7 @@ import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
 import InlinePropertyView from './InlinePropertyView'
 import InlineSubdivisionPlots from './InlineSubdivisionPlots'
 import { useAutoCloseWithCountdown } from '../../../hooks/useAutoClose'
+import SkeletonLoader from '../../ui/SkeletonLoader'
 
 interface SubdivisionPropertyCardProps {
   property: Property
@@ -16,33 +17,76 @@ interface SubdivisionPropertyCardProps {
   onEditSubdivision: (subdivision: SubdivisionItem) => void
   onViewHistory: (subdivisionId: string) => void
   onPropertyCreated?: (propertyId: string) => void
+  loading?: boolean
+  skeleton?: boolean
 }
 
-export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = ({
+// Skeleton component for loading state
+const SubdivisionPropertyCardSkeleton: React.FC = () => (
+  <PropertyCard theme="subdivision" interactive={false}>
+    <PropertyCardHeader>
+      <div className="grid grid-cols-3 gap-4 items-start">
+        <div className="col-span-2">
+          <div className="flex items-center space-x-3 mb-2">
+            <SkeletonLoader height="1.5rem" width="60%" />
+            <SkeletonLoader variant="circular" width="2rem" height="2rem" />
+          </div>
+          <SkeletonLoader height="1rem" width="80%" className="mb-3" />
+          <div className="space-y-1">
+            <SkeletonLoader height="0.75rem" width="70%" />
+            <SkeletonLoader height="0.75rem" width="60%" />
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <SkeletonLoader height="2rem" width="8rem" />
+          <SkeletonLoader height="2rem" width="6rem" />
+        </div>
+      </div>
+    </PropertyCardHeader>
+  </PropertyCard>
+)
+
+const SubdivisionPropertyCardComponent: React.FC<SubdivisionPropertyCardProps> = ({
   property,
   subdivision,
   canEdit,
   onStartSubdivision,
   onEditSubdivision,
   onViewHistory,
-  onPropertyCreated
+  onPropertyCreated,
+  loading = false,
+  skeleton = false
 }) => {
   const [showDetails, setShowDetails] = useState(false)
   const [showPlots, setShowPlots] = useState(false)
 
-  const hasSubdivision = Boolean(subdivision)
+  // Memoized computed values for performance
+  const hasSubdivision = useMemo(() => Boolean(subdivision), [subdivision])
 
-  // Click-outside functionality for property details
+  const propertyMetadata = useMemo(() => ({
+    type: property.property_type,
+    area: property.area_acres,
+    expectedRent: property.expected_rent_kes,
+    purchaseDate: property.purchase_date,
+    subdivisionDate: subdivision?.subdivision_date
+  }), [property, subdivision])
+
+  // Always call hooks - Click-outside functionality for property details
   const { containerRef: detailsContainerRef } = useAutoCloseWithCountdown(
     showDetails,
     () => setShowDetails(false)
   )
 
-  // Click-outside functionality for plots view
+  // Always call hooks - Click-outside functionality for plots view
   const { containerRef: plotsContainerRef } = useAutoCloseWithCountdown(
     showPlots,
     () => setShowPlots(false)
   )
+
+  // Show skeleton while loading (after all hooks are called)
+  if (skeleton || loading) {
+    return <SubdivisionPropertyCardSkeleton />
+  }
 
   const handleStartSubdivision = () => {
     onStartSubdivision(property)
@@ -86,25 +130,25 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
               {property.physical_address}
             </p>
 
-            {/* Meta Information */}
+            {/* Meta Information - Optimized with memoized data */}
             <div className="text-xs text-gray-500 space-y-1">
               <div className="flex items-center space-x-4">
-                {property.property_type && (
-                  <span>Type: {property.property_type}</span>
+                {propertyMetadata.type && (
+                  <span>Type: {propertyMetadata.type}</span>
                 )}
-                {property.area_acres && (
-                  <span>Area: {property.area_acres} acres</span>
+                {propertyMetadata.area && (
+                  <span>Area: {propertyMetadata.area} acres</span>
                 )}
-                {property.expected_rent_kes && (
-                  <span>Expected Rent: {formatKES(property.expected_rent_kes)}/month</span>
+                {propertyMetadata.expectedRent && (
+                  <span>Expected Rent: {formatKES(propertyMetadata.expectedRent)}/month</span>
                 )}
               </div>
               <div className="flex items-center space-x-4">
-                {property.purchase_date && (
-                  <span>Purchased: {formatDate(property.purchase_date)}</span>
+                {propertyMetadata.purchaseDate && (
+                  <span>Purchased: {formatDate(propertyMetadata.purchaseDate)}</span>
                 )}
-                {subdivision?.subdivision_date && (
-                  <span>Subdivided: {formatDate(subdivision.subdivision_date)}</span>
+                {propertyMetadata.subdivisionDate && (
+                  <span>Subdivided: {formatDate(propertyMetadata.subdivisionDate)}</span>
                 )}
               </div>
             </div>
@@ -183,36 +227,55 @@ export const SubdivisionPropertyCard: React.FC<SubdivisionPropertyCardProps> = (
         </div>
       </div>
 
-      {/* Expandable Details Section */}
+      {/* Expandable Details Section - Lazy loaded */}
       {showDetails && (
         <PropertyCardContent>
           <div ref={detailsContainerRef}>
-            <InlinePropertyView
-              property={property}
-              canEdit={canEdit}
-              onPropertyUpdated={() => {
-                // Refresh property data if needed
-              }}
-            />
+            <Suspense fallback={<SkeletonLoader variant="card" height="200px" />}>
+              <InlinePropertyView
+                property={property}
+                canEdit={canEdit}
+                onPropertyUpdated={() => {
+                  // Refresh property data if needed
+                }}
+              />
+            </Suspense>
           </div>
         </PropertyCardContent>
       )}
 
-      {/* Expandable Plots Section */}
+      {/* Expandable Plots Section - Lazy loaded */}
       {hasSubdivision && subdivision && showPlots && (
         <PropertyCardContent>
           <div ref={plotsContainerRef}>
-            <InlineSubdivisionPlots
-              property={property}
-              subdivision={subdivision}
-              isExpanded={showPlots}
-              onToggle={() => setShowPlots(!showPlots)}
-              onPropertyCreated={onPropertyCreated}
-              canEdit={canEdit}
-            />
+            <Suspense fallback={<SkeletonLoader variant="card" height="300px" />}>
+              <InlineSubdivisionPlots
+                property={property}
+                subdivision={subdivision}
+                isExpanded={showPlots}
+                onToggle={() => setShowPlots(!showPlots)}
+                onPropertyCreated={onPropertyCreated}
+                canEdit={canEdit}
+              />
+            </Suspense>
           </div>
         </PropertyCardContent>
       )}
     </PropertyCard>
   )
 }
+
+// Memoized export for performance optimization
+export const SubdivisionPropertyCard = React.memo(SubdivisionPropertyCardComponent, (prevProps, nextProps) => {
+  // Custom comparison for better performance
+  return (
+    prevProps.property.id === nextProps.property.id &&
+    prevProps.property.name === nextProps.property.name &&
+    prevProps.property.subdivision_status === nextProps.property.subdivision_status &&
+    prevProps.subdivision?.id === nextProps.subdivision?.id &&
+    prevProps.subdivision?.subdivision_status === nextProps.subdivision?.subdivision_status &&
+    prevProps.canEdit === nextProps.canEdit &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.skeleton === nextProps.skeleton
+  )
+})

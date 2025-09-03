@@ -20,6 +20,7 @@ interface NavigationOptimizationOptions {
   cacheTimeout?: number
   enablePrefetch?: boolean
   enablePreload?: boolean
+  enableLogging?: boolean
 }
 
 export function useNavigationOptimization(options: NavigationOptimizationOptions = {}) {
@@ -27,13 +28,15 @@ export function useNavigationOptimization(options: NavigationOptimizationOptions
     preloadDelay = 100,
     cacheTimeout = 5 * 60 * 1000, // 5 minutes
     enablePrefetch = true,
-    enablePreload = true
+    enablePreload = true,
+    enableLogging = process.env.NODE_ENV === 'development'
   } = options
 
   const router = useRouter()
   const pathname = usePathname()
   const cacheRef = useRef<NavigationCache>({})
   const preloadTimeoutRef = useRef<NodeJS.Timeout>()
+  const loggedRoutesRef = useRef<Set<string>>(new Set())
 
   // Route to component mapping for preloading
   const routeComponentMap = {
@@ -74,11 +77,17 @@ export function useNavigationOptimization(options: NavigationOptimizationOptions
         preloaded: true
       }
 
-      console.log(`🚀 Preloaded route: ${route}`)
+      // Log only once per route and only in development
+      if (enableLogging && !loggedRoutesRef.current.has(route)) {
+        loggedRoutesRef.current.add(route)
+        console.log(`🚀 Preloaded route: ${route}`)
+      }
     } catch (error) {
-      console.warn(`Failed to preload route ${route}:`, error)
+      if (enableLogging) {
+        console.warn(`Failed to preload route ${route}:`, error)
+      }
     }
-  }, [router, enablePrefetch, enablePreload, cacheTimeout])
+  }, [router, enablePrefetch, enablePreload, cacheTimeout, enableLogging])
 
   // Optimized navigation function
   const navigateOptimized = useCallback(async (route: string) => {
@@ -196,22 +205,34 @@ export interface OptimizedLinkProps {
   onClick?: () => void
 }
 
-// Hook for optimized link behavior
+// Global navigation optimization instance to prevent multiple hook calls
+let globalNavigationOptimization: ReturnType<typeof useNavigationOptimization> | null = null
+
+// Hook for optimized link behavior - uses global instance to prevent multiple hook calls
 export function useOptimizedLink(href: string) {
-  const { handleLinkHover, handleLinkLeave, navigateOptimized } = useNavigationOptimization()
+  const router = useRouter()
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
-    navigateOptimized(href)
-  }, [href, navigateOptimized])
+    if (globalNavigationOptimization) {
+      globalNavigationOptimization.navigateOptimized(href)
+    } else {
+      // Fallback to regular navigation
+      router.push(href)
+    }
+  }, [href, router])
 
   const handleMouseEnter = useCallback(() => {
-    handleLinkHover(href)
-  }, [href, handleLinkHover])
+    if (globalNavigationOptimization) {
+      globalNavigationOptimization.handleLinkHover(href)
+    }
+  }, [href])
 
   const handleMouseLeave = useCallback(() => {
-    handleLinkLeave()
-  }, [handleLinkLeave])
+    if (globalNavigationOptimization) {
+      globalNavigationOptimization.handleLinkLeave()
+    }
+  }, [])
 
   return {
     onClick: handleClick,
@@ -220,4 +241,9 @@ export function useOptimizedLink(href: string) {
     onFocus: handleMouseEnter, // Also preload on focus for keyboard navigation
     onBlur: handleMouseLeave
   }
+}
+
+// Function to set the global navigation optimization instance
+export function setGlobalNavigationOptimization(instance: ReturnType<typeof useNavigationOptimization>) {
+  globalNavigationOptimization = instance
 }

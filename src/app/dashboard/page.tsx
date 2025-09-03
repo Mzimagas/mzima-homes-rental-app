@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { withAuth } from '../../lib/withAuth'
 import { useRouter } from 'next/navigation'
-import supabase, { clientBusinessFunctions } from '../../lib/supabase-client'
+import getSupabaseClient, { clientBusinessFunctions } from '../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { LoadingStats, LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
 // PropertyForm removed - using workflow-based property creation
@@ -252,10 +254,14 @@ function DashboardPage() {
             unit_label,
             monthly_rent_kes,
             is_active,
-            tenants (
+            tenancy_agreements!left (
               id,
-              full_name,
-              status
+              status,
+              tenants!inner (
+                id,
+                full_name,
+                status
+              )
             )
           )
         `
@@ -361,8 +367,8 @@ function DashboardPage() {
               totalRentPotential += rentAmount
 
               const activeTenants =
-                (unit as any).tenants?.filter(
-                  (tenant: any) => tenant && tenant.status === 'ACTIVE'
+                (unit as any).tenancy_agreements?.filter(
+                  (agreement: any) => agreement && agreement.status === 'ACTIVE' && agreement.tenants
                 ) || []
               if (activeTenants.length > 0) {
                 occupiedUnits++
@@ -376,23 +382,13 @@ function DashboardPage() {
         }
       }
 
-      // Get overdue invoices (using correct rent_invoices table)
-      // Only include invoices from active properties (exclude soft-deleted properties)
+      // Get overdue rental amounts using the optimized view
+      // Only include amounts from active properties (exclude soft-deleted properties)
       const { data: overdueInvoices, error: overdueError } = await supabase
-        .from('rent_invoices')
-        .select(
-          `
-          amount_due_kes,
-          amount_paid_kes,
-          units!inner(
-            property_id,
-            properties!inner(disabled_at)
-          )
-        `
-        )
-        .in('units.property_id', propertyIds)
-        .eq('status', 'OVERDUE')
-        .is('units.properties.disabled_at', null)
+        .from('v_overdue_rental_summary')
+        .select('amount_due, property_id, property_disabled_at')
+        .in('property_id', propertyIds)
+        .is('property_disabled_at', null)
 
       let overdueAmount = 0
       if (overdueError) {
@@ -401,8 +397,7 @@ function DashboardPage() {
       } else {
         overdueAmount =
           overdueInvoices?.reduce(
-            (sum: number, invoice: any) =>
-              sum + ((invoice.amount_due_kes || 0) - (invoice.amount_paid_kes || 0)),
+            (sum: number, invoice: any) => sum + (invoice.amount_due || 0),
             0
           ) || 0
       }

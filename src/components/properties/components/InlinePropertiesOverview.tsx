@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { LoadingCard } from '../../ui/loading'
 import { ErrorCard } from '../../ui/error'
 import { Property as DbProperty, Unit as DbUnit } from '../../../lib/types/database'

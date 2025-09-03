@@ -3,7 +3,9 @@
  * Handles fetching real property data for permission assignment
  */
 
-import { supabase } from '../lib/supabase-client'
+import getSupabaseClient from '../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 
 export interface Property {
   id: string

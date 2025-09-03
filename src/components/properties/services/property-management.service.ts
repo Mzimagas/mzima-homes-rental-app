@@ -1,4 +1,6 @@
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 import { isAuthError, redirectToLogin } from '../utils/property-management.utils'
 
@@ -28,41 +30,33 @@ export class PropertyManagementService {
         if (handled) return []
       }
       if (!user) {
-                window.location.href = '/auth/login?message=Please log in to access properties.'
+        console.warn('⚠️ No user found in loadProperties')
+        window.location.href = '/auth/login?message=Please log in to access properties.'
         return []
       }
 
+      console.log('✅ User authenticated:', user.id, user.email)
+
+      // Get properties the user has access to
       const { data, error } = await supabase
         .from('properties')
-        .select(
-          `
+        .select(`
           *,
-          property_source,
-          lifecycle_status,
-          subdivision_status,
-          handover_status,
-          handover_date,
-          source_reference_id,
-          parent_property_id,
-          purchase_completion_date,
-          subdivision_date,
-          acquisition_notes,
-          expected_rental_income_kes,
-          sale_price_kes,
-          estimated_value_kes,
-          total_area_sqm,
-          total_area_acres,
-          purchase_price_agreement_kes,
-          lat,
-          lng,
-          physical_address
-        `
-        )
+          property_users!inner(role, status)
+        `)
+        .eq('property_users.user_id', user.id)
+        .eq('property_users.status', 'ACTIVE')
+        .is('disabled_at', null)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Database error in loadProperties:', error)
+        throw error
+      }
 
-      // For now, return data without land financial transformation until DB migration is applied
+      console.log('📊 Properties loaded successfully:', data?.length || 0, 'properties')
+
+      // Return the properties data directly
       return (data as PropertyWithLifecycle[]) || []
     } catch (error) {
             if (error instanceof Error && isAuthError(error)) {

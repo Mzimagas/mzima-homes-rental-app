@@ -13,7 +13,9 @@ import {
   formatCurrency,
 } from '../../../lib/constants/financial-stage-requirements'
 import { useTabNavigation } from '../../../hooks/useTabNavigation'
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 
 interface PaymentIntegrationProps {
   propertyId: string

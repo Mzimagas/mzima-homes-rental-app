@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import supabase, { clientBusinessFunctions } from '../../../lib/supabase-client'
+import getSupabaseClient, { clientBusinessFunctions } from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import UtilityBalancePanel from '../../../components/utilities/utility-balance-panel'
 import UtilityLedgerTable from '../../../components/utilities/utility-ledger-table'
 

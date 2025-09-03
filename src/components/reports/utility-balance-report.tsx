@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import supabase from '../../lib/supabase-client'
+import getSupabaseClient from '../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { formatCurrency } from '../../lib/export-utils'
 
 export default function UtilityBalanceReport() {

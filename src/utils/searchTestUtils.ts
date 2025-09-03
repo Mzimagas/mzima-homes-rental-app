@@ -120,8 +120,8 @@ export async function debugQuery(query: string) {
   }
 }
 
-// Make functions available globally in development
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+// Make functions available globally only when debug is enabled
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ENABLE_SEARCH_DEBUG === '1') {
   // Add a small delay to ensure everything is loaded
   setTimeout(() => {
     try {

@@ -8,7 +8,9 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckCircleIconSolid } from '@heroicons/react/24/solid'
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import {
   DOC_TYPES,
   type DocTypeKey,

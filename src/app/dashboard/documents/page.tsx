@@ -2,7 +2,9 @@
 
 import { useState, useEffect, Suspense, lazy } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
 import ErrorBoundary from '../../../components/ui/ErrorBoundary'

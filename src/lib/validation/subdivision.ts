@@ -16,7 +16,10 @@ export const subdivisionSchema = z.object({
   approvalAuthority: z.string().optional(),
   surveyCost: z.coerce.number().min(0, 'Survey cost must be 0 or positive'),
   approvalFees: z.coerce.number().min(0).optional(),
-  expectedPlotValue: z.coerce.number().positive('Expected plot value must be positive'),
+  expectedPlotValue: z.union([
+    z.coerce.number().positive('Expected plot value must be positive'),
+    z.literal('').transform(() => undefined)
+  ]).optional(),
   targetCompletionDate: z.string().min(1, 'Target completion date is required'),
   subdivisionNotes: z.string().optional(),
 })

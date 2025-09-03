@@ -3,7 +3,9 @@ import {
   PaymentInstallment,
   PurchasePriceHistoryEntry,
 } from '../types/property-management.types'
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 
 // Helper function to get CSRF token
 function getCsrfToken(): string | null {
@@ -18,11 +20,11 @@ function getCsrfToken(): string | null {
 
 // API service for property acquisition financials
 export class AcquisitionFinancialsService {
-  // Feature flags to disable non-existent APIs and reduce 403 errors
+  // Feature flags to enable financial APIs
   private static readonly FEATURE_FLAGS = {
-    PURCHASE_PIPELINE_API: false, // ❌ Disabled - Causing 403 errors
-    ACQUISITION_COSTS_API: false, // ❌ Disabled - Causing 403 errors
-    PAYMENT_INSTALLMENTS_API: false, // ❌ Disabled - Causing 403 errors
+    PURCHASE_PIPELINE_API: true, // ✅ Enabled - API routes exist
+    ACQUISITION_COSTS_API: true, // ✅ Enabled - API routes exist
+    PAYMENT_INSTALLMENTS_API: true, // ✅ Enabled - API routes exist
   }
 
   private static async makeRequest(

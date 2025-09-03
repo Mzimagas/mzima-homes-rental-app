@@ -8,7 +8,9 @@ import {
 } from '../../../lib/security/security-test.service'
 import { FieldSecurityService } from '../../../lib/security/field-security.service'
 import { RoleManagementService } from '../../../lib/auth/role-management.service'
-import { supabase } from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 
 export default function SecurityTestPanel() {
   const [testResults, setTestResults] = useState<SecurityTestResult[]>([])

@@ -4,7 +4,9 @@
  */
 
 import { useEffect, useState, useCallback } from 'react'
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { RealtimeChannel } from '@supabase/supabase-js'
 
 export interface OccupancyData {

@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from '../../ui'
 import { RoleManagementService } from '../../../lib/auth/role-management.service'
-import { supabase } from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 
 interface User {
   id: string

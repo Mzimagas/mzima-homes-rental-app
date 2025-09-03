@@ -29,12 +29,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Build a real client when env vars are present; otherwise a safe stub for dev
-let supabase: any
+let _supabaseClient: any = null
 
-if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
-  // Enhanced client configuration with better error handling and retry logic
-  // Create single instance to prevent multiple GoTrueClient warnings
-  supabase = createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
+function getSupabaseClient() {
+  if (_supabaseClient) {
+    return _supabaseClient
+  }
+
+  if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
+    // Enhanced client configuration with better error handling and retry logic
+    // Create single instance to prevent multiple GoTrueClient warnings
+    _supabaseClient = createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
@@ -76,10 +81,10 @@ if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
         eventsPerSecond: 10,
       },
     },
-  })
-} else {
-  // Minimal stub client for local/dev when env is missing
-  const stub: any = {
+    })
+  } else {
+    // Minimal stub client for local/dev when env is missing
+    _supabaseClient = {
     auth: {
       async signInWithPassword() {
         return {
@@ -135,11 +140,17 @@ if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
     from: () => ({
       select: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
     }),
+    }
   }
-  supabase = stub
+
+  return _supabaseClient
 }
 
-// Named exports removed to avoid duplicate export conflicts
+// Export the singleton function as default
+export default getSupabaseClient
+
+// Legacy named export for backward compatibility (but use the function to ensure singleton)
+export const supabase = getSupabaseClient()
 
 // Helper function to handle Supabase errors
 export function handleSupabaseError(error: any) {
@@ -1328,7 +1339,5 @@ export const createEnhancedClient = () => {
   }
 }
 
-// Export single instance as default to prevent multiple instances
-export default supabase
-
-export { supabase }
+// Export the singleton function to prevent multiple instances
+// Use getSupabaseClient() everywhere to ensure singleton pattern

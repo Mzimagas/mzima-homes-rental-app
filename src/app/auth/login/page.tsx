@@ -5,7 +5,9 @@ import { useAuth } from '../../../lib/auth-context'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Turnstile } from '@marsidev/react-turnstile'
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { validateEmailSimple } from '../../../lib/email-validation'
 import MfaChallenge from './mfa-challenge'
 
@@ -316,7 +318,7 @@ function LoginForm() {
 
           <div className="text-center">
             <span className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">
                 Sign up
               </Link>

@@ -14,6 +14,7 @@ import {
 } from '../../types/subdivision'
 import { SubdivisionService } from '../../lib/services/subdivision'
 import { isTableNotFoundError } from '../../lib/utils/subdivision'
+import { subdivisionPrefetchService } from '../../lib/services/subdivision-prefetch'
 import { useMultipleErrors } from '../../hooks/useErrorHandler'
 import { useMultipleLoading } from '../../hooks/useLoadingState'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
@@ -53,26 +54,61 @@ const SubdivisionPipelineManager: React.FC<SubdivisionPipelineProps> = ({
   const { canEditProperty } = usePropertyAccess()
 
   /**
-   * Load subdivisions data
+   * Load subdivisions data with optimized parallel loading
    */
   const loadSubdivisions = useCallback(async () => {
     try {
       clearError('subdivisions')
-      
-      // Check if tables exist first
-      const tablesExist = await SubdivisionService.checkTablesExist()
-      setTablesExist(tablesExist)
-      
-      if (!tablesExist) {
-        setSubdivisions([])
-        return
-      }
 
-      const data = await withLoading('subdivisions', async () => {
-        return await SubdivisionService.loadSubdivisions()
+      // Start loading immediately with optimized parallel loading
+      const loadingPromise = withLoading('subdivisions', async () => {
+        // Try to get cached data first for instant display
+        try {
+          const cachedData = subdivisionPrefetchService.getCachedSubdivisionData('all')
+          if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
+            // Use cached data immediately, refresh in background
+            setTimeout(() => {
+              SubdivisionService.loadSubdivisions()
+                .then(freshData => {
+                  if (JSON.stringify(freshData) !== JSON.stringify(cachedData)) {
+                    setSubdivisions(freshData)
+                  }
+                })
+                .catch(() => {}) // Silent fail for background refresh
+            }, 500)
+            return cachedData
+          }
+        } catch (error) {
+          // Cache access failed, continue with fresh load
+        }
+
+        // No cache, load fresh data with parallel queries
+        const [tablesExist, subdivisionData] = await Promise.allSettled([
+          SubdivisionService.checkTablesExist(),
+          SubdivisionService.loadSubdivisions()
+        ])
+
+        if (tablesExist.status === 'fulfilled' && !tablesExist.value) {
+          setTablesExist(false)
+          return []
+        }
+
+        if (subdivisionData.status === 'fulfilled') {
+          setTablesExist(true)
+          return subdivisionData.value
+        }
+
+        throw subdivisionData.reason || new Error('Failed to load subdivisions')
       })
-      
+
+      const data = await loadingPromise
       setSubdivisions(data)
+
+      // Prefetch related data for better performance
+      if (data.length > 0) {
+        const propertyIds = data.map(sub => sub.original_property_id).filter(Boolean)
+        subdivisionPrefetchService.batchPrefetchSubdivisions(propertyIds)
+      }
     } catch (error) {
       if (isTableNotFoundError(error)) {
         setTablesExist(false)
@@ -87,11 +123,42 @@ const SubdivisionPipelineManager: React.FC<SubdivisionPipelineProps> = ({
   }, [withLoading, setError, clearError])
 
   /**
-   * Initialize component
+   * Initialize component with immediate skeleton display
    */
   useEffect(() => {
-    loadSubdivisions()
-  }, [loadSubdivisions])
+    // Show skeleton immediately, then start loading
+    if (subdivisions.length === 0) {
+      // Trigger loading state for immediate skeleton display
+      loadSubdivisions()
+    }
+  }, [loadSubdivisions, subdivisions.length])
+
+  /**
+   * Prefetch data on component mount for faster subsequent loads
+   */
+  useEffect(() => {
+    // Prefetch common subdivision data in background
+    const prefetchCommonData = async () => {
+      try {
+        // Wait a bit for component to stabilize
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Prefetch subdivision tables check (non-blocking)
+        SubdivisionService.checkTablesExist().catch(() => {})
+
+        // Clear expired cache
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            subdivisionPrefetchService.clearExpiredCache()
+          }, 1000)
+        }
+      } catch (error) {
+        // Silent fail for prefetching
+      }
+    }
+
+    prefetchCommonData()
+  }, [])
 
   /**
    * Filter properties with subdivision status (both active and completed)
@@ -254,9 +321,22 @@ const SubdivisionPipelineManager: React.FC<SubdivisionPipelineProps> = ({
         />
       )}
 
-      {/* Loading State */}
-      {loadingStates.subdivisions && (
-        <LoadingSpinner size="lg" message="Loading subdivisions..." />
+      {/* Loading State with Skeleton */}
+      {loadingStates.subdivisions && filteredProperties.length === 0 && (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SubdivisionPropertyCard
+              key={`skeleton-${index}`}
+              property={{} as any}
+              subdivision={null}
+              onStartSubdivision={() => {}}
+              onEditSubdivision={() => {}}
+              onViewHistory={() => {}}
+              canEdit={false}
+              skeleton={true}
+            />
+          ))}
+        </div>
       )}
 
       {/* Search */}
@@ -306,6 +386,8 @@ const SubdivisionPipelineManager: React.FC<SubdivisionPipelineProps> = ({
                   onViewHistory={handleViewHistory}
                   onPropertyCreated={handlePropertyCreated}
                   canEdit={canEdit}
+                  loading={loadingStates.subdivisions}
+                  skeleton={loadingStates.subdivisions && !property}
                 />
               )
             })}

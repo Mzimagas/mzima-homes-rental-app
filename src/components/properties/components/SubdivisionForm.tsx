@@ -34,7 +34,7 @@ const SubdivisionForm: React.FC<SubdivisionFormProps> = memo(({
       approvalAuthority: '',
       surveyCost: 0,
       approvalFees: 0,
-      expectedPlotValue: 0,
+      expectedPlotValue: '',
       targetCompletionDate: '',
       subdivisionNotes: '',
     }
@@ -52,7 +52,7 @@ const SubdivisionForm: React.FC<SubdivisionFormProps> = memo(({
         approvalAuthority: subdivision.approval_authority || '',
         surveyCost: subdivision.survey_cost_kes || 0,
         approvalFees: subdivision.approval_fees_kes || 0,
-        expectedPlotValue: subdivision.expected_plot_value_kes || 0,
+        expectedPlotValue: subdivision.expected_plot_value_kes || '',
         targetCompletionDate: subdivision.target_completion_date || '',
         subdivisionNotes: subdivision.subdivision_notes || '',
       })
@@ -66,7 +66,7 @@ const SubdivisionForm: React.FC<SubdivisionFormProps> = memo(({
         approvalAuthority: '',
         surveyCost: 0,
         approvalFees: 0,
-        expectedPlotValue: 0,
+        expectedPlotValue: '',
         targetCompletionDate: '',
         subdivisionNotes: '',
       })
@@ -228,7 +228,7 @@ const SubdivisionForm: React.FC<SubdivisionFormProps> = memo(({
 
           <FormField
             name="expectedPlotValue"
-            label="Expected Plot Value (KES) *"
+            label="Expected Plot Value (KES) - Optional"
             error={form.formState.errors.expectedPlotValue?.message}
           >
             {({ id }) => (
@@ -236,8 +236,8 @@ const SubdivisionForm: React.FC<SubdivisionFormProps> = memo(({
                 id={id}
                 {...form.register('expectedPlotValue', { valueAsNumber: true })}
                 type="number"
-                min="1"
-                placeholder="500000"
+                min="0"
+                placeholder="500000 (optional)"
                 disabled={isLoading}
               />
             )}

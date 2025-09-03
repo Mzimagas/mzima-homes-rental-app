@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
-import { useNavigationOptimization } from '../../hooks/useNavigationOptimization'
+import { useNavigationOptimization, setGlobalNavigationOptimization } from '../../hooks/useNavigationOptimization'
+import { useSubdivisionPrefetch } from '../../hooks/useSubdivisionPrefetch'
 import { DashboardProvider } from '../../contexts/DashboardContext'
 import ContextualHeader from '../../components/dashboard/ContextualHeader'
 import EnhancedGlobalSearch from '../../components/dashboard/EnhancedGlobalSearch'
@@ -201,10 +202,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter()
 
   // Navigation optimization for smooth transitions
-  const { preloadRoute, handleLinkHover, handleLinkLeave } = useNavigationOptimization({
+  const navigationOptimization = useNavigationOptimization({
     enablePrefetch: true,
     enablePreload: true,
-    preloadDelay: 100
+    preloadDelay: 100,
+    enableLogging: false // Disable logging in production
+  })
+
+  // Set global instance for optimized links
+  useEffect(() => {
+    setGlobalNavigationOptimization(navigationOptimization)
+  }, [navigationOptimization])
+
+  // Subdivision data prefetching for faster navigation (conservative)
+  useSubdivisionPrefetch({
+    enabled: true,
+    prefetchOnHover: true,
+    prefetchDelay: 1000 // Longer delay to avoid aggressive prefetching
   })
 
   // Initialize search service
@@ -218,8 +232,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         await searchInitializationService.initialize()
         console.log('✅ Search service initialized in dashboard')
 
-        // Load search test utilities in development (with error handling)
-        if (process.env.NODE_ENV === 'development') {
+        // Load search test utilities only when explicitly enabled
+        if (process.env.NEXT_PUBLIC_ENABLE_SEARCH_DEBUG === '1') {
           import('../../utils/searchTestUtils').catch((error) => {
             console.warn('⚠️ Failed to load search test utilities:', error)
           })

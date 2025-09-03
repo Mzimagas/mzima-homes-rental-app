@@ -11,7 +11,9 @@ import HandoverStageModal from './HandoverStageModal'
 import PropertySearch from './PropertySearch'
 import InlineHandoverView from './InlineHandoverView'
 import { Property } from '../../../lib/types/database'
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import {
   HandoverItem,
   HandoverPipelineFormValues,
@@ -125,19 +127,67 @@ export default function HandoverPipelineManager({
           handoverError.code === 'PGRST116' ||
           handoverError.message?.includes('does not exist')
         ) {
-          setHandovers([])
+          // If handover_pipeline table doesn't exist, just load properties with IN_PROGRESS status
+          await loadPropertiesWithHandoverStatus()
           return
         }
         throw handoverError
       }
 
-      if (!handoverData || handoverData.length === 0) {
-        setHandovers([])
-        return
+      // Also load properties with IN_PROGRESS handover status that don't have pipeline records
+      const { data: propertiesInProgress, error: propertiesError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('handover_status', 'IN_PROGRESS')
+        .order('name')
+
+      if (propertiesError) {
+        console.warn('Error loading properties with IN_PROGRESS handover status:', propertiesError)
       }
 
       // Get unique property IDs from handover data (if they exist)
-      const propertyIds = handoverData
+      const existingPipelinePropertyIds = new Set(
+        (handoverData || [])
+          .map((handover) => handover.property_id)
+          .filter((id) => id != null && id !== '')
+      )
+
+      // Create handover records for properties that don't have pipeline records yet
+      const propertiesWithoutPipeline = (propertiesInProgress || []).filter(
+        (property) => !existingPipelinePropertyIds.has(property.id)
+      )
+
+      // Convert properties to handover format
+      const syntheticHandovers = propertiesWithoutPipeline.map((property) => ({
+        id: `synthetic-${property.id}`,
+        property_id: property.id,
+        property_name: property.name,
+        property_address: property.physical_address,
+        property_type: property.property_type,
+        handover_status: 'IN_PROGRESS',
+        current_stage: 1,
+        overall_progress: 0,
+        pipeline_stages: [],
+        buyer_name: null,
+        buyer_contact: null,
+        buyer_email: null,
+        buyer_address: null,
+        asking_price_kes: null,
+        negotiated_price_kes: null,
+        deposit_received_kes: null,
+        balance_due_kes: null,
+        target_completion_date: null,
+        actual_completion_date: null,
+        created_at: property.created_at,
+        updated_at: property.updated_at,
+        is_synthetic: true // Flag to identify synthetic records
+      }))
+
+      // Combine pipeline data with synthetic handovers
+      const allHandovers = [...(handoverData || []), ...syntheticHandovers]
+
+      // Get unique property IDs from all handover data
+      const propertyIds = allHandovers
         .map((handover) => handover.property_id)
         .filter((id) => id != null && id !== '')
 
@@ -164,7 +214,7 @@ export default function HandoverPipelineManager({
       }
 
       // Enhance handover data with property coordinates
-      const enhancedData = handoverData.map((handover) => {
+      const enhancedData = allHandovers.map((handover) => {
         const property = propertiesMap.get(handover.property_id)
         return {
           ...handover,
@@ -176,9 +226,54 @@ export default function HandoverPipelineManager({
 
       setHandovers(enhancedData as HandoverItem[])
     } catch (error) {
+      console.error('Error loading handovers:', error)
       setHandovers([])
     } finally {
       setHandoverLoading(false)
+    }
+  }
+
+  // Helper function to load only properties with handover status
+  const loadPropertiesWithHandoverStatus = async () => {
+    try {
+      const { data: propertiesInProgress, error: propertiesError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('handover_status', 'IN_PROGRESS')
+        .order('name')
+
+      if (propertiesError) throw propertiesError
+
+      // Convert properties to handover format
+      const syntheticHandovers = (propertiesInProgress || []).map((property) => ({
+        id: `synthetic-${property.id}`,
+        property_id: property.id,
+        property_name: property.name,
+        property_address: property.physical_address,
+        property_type: property.property_type,
+        handover_status: 'IN_PROGRESS',
+        current_stage: 1,
+        overall_progress: 0,
+        pipeline_stages: [],
+        buyer_name: null,
+        buyer_contact: null,
+        buyer_email: null,
+        buyer_address: null,
+        asking_price_kes: null,
+        negotiated_price_kes: null,
+        deposit_received_kes: null,
+        balance_due_kes: null,
+        target_completion_date: null,
+        actual_completion_date: null,
+        created_at: property.created_at,
+        updated_at: property.updated_at,
+        is_synthetic: true
+      }))
+
+      setHandovers(syntheticHandovers)
+    } catch (error) {
+      console.error('Error loading properties with handover status:', error)
+      setHandovers([])
     }
   }
 
@@ -773,7 +868,7 @@ export default function HandoverPipelineManager({
               <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-medium text-gray-900">Property Information</h3>
-                  <p className="text-sm text-gray-600 mt-1">Select the property you're preparing for handover</p>
+                  <p className="text-sm text-gray-600 mt-1">Select the property you&apos;re preparing for handover</p>
                 </div>
 
                 {/* Property Selection */}

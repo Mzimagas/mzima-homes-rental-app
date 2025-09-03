@@ -12,7 +12,7 @@ import {
 interface AddressAutocompleteProps {
   value: string
   onChange: (value: string) => void
-  onSelect: (result: GeocodeResult) => void
+  onSelect?: (result: GeocodeResult) => void
   label?: string
   allowCurrentLocation?: boolean
   error?: string | null
@@ -26,6 +26,12 @@ export default function AddressAutocomplete({
   allowCurrentLocation = true,
   error,
 }: AddressAutocompleteProps) {
+  // Safe onSelect handler
+  const handleSelect = (result: GeocodeResult) => {
+    if (typeof onSelect === 'function') {
+      onSelect(result)
+    }
+  }
   const [loading, setLoading] = useState(false)
   const [validated, setValidated] = useState<GeocodeResult | null>(null)
   const [localError, setLocalError] = useState<string | null>(null)
@@ -147,7 +153,7 @@ export default function AddressAutocomplete({
               }
               setValidated(result)
               onChange(address)
-              onSelect(result)
+              handleSelect(result)
             } else {
                             const result: GeocodeResult = {
                 address: `${latitude}, ${longitude}`,
@@ -156,7 +162,7 @@ export default function AddressAutocomplete({
               }
               setValidated(result)
               onChange(result.address)
-              onSelect(result)
+              handleSelect(result)
             }
             setLoading(false)
           } catch (geocodeError) {
@@ -168,7 +174,7 @@ export default function AddressAutocomplete({
             }
             setValidated(result)
             onChange(result.address)
-            onSelect(result)
+            handleSelect(result)
             setLoading(false)
           }
         },
@@ -324,7 +330,7 @@ export default function AddressAutocomplete({
                     const res: GeocodeResult = { address, lat: parsed.lat, lng: parsed.lng }
                     setValidated(res)
                     onChange(address)
-                    onSelect(res)
+                    handleSelect(res)
                   } else {
                                         const res: GeocodeResult = {
                       address: `${parsed.lat}, ${parsed.lng}`,
@@ -333,7 +339,7 @@ export default function AddressAutocomplete({
                     }
                     setValidated(res)
                     onChange(res.address)
-                    onSelect(res)
+                    handleSelect(res)
                   }
                 } catch (e) {
                                     const res: GeocodeResult = {
@@ -343,7 +349,7 @@ export default function AddressAutocomplete({
                   }
                   setValidated(res)
                   onChange(res.address)
-                  onSelect(res)
+                  handleSelect(res)
                 } finally {
                   setCoordsLoading(false)
                 }

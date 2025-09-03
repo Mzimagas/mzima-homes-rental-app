@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
+import getSupabaseClient, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard, EmptyState } from '../../../components/ui/error'
 import { Payment, Unit, Property } from '../../../lib/types/database'
@@ -247,7 +249,7 @@ export default function PaymentsPage() {
                     <div className="ml-5 w-0 flex-1">
                       <dl>
                         <dt className="text-sm font-medium text-gray-500 truncate">
-                          Today's Payments
+                          Today&apos;s Payments
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
                           {formatCurrency(stats.totalPaymentsToday)}

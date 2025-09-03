@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../../lib/auth-context'
 import { usePropertyAccess } from '../../../../hooks/usePropertyAccess'
-import supabase from '../../../../lib/supabase-client'
+import getSupabaseClient from '../../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import Link from 'next/link'
 
 interface DeletedProperty {

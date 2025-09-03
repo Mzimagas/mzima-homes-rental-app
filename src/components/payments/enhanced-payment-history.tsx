@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import supabase from '../../lib/supabase-client'
+import getSupabaseClient from '../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 import { LoadingCard } from '../ui/loading'
 import { ErrorCard, EmptyState } from '../ui/error'
 import { Payment } from '../../lib/types/database'

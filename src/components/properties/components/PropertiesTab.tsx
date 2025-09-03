@@ -41,6 +41,7 @@ export default function PropertiesTab({
 }: PropertiesTabProps) {
   // Filter properties based on search term and lifecycle status
   const filteredProperties = useMemo(() => {
+
     // Filter out properties that are back in the purchase pipeline or fully subdivided
     // Keep properties that are just starting subdivision (they may not complete the process)
     const activeProperties = properties.filter((property) => {

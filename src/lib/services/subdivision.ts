@@ -2,7 +2,9 @@
  * Service for subdivision management operations
  */
 
-import supabase from '../supabase-client'
+import getSupabaseClient from '../supabase-client'
+
+const supabase = getSupabaseClient()
 import { 
   Property, 
   SubdivisionItem, 
@@ -31,30 +33,40 @@ export class SubdivisionService {
   }
 
   /**
-   * Load all subdivisions with property details
+   * Load all subdivisions with property details - optimized query
    */
   static async loadSubdivisions(): Promise<SubdivisionItem[]> {
+    // Optimized query with only essential fields for initial load
     const { data, error } = await supabase
       .from('property_subdivisions')
       .select(`
-        *,
-        properties (
+        id,
+        subdivision_name,
+        subdivision_status,
+        current_stage,
+        overall_progress,
+        total_plots_planned,
+        total_plots_created,
+        target_completion_date,
+        created_at,
+        updated_at,
+        original_property_id,
+        properties!inner (
           id,
           name,
           physical_address,
           property_type,
-          total_area_sqm,
-          total_area_acres,
+          area_acres:total_area_acres,
           lifecycle_status,
           subdivision_status,
           lat,
           lng,
-          expected_rental_income_kes,
-          purchase_completion_date,
-          subdivision_date
+          expected_rent_kes:expected_rental_income_kes,
+          purchase_date:purchase_completion_date
         )
       `)
       .order('created_at', { ascending: false })
+      .limit(50) // Limit initial load for better performance
 
     if (error) {
       if (isTableNotFoundError(error)) {
@@ -64,6 +76,27 @@ export class SubdivisionService {
     }
 
     return data || []
+  }
+
+  /**
+   * Load subdivision details (for when full data is needed)
+   */
+  static async loadSubdivisionDetails(subdivisionId: string): Promise<SubdivisionItem | null> {
+    const { data, error } = await supabase
+      .from('property_subdivisions')
+      .select(`
+        *,
+        properties (*)
+      `)
+      .eq('id', subdivisionId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+
+    return data
   }
 
   /**

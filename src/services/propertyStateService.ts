@@ -3,11 +3,9 @@
  * Manages property state transitions and mutual exclusivity between subdivision and handover processes
  */
 
-import { createClient } from '@supabase/supabase-js'
+import getSupabaseClient from '../lib/supabase-client'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabase = getSupabaseClient()
 
 // Service role client for admin operations (bypasses RLS)
 const getServiceRoleClient = () => {
@@ -19,6 +17,8 @@ const getServiceRoleClient = () => {
   // Server-side: try to use service role if available
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (serviceKey) {
+    const { createClient } = require('@supabase/supabase-js')
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     return createClient(supabaseUrl, serviceKey)
   }
 
@@ -73,7 +73,10 @@ export class PropertyStateService {
         return null
       }
 
-      console.log('Getting property state for:', propertyId)
+      // Reduced logging to prevent console spam
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('Getting property state for:', propertyId)
+      }
 
       const { data, error } = await supabase
         .from('properties')

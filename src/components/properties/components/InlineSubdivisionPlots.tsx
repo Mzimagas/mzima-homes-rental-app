@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Button } from '../../ui'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import supabase from '../../../lib/supabase-client'
+import getSupabaseClient from '../../../lib/supabase-client'
+import SkeletonLoader from '../../ui/SkeletonLoader'
+
+const supabase = getSupabaseClient()
 import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
 
 // Types
@@ -83,14 +86,8 @@ export default function InlineSubdivisionPlots({
     },
   })
 
-  // Load plots when expanded and subdivision exists
-  useEffect(() => {
-    if (isExpanded && subdivision) {
-      loadPlots()
-    }
-  }, [isExpanded, subdivision])
-
-  const loadPlots = async () => {
+  // Optimized load plots function with useCallback
+  const loadPlots = useCallback(async () => {
     if (!subdivision) return
 
     try {
@@ -116,7 +113,14 @@ export default function InlineSubdivisionPlots({
     } finally {
       setLoading(false)
     }
-  }
+  }, [subdivision])
+
+  // Load plots when expanded and subdivision exists
+  useEffect(() => {
+    if (isExpanded && subdivision) {
+      loadPlots()
+    }
+  }, [isExpanded, subdivision, loadPlots])
 
   const validatePlotCreation = (subdivisionId: string) => {
     if (!subdivision) {
@@ -375,13 +379,57 @@ export default function InlineSubdivisionPlots({
     )
   }
 
+  // Skeleton component for loading plots
+  const PlotsSkeleton = () => (
+    <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
+      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <SkeletonLoader variant="circular" width="1.5rem" height="1.5rem" />
+            <div>
+              <SkeletonLoader height="1.25rem" width="12rem" className="mb-1" />
+              <SkeletonLoader height="0.875rem" width="8rem" />
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <SkeletonLoader height="2rem" width="6rem" />
+            <SkeletonLoader height="2rem" width="4rem" />
+          </div>
+        </div>
+      </div>
+      <div className="p-4 space-y-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="border border-gray-200 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <SkeletonLoader variant="circular" width="2rem" height="2rem" />
+                <div>
+                  <SkeletonLoader height="1rem" width="6rem" className="mb-1" />
+                  <SkeletonLoader height="0.75rem" width="8rem" />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <SkeletonLoader height="1.5rem" width="4rem" />
+                <SkeletonLoader height="1.5rem" width="4rem" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
   return (
     <div className="mt-4">
       {/* Expandable Content */}
       {isExpanded && (
-        <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+        <>
+          {loading ? (
+            <PlotsSkeleton />
+          ) : (
+            <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <span className="text-lg">📐</span>
@@ -584,7 +632,9 @@ export default function InlineSubdivisionPlots({
               })()
             )}
           </div>
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Plot Form Modal */}
