@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import ViewOnGoogleMapsButton from './ViewOnGoogleMapsButton'
+import ViewOnGoogleMapsButton from '../ui/ViewOnGoogleMapsButton'
 
 /**
  * Test component to verify Google Maps URL generation
@@ -122,10 +122,10 @@ export default function GoogleMapsTestComponent() {
 
               <div className="flex justify-center">
                 <ViewOnGoogleMapsButton
+                  source="Test Component"
+                  name={scenario.propertyName}
                   lat={scenario.lat}
                   lng={scenario.lng}
-                  address={scenario.address}
-                  propertyName={scenario.propertyName}
                 />
               </div>
             </div>

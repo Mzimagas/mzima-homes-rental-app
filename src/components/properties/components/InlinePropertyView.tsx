@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '../../ui'
-import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import ViewOnGoogleMapsButton from '../../ui/ViewOnGoogleMapsButton'
 import PropertyCard, {
   PropertyCardHeader,
   PropertyCardContent,
@@ -610,16 +610,11 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
 
                           <div className="flex justify-end">
                             <ViewOnGoogleMapsButton
+                              source="Purchase Pipeline"
+                              name={purchaseData.property_name}
                               lat={(purchaseData as any).property_lat ?? null}
                               lng={(purchaseData as any).property_lng ?? null}
-                              address={
-                                (purchaseData as any).property_physical_address ||
-                                purchaseData.property_address ||
-                                purchaseData.property_name
-                              }
-                              propertyName={purchaseData.property_name}
-                              debug={process.env.NODE_ENV === 'development'}
-                              debugContext={`Purchase Pipeline - ${purchaseData.property_name}`}
+                              compact
                             />
                           </div>
                         </div>

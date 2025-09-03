@@ -58,7 +58,7 @@ export default function PurchaseList({
         <div className="text-4xl mb-4">🏢</div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">No Purchase Opportunities</h3>
         <p className="text-gray-600 mb-4">
-          Start tracking properties you're considering for purchase.
+          Start tracking properties you&apos;re considering for purchase.
         </p>
         <Button onClick={onAddPurchase} variant="primary">
           Add First Purchase

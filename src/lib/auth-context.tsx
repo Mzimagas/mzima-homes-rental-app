@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe()
       setIsMounted(false)
     }
-  }, [router])
+  }, [router, isMounted])
 
   const signIn = async (email: string, password: string) => {
     try {

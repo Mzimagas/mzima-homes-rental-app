@@ -168,7 +168,7 @@ export const FeatureComponents = {
     ssr: false
   }),
 
-  PropertyMap: dynamic(() => import('../../components/location/ViewOnGoogleMapsButton'), {
+  PropertyMap: dynamic(() => import('../../components/ui/ViewOnGoogleMapsButton'), {
     loading: LoadingSpinner,
     ssr: false
   }),

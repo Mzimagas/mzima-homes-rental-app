@@ -28,6 +28,7 @@ export function logAuthState(next: string, context?: string) {
   // Only log in development
   if (process.env.NODE_ENV !== 'production') {
     const prefix = context ? `[${context}]` : '';
+    // eslint-disable-next-line no-console
     console.info(`${prefix} Auth state: ${next}`);
   }
 }
@@ -38,6 +39,7 @@ export function logAuthState(next: string, context?: string) {
 export function logDataFetch(source: string, count: number, errors?: number) {
   if (process.env.NODE_ENV !== 'production') {
     const errorText = errors ? ` (${errors} errors)` : '';
+    // eslint-disable-next-line no-console
     console.info(`📊 ${source}: ${count} items fetched${errorText}`);
   }
 }
@@ -48,6 +50,7 @@ export function logDataFetch(source: string, count: number, errors?: number) {
 export function logPerformance(operation: string, duration: number, details?: any) {
   if (process.env.NODE_ENV !== 'production') {
     const detailsText = details ? ` - ${JSON.stringify(details)}` : '';
+    // eslint-disable-next-line no-console
     console.info(`⚡ ${operation}: ${duration.toFixed(2)}ms${detailsText}`);
   }
 }
@@ -58,16 +61,19 @@ export function logPerformance(operation: string, duration: number, details?: an
 export const devLogger = {
   info: (message: string, ...args: any[]) => {
     if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
       console.info(message, ...args);
     }
   },
   warn: (message: string, ...args: any[]) => {
     if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
       console.warn(message, ...args);
     }
   },
   error: (message: string, ...args: any[]) => {
     // Always log errors, even in production
+    // eslint-disable-next-line no-console
     console.error(message, ...args);
   }
 };

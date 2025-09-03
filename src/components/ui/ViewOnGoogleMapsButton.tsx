@@ -73,6 +73,7 @@ export function useMapLinkTelemetry() {
 
   const logSummary = React.useCallback((listName: string) => {
     if (invalidCount > 0 && process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
       console.warn(`${listName}: ${invalidCount} items missing/invalid coords`, {
         sample: invalidReasons.slice(0, 3)
       });

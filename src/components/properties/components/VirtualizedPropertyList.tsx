@@ -70,24 +70,24 @@ const VirtualPropertyItem = memo(function VirtualPropertyItem({
   const { properties, pendingChanges, savingChanges, propertiesWithPipelineIssues, handlers } = data
   const property = properties[index]
 
+  // Memoize computed values (must be called before any conditional returns)
+  const hasChanges = useMemo(() => property ? hasPendingChanges(property.id, pendingChanges) : false, [property?.id, pendingChanges])
+  const isSaving = useMemo(() => property ? savingChanges[property.id] : false, [savingChanges, property?.id])
+  const subdivisionValue = useMemo(() => property ? getPendingSubdivisionValue(property, pendingChanges) : '', [property, pendingChanges])
+  const handoverValue = useMemo(() => property ? getPendingHandoverValue(property, pendingChanges) : '', [property, pendingChanges])
+
+  // Memoized handlers (must be called before any conditional returns)
+  const handleEdit = useCallback(() => property && handlers.onEditProperty(property), [handlers.onEditProperty, property])
+  const handleView = useCallback(() => property && handlers.onViewProperty(property.id), [handlers.onViewProperty, property?.id])
+  const handleSubdivisionChange = useCallback((value: string) => property && handlers.onSubdivisionChange(property.id, value), [handlers.onSubdivisionChange, property?.id])
+  const handleHandoverChange = useCallback((value: string) => property && handlers.onHandoverChange(property.id, value), [handlers.onHandoverChange, property?.id])
+  const handleSave = useCallback(() => property && handlers.onSaveChanges(property.id), [handlers.onSaveChanges, property?.id])
+  const handleCancel = useCallback(() => property && handlers.onCancelChanges(property.id), [handlers.onCancelChanges, property?.id])
+  const handleDelete = useCallback(() => property && handlers.onDeleteProperty?.(property.id), [handlers.onDeleteProperty, property?.id])
+
   if (!property) {
     return <div style={style} />
   }
-
-  // Memoize computed values
-  const hasChanges = useMemo(() => hasPendingChanges(property.id, pendingChanges), [property.id, pendingChanges])
-  const isSaving = useMemo(() => savingChanges[property.id], [savingChanges, property.id])
-  const subdivisionValue = useMemo(() => getPendingSubdivisionValue(property, pendingChanges), [property, pendingChanges])
-  const handoverValue = useMemo(() => getPendingHandoverValue(property, pendingChanges), [property, pendingChanges])
-  
-  // Memoized handlers
-  const handleEdit = useCallback(() => handlers.onEditProperty(property), [handlers.onEditProperty, property])
-  const handleView = useCallback(() => handlers.onViewProperty(property.id), [handlers.onViewProperty, property.id])
-  const handleSubdivisionChange = useCallback((value: string) => handlers.onSubdivisionChange(property.id, value), [handlers.onSubdivisionChange, property.id])
-  const handleHandoverChange = useCallback((value: string) => handlers.onHandoverChange(property.id, value), [handlers.onHandoverChange, property.id])
-  const handleSave = useCallback(() => handlers.onSaveChanges(property.id), [handlers.onSaveChanges, property.id])
-  const handleCancel = useCallback(() => handlers.onCancelChanges(property.id), [handlers.onCancelChanges, property.id])
-  const handleDelete = useCallback(() => handlers.onDeleteProperty?.(property.id), [handlers.onDeleteProperty, property.id])
 
   return (
     <div style={style} className="px-4 py-2">
@@ -274,7 +274,24 @@ export default function VirtualizedPropertyList({
   // Map link telemetry to replace console spam
   const { onInvalid, logSummary } = useMapLinkTelemetry()
 
-  // Memoized handlers to prevent unnecessary re-renders
+  // Individual memoized handlers to prevent unnecessary re-renders
+  const handleViewProperty = useCallback((propertyId: string) => {
+    setViewingPropertyId(propertyId)
+  }, [])
+
+  const handlePipelineStatusChange = useCallback((propertyId: string, hasIssues: boolean) => {
+    setPropertiesWithPipelineIssues((prev) => {
+      const newSet = new Set(prev)
+      if (hasIssues) {
+        newSet.add(propertyId)
+      } else {
+        newSet.delete(propertyId)
+      }
+      return newSet
+    })
+  }, [])
+
+  // Memoized handlers object
   const handlers = useMemo(() => ({
     onEditProperty,
     onSubdivisionChange,
@@ -283,22 +300,10 @@ export default function VirtualizedPropertyList({
     onCancelChanges,
     onNavigateToTabs,
     onDeleteProperty,
-    onViewProperty: useCallback((propertyId: string) => {
-      setViewingPropertyId(propertyId)
-    }, []),
-    onPipelineStatusChange: useCallback((propertyId: string, hasIssues: boolean) => {
-      setPropertiesWithPipelineIssues((prev) => {
-        const newSet = new Set(prev)
-        if (hasIssues) {
-          newSet.add(propertyId)
-        } else {
-          newSet.delete(propertyId)
-        }
-        return newSet
-      })
-    }, []),
+    onViewProperty: handleViewProperty,
+    onPipelineStatusChange: handlePipelineStatusChange,
     onMapInvalid: onInvalid,
-  }), [onEditProperty, onSubdivisionChange, onHandoverChange, onSaveChanges, onCancelChanges, onNavigateToTabs, onDeleteProperty, onInvalid])
+  }), [onEditProperty, onSubdivisionChange, onHandoverChange, onSaveChanges, onCancelChanges, onNavigateToTabs, onDeleteProperty, handleViewProperty, handlePipelineStatusChange, onInvalid])
 
   // Memoized item data to prevent unnecessary re-renders
   const itemData = useMemo<PropertyItemData>(() => ({

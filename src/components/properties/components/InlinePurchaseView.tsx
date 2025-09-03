@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '../../ui'
-import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import ViewOnGoogleMapsButton from '../../ui/ViewOnGoogleMapsButton'
 
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import PurchasePipelineDocuments from './PurchasePipelineDocuments'

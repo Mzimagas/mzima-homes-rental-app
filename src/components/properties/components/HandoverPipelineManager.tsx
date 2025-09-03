@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, TextField, FormField } from '../../ui'
 import Modal from '../../ui/Modal'
-import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import ViewOnGoogleMapsButton from '../../ui/ViewOnGoogleMapsButton'
 import PropertyCard, {
   PropertyCardHeader,
   PropertyCardContent,

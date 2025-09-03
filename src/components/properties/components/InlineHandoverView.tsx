@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '../../ui'
-import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import ViewOnGoogleMapsButton from '../../ui/ViewOnGoogleMapsButton'
 import PropertyAcquisitionFinancials from './PropertyAcquisitionFinancials'
 import { HandoverItem } from '../types/property-management.types'
 import { initializeHandoverPipelineStages } from '../utils/property-management.utils'
