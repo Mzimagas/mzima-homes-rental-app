@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import getSupabaseClient, { clientBusinessFunctions } from '../../../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase, { clientBusinessFunctions } from '../../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../../../components/ui/loading'
 import { ErrorCard } from '../../../../components/ui/error'
 import { Property, Unit } from '../../../../lib/types/database'
