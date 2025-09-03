@@ -15,7 +15,7 @@ import PhotosTab from './PhotosTab'
 import UserManagement from '../../../../components/property/UserManagement'
 import { usePropertyAccess } from '../../../../hooks/usePropertyAccess'
 // UnitActions, PropertyActions, PropertyBillingSettings, and LandDetailsForm removed - using workflow-based management
-import ViewOnGoogleMapsButton from '../../../../components/location/ViewOnGoogleMapsButton'
+import ViewOnGoogleMapsButton from '../../../../components/ui/ViewOnGoogleMapsButton'
 
 import { isLandProperty, getPropertyTypeLabel } from '../../../../lib/validation/property'
 import { PropertyStateDetailed } from '../../../../components/properties/components/PropertyStateIndicator'
@@ -256,10 +256,10 @@ export default function PropertyDetailPage() {
             <p className="text-gray-600">{property.physical_address}</p>
             <div className="mt-3">
               <ViewOnGoogleMapsButton
+                source="Property Details"
+                name={property.name}
                 lat={(property as any).lat ?? null}
                 lng={(property as any).lng ?? null}
-                address={property.physical_address ?? property.name}
-                propertyName={property.name}
               />
             </div>
           </div>

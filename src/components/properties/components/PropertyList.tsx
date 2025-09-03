@@ -3,7 +3,7 @@ import ReverseTransferAction from './ReverseTransferAction'
 
 import { useState, useCallback, useMemo, memo } from 'react'
 import { Button } from '../../ui'
-import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import ViewOnGoogleMapsButton from '../../ui/ViewOnGoogleMapsButton'
 import InlinePropertyView from './InlinePropertyView'
 import PropertyCard, {
   PropertyCardHeader,
@@ -257,12 +257,11 @@ export default function PropertyList({
                 <PropertyStateCompact propertyId={property.id} />
 
                 <ViewOnGoogleMapsButton
+                  source="Property List"
+                  name={property.name}
                   lat={(property as any).lat ?? null}
                   lng={(property as any).lng ?? null}
-                  address={property.physical_address ?? property.name}
-                  propertyName={property.name}
-                  debug={process.env.NODE_ENV === 'development'}
-                  debugContext={`Property List - ${property.name}`}
+                  compact
                 />
               </div>
             </div>

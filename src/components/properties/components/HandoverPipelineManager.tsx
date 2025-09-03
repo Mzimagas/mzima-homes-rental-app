@@ -819,16 +819,11 @@ export default function HandoverPipelineManager({
 
                   <div className="flex justify-end">
                     <ViewOnGoogleMapsButton
+                      source="Handover Pipeline"
+                      name={handover.property_name}
                       lat={(handover as any).property_lat ?? null}
                       lng={(handover as any).property_lng ?? null}
-                      address={
-                        (handover as any).property_physical_address ||
-                        handover.property_address ||
-                        handover.property_name
-                      }
-                      propertyName={handover.property_name}
-                      debug={process.env.NODE_ENV === 'development'}
-                      debugContext={`Handover Pipeline - ${handover.property_name}`}
+                      compact
                     />
                   </div>
                 </div>
