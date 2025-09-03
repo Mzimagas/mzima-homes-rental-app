@@ -5,9 +5,16 @@ import { ActiveTab } from '../types/property-management.types'
 interface WorkflowNavigationProps {
   activeTab: ActiveTab
   onTabChange: (tab: ActiveTab) => void
+  onTabHover?: (tab: ActiveTab) => void
+  onTabLeave?: () => void
 }
 
-export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowNavigationProps) {
+export default function WorkflowNavigation({
+  activeTab,
+  onTabChange,
+  onTabHover,
+  onTabLeave,
+}: WorkflowNavigationProps) {
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
       <h2 className="text-xl font-bold text-gray-900 mb-3 text-center">
@@ -17,6 +24,8 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
         {/* Properties Repository */}
         <button
           onClick={() => onTabChange('properties')}
+          onMouseEnter={() => onTabHover?.('properties')}
+          onMouseLeave={() => onTabLeave?.()}
           className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
             activeTab === 'properties'
               ? 'from-blue-100 to-cyan-100 border-blue-400 shadow-md ring-2 ring-blue-300 ring-opacity-50 scale-102'
@@ -47,6 +56,8 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
         {/* Purchase Pipeline */}
         <button
           onClick={() => onTabChange('purchase')}
+          onMouseEnter={() => onTabHover?.('purchase')}
+          onMouseLeave={() => onTabLeave?.()}
           className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
             activeTab === 'purchase'
               ? 'from-green-100 to-emerald-100 border-green-400 shadow-md ring-2 ring-green-300 ring-opacity-50 scale-102'
@@ -77,6 +88,8 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
         {/* Subdivision Pipeline */}
         <button
           onClick={() => onTabChange('subdivision')}
+          onMouseEnter={() => onTabHover?.('subdivision')}
+          onMouseLeave={() => onTabLeave?.()}
           className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
             activeTab === 'subdivision'
               ? 'from-orange-100 to-amber-100 border-orange-400 shadow-md ring-2 ring-orange-300 ring-opacity-50 scale-102'
@@ -107,6 +120,8 @@ export default function WorkflowNavigation({ activeTab, onTabChange }: WorkflowN
         {/* Handover Pipeline */}
         <button
           onClick={() => onTabChange('handover')}
+          onMouseEnter={() => onTabHover?.('handover')}
+          onMouseLeave={() => onTabLeave?.()}
           className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
             activeTab === 'handover'
               ? 'from-purple-100 to-violet-100 border-purple-400 shadow-md ring-2 ring-purple-300 ring-opacity-50 scale-102'

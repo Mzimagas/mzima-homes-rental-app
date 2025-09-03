@@ -1,13 +1,23 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense, lazy, useCallback } from 'react'
 import { useAuth } from '../../lib/auth-context'
-import PurchasePipelineManager from './PurchasePipelineManager'
-import SubdivisionPipelineManager from './SubdivisionPipelineManager'
+import { useTabPrefetch } from '../../hooks/useTabPrefetch'
 import WorkflowNavigation from './components/WorkflowNavigation'
 import PropertiesTab from './components/PropertiesTab'
-import HandoverPipelineManager from './components/HandoverPipelineManager'
+import { LoadingSpinner } from '../ui/loading'
+import {
+  PurchasePipelineSkeleton,
+  SubdivisionPipelineSkeleton,
+  HandoverPipelineSkeleton,
+  TabSwitchSkeleton,
+} from './components/PipelineSkeletonLoader'
+import PerformanceMonitor from './components/PerformanceMonitor'
 
+// Lazy load pipeline managers for better performance
+const PurchasePipelineManager = lazy(() => import('./PurchasePipelineManager'))
+const SubdivisionPipelineManager = lazy(() => import('./SubdivisionPipelineManager'))
+const HandoverPipelineManager = lazy(() => import('./components/HandoverPipelineManager'))
 
 import { RoleManagementService } from '../../lib/auth/role-management.service'
 
@@ -42,6 +52,13 @@ export default function PropertyManagementTabs({
 
   // Guard against StrictMode double-invocation
   const didInitialize = useRef(false)
+
+  // Tab prefetching for better performance
+  const { handleTabHover, cancelPrefetch, prefetchAdjacentTabs } = useTabPrefetch({
+    enabled: true,
+    prefetchDelay: 300,
+    prefetchOnHover: true,
+  })
 
   // Load properties and user role on component mount
   useEffect(() => {
@@ -135,19 +152,39 @@ export default function PropertyManagementTabs({
         await loadProperties()
       }
     } catch (error) {
-          } finally {
+    } finally {
       setSavingChanges((prev) => ({ ...prev, [propertyId]: false }))
     }
   }
 
-  const handleNavigateToTabs = (tab: string) => {
-    setActiveTab(tab as ActiveTab)
-  }
+  const handleNavigateToTabs = useCallback(
+    (tab: string) => {
+      const activeTabValue = tab as ActiveTab
+      setActiveTab(activeTabValue)
+      // Prefetch adjacent tabs for smoother navigation
+      prefetchAdjacentTabs(activeTabValue)
+    },
+    [prefetchAdjacentTabs]
+  )
+
+  // Enhanced tab change handler with prefetching
+  const handleTabChange = useCallback(
+    (tab: ActiveTab) => {
+      setActiveTab(tab)
+      prefetchAdjacentTabs(tab)
+    },
+    [prefetchAdjacentTabs]
+  )
 
   return (
     <div className="space-y-6">
       {/* Interactive Workflow Cards - Primary Navigation */}
-      <WorkflowNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <WorkflowNavigation
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onTabHover={handleTabHover}
+        onTabLeave={cancelPrefetch}
+      />
 
       {/* Tab Content */}
       <div className="min-h-[600px]">
@@ -170,31 +207,44 @@ export default function PropertyManagementTabs({
         )}
 
         {activeTab === 'purchase' && (
-          <PurchasePipelineManager
-            onPropertyTransferred={handlePropertyTransferred}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            userRole={userRole}
-          />
+          <Suspense fallback={<PurchasePipelineSkeleton itemCount={3} />}>
+            <PurchasePipelineManager
+              onPropertyTransferred={handlePropertyTransferred}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              userRole={userRole}
+            />
+          </Suspense>
         )}
 
         {activeTab === 'subdivision' && (
-          <SubdivisionPipelineManager
-            properties={properties}
-            onPropertyCreated={handlePropertyCreated}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-          />
+          <Suspense fallback={<SubdivisionPipelineSkeleton itemCount={3} />}>
+            <SubdivisionPipelineManager
+              properties={properties}
+              onPropertyCreated={handlePropertyCreated}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+            />
+          </Suspense>
         )}
 
         {activeTab === 'handover' && (
-          <HandoverPipelineManager
-            onHandoverCreated={loadProperties}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-          />
+          <Suspense fallback={<HandoverPipelineSkeleton itemCount={3} />}>
+            <HandoverPipelineManager
+              onHandoverCreated={loadProperties}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+            />
+          </Suspense>
         )}
       </div>
+
+      {/* Performance Monitor (development only) */}
+      <PerformanceMonitor
+        activeTab={activeTab}
+        enabled={false} // Disabled for production
+        showMetrics={false}
+      />
     </div>
   )
 }

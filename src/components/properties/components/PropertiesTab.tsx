@@ -7,6 +7,9 @@ import PropertyList from './PropertyList'
 import PropertySearch from './PropertySearch'
 import PropertyForm from '../property-form'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
+import getSupabaseClient from '../../../lib/supabase-client'
+
+const supabase = getSupabaseClient()
 
 interface PropertiesTabProps {
   properties: PropertyWithLifecycle[]
@@ -41,7 +44,6 @@ export default function PropertiesTab({
 }: PropertiesTabProps) {
   // Filter properties based on search term and lifecycle status
   const filteredProperties = useMemo(() => {
-
     // Filter out properties that are back in the purchase pipeline or fully subdivided
     // Keep properties that are just starting subdivision (they may not complete the process)
     const activeProperties = properties.filter((property) => {
@@ -119,15 +121,17 @@ export default function PropertiesTab({
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-2xl font-bold text-gray-900">Properties Repository</h3>
-          <p className="text-gray-600">Primary repository for all properties from all creation pathways</p>
+          <p className="text-gray-600">
+            Primary repository for all properties from all creation pathways
+          </p>
         </div>
-        <Button onClick={handleAddProperty} variant="primary">
-          <span className="mr-2">🏠</span>
-          Add Property Directly
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button onClick={handleAddProperty} variant="primary">
+            <span className="mr-2">🏠</span>
+            Add Property Directly
+          </Button>
+        </div>
       </div>
-
-
 
       {/* Search */}
       <PropertySearch
@@ -173,7 +177,11 @@ export default function PropertiesTab({
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <svg className="h-8 w-8 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div>
@@ -191,8 +199,8 @@ export default function PropertiesTab({
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-900 mb-2">🏢 Purchase Pipeline</h4>
               <p className="text-sm text-blue-700">
-                For properties being acquired through purchase. Includes comprehensive workflow management,
-                document tracking, financial management, and legal compliance.
+                For properties being acquired through purchase. Includes comprehensive workflow
+                management, document tracking, financial management, and legal compliance.
               </p>
             </div>
 
@@ -240,16 +248,10 @@ export default function PropertiesTab({
             </div>
 
             <div className="flex space-x-3">
-              <Button
-                variant="outline"
-                onClick={cancelDirectAddition}
-              >
+              <Button variant="outline" onClick={cancelDirectAddition}>
                 Cancel
               </Button>
-              <Button
-                variant="primary"
-                onClick={proceedWithDirectAddition}
-              >
+              <Button variant="primary" onClick={proceedWithDirectAddition}>
                 Proceed with Direct Addition
               </Button>
             </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Button } from '../ui'
 import PurchaseList from './components/PurchaseList'
 import SecurePurchaseForm from './components/SecurePurchaseForm'
@@ -49,16 +49,17 @@ export default function PurchasePipelineManager({
     loadPurchases()
   }, [])
 
-  const loadPurchases = async () => {
+  const loadPurchases = useCallback(async () => {
     try {
       setLoading(true)
       const data = await PurchasePipelineService.loadPurchases()
       setPurchases(data)
     } catch (error) {
-          } finally {
+      console.error('Error loading purchases:', error)
+    } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const handleAddPurchase = () => {
     setEditingPurchase(null)
@@ -109,13 +110,13 @@ export default function PurchasePipelineManager({
 
       handlePurchaseCreated()
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
   const handleStageClick = (stageId: number, purchaseId: string) => {
     // Stage modal functionality removed
-      }
+  }
 
   const handleStageUpdate = async (
     purchaseId: string,
@@ -134,7 +135,7 @@ export default function PurchasePipelineManager({
       )
       await loadPurchases()
     } catch (error) {
-            throw error
+      throw error
     }
   }
 
@@ -146,7 +147,7 @@ export default function PurchasePipelineManager({
       loadPurchases()
       onPropertyTransferred?.(propertyId)
     } catch (error) {
-            alert('Failed to transfer property')
+      alert('Failed to transfer property')
     } finally {
       setTransferringId(null)
     }
@@ -200,7 +201,6 @@ export default function PurchasePipelineManager({
         onSubmit={handleSecureFormSubmit}
         userRole={userRole}
       />
-
     </div>
   )
 }

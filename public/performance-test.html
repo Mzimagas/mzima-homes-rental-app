@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Management Workflow Performance Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-header {
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+        .test-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .metric-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-good { background: #10b981; }
+        .status-warning { background: #f59e0b; }
+        .status-poor { background: #ef4444; }
+        .test-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 12px;
+        }
+        .test-button:hover {
+            background: #2563eb;
+        }
+        .test-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .log-container {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .recommendations {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        .recommendations h3 {
+            margin: 0 0 12px 0;
+            color: #92400e;
+        }
+        .recommendations ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .recommendations li {
+            margin-bottom: 8px;
+            color: #78350f;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🚀 Property Management Workflow Performance Test</h1>
+            <p>This tool measures loading times and identifies bottlenecks across workflow tabs.</p>
+        </div>
+
+        <div>
+            <button class="test-button" onclick="runQuickTest()">Quick Test</button>
+            <button class="test-button" onclick="runFullTest()">Full Test Suite</button>
+            <button class="test-button" onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <div class="test-results" id="results"></div>
+        
+        <div class="recommendations" id="recommendations" style="display: none;">
+            <h3>💡 Performance Recommendations</h3>
+            <ul id="recommendationsList"></ul>
+        </div>
+
+        <div class="log-container" id="logContainer">
+            <div id="logs">Ready to run performance tests...</div>
+        </div>
+    </div>
+
+    <script>
+        class WorkflowPerformanceTester {
+            constructor() {
+                this.results = [];
+                this.isRunning = false;
+                this.logContainer = document.getElementById('logs');
+            }
+
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.innerHTML = `<span style="color: #6b7280;">[${timestamp}]</span> ${message}`;
+                this.logContainer.appendChild(logEntry);
+                this.logContainer.scrollTop = this.logContainer.scrollHeight;
+                console.log(`[Performance Test] ${message}`);
+            }
+
+            async measureTabLoad(tabName, tabUrl) {
+                this.log(`🔍 Testing ${tabName} tab...`);
+                
+                const startTime = performance.now();
+                
+                try {
+                    // Open tab in new window to measure fresh load
+                    const testWindow = window.open(tabUrl, '_blank', 'width=1200,height=800');
+                    
+                    if (!testWindow) {
+                        throw new Error('Popup blocked - please allow popups for this test');
+                    }
+
+                    // Wait for window to load
+                    await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            testWindow.close();
+                            reject(new Error('Load timeout'));
+                        }, 15000);
+
+                        testWindow.onload = () => {
+                            clearTimeout(timeout);
+                            resolve();
+                        };
+                    });
+
+                    // Wait a bit more for React hydration
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    const loadTime = performance.now() - startTime;
+                    
+                    // Check for loading indicators
+                    const hasLoadingStates = testWindow.document.querySelectorAll('.animate-spin, .animate-pulse').length > 0;
+                    const buttonCount = testWindow.document.querySelectorAll('button').length;
+                    const hasSkeletonLoaders = testWindow.document.querySelectorAll('[class*="skeleton"], .animate-pulse').length > 0;
+
+                    testWindow.close();
+
+                    const result = {
+                        tabName,
+                        loadTime: Math.round(loadTime),
+                        hasLoadingStates,
+                        buttonCount,
+                        hasSkeletonLoaders,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    this.log(`✅ ${tabName}: ${result.loadTime}ms (${buttonCount} buttons, skeleton: ${hasSkeletonLoaders})`);
+                    return result;
+
+                } catch (error) {
+                    this.log(`❌ ${tabName} failed: ${error.message}`, 'error');
+                    return {
+                        tabName,
+                        loadTime: -1,
+                        error: error.message,
+                        timestamp: new Date().toISOString()
+                    };
+                }
+            }
+
+            async runQuickTest() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.log('🚀 Starting Quick Performance Test...');
+                
+                const baseUrl = window.location.origin;
+                const tests = [
+                    { name: 'Properties', url: `${baseUrl}/dashboard/properties` },
+                    { name: 'Purchase Pipeline', url: `${baseUrl}/dashboard/properties?tab=purchase` }
+                ];
+
+                for (const test of tests) {
+                    const result = await this.measureTabLoad(test.name, test.url);
+                    this.results.push(result);
+                }
+
+                this.updateResults();
+                this.isRunning = false;
+                this.log('✅ Quick test completed!');
+            }
+
+            async runFullTest() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.log('🚀 Starting Full Performance Test Suite...');
+                
+                const baseUrl = window.location.origin;
+                const tests = [
+                    { name: 'Properties', url: `${baseUrl}/dashboard/properties` },
+                    { name: 'Purchase Pipeline', url: `${baseUrl}/dashboard/properties?tab=purchase` },
+                    { name: 'Subdivision Pipeline', url: `${baseUrl}/dashboard/properties?tab=subdivision` },
+                    { name: 'Handover Pipeline', url: `${baseUrl}/dashboard/properties?tab=handover` }
+                ];
+
+                // Test each tab twice - cold and warm
+                for (const test of tests) {
+                    // Cold load
+                    const coldResult = await this.measureTabLoad(`${test.name} (Cold)`, test.url);
+                    this.results.push(coldResult);
+                    
+                    // Wait a bit
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Warm load
+                    const warmResult = await this.measureTabLoad(`${test.name} (Warm)`, test.url);
+                    this.results.push(warmResult);
+                }
+
+                this.updateResults();
+                this.generateRecommendations();
+                this.isRunning = false;
+                this.log('✅ Full test suite completed!');
+            }
+
+            updateResults() {
+                const resultsContainer = document.getElementById('results');
+                resultsContainer.innerHTML = '';
+
+                if (this.results.length === 0) return;
+
+                // Calculate summary metrics
+                const validResults = this.results.filter(r => r.loadTime > 0);
+                const avgLoadTime = validResults.reduce((sum, r) => sum + r.loadTime, 0) / validResults.length;
+                const maxLoadTime = Math.max(...validResults.map(r => r.loadTime));
+                const minLoadTime = Math.min(...validResults.map(r => r.loadTime));
+
+                // Create metric cards
+                const metrics = [
+                    {
+                        label: 'Average Load Time',
+                        value: `${Math.round(avgLoadTime)}ms`,
+                        status: avgLoadTime < 1000 ? 'good' : avgLoadTime < 3000 ? 'warning' : 'poor'
+                    },
+                    {
+                        label: 'Fastest Load',
+                        value: `${minLoadTime}ms`,
+                        status: minLoadTime < 500 ? 'good' : minLoadTime < 1500 ? 'warning' : 'poor'
+                    },
+                    {
+                        label: 'Slowest Load',
+                        value: `${maxLoadTime}ms`,
+                        status: maxLoadTime < 2000 ? 'good' : maxLoadTime < 5000 ? 'warning' : 'poor'
+                    },
+                    {
+                        label: 'Tests Completed',
+                        value: `${validResults.length}/${this.results.length}`,
+                        status: validResults.length === this.results.length ? 'good' : 'warning'
+                    }
+                ];
+
+                metrics.forEach(metric => {
+                    const card = document.createElement('div');
+                    card.className = 'metric-card';
+                    card.innerHTML = `
+                        <div class="metric-value">
+                            <span class="status-indicator status-${metric.status}"></span>
+                            ${metric.value}
+                        </div>
+                        <div class="metric-label">${metric.label}</div>
+                    `;
+                    resultsContainer.appendChild(card);
+                });
+
+                // Add detailed results
+                const detailsCard = document.createElement('div');
+                detailsCard.className = 'metric-card';
+                detailsCard.style.gridColumn = '1 / -1';
+                
+                const detailsHtml = this.results.map(result => {
+                    const status = result.loadTime < 0 ? 'poor' : 
+                                 result.loadTime < 1000 ? 'good' : 
+                                 result.loadTime < 3000 ? 'warning' : 'poor';
+                    
+                    return `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                            <span>
+                                <span class="status-indicator status-${status}"></span>
+                                ${result.tabName}
+                            </span>
+                            <span style="font-weight: bold;">
+                                ${result.loadTime > 0 ? `${result.loadTime}ms` : 'Failed'}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+
+                detailsCard.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 12px;">Detailed Results</div>
+                    ${detailsHtml}
+                `;
+                resultsContainer.appendChild(detailsCard);
+            }
+
+            generateRecommendations() {
+                const validResults = this.results.filter(r => r.loadTime > 0);
+                const avgLoadTime = validResults.reduce((sum, r) => sum + r.loadTime, 0) / validResults.length;
+                const maxLoadTime = Math.max(...validResults.map(r => r.loadTime));
+                
+                const recommendations = [];
+
+                if (avgLoadTime > 3000) {
+                    recommendations.push('Average load time is slow (>3s). Implement skeleton loading states and optimize data fetching.');
+                }
+
+                if (maxLoadTime > 5000) {
+                    recommendations.push('Some tabs are very slow (>5s). Consider lazy loading and code splitting.');
+                }
+
+                const hasSkeletonLoaders = validResults.some(r => r.hasSkeletonLoaders);
+                if (!hasSkeletonLoaders) {
+                    recommendations.push('No skeleton loaders detected. Add skeleton states for better perceived performance.');
+                }
+
+                if (avgLoadTime < 1000) {
+                    recommendations.push('Great performance! Consider monitoring in production and adding prefetching for even better UX.');
+                }
+
+                if (recommendations.length > 0) {
+                    const recommendationsContainer = document.getElementById('recommendations');
+                    const recommendationsList = document.getElementById('recommendationsList');
+                    
+                    recommendationsList.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
+                    recommendationsContainer.style.display = 'block';
+                }
+            }
+
+            clearResults() {
+                this.results = [];
+                document.getElementById('results').innerHTML = '';
+                document.getElementById('recommendations').style.display = 'none';
+                this.logContainer.innerHTML = 'Results cleared. Ready for new tests...';
+                this.log('🧹 Results cleared');
+            }
+        }
+
+        // Initialize tester
+        const tester = new WorkflowPerformanceTester();
+
+        // Global functions for buttons
+        function runQuickTest() {
+            tester.runQuickTest();
+        }
+
+        function runFullTest() {
+            tester.runFullTest();
+        }
+
+        function clearResults() {
+            tester.clearResults();
+        }
+
+        // Auto-run quick test on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                tester.log('🎯 Performance tester ready! Click "Quick Test" or "Full Test Suite" to begin.');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -6,7 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, TextField, FormField } from '../../ui'
 import Modal from '../../ui/Modal'
 import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
-import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
+import PropertyCard, {
+  PropertyCardHeader,
+  PropertyCardContent,
+  PropertyCardFooter,
+} from './PropertyCard'
 import HandoverStageModal from './HandoverStageModal'
 import PropertySearch from './PropertySearch'
 import InlineHandoverView from './InlineHandoverView'
@@ -52,9 +56,8 @@ export default function HandoverPipelineManager({
   const [viewingHandoverId, setViewingHandoverId] = useState<string | null>(null)
 
   // Click-outside functionality for handover details
-  const { containerRef } = useAutoCloseWithCountdown(
-    viewingHandoverId !== null,
-    () => setViewingHandoverId(null)
+  const { containerRef } = useAutoCloseWithCountdown(viewingHandoverId !== null, () =>
+    setViewingHandoverId(null)
   )
 
   // Filter handovers based on search term
@@ -180,7 +183,7 @@ export default function HandoverPipelineManager({
         actual_completion_date: null,
         created_at: property.created_at,
         updated_at: property.updated_at,
-        is_synthetic: true // Flag to identify synthetic records
+        is_synthetic: true, // Flag to identify synthetic records
       }))
 
       // Combine pipeline data with synthetic handovers
@@ -267,7 +270,7 @@ export default function HandoverPipelineManager({
         actual_completion_date: null,
         created_at: property.created_at,
         updated_at: property.updated_at,
-        is_synthetic: true
+        is_synthetic: true,
       }))
 
       setHandovers(syntheticHandovers)
@@ -320,10 +323,21 @@ export default function HandoverPipelineManager({
 
       if (propertiesError) throw propertiesError
 
+      // Show properties that are ready for handover or already in progress
       let filteredProperties =
-        (allProperties as PropertyWithLifecycle[] | null)?.filter(
-          (property: any) => property.handover_status === 'IN_PROGRESS'
-        ) || []
+        (allProperties as PropertyWithLifecycle[] | null)?.filter((property: any) => {
+          // Include properties that are:
+          // 1. Already in handover progress
+          // 2. Active properties that haven't been handed over yet
+          // 3. Completed properties that haven't been handed over yet
+          return (
+            property.handover_status === 'IN_PROGRESS' ||
+            (property.lifecycle_status === 'ACTIVE' &&
+              (!property.handover_status || property.handover_status === 'NOT_STARTED')) ||
+            (property.lifecycle_status === 'COMPLETED' &&
+              (!property.handover_status || property.handover_status === 'NOT_STARTED'))
+          )
+        }) || []
 
       const { data: existingHandovers, error: handoversError } = await supabase
         .from('handover_pipeline')
@@ -344,6 +358,7 @@ export default function HandoverPipelineManager({
 
       setAvailableProperties(filteredProperties as any)
     } catch (error) {
+      console.error('Error loading available properties:', error)
       if (error instanceof Error && isAuthError(error)) {
         redirectToLogin('loadAvailableProperties')
       }
@@ -794,7 +809,9 @@ export default function HandoverPipelineManager({
                         <span>Asking: KES {handover.asking_price_kes.toLocaleString()}</span>
                       )}
                       {handover.negotiated_price_kes && (
-                        <span>Negotiated: KES {handover.negotiated_price_kes.toLocaleString()}</span>
+                        <span>
+                          Negotiated: KES {handover.negotiated_price_kes.toLocaleString()}
+                        </span>
                       )}
                       <span>Progress: {handover.overall_progress}%</span>
                     </div>
@@ -819,7 +836,11 @@ export default function HandoverPipelineManager({
 
               <PropertyCardFooter>
                 <div className="flex space-x-2">
-                  <Button variant="secondary" size="sm" onClick={() => handleEditHandover(handover)}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleEditHandover(handover)}
+                  >
                     Edit Details
                   </Button>
                   <Button
@@ -868,7 +889,9 @@ export default function HandoverPipelineManager({
               <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-medium text-gray-900">Property Information</h3>
-                  <p className="text-sm text-gray-600 mt-1">Select the property you&apos;re preparing for handover</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Select the property you&apos;re preparing for handover
+                  </p>
                 </div>
 
                 {/* Property Selection */}
@@ -893,38 +916,41 @@ export default function HandoverPipelineManager({
                   )}
                 </FormField>
 
-            {/* Selected Property Map Preview */}
-            {selectedHandoverProperty && (
-              <div className="bg-gray-50 border rounded-lg p-3">
-                <div className="text-sm text-gray-700 mb-2">Selected Property Location</div>
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="text-xs text-gray-500 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                    Debug: lat={selectedHandoverProperty.lat}, lng={selectedHandoverProperty.lng},
-                    address={selectedHandoverProperty.physical_address}
+                {/* Selected Property Map Preview */}
+                {selectedHandoverProperty && (
+                  <div className="bg-gray-50 border rounded-lg p-3">
+                    <div className="text-sm text-gray-700 mb-2">Selected Property Location</div>
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="text-xs text-gray-500 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                        Debug: lat={selectedHandoverProperty.lat}, lng=
+                        {selectedHandoverProperty.lng}, address=
+                        {selectedHandoverProperty.physical_address}
+                      </div>
+                    )}
+                    <div className="flex justify-center">
+                      <ViewOnGoogleMapsButton
+                        lat={(selectedHandoverProperty as any).lat ?? null}
+                        lng={(selectedHandoverProperty as any).lng ?? null}
+                        address={
+                          (selectedHandoverProperty as any).physical_address ??
+                          (selectedHandoverProperty as any).name
+                        }
+                        propertyName={(selectedHandoverProperty as any).name}
+                        debug={process.env.NODE_ENV === 'development'}
+                        debugContext={`Handover Form - ${(selectedHandoverProperty as any).name}`}
+                      />
+                    </div>
                   </div>
                 )}
-                <div className="flex justify-center">
-                  <ViewOnGoogleMapsButton
-                    lat={(selectedHandoverProperty as any).lat ?? null}
-                    lng={(selectedHandoverProperty as any).lng ?? null}
-                    address={
-                      (selectedHandoverProperty as any).physical_address ??
-                      (selectedHandoverProperty as any).name
-                    }
-                    propertyName={(selectedHandoverProperty as any).name}
-                    debug={process.env.NODE_ENV === 'development'}
-                    debugContext={`Handover Form - ${(selectedHandoverProperty as any).name}`}
-                  />
-                </div>
-              </div>
-            )}
               </div>
 
               {/* Buyer Information Section */}
               <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-medium text-gray-900">Buyer Information</h3>
-                  <p className="text-sm text-gray-600 mt-1">Contact details and information about the property buyer</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Contact details and information about the property buyer
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -995,7 +1021,9 @@ export default function HandoverPipelineManager({
               <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-medium text-gray-900">Financial Information</h3>
-                  <p className="text-sm text-gray-600 mt-1">Pricing details and financial terms for the handover</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Pricing details and financial terms for the handover
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1065,7 +1093,9 @@ export default function HandoverPipelineManager({
               <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-medium text-gray-900">Legal & Administrative</h3>
-                  <p className="text-sm text-gray-600 mt-1">Legal representation and administrative details</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Legal representation and administrative details
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1090,7 +1120,9 @@ export default function HandoverPipelineManager({
               <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-medium text-gray-900">Investment Analysis</h3>
-                  <p className="text-sm text-gray-600 mt-1">Financial projections and investment assessment</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Financial projections and investment assessment
+                  </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
