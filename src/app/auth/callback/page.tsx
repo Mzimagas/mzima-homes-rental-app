@@ -4,6 +4,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import getSupabaseClient from '../../../lib/supabase-client'
+import { devLogger } from '../../../lib/auth-logs'
 
 const supabase = getSupabaseClient()
 
@@ -16,19 +17,19 @@ export default function AuthCallback() {
         const { data, error } = await supabase.auth.getSession()
 
         if (error) {
-          console.error('Auth callback error:', error)
+          devLogger.error('Auth callback error:', error)
           router.push('/auth/login?error=callback_error')
           return
         }
 
         if (data.session) {
-          console.log('User confirmed and logged in:', data.session.user.email)
+          devLogger.info('User confirmed and logged in:', data.session.user.email)
           router.push('/dashboard')
         } else {
           router.push('/auth/login')
         }
       } catch (err) {
-        console.error('Callback handling error:', err)
+        devLogger.error('Callback handling error:', err)
         router.push('/auth/login?error=callback_error')
       }
     }

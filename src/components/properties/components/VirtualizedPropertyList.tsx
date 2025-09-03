@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback, memo, useState, useRef, useEffect } from 'react'
 import { FixedSizeList as List, VariableSizeList } from 'react-window'
 import { Button } from '../../ui'
-import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import ViewOnGoogleMapsButton, { useMapLinkTelemetry } from '../../ui/ViewOnGoogleMapsButton'
 import InlinePropertyView from './InlinePropertyView'
 import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
 import ReverseTransferAction from './ReverseTransferAction'
@@ -53,6 +53,7 @@ interface PropertyItemData {
     onDeleteProperty?: (propertyId: string) => void
     onViewProperty: (propertyId: string) => void
     onPipelineStatusChange: (propertyId: string, hasIssues: boolean) => void
+    onMapInvalid: (reason: string) => void
   }
 }
 
@@ -130,15 +131,15 @@ const VirtualPropertyItem = memo(function VirtualPropertyItem({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
               <p className="text-sm text-gray-900">{property.physical_address || 'No address provided'}</p>
-              {property.lat && property.lng && (
-                <ViewOnGoogleMapsButton
-                  lat={property.lat}
-                  lng={property.lng}
-                  address={property.physical_address}
-                  propertyName={property.name}
-                  className="mt-1"
-                />
-              )}
+              <ViewOnGoogleMapsButton
+                source="Property List"
+                name={property.name}
+                lat={property.lat}
+                lng={property.lng}
+                onInvalid={handlers.onMapInvalid}
+                className="mt-1"
+                compact
+              />
             </div>
 
             <div>
@@ -270,6 +271,9 @@ export default function VirtualizedPropertyList({
   const [propertiesWithPipelineIssues, setPropertiesWithPipelineIssues] = useState<Set<string>>(new Set())
   const listRef = useRef<List>(null)
 
+  // Map link telemetry to replace console spam
+  const { onInvalid, logSummary } = useMapLinkTelemetry()
+
   // Memoized handlers to prevent unnecessary re-renders
   const handlers = useMemo(() => ({
     onEditProperty,
@@ -293,7 +297,8 @@ export default function VirtualizedPropertyList({
         return newSet
       })
     }, []),
-  }), [onEditProperty, onSubdivisionChange, onHandoverChange, onSaveChanges, onCancelChanges, onNavigateToTabs, onDeleteProperty])
+    onMapInvalid: onInvalid,
+  }), [onEditProperty, onSubdivisionChange, onHandoverChange, onSaveChanges, onCancelChanges, onNavigateToTabs, onDeleteProperty, onInvalid])
 
   // Memoized item data to prevent unnecessary re-renders
   const itemData = useMemo<PropertyItemData>(() => ({
@@ -314,6 +319,14 @@ export default function VirtualizedPropertyList({
       listRef.current.scrollToItem(0, 'start')
     }
   }, [properties.length])
+
+  // Log coordinate validation summary
+  useEffect(() => {
+    if (properties.length > 0) {
+      const timer = setTimeout(() => logSummary('Property List'), 100)
+      return () => clearTimeout(timer)
+    }
+  }, [properties.length, logSummary])
 
   if (loading) {
     return (

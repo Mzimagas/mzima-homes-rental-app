@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, useToast } from '../../ui'
-import ViewOnGoogleMapsButton from '../../location/ViewOnGoogleMapsButton'
+import ViewOnGoogleMapsButton, { useMapLinkTelemetry } from '../../ui/ViewOnGoogleMapsButton'
 import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
 
 import { PurchaseListProps, PurchaseItem } from '../types/purchase-pipeline.types'
@@ -23,6 +23,17 @@ export default function PurchaseList({
 }: PurchaseListProps) {
   const [openDetailsId, setOpenDetailsId] = useState<string | null>(null)
   const [updatedPurchases, setUpdatedPurchases] = useState<{ [key: string]: PurchaseItem }>({})
+
+  // Map link telemetry to replace console spam
+  const { onInvalid, logSummary } = useMapLinkTelemetry()
+
+  // Log coordinate validation summary
+  useEffect(() => {
+    if (purchases.length > 0) {
+      const timer = setTimeout(() => logSummary('Purchase List'), 100)
+      return () => clearTimeout(timer)
+    }
+  }, [purchases.length, logSummary])
 
   // Click-outside functionality for purchase details
   const { containerRef } = useAutoCloseWithCountdown(
@@ -116,16 +127,12 @@ export default function PurchaseList({
 
                   <div className="flex justify-end">
                     <ViewOnGoogleMapsButton
+                      source="Purchase List"
+                      name={purchase.property_name}
                       lat={(purchase as any).property_lat ?? null}
                       lng={(purchase as any).property_lng ?? null}
-                      address={
-                        (purchase as any).property_physical_address ||
-                        purchase.property_address ||
-                        purchase.property_name
-                      }
-                      propertyName={purchase.property_name}
-                      debug={process.env.NODE_ENV === 'development'}
-                      debugContext={`Purchase List - ${purchase.property_name}`}
+                      onInvalid={onInvalid}
+                      compact
                     />
                   </div>
                 </div>

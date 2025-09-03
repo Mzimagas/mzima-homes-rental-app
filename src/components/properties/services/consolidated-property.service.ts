@@ -1,5 +1,6 @@
 import supabase from '../../../lib/supabase-client'
 import { PropertyWithLifecycle } from '../types/property-management.types'
+import { coerceSupabaseCoords } from '../../../lib/geo'
 import { isAuthError } from '../utils/property-management.utils'
 
 /**
@@ -80,7 +81,7 @@ export class ConsolidatedPropertyService {
    * Load properties with consistent error handling and authentication
    */
   static async loadProperties(): Promise<PropertyWithLifecycle[]> {
-    return this.executeWithErrorHandling(
+    const result = await this.executeWithErrorHandling(
       () => supabase
         .from('properties')
         .select(`
@@ -92,13 +93,16 @@ export class ConsolidatedPropertyService {
       'loadProperties',
       []
     )
+
+    // Coerce coordinate types from Supabase Decimals to numbers
+    return coerceSupabaseCoords(result, 'lat', 'lng')
   }
 
   /**
    * Load single property by ID
    */
   static async loadPropertyById(propertyId: string): Promise<PropertyWithLifecycle | null> {
-    return this.executeWithErrorHandling(
+    const result = await this.executeWithErrorHandling(
       () => supabase
         .from('properties')
         .select(`
@@ -111,6 +115,13 @@ export class ConsolidatedPropertyService {
       'loadPropertyById',
       null
     )
+
+    // Coerce coordinate types from Supabase Decimals to numbers
+    if (result) {
+      const [coerced] = coerceSupabaseCoords([result], 'lat', 'lng')
+      return coerced
+    }
+    return null
   }
 
   /**

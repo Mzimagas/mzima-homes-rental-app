@@ -257,7 +257,6 @@ export class ProcessAutoCompletionService {
 
     return { subdivision, handover }
   }
-}
 
   // ==================== SUBDIVISION COMPLETION CHECKS ====================
 

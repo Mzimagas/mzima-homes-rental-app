@@ -4,6 +4,7 @@
  */
 
 import getSupabaseClient from '../lib/supabase-client'
+import { coerceSupabaseCoords } from '../lib/geo'
 
 const supabase = getSupabaseClient()
 
@@ -104,7 +105,10 @@ export async function getAllProperties(): Promise<Property[]> {
       return []
     }
 
-    return (data || []).map((property: any) => ({
+    // Coerce coordinate types from Supabase Decimals to numbers
+    const coercedData = coerceSupabaseCoords(data || [], 'lat', 'lng')
+
+    return coercedData.map((property: any) => ({
       id: property.id,
       name: property.name || 'Unnamed Property',
       address: property.physical_address || 'No address provided',
@@ -116,6 +120,8 @@ export async function getAllProperties(): Promise<Property[]> {
       property_source: property.property_source,
       created_at: property.created_at,
       landlord_id: property.landlord_id,
+      lat: property.lat,
+      lng: property.lng,
     }))
   } catch (error) {
     console.error('Error in getAllProperties:', error)

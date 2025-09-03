@@ -8,6 +8,7 @@ import getSupabaseClient from './supabase-client'
 const supabase = getSupabaseClient()
 import { validateEmailSimple } from './email-validation'
 import { logger, shouldLogAuth, redactEmail } from './logger'
+import { logAuthState } from './auth-logs'
 
 interface AuthContextType {
   user: User | null
@@ -44,8 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           logger.error('AuthProvider: Error getting session', error)
         } else {
-          if (shouldLogAuth())
-            logger.debug('AuthProvider: Initial session', redactEmail(session?.user?.email || ''))
+          logAuthState('INITIAL_SESSION', redactEmail(session?.user?.email || 'anonymous'))
           setSession(session)
           setUser(session?.user ?? null)
         }
@@ -62,12 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event: string, session: Session | null) => {
-      if (shouldLogAuth())
-        logger.info(
-          'AuthProvider: Auth state change',
-          event,
-          redactEmail(session?.user?.email || '')
-        )
+      logAuthState(event, redactEmail(session?.user?.email || 'anonymous'))
 
       setSession(session)
       setUser(session?.user ?? null)
@@ -76,10 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Handle different auth events - only if component is mounted
       if (isMounted) {
         if (event === 'SIGNED_IN') {
-          if (shouldLogAuth()) logger.info('AuthProvider: User signed in, redirecting to dashboard')
+          logAuthState('REDIRECTING_TO_DASHBOARD')
           router.push('/dashboard')
         } else if (event === 'SIGNED_OUT') {
-          if (shouldLogAuth()) logger.info('AuthProvider: User signed out, redirecting to login')
+          logAuthState('REDIRECTING_TO_LOGIN')
           router.push('/auth/login')
         }
       }
