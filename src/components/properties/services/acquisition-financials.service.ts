@@ -3,9 +3,7 @@ import {
   PaymentInstallment,
   PurchasePriceHistoryEntry,
 } from '../types/property-management.types'
-import getSupabaseClient from '../../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../../../lib/supabase-client'
 
 // Helper function to get CSRF token
 function getCsrfToken(): string | null {

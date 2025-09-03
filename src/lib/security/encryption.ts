@@ -1,9 +1,7 @@
 // Security and Encryption Implementation
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
-import getSupabaseClient from '../supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../supabase-client'
 
 // Note: This should only be used server-side with service role key
 // For client-side operations, use the regular supabase client

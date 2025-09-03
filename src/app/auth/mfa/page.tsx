@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { withAuth } from '../../../lib/withAuth'
-import getSupabaseClient from '../../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../../../lib/supabase-client'
 
 function MfaPage() {
   const [factorId, setFactorId] = useState<string | null>(null)

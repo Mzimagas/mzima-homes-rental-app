@@ -3,9 +3,7 @@
  * Manages property state transitions and mutual exclusivity between subdivision and handover processes
  */
 
-import getSupabaseClient from '../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../lib/supabase-client'
 
 // Service role client for admin operations (bypasses RLS)
 const getServiceRoleClient = () => {

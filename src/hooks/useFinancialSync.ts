@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useFinancialStatus } from './useFinancialStatus'
-import getSupabaseClient from '../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../lib/supabase-client'
 
 interface FinancialSyncOptions {
   propertyId: string

@@ -1,8 +1,6 @@
 // Hook for managing multi-user property access
 import { useState, useEffect } from 'react'
-import getSupabaseClient from '../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../lib/supabase-client'
 
 export type UserRole =
   | 'OWNER'

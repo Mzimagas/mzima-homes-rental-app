@@ -146,11 +146,12 @@ function getSupabaseClient() {
   return _supabaseClient
 }
 
-// Export the singleton function as default
-export default getSupabaseClient
+// Create singleton instance
+const supabase = getSupabaseClient()
 
-// Legacy named export for backward compatibility (but use the function to ensure singleton)
-export const supabase = getSupabaseClient()
+// Export the singleton instance as both default and named export
+export default supabase
+export { supabase }
 
 // Helper function to handle Supabase errors
 export function handleSupabaseError(error: any) {

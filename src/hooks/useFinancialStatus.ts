@@ -5,9 +5,7 @@ import {
   getStageFinancialRequirements,
   formatCurrency,
 } from '../lib/constants/financial-stage-requirements'
-import getSupabaseClient from '../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../lib/supabase-client'
 
 interface FinancialRecord {
   id: string

@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import getSupabaseClient from '../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../../lib/supabase-client'
 import { formatCurrency, formatDate } from '../../lib/export-utils'
 
 export default function UtilityLedgerTable({ accountId }: { accountId: string }) {

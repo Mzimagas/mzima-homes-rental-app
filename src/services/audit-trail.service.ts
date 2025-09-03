@@ -1,6 +1,4 @@
-import getSupabaseClient from '../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../lib/supabase-client'
 
 export interface AuditLogEntry {
   id: string
