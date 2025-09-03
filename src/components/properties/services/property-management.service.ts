@@ -1,6 +1,4 @@
-import getSupabaseClient from '../../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../../../lib/supabase-client'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 import { isAuthError, redirectToLogin } from '../utils/property-management.utils'
 

@@ -24,7 +24,7 @@ export async function checkSupabaseHealth(): Promise<HealthCheckResult> {
     const latency = Date.now() - startTime
 
     if (error) {
-      console.error('❌ Supabase health check failed:', error)
+      console.warn('❌ Supabase health check failed:', error)
       return {
         isHealthy: false,
         error: error.message,
@@ -41,7 +41,7 @@ export async function checkSupabaseHealth(): Promise<HealthCheckResult> {
     }
   } catch (error) {
     const latency = Date.now() - startTime
-    console.error('❌ Supabase health check exception:', error)
+    console.warn('❌ Supabase health check exception:', error)
 
     return {
       isHealthy: false,

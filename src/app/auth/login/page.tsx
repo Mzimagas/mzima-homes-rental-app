@@ -5,9 +5,7 @@ import { useAuth } from '../../../lib/auth-context'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Turnstile } from '@marsidev/react-turnstile'
-import getSupabaseClient from '../../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../../../lib/supabase-client'
 import { validateEmailSimple } from '../../../lib/email-validation'
 import MfaChallenge from './mfa-challenge'
 

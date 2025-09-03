@@ -2,9 +2,7 @@
  * Service for subdivision management operations
  */
 
-import getSupabaseClient from '../supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../supabase-client'
 import { 
   Property, 
   SubdivisionItem, 

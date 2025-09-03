@@ -1,7 +1,14 @@
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import * as XLSX from 'xlsx'
-import { saveAs } from 'file-saver'
+// Dynamic imports for better tree shaking
+const loadJsPDF = async () => {
+  const [jsPDF, autoTable] = await Promise.all([
+    import('jspdf').then(module => module.default),
+    import('jspdf-autotable').then(module => module.default)
+  ])
+  return { jsPDF, autoTable }
+}
+
+const loadXLSX = () => import('xlsx')
+const loadFileSaver = () => import('file-saver')
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -55,7 +62,7 @@ export const formatPercentage = (value: number): string => {
 }
 
 // PDF Export Functions
-export const createPDFHeader = (doc: jsPDF, options: ExportOptions): number => {
+export const createPDFHeader = async (doc: any, options: ExportOptions): Promise<number> => {
   const pageWidth = doc.internal.pageSize.width
   let yPosition = 20
 

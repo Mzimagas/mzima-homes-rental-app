@@ -80,7 +80,7 @@ export default function TenantManagement({ propertyId }: TenantManagementProps) 
       setTenants(tenantsData)
       setProperties(propertiesData)
     } catch (err) {
-      console.error('Error loading tenant data:', err)
+      console.warn('Error loading tenant data:', err)
       setError('Failed to load tenant data. Please try again.')
       toast.error('Failed to load tenant data')
     } finally {
@@ -93,7 +93,7 @@ export default function TenantManagement({ propertyId }: TenantManagementProps) 
       const unitsData = await RentalManagementService.getUnitsForProperty(propertyId)
       setUnits(unitsData)
     } catch (err) {
-      console.error('Error loading units:', err)
+      console.warn('Error loading units:', err)
       toast.error('Failed to load units for selected property')
     }
   }
@@ -137,7 +137,7 @@ export default function TenantManagement({ propertyId }: TenantManagementProps) 
       setTenants(prev => [newTenant, ...prev])
       toast.success('Tenant added successfully')
     } catch (err) {
-      console.error('Error adding tenant:', err)
+      console.warn('Error adding tenant:', err)
       toast.error('Failed to add tenant. Please try again.')
       throw err // Re-throw to prevent modal from closing
     } finally {
@@ -165,7 +165,7 @@ export default function TenantManagement({ propertyId }: TenantManagementProps) 
       setTenants(prev => prev.filter(t => t.id !== tenant.id))
       toast.success('Tenant deleted successfully')
     } catch (err) {
-      console.error('Error deleting tenant:', err)
+      console.warn('Error deleting tenant:', err)
       toast.error('Failed to delete tenant. Please try again.')
     }
   }

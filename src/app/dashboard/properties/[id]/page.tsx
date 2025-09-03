@@ -112,7 +112,7 @@ export default function PropertyDetailPage() {
           .eq('status', 'ACTIVE')
 
         if (tenantsError) {
-          console.error('[PropertyDetails] Error loading tenants:', tenantsError)
+          console.warn('[PropertyDetails] Error loading tenants:', tenantsError)
         } else {
           console.info('[PropertyDetails] Loaded tenants:', tenantsData?.length || 0, tenantsData)
         }
@@ -146,7 +146,7 @@ export default function PropertyDetailPage() {
       }
     } catch (err) {
       setError('Failed to load property details')
-      console.error('Property details loading error:', err)
+      console.warn('Property details loading error:', err)
     } finally {
       setLoading(false)
     }

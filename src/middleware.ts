@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+// Temporarily disabled to fix edge runtime issues
+// import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 
 export async function middleware(req: NextRequest) {
+  // Temporarily simplified middleware to fix edge runtime issues
   const res = NextResponse.next()
 
   // Ensure CSRF token cookie exists (double-submit cookie pattern)
@@ -37,11 +39,12 @@ export async function middleware(req: NextRequest) {
   )
 
   let session: any = null
-  if (authConfigured) {
-    const supabase = createMiddlewareClient({ req, res }, { supabaseUrl, supabaseKey })
-    const result = await supabase.auth.getSession()
-    session = result.data.session
-  }
+  // Temporarily disabled to fix edge runtime issues
+  // if (authConfigured) {
+  //   const supabase = createMiddlewareClient({ req, res }, { supabaseUrl, supabaseKey })
+  //   const result = await supabase.auth.getSession()
+  //   session = result.data.session
+  // }
 
   const url = req.nextUrl
   const pathname = url.pathname

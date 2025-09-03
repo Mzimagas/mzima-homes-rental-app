@@ -72,13 +72,27 @@ export default function PaymentDashboard() {
       }
 
       // Get overdue invoices
-      const { data: overdueInvoices, error: invoicesError } = await supabase
-        .from('rent_invoices')
-        .select('amount_due_kes, amount_paid_kes')
-        .eq('status', 'OVERDUE')
+      let overdueInvoices = []
+      try {
+        const { data, error: invoicesError } = await supabase
+          .from('rent_invoices')
+          .select('amount_due_kes, amount_paid_kes')
+          .eq('status', 'OVERDUE')
 
-      if (invoicesError) {
-              }
+        if (invoicesError) {
+          if (invoicesError.message?.includes('does not exist')) {
+            console.warn('rent_invoices table does not exist, using empty data')
+            overdueInvoices = []
+          } else {
+            throw invoicesError
+          }
+        } else {
+          overdueInvoices = data || []
+        }
+      } catch (error: any) {
+        console.warn('Error loading overdue invoices:', error.message)
+        overdueInvoices = []
+      }
 
       // Calculate statistics
       const totalPayments = payments?.length || 0

@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '../../../../../../lib/supabase-server'
-import { resolveUserId } from '../../../../../../lib/auth-utils'
+
+// Local auth utility function
+async function resolveUserId(req: NextRequest): Promise<string | null> {
+  try {
+    const supabase = createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    return user?.id || null
+  } catch (error) {
+    console.error('Error resolving user ID:', error)
+    return null
+  }
+}
 
 // Environment variables for service role access
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!

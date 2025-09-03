@@ -1,6 +1,4 @@
-import getSupabaseClient from '../supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../supabase-client'
 
 export interface UserRole {
   id: string
@@ -179,7 +177,7 @@ export class RoleManagementService {
       }
 
       if (error) {
-        console.error('Error fetching user roles:', error)
+        console.warn('Error fetching user roles:', error)
 
         // Check if it's a server error (500+) - RLS recursion typically shows as 500
         if (error.code === 'PGRST301' || (error.message && error.message.includes('infinite recursion'))) {
@@ -257,7 +255,7 @@ export class RoleManagementService {
 
       return highestRole.role
     } catch (error) {
-      console.error('Error getting user role:', error)
+      console.warn('Error getting user role:', error)
 
       // If it's a server error, show a warning but still provide fallback
       if (error instanceof Error && error.message.includes('Server error:')) {
@@ -288,7 +286,7 @@ export class RoleManagementService {
 
       return false
     } catch (error) {
-      console.error('Error checking permission:', error)
+      console.warn('Error checking permission:', error)
       return false
     }
   }
@@ -322,7 +320,7 @@ export class RoleManagementService {
       console.log('Final permissions:', finalPermissions)
       return finalPermissions
     } catch (error) {
-      console.error('Error getting user permissions:', error)
+      console.warn('Error getting user permissions:', error)
       return []
     }
   }

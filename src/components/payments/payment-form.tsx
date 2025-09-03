@@ -70,7 +70,7 @@ export default function PaymentForm({
       // Load accessible properties via RPC (supports simple and extended variants)
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_properties_simple')
       if (rpcError) {
-        console.error('Error loading properties (RPC):', rpcError)
+        console.warn('Error loading properties (RPC):', rpcError)
       }
 
       const items: any[] = Array.isArray(rpcData) ? (rpcData as any[]) : []

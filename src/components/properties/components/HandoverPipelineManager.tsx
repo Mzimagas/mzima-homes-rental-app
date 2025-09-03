@@ -15,9 +15,7 @@ import HandoverStageModal from './HandoverStageModal'
 import PropertySearch from './PropertySearch'
 import InlineHandoverView from './InlineHandoverView'
 import { Property } from '../../../lib/types/database'
-import getSupabaseClient from '../../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../../../lib/supabase-client'
 import {
   HandoverItem,
   HandoverPipelineFormValues,

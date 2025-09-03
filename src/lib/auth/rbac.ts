@@ -245,7 +245,7 @@ export class RBACService {
       if (error) throw error
       return data
     } catch (error) {
-      console.error('Error getting user:', error)
+      console.warn('Error getting user:', error)
       return null
     }
   }
@@ -274,7 +274,7 @@ export class RBACService {
       if (error) throw error
       return data
     } catch (error) {
-      console.error('Error creating user profile:', error)
+      console.warn('Error creating user profile:', error)
       return null
     }
   }
@@ -303,7 +303,7 @@ export class RBACService {
 
       return true
     } catch (error) {
-      console.error('Error updating user role:', error)
+      console.warn('Error updating user role:', error)
       return false
     }
   }
@@ -326,7 +326,7 @@ export class RBACService {
 
       return true
     } catch (error) {
-      console.error('Error deactivating user:', error)
+      console.warn('Error deactivating user:', error)
       return false
     }
   }
@@ -362,7 +362,7 @@ export class RBACService {
       if (error) throw error
       return data || []
     } catch (error) {
-      console.error('Error getting users:', error)
+      console.warn('Error getting users:', error)
       return []
     }
   }
@@ -383,7 +383,7 @@ export class RBACService {
         created_at: new Date().toISOString(),
       })
     } catch (error) {
-      console.error('Error logging user activity:', error)
+      console.warn('Error logging user activity:', error)
     }
   }
 
@@ -398,7 +398,7 @@ export class RBACService {
         })
         .eq('id', userId)
     } catch (error) {
-      console.error('Error updating last login:', error)
+      console.warn('Error updating last login:', error)
     }
   }
 
@@ -431,7 +431,7 @@ export class RBACService {
 
       return true
     } catch (error) {
-      console.error('Error checking action permission:', error)
+      console.warn('Error checking action permission:', error)
       return false
     }
   }
@@ -456,7 +456,7 @@ export function useRBAC() {
           await RBACService.updateLastLogin(authUser.id)
         }
       } catch (error) {
-        console.error('Error getting current user:', error)
+        console.warn('Error getting current user:', error)
       } finally {
         setLoading(false)
       }

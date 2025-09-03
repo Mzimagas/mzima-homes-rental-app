@@ -4,7 +4,7 @@
  * Handles all coordinate formats silently
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { normalizeLatLng, buildGoogleMapsUrl } from '../../lib/geo';
 
 type Props = {
@@ -28,12 +28,18 @@ export default function ViewOnGoogleMapsButton({
 }: Props) {
   const norm = useMemo(() => normalizeLatLng(lat, lng), [lat, lng]);
 
+  // Use useEffect to avoid state updates during render
+  useEffect(() => {
+    if (!norm) {
+      // Silent telemetry instead of console spam
+      onInvalid?.(`${source} - ${name ?? 'Unknown'}: Missing/invalid coordinates`);
+    }
+  }, [norm, onInvalid, source, name]);
+
   if (!norm) {
-    // Silent telemetry instead of console spam
-    onInvalid?.(`${source} - ${name ?? 'Unknown'}: Missing/invalid coordinates`);
     return (
-      <span 
-        className={`inline-flex items-center text-xs opacity-60 ${className ?? ''}`} 
+      <span
+        className={`inline-flex items-center text-xs opacity-60 ${className ?? ''}`}
         aria-label="Map unavailable"
         title="Coordinates not available"
       >

@@ -314,12 +314,42 @@ export const clientBusinessFunctions = {
 
   // Get tenant outstanding balance
   async getTenantBalance(tenantId: string) {
-    return callRPC<number>('get_tenant_balance', { p_tenant_id: tenantId })
+    try {
+      const result = await callRPC<any>('get_tenant_balance_summary', { p_tenant_id: tenantId })
+      // The function now returns a structured object with balance info
+      return result
+    } catch (error: any) {
+      // Handle missing function or table gracefully
+      if (error?.message?.includes('does not exist') || error?.code === 'PGRST202' || error?.code === '42P01') {
+        console.warn('get_tenant_balance_summary function or rent_invoices table does not exist, returning zero balance')
+        return {
+          data: {
+            tenant_id: tenantId,
+            total_invoiced: 0,
+            total_paid: 0,
+            balance: 0,
+            overdue_amount: 0,
+            last_payment_date: null
+          },
+          error: null
+        }
+      }
+      throw error
+    }
   },
 
   // RENT balances: summary and ledger
   async getRentBalanceSummary(tenantId: string) {
-    return callRPC<any>('get_rent_balance_summary', { p_tenant_id: tenantId })
+    try {
+      return await callRPC<any>('get_rent_balance_summary', { p_tenant_id: tenantId })
+    } catch (error: any) {
+      // Handle missing function or table gracefully
+      if (error?.message?.includes('does not exist') || error?.code === 'PGRST202' || error?.code === '42P01') {
+        console.warn('get_rent_balance_summary function or related tables do not exist, returning empty summary')
+        return { data: { balance: 0, total_charges: 0, total_payments: 0 }, error: null }
+      }
+      throw error
+    }
   },
   async getRentLedger(tenantId: string, limit = 100) {
     return callRPC<any[]>('get_rent_ledger', { p_tenant_id: tenantId, p_limit: limit })
@@ -1205,42 +1235,60 @@ export const clientQueries = {
 
   // Get outstanding invoices for a tenant
   async getOutstandingInvoices(tenantId: string) {
-    return supabase
-      .from('rent_invoices')
-      .select(
-        `
-        *,
-        units (
-          unit_label,
-          properties (
-            name
+    try {
+      return await supabase
+        .from('rent_invoices')
+        .select(
+          `
+          *,
+          units (
+            unit_label,
+            properties (
+              name
+            )
           )
+        `
         )
-      `
-      )
-      .eq('tenant_id', tenantId)
-      .in('status', ['PENDING', 'PARTIAL', 'OVERDUE'])
-      .order('due_date')
+        .eq('tenant_id', tenantId)
+        .in('status', ['PENDING', 'PARTIAL', 'OVERDUE'])
+        .order('due_date')
+    } catch (error: any) {
+      // Handle missing table gracefully
+      if (error?.message?.includes('does not exist')) {
+        console.warn('rent_invoices table does not exist, returning empty result')
+        return { data: [], error: null }
+      }
+      throw error
+    }
   },
 
   // Get recent payments for a property
   async getRecentPayments(propertyId: string, limit = 20) {
-    return supabase
-      .from('payments')
-      .select(
-        `
-        *,
-        tenants (
-          full_name,
-          units (
-            unit_label
+    try {
+      return await supabase
+        .from('payments')
+        .select(
+          `
+          *,
+          tenants (
+            full_name,
+            units (
+              unit_label
+            )
           )
+        `
         )
-      `
-      )
-      .eq('tenants.units.property_id', propertyId)
-      .order('payment_date', { ascending: false })
-      .limit(limit)
+        .eq('tenants.units.property_id', propertyId)
+        .order('payment_date', { ascending: false })
+        .limit(limit)
+    } catch (error: any) {
+      // Handle missing table gracefully
+      if (error?.message?.includes('does not exist')) {
+        console.warn('payments table does not exist, returning empty result')
+        return { data: [], error: null }
+      }
+      throw error
+    }
   },
 }
 

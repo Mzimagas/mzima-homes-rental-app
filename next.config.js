@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const webpackOptimization = require('./webpack.optimization')
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 let SUPABASE_HOST = 'ajrxvnakphkpkcssisxm.supabase.co'
 try {
@@ -104,19 +106,25 @@ const nextConfig = {
             compress: {
               drop_console: true, // Remove console.log statements
               drop_debugger: true, // Remove debugger statements
+              pure_funcs: ['console.log', 'console.info', 'console.debug'], // Remove specific console methods
+              passes: 2, // Multiple passes for better optimization
+            },
+            mangle: {
+              safari10: true, // Fix Safari 10 issues
             },
           },
         })
       )
     }
 
-    // Bundle analyzer (only in development)
-    if (dev && process.env.ANALYZE === 'true') {
+    // Bundle analyzer (works in both dev and production)
+    if (process.env.ANALYZE === 'true') {
       const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
       config.plugins.push(
         new BundleAnalyzerPlugin({
           analyzerMode: 'server',
           openAnalyzer: true,
+          analyzerPort: dev ? 8888 : 8889,
         })
       )
     }
@@ -129,14 +137,91 @@ const nextConfig = {
           chunks: 'all',
           minSize: 20000,
           maxSize: 244000,
+          maxAsyncRequests: 30,
+          maxInitialRequests: 25,
           cacheGroups: {
             // Framework chunk (React, Next.js)
             framework: {
               test: /[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
               name: 'framework',
               chunks: 'all',
+              priority: 50,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // Supabase chunk (large auth/database library)
+            supabase: {
+              test: /[\\/]node_modules[\\/]@supabase[\\/]/,
+              name: 'supabase',
+              chunks: 'all',
+              priority: 45,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // UI libraries chunk
+            uiLibraries: {
+              test: /[\\/]node_modules[\\/](@headlessui|@heroicons|@radix-ui|lucide-react)[\\/]/,
+              name: 'ui-libraries',
+              chunks: 'all',
               priority: 40,
               enforce: true,
+              reuseExistingChunk: true,
+            },
+            // Form and validation libraries
+            forms: {
+              test: /[\\/]node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/,
+              name: 'forms',
+              chunks: 'all',
+              priority: 35,
+              reuseExistingChunk: true,
+            },
+            // Analytics and monitoring
+            analytics: {
+              test: /[\\/]node_modules[\\/](posthog-js|@upstash)[\\/]/,
+              name: 'analytics',
+              chunks: 'all',
+              priority: 30,
+              reuseExistingChunk: true,
+            },
+            // Property management components (admin features)
+            propertyAdmin: {
+              test: /[\\/]src[\\/]components[\\/]properties[\\/](permission-management|components\/(GranularPermissionManager|SecurityTestPanel|AuditTrailDashboard))[\\/]/,
+              name: 'property-admin',
+              chunks: 'all',
+              priority: 28,
+              minChunks: 1,
+            },
+            // Property management components (core features)
+            propertyCore: {
+              test: /[\\/]src[\\/]components[\\/]properties[\\/]/,
+              name: 'property-core',
+              chunks: 'all',
+              priority: 25,
+              minChunks: 1,
+            },
+            // Reports and analytics components
+            reports: {
+              test: /[\\/]src[\\/]components[\\/]reports[\\/]/,
+              name: 'reports',
+              chunks: 'all',
+              priority: 23,
+              minChunks: 1,
+            },
+            // UI components
+            uiComponents: {
+              test: /[\\/]src[\\/]components[\\/]ui[\\/]/,
+              name: 'ui-components',
+              chunks: 'all',
+              priority: 20,
+              minChunks: 2,
+            },
+            // Services and utilities
+            services: {
+              test: /[\\/]src[\\/](services|lib|utils)[\\/]/,
+              name: 'services',
+              chunks: 'all',
+              priority: 18,
+              minChunks: 2,
             },
             // Large vendor libraries
             vendor: {
@@ -146,30 +231,7 @@ const nextConfig = {
               priority: 10,
               minChunks: 1,
               maxSize: 200000,
-            },
-            // Property management components
-            propertyComponents: {
-              test: /[\\/]src[\\/]components[\\/]properties[\\/]/,
-              name: 'property-components',
-              chunks: 'all',
-              priority: 30,
-              minChunks: 1,
-            },
-            // UI components
-            uiComponents: {
-              test: /[\\/]src[\\/]components[\\/]ui[\\/]/,
-              name: 'ui-components',
-              chunks: 'all',
-              priority: 25,
-              minChunks: 2,
-            },
-            // Services and utilities
-            services: {
-              test: /[\\/]src[\\/](services|lib|utils)[\\/]/,
-              name: 'services',
-              chunks: 'all',
-              priority: 20,
-              minChunks: 2,
+              reuseExistingChunk: true,
             },
             // Common chunk for shared code
             common: {
@@ -197,18 +259,33 @@ const nextConfig = {
       }
     }
 
-    // Tree shaking optimization (removed usedExports due to conflict with Next.js caching)
+    // Apply comprehensive optimizations (temporarily disabled for debugging)
+    // config = webpackOptimization.applyOptimizations(config, { buildId, dev, isServer, defaultLoaders, webpack })
+
+    // Basic tree shaking only
     config.optimization.sideEffects = false
 
     return config
   },
 
-  // Experimental features for better error handling
+  // Server external packages for better performance
+  serverExternalPackages: ['@supabase/supabase-js'],
+
+  // Experimental features for better optimization
   experimental: {
     // Enable better error overlay - removed @supabase/supabase-js to avoid conflict with serverExternalPackages
-    optimizePackageImports: ['react', 'react-dom'],
-    // Enable modern bundling optimizations
-    optimizeCss: true,
+    optimizePackageImports: [
+      'react',
+      'react-dom',
+      '@heroicons/react',
+      '@headlessui/react',
+      'lucide-react',
+      'lodash'
+    ],
+    // Enable modern bundling optimizations (disabled temporarily due to critters issue)
+    optimizeCss: false,
+    // Enable webpack build worker for faster builds
+    webpackBuildWorker: true,
   },
 }
 

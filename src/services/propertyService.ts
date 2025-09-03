@@ -3,10 +3,8 @@
  * Handles fetching real property data for permission assignment
  */
 
-import getSupabaseClient from '../lib/supabase-client'
+import supabase from '../lib/supabase-client'
 import { coerceSupabaseCoords } from '../lib/geo'
-
-const supabase = getSupabaseClient()
 
 export interface Property {
   id: string

@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react'
 import { FieldSecurityService, AuditLogEntry } from '../../../lib/security/field-security.service'
 import { Button } from '../../ui'
-import getSupabaseClient from '../../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../../../lib/supabase-client'
 
 interface AuditTrailDashboardProps {
   purchaseId?: string

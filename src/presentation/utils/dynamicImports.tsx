@@ -132,7 +132,7 @@ export const DynamicComponents = {
   })
 }
 
-// Route-based code splitting
+// Route-based code splitting with enhanced optimization
 export const RouteComponents = {
   PropertiesPage: dynamic(() => import('../../components/properties/PropertyManagementTabs'), {
     loading: LoadingSpinner,
@@ -152,6 +152,22 @@ export const RouteComponents = {
   AnalyticsPage: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
     ssr: false // Analytics can be client-side only
+  }),
+
+  // Admin-only features (separate bundle)
+  AdminUserManagement: dynamic(() => import('../../components/administration/UserManagement'), {
+    loading: LoadingSpinner,
+    ssr: false
+  }),
+
+  AdminPermissions: dynamic(() => import('../../components/properties/permission-management/GranularPermissionManager'), {
+    loading: LoadingSpinner,
+    ssr: false
+  }),
+
+  AdminAuditTrail: dynamic(() => import('../../components/properties/components/AuditTrailDashboard'), {
+    loading: LoadingSpinner,
+    ssr: false
   }),
 
   SettingsPage: dynamic(() => import('../../components/notifications/notification-settings'), {
@@ -214,7 +230,39 @@ export const FeatureComponents = {
   AdvancedFilters: dynamic(() => import('../../components/dashboard/SearchFilters'), {
     loading: LoadingSpinner,
     ssr: false
-  })
+  }),
+
+  // Heavy components that should be lazy loaded
+  TenantAnalytics: dynamic(() => import('../../components/reports/tenant-analytics'), {
+    loading: LoadingSpinner,
+    ssr: false
+  }),
+
+  PropertyReports: dynamic(() => import('../../components/reports/property-reports'), {
+    loading: LoadingSpinner,
+    ssr: false
+  }),
+
+  DocumentManagement: dynamic(() => import('../../components/properties/components/DirectAdditionDocumentsV2'), {
+    loading: LoadingSpinner,
+    ssr: false
+  }),
+
+  PaymentDashboard: dynamic(() => import('../../components/payments/payment-dashboard'), {
+    loading: LoadingSpinner,
+    ssr: false
+  }),
+
+  // PDF and Excel export functionality (commented out until components exist)
+  // PDFExport: dynamic(() => import('../../components/reports/pdf-export'), {
+  //   loading: LoadingSpinner,
+  //   ssr: false
+  // }),
+
+  // ExcelExport: dynamic(() => import('../../components/reports/excel-export'), {
+  //   loading: LoadingSpinner,
+  //   ssr: false
+  // })
 }
 
 // Enhanced utility for preloading components with navigation optimization

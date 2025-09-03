@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
-import getSupabaseClient from '../../lib/supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../../lib/supabase-client'
 
 interface DocumentDebuggerProps {
   propertyId?: string

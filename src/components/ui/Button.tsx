@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React from 'react'
 
 type Variant = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'outline' | 'ghost'
 type Size = 'sm' | 'md' | 'lg'

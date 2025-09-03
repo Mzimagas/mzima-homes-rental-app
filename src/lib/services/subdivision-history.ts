@@ -1,6 +1,4 @@
-import getSupabaseClient from '../supabase-client'
-
-const supabase = getSupabaseClient()
+import supabase from '../supabase-client'
 
 // Helper function to get CSRF token
 function getCsrfToken(): string | null {

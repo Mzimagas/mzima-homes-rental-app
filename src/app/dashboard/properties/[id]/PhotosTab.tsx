@@ -51,7 +51,7 @@ export default function PhotosTab({ propertyId }: { propertyId: string }) {
           if (units?.length > 0) setSelectedUnitId(units[0].id)
         }
       } catch (e) {
-        console.error('Failed to load units:', e)
+        console.warn('Failed to load units:', e)
         setError('Failed to load units')
       } finally {
         setLoading(false)

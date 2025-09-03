@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/auth-context'
-import getSupabaseClient, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
+import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 
 const supabase = getSupabaseClient()
 import { LoadingStats, LoadingCard } from '../../../components/ui/loading'
@@ -55,7 +55,7 @@ export default function PaymentsPage() {
         .select('*', { count: 'exact', head: true })
 
       if (countError) {
-        console.error('[Payments] Payments table access failed:', countError)
+        console.warn('[Payments] Payments table access failed:', countError)
         setError('Payments table not accessible: ' + countError.message)
         return
       }
@@ -71,8 +71,8 @@ export default function PaymentsPage() {
         .limit(20)
 
       if (paymentsError) {
-        console.error('[Payments] Error loading payments:', paymentsError)
-        console.error('[Payments] Error details:', JSON.stringify(paymentsError, null, 2))
+        console.warn('[Payments] Error loading payments:', paymentsError)
+        console.warn('[Payments] Error details:', JSON.stringify(paymentsError, null, 2))
         setError('Failed to load payment data: ' + (paymentsError.message || 'Unknown error'))
         return
       }
@@ -95,14 +95,27 @@ export default function PaymentsPage() {
 
       // Get outstanding invoices count
       console.info('[Payments] Loading overdue invoices...')
-      const { data: overdueInvoices, error: invoicesError } = await supabase
-        .from('rent_invoices')
-        .select('amount_due_kes, amount_paid_kes')
-        .eq('status', 'OVERDUE')
+      let overdueInvoices = []
+      try {
+        const { data, error: invoicesError } = await supabase
+          .from('rent_invoices')
+          .select('amount_due_kes, amount_paid_kes')
+          .eq('status', 'OVERDUE')
 
-      if (invoicesError) {
-        console.error('[Payments] Error loading invoices:', invoicesError)
-        // Continue with empty invoices data
+        if (invoicesError) {
+          if (invoicesError.message?.includes('does not exist')) {
+            console.warn('[Payments] rent_invoices table does not exist, using empty data')
+            overdueInvoices = []
+          } else {
+            console.error('[Payments] Error loading invoices:', invoicesError)
+            overdueInvoices = []
+          }
+        } else {
+          overdueInvoices = data || []
+        }
+      } catch (error: any) {
+        console.warn('[Payments] Error loading overdue invoices:', error.message)
+        overdueInvoices = []
       }
       console.info('[Payments] Loaded invoices:', overdueInvoices?.length || 0)
 

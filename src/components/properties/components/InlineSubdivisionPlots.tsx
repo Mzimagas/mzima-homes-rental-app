@@ -5,10 +5,8 @@ import { Button } from '../../ui'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import getSupabaseClient from '../../../lib/supabase-client'
+import supabase from '../../../lib/supabase-client'
 import SkeletonLoader from '../../ui/SkeletonLoader'
-
-const supabase = getSupabaseClient()
 import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFooter } from './PropertyCard'
 
 // Types

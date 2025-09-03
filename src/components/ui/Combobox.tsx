@@ -1,5 +1,5 @@
 'use client'
-import * as React from 'react'
+import React from 'react'
 import { Combobox as HCombobox, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 
