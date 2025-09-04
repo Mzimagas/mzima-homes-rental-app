@@ -46,7 +46,7 @@ export default function HandoverPipelineManager({
   const [handovers, setHandovers] = useState<HandoverItem[]>([])
   const [handoverLoading, setHandoverLoading] = useState(false)
   const [showHandoverForm, setShowHandoverForm] = useState(false)
-  const [availableProperties, setAvailableProperties] = useState<Property[]>([])
+
   const [editingHandover, setEditingHandover] = useState<HandoverItem | null>(null)
   const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null)
   const [selectedHandoverStageId, setSelectedHandoverStageId] = useState<number | null>(null)
@@ -86,12 +86,6 @@ export default function HandoverPipelineManager({
     resolver: zodResolver(handoverPipelineSchema),
   })
 
-  // Selected property in Handover modal for map preview
-  const selectedHandoverPropertyId = watchHandover('propertyId') as string | undefined
-  const selectedHandoverProperty = selectedHandoverPropertyId
-    ? [...availableProperties].find((p: any) => p.id === selectedHandoverPropertyId)
-    : undefined
-
   // Helper function to handle authentication errors
   const handleAuthError = async (error: any, context: string) => {
     if (isAuthError(error)) {
@@ -106,12 +100,7 @@ export default function HandoverPipelineManager({
 
   useEffect(() => {
     loadHandovers()
-    loadAvailableProperties()
   }, [])
-
-  useEffect(() => {
-    loadAvailableProperties()
-  }, [editingHandover])
 
   const loadHandovers = async () => {
     try {
@@ -275,116 +264,6 @@ export default function HandoverPipelineManager({
     } catch (error) {
       console.error('Error loading properties with handover status:', error)
       setHandovers([])
-    }
-  }
-
-  const loadAvailableProperties = async () => {
-    try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
-      if (authError) {
-        const handled = await handleAuthError(authError, 'loadAvailableProperties')
-        if (handled) return
-      }
-      if (!user) {
-        return
-      }
-
-      const { data: allProperties, error: propertiesError } = await supabase
-        .from('properties')
-        .select(
-          `
-          *,
-          property_source,
-          lifecycle_status,
-          subdivision_status,
-          handover_status,
-          handover_date,
-          source_reference_id,
-          parent_property_id,
-          purchase_completion_date,
-          subdivision_date,
-          acquisition_notes,
-          expected_rental_income_kes,
-          sale_price_kes,
-          estimated_value_kes,
-          total_area_sqm,
-          total_area_acres,
-          lat,
-          lng,
-          physical_address
-        `
-        )
-        .order('name')
-
-      if (propertiesError) throw propertiesError
-
-      // Show properties that are ready for handover or already in progress
-      let filteredProperties =
-        (allProperties as PropertyWithLifecycle[] | null)?.filter((property: any) => {
-          // Include properties that are:
-          // 1. Already in handover progress
-          // 2. Active properties that haven't been handed over yet
-          // 3. Completed properties that haven't been handed over yet
-          return (
-            property.handover_status === 'IN_PROGRESS' ||
-            (property.lifecycle_status === 'ACTIVE' &&
-              (!property.handover_status || property.handover_status === 'NOT_STARTED')) ||
-            (property.lifecycle_status === 'COMPLETED' &&
-              (!property.handover_status || property.handover_status === 'NOT_STARTED'))
-          )
-        }) || []
-
-      const { data: existingHandovers, error: handoversError } = await supabase
-        .from('handover_pipeline')
-        .select('property_id')
-        .neq('handover_status', 'COMPLETED')
-        .neq('handover_status', 'CANCELLED')
-
-      if (handoversError) throw handoversError
-
-      const existingIds = new Set((existingHandovers || []).map((h: any) => h.property_id))
-
-      // If editing, allow the currently selected property to remain available
-      filteredProperties = filteredProperties.filter((p: any) =>
-        editingHandover
-          ? !existingIds.has(p.id) || p.id === editingHandover.property_id
-          : !existingIds.has(p.id)
-      )
-
-      setAvailableProperties(filteredProperties as any)
-    } catch (error) {
-      console.error('Error loading available properties:', error)
-      if (error instanceof Error && isAuthError(error)) {
-        redirectToLogin('loadAvailableProperties')
-      }
-    }
-  }
-
-  const startHandoverProcess = async (property: any) => {
-    try {
-      resetHandover({
-        propertyId: property.id,
-        buyerName: '',
-        buyerContact: '',
-        buyerEmail: '',
-        buyerAddress: '',
-        askingPrice: undefined,
-        negotiatedPrice: undefined,
-        depositReceived: undefined,
-        targetCompletionDate: '',
-        legalRepresentative: '',
-        riskAssessment: '',
-        propertyConditionNotes: '',
-        expectedProfit: undefined,
-        expectedProfitPercentage: undefined,
-      })
-      setEditingHandover(null)
-      setShowHandoverForm(true)
-    } catch (error) {
-      alert('Failed to start handover process')
     }
   }
 
@@ -565,9 +444,11 @@ export default function HandoverPipelineManager({
         return
       }
 
-      const selectedProperty = availableProperties.find((p) => p.id === values.propertyId)
-      if (!selectedProperty) {
-        alert('Selected property not found')
+      // Only allow editing existing handovers
+      if (!editingHandover) {
+        alert(
+          'Creating new handovers is not allowed from this interface. Please use the Properties tab.'
+        )
         return
       }
 
@@ -577,15 +458,9 @@ export default function HandoverPipelineManager({
 
       const handoverData = {
         property_id: values.propertyId,
-        property_name:
-          (selectedProperty as any).name ||
-          (selectedProperty as any).property_name ||
-          'Unknown Property',
-        property_address:
-          (selectedProperty as any).physical_address ||
-          (selectedProperty as any).address ||
-          'Unknown Address',
-        property_type: (selectedProperty as any).property_type || 'HOME',
+        property_name: editingHandover.property_name,
+        property_address: editingHandover.property_address,
+        property_type: editingHandover.property_type,
         buyer_name: values.buyerName,
         buyer_contact: values.buyerContact || null,
         buyer_email: values.buyerEmail || null,
@@ -654,7 +529,6 @@ export default function HandoverPipelineManager({
       setShowHandoverForm(false)
       setEditingHandover(null)
       loadHandovers()
-      loadAvailableProperties()
       onHandoverCreated?.()
     } catch (error) {
       alert('Failed to save handover')
@@ -677,52 +551,6 @@ export default function HandoverPipelineManager({
         </div>
       </div>
 
-      {/* Available Properties for Handover */}
-      {availableProperties.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Available Properties for Handover
-          </h3>
-          <div className="grid gap-4">
-            {availableProperties.slice(0, 5).map((property) => (
-              <div
-                key={property.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <h4 className="font-medium text-gray-900">{(property as any).name}</h4>
-                    <span className="text-sm text-gray-500">
-                      {(property as any).property_source &&
-                        `(${(property as any).property_source.replace('_', ' ')})`}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">{(property as any).physical_address}</p>
-                  <div className="flex items-center space-x-4 mt-2">
-                    <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
-                      {(property as any).property_type?.replace('_', ' ')}
-                    </span>
-                    <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
-                      Ready for Handover
-                    </span>
-                  </div>
-                </div>
-                <Button variant="primary" size="sm" onClick={() => startHandoverProcess(property)}>
-                  Start Handover
-                </Button>
-              </div>
-            ))}
-            {availableProperties.length > 5 && (
-              <div className="text-center py-2">
-                <span className="text-sm text-gray-500">
-                  +{availableProperties.length - 5} more properties available
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Search */}
       {onSearchChange && handovers.length > 0 && (
         <PropertySearch
@@ -743,26 +571,20 @@ export default function HandoverPipelineManager({
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <div className="text-4xl mb-4">🏠</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Handover Opportunities</h3>
-          {availableProperties.length === 0 ? (
-            <div>
-              <p className="text-gray-600 mb-4">No properties available for handover.</p>
-              <p className="text-sm text-gray-500 mb-4">
-                You need to create properties first before you can start handover processes.
-              </p>
-              <Button
-                variant="secondary"
-                onClick={() => (window.location.href = '/dashboard/properties')}
-              >
-                Go to Properties Tab
-              </Button>
-            </div>
-          ) : (
-            <div>
-              <p className="text-gray-600 mb-4">
-                Start tracking properties you&apos;re preparing for handover.
-              </p>
-            </div>
-          )}
+          <div>
+            <p className="text-gray-600 mb-4">
+              No properties are currently in the handover pipeline.
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              Add properties to the handover pipeline from the Properties tab.
+            </p>
+            <Button
+              variant="secondary"
+              onClick={() => (window.location.href = '/dashboard/properties')}
+            >
+              Go to Properties Tab
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="grid gap-6">
@@ -873,7 +695,7 @@ export default function HandoverPipelineManager({
             setEditingHandover(null)
             resetHandover()
           }}
-          title={editingHandover ? 'Edit Handover Opportunity' : 'Add Handover Opportunity'}
+          title="Edit Handover Opportunity"
           size="lg"
         >
           <div className="p-8">
@@ -882,56 +704,31 @@ export default function HandoverPipelineManager({
               <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-medium text-gray-900">Property Information</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Select the property you&apos;re preparing for handover
-                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Property details for this handover</p>
                 </div>
 
-                {/* Property Selection */}
-                <FormField
-                  name="propertyId"
-                  label="Property"
-                  error={handoverErrors.propertyId?.message}
-                >
-                  {({ id }) => (
-                    <select
-                      id={id}
-                      {...registerHandover('propertyId')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select a property</option>
-                      {availableProperties.map((property) => (
-                        <option key={property.id} value={property.id}>
-                          {(property as any).name} - {(property as any).physical_address}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </FormField>
-
-                {/* Selected Property Map Preview */}
-                {selectedHandoverProperty && (
-                  <div className="bg-gray-50 border rounded-lg p-3">
-                    <div className="text-sm text-gray-700 mb-2">Selected Property Location</div>
-                    {process.env.NODE_ENV === 'development' && (
-                      <div className="text-xs text-gray-500 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                        Debug: lat={selectedHandoverProperty.lat}, lng=
-                        {selectedHandoverProperty.lng}, address=
-                        {selectedHandoverProperty.physical_address}
+                {/* Property Display (Read-only for editing) */}
+                {editingHandover && (
+                  <div className="bg-gray-50 border rounded-lg p-4">
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Property Name:</span>
+                        <span className="ml-2 text-sm text-gray-900">
+                          {editingHandover.property_name}
+                        </span>
                       </div>
-                    )}
-                    <div className="flex justify-center">
-                      <ViewOnGoogleMapsButton
-                        lat={(selectedHandoverProperty as any).lat ?? null}
-                        lng={(selectedHandoverProperty as any).lng ?? null}
-                        address={
-                          (selectedHandoverProperty as any).physical_address ??
-                          (selectedHandoverProperty as any).name
-                        }
-                        propertyName={(selectedHandoverProperty as any).name}
-                        debug={process.env.NODE_ENV === 'development'}
-                        debugContext={`Handover Form - ${(selectedHandoverProperty as any).name}`}
-                      />
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Address:</span>
+                        <span className="ml-2 text-sm text-gray-900">
+                          {editingHandover.property_address}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Type:</span>
+                        <span className="ml-2 text-sm text-gray-900">
+                          {editingHandover.property_type}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1206,11 +1003,7 @@ export default function HandoverPipelineManager({
                   disabled={isHandoverSubmitting}
                   className="px-6 py-2"
                 >
-                  {isHandoverSubmitting
-                    ? 'Saving...'
-                    : editingHandover
-                      ? 'Update Handover'
-                      : 'Create Handover'}
+                  {isHandoverSubmitting ? 'Saving...' : 'Update Handover'}
                 </Button>
               </div>
             </form>
