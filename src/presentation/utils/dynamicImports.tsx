@@ -18,15 +18,17 @@ export const LazyErrorBoundary = ({ error, retry }: { error: Error; retry: () =>
   <div className="flex flex-col items-center justify-center p-8 text-center">
     <div className="text-red-600 mb-4">
       <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+        />
       </svg>
       <h3 className="text-lg font-semibold">Failed to load component</h3>
     </div>
     <p className="text-gray-600 mb-4">{error.message}</p>
-    <button
-      onClick={retry}
-      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-    >
+    <button onClick={retry} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
       Try Again
     </button>
   </div>
@@ -46,7 +48,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
     fallback = LoadingSpinner,
     errorBoundary = LazyErrorBoundary,
     retryAttempts = 3,
-    retryDelay = 1000
+    retryDelay = 1000,
   } = options
 
   let attempts = 0
@@ -56,12 +58,12 @@ export function createLazyComponent<T extends ComponentType<any>>(
       return await importFn()
     } catch (error) {
       attempts++
-      
+
       if (attempts < retryAttempts) {
-        await new Promise(resolve => setTimeout(resolve, retryDelay * attempts))
+        await new Promise((resolve) => setTimeout(resolve, retryDelay * attempts))
         return retryableImport()
       }
-      
+
       throw error
     }
   }
@@ -74,106 +76,111 @@ export const DynamicComponents = {
   // Property Management
   PropertyList: dynamic(() => import('../../components/properties/components/PropertyList'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   PropertyForm: dynamic(() => import('../../components/properties/property-form'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
-  PropertyDetails: dynamic(() => import('../../components/properties/components/InlinePropertyView'), {
-    loading: LoadingSpinner,
-    ssr: false
-  }),
+  PropertyDetails: dynamic(
+    () => import('../../components/properties/components/InlinePropertyView'),
+    {
+      loading: LoadingSpinner,
+      ssr: false,
+    }
+  ),
 
   // Tenant Management
   TenantList: dynamic(() => import('../../components/tenants/tenant-list'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   TenantForm: dynamic(() => import('../../components/tenants/tenant-form'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   TenantDetails: dynamic(() => import('../../components/tenants/tenant-detail'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
-  // Dashboard Components
-  Dashboard: dynamic(() => import('../../components/dashboard/ResponsiveDashboardGrid'), {
-    loading: LoadingSpinner,
-    ssr: false
-  }),
+  // Dashboard Components - removed with dashboard cleanup
 
   Analytics: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   // Settings and Admin
   Settings: dynamic(() => import('../../components/notifications/notification-settings'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   UserManagement: dynamic(() => import('../../components/users/ComprehensiveUserManagement'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   // CQRS Debug Panel
   CQRSDebugPanel: dynamic(() => import('../../components/debug/SearchDebugPanel'), {
     loading: LoadingSpinner,
-    ssr: false
-  })
+    ssr: false,
+  }),
 }
 
 // Route-based code splitting with enhanced optimization
 export const RouteComponents = {
   PropertiesPage: dynamic(() => import('../../components/properties/PropertyManagementTabs'), {
     loading: LoadingSpinner,
-    ssr: true // Enable SSR for main pages
+    ssr: true, // Enable SSR for main pages
   }),
 
-  TenantsPage: dynamic(() => import('../../components/rental-management/components/TenantManagement'), {
-    loading: LoadingSpinner,
-    ssr: true
-  }),
+  TenantsPage: dynamic(
+    () => import('../../components/rental-management/components/TenantManagement'),
+    {
+      loading: LoadingSpinner,
+      ssr: true,
+    }
+  ),
 
-  DashboardPage: dynamic(() => import('../../components/dashboard/ResponsiveDashboardGrid'), {
-    loading: LoadingSpinner,
-    ssr: true
-  }),
+  // DashboardPage: Dashboard components have been removed
 
   AnalyticsPage: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
-    ssr: false // Analytics can be client-side only
+    ssr: false, // Analytics can be client-side only
   }),
 
   // Admin-only features (separate bundle)
   AdminUserManagement: dynamic(() => import('../../components/administration/UserManagement'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
-  AdminPermissions: dynamic(() => import('../../components/properties/permission-management/GranularPermissionManager'), {
-    loading: LoadingSpinner,
-    ssr: false
-  }),
+  AdminPermissions: dynamic(
+    () => import('../../components/properties/permission-management/GranularPermissionManager'),
+    {
+      loading: LoadingSpinner,
+      ssr: false,
+    }
+  ),
 
-  AdminAuditTrail: dynamic(() => import('../../components/properties/components/AuditTrailDashboard'), {
-    loading: LoadingSpinner,
-    ssr: false
-  }),
+  AdminAuditTrail: dynamic(
+    () => import('../../components/properties/components/AuditTrailDashboard'),
+    {
+      loading: LoadingSpinner,
+      ssr: false,
+    }
+  ),
 
   SettingsPage: dynamic(() => import('../../components/notifications/notification-settings'), {
     loading: LoadingSpinner,
-    ssr: false
-  })
+    ssr: false,
+  }),
 }
 
 // Feature-based code splitting
@@ -181,76 +188,79 @@ export const FeatureComponents = {
   // Property Features
   PropertySearch: dynamic(() => import('../../components/properties/components/PropertySearch'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   PropertyMap: dynamic(() => import('../../components/ui/ViewOnGoogleMapsButton'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   PropertyReports: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   // Tenant Features
   TenantCommunication: dynamic(() => import('../../components/notifications/notification-center'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
-  LeaseManagement: dynamic(() => import('../../components/rental-management/components/TenantManagement'), {
-    loading: LoadingSpinner,
-    ssr: false
-  }),
+  LeaseManagement: dynamic(
+    () => import('../../components/rental-management/components/TenantManagement'),
+    {
+      loading: LoadingSpinner,
+      ssr: false,
+    }
+  ),
 
   // Payment Features
   PaymentProcessing: dynamic(() => import('../../components/payments/enhanced-payment-form'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   PaymentReports: dynamic(() => import('../../components/payments/payment-analytics'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   // Advanced Features
   BulkOperations: dynamic(() => import('../../components/properties/components/PropertyList'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   DataExport: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
-  AdvancedFilters: dynamic(() => import('../../components/dashboard/SearchFilters'), {
-    loading: LoadingSpinner,
-    ssr: false
-  }),
+  // AdvancedFilters: Dashboard components have been removed
 
   // Heavy components that should be lazy loaded
   TenantAnalytics: dynamic(() => import('../../components/reports/tenant-analytics'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   PropertyReports: dynamic(() => import('../../components/reports/property-reports'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
-  DocumentManagement: dynamic(() => import('../../components/properties/components/DirectAdditionDocumentsV2'), {
-    loading: LoadingSpinner,
-    ssr: false
-  }),
+  DocumentManagement: dynamic(
+    () => import('../../components/properties/components/DirectAdditionDocumentsV2'),
+    {
+      loading: LoadingSpinner,
+      ssr: false,
+    }
+  ),
 
   PaymentDashboard: dynamic(() => import('../../components/payments/payment-dashboard'), {
     loading: LoadingSpinner,
-    ssr: false
+    ssr: false,
   }),
 
   // PDF and Excel export functionality (commented out until components exist)
@@ -273,7 +283,9 @@ export class ComponentPreloader {
   /**
    * Preload a single component
    */
-  static async preload(componentName: keyof typeof DynamicComponents | keyof typeof FeatureComponents | string): Promise<void> {
+  static async preload(
+    componentName: keyof typeof DynamicComponents | keyof typeof FeatureComponents | string
+  ): Promise<void> {
     if (this.preloadedComponents.has(componentName)) {
       return
     }
@@ -301,7 +313,7 @@ export class ComponentPreloader {
    * Preload multiple components
    */
   static async preloadMultiple(componentNames: string[]): Promise<void> {
-    const promises = componentNames.map(name => this.preload(name))
+    const promises = componentNames.map((name) => this.preload(name))
     await Promise.allSettled(promises)
   }
 
@@ -319,7 +331,8 @@ export class ComponentPreloader {
     // Handle route-specific components
     switch (componentName) {
       case 'Dashboard':
-        return import('../../components/dashboard/ResponsiveDashboardGrid')
+        // Dashboard components have been removed
+        return Promise.resolve({ default: () => null })
       case 'PropertyList':
         return import('../../components/properties/components/PropertyList')
       case 'PropertyForm':
@@ -349,16 +362,24 @@ export class ComponentPreloader {
       default:
         // Try to preload from existing dynamic components
         if (componentName in DynamicComponents) {
-          return (DynamicComponents[componentName as keyof typeof DynamicComponents] as any).preload?.() || Promise.resolve()
+          return (
+            (
+              DynamicComponents[componentName as keyof typeof DynamicComponents] as any
+            ).preload?.() || Promise.resolve()
+          )
         } else if (componentName in FeatureComponents) {
-          return (FeatureComponents[componentName as keyof typeof FeatureComponents] as any).preload?.() || Promise.resolve()
+          return (
+            (
+              FeatureComponents[componentName as keyof typeof FeatureComponents] as any
+            ).preload?.() || Promise.resolve()
+          )
         }
         return Promise.resolve()
     }
   }
 
   static async preloadMultiple(componentNames: string[]): Promise<void> {
-    const promises = componentNames.map(name => this.preload(name))
+    const promises = componentNames.map((name) => this.preload(name))
     await Promise.allSettled(promises)
   }
 
@@ -367,7 +388,7 @@ export class ComponentPreloader {
       '/properties': ['PropertyList', 'PropertyForm', 'PropertySearch'],
       '/tenants': ['TenantList', 'TenantForm', 'LeaseManagement'],
       '/dashboard': ['Analytics', 'PropertyReports'],
-      '/settings': ['UserManagement', 'BulkOperations']
+      '/settings': ['UserManagement', 'BulkOperations'],
     }
 
     const componentsToPreload = routePreloadMap[route] || []
@@ -391,19 +412,16 @@ export class BundleSizeMonitor {
     timestamp: Date
   }> = []
 
-  static measureComponentLoad<T>(
-    componentName: string,
-    loadFn: () => Promise<T>
-  ): Promise<T> {
+  static measureComponentLoad<T>(componentName: string, loadFn: () => Promise<T>): Promise<T> {
     const startTime = performance.now()
-    
-    return loadFn().then(result => {
+
+    return loadFn().then((result) => {
       const loadTime = performance.now() - startTime
-      
+
       this.measurements.push({
         component: componentName,
         loadTime,
-        timestamp: new Date()
+        timestamp: new Date(),
       })
 
       // Log slow loads in development
@@ -420,8 +438,8 @@ export class BundleSizeMonitor {
   }
 
   static getAverageLoadTime(componentName?: string): number {
-    const filtered = componentName 
-      ? this.measurements.filter(m => m.component === componentName)
+    const filtered = componentName
+      ? this.measurements.filter((m) => m.component === componentName)
       : this.measurements
 
     if (filtered.length === 0) return 0
@@ -430,10 +448,12 @@ export class BundleSizeMonitor {
     return total / filtered.length
   }
 
-  static getSlowestComponents(limit: number = 5): Array<{ component: string; averageTime: number }> {
+  static getSlowestComponents(
+    limit: number = 5
+  ): Array<{ component: string; averageTime: number }> {
     const componentTimes = new Map<string, number[]>()
 
-    this.measurements.forEach(m => {
+    this.measurements.forEach((m) => {
       if (!componentTimes.has(m.component)) {
         componentTimes.set(m.component, [])
       }
@@ -442,12 +462,10 @@ export class BundleSizeMonitor {
 
     const averages = Array.from(componentTimes.entries()).map(([component, times]) => ({
       component,
-      averageTime: times.reduce((sum, time) => sum + time, 0) / times.length
+      averageTime: times.reduce((sum, time) => sum + time, 0) / times.length,
     }))
 
-    return averages
-      .sort((a, b) => b.averageTime - a.averageTime)
-      .slice(0, limit)
+    return averages.sort((a, b) => b.averageTime - a.averageTime).slice(0, limit)
   }
 
   static clearMeasurements() {

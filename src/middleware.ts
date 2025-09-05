@@ -38,7 +38,7 @@ export async function middleware(req: NextRequest) {
     !supabaseKey.includes('your-anon-key-here')
   )
 
-  let session: any = null
+  const session: any = null
   // Temporarily disabled to fix edge runtime issues
   // if (authConfigured) {
   //   const supabase = createMiddlewareClient({ req, res }, { supabaseUrl, supabaseKey })
@@ -53,13 +53,14 @@ export async function middleware(req: NextRequest) {
   const publicPrefixes = [
     '/',
     '/auth/',
+    '/api/', // Allow all API routes to handle their own auth
     '/api/auth/confirm-user', // dev-only API
   ]
 
   const isPublic = publicPrefixes.some((p) => pathname === p || pathname.startsWith(p))
 
-  // Protect non-public routes
-  if (!isPublic && !session) {
+  // Protect non-public routes (but skip API routes since they handle their own auth)
+  if (!isPublic && !session && !pathname.startsWith('/api/')) {
     const loginUrl = new URL('/auth/login', req.url)
     loginUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(loginUrl)

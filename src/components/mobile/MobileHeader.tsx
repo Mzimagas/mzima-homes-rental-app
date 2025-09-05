@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import MobileMenuButton from './MobileMenuButton'
-import EnhancedGlobalSearch from '../dashboard/EnhancedGlobalSearch'
+// import EnhancedGlobalSearch from '../dashboard/EnhancedGlobalSearch' // Removed with dashboard cleanup
 import {
   BellIcon,
   UserIcon,
@@ -43,11 +43,11 @@ export default function MobileHeader({ onMenuToggle, isMenuOpen }: MobileHeaderP
     try {
       const { error } = await signOut()
       if (error) {
-                alert(`Logout failed: ${error}`)
+        alert(`Logout failed: ${error}`)
       } else {
-              }
+      }
     } catch (err) {
-            alert('An unexpected error occurred during logout')
+      alert('An unexpected error occurred during logout')
     }
   }
 
@@ -158,11 +158,10 @@ export default function MobileHeader({ onMenuToggle, isMenuOpen }: MobileHeaderP
       {/* Search Bar (when toggled) */}
       {showSearch && (
         <div className="px-4 pb-3 border-t border-gray-100">
-          <EnhancedGlobalSearch
-            className="w-full"
+          <input
+            type="text"
             placeholder="Search properties, tenants, payments..."
-            qualityThreshold="moderate"
-            maxResults={8}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       )}

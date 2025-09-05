@@ -1,6 +1,12 @@
 'use client'
 
-export type AccountingTab = 'income' | 'expenses' | 'tax' | 'reports'
+export type AccountingTab =
+  | 'income'
+  | 'expenses'
+  | 'reports'
+  | 'tax'
+  | 'reconciliation'
+  | 'invoicing'
 
 interface Props {
   activeTab: AccountingTab
@@ -11,7 +17,7 @@ export default function AccountingWorkflowNavigation({ activeTab, onTabChange }:
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
       <h2 className="text-xl font-bold text-gray-900 mb-3 text-center">Accounting Workflows</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2">
         {/* Income Tracking */}
         <button
           onClick={() => onTabChange('income')}
@@ -131,6 +137,68 @@ export default function AccountingWorkflowNavigation({ activeTab, onTabChange }:
                 className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'reports' ? 'text-purple-700' : 'text-purple-600'}`}
               >
                 P&L and Cash Flow statements
+              </p>
+            </div>
+          </div>
+        </button>
+
+        {/* Bank Reconciliation */}
+        <button
+          onClick={() => onTabChange('reconciliation')}
+          className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
+            activeTab === 'reconciliation'
+              ? 'from-teal-100 to-cyan-100 border-teal-400 shadow-md ring-2 ring-teal-300 ring-opacity-50 scale-102'
+              : 'from-teal-50 to-cyan-50 border-teal-200 hover:shadow-md hover:from-teal-100 hover:to-cyan-100'
+          }`}
+          aria-pressed={activeTab === 'reconciliation'}
+        >
+          <div className="flex flex-col items-center text-center space-y-1">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'reconciliation' ? 'bg-teal-200' : 'bg-teal-100'}`}
+            >
+              🏦
+            </div>
+            <div>
+              <h3
+                className={`font-bold text-base transition-colors ${activeTab === 'reconciliation' ? 'text-teal-900' : 'text-teal-800'}`}
+              >
+                Reconciliation
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'reconciliation' ? 'text-teal-700' : 'text-teal-600'}`}
+              >
+                Bank and M-PESA matching
+              </p>
+            </div>
+          </div>
+        </button>
+
+        {/* Invoicing & Receipts */}
+        <button
+          onClick={() => onTabChange('invoicing')}
+          className={`bg-gradient-to-br rounded-lg py-3 px-3 transition-all duration-200 hover:scale-102 cursor-pointer border-2 ${
+            activeTab === 'invoicing'
+              ? 'from-indigo-100 to-blue-100 border-indigo-400 shadow-md ring-2 ring-indigo-300 ring-opacity-50 scale-102'
+              : 'from-indigo-50 to-blue-50 border-indigo-200 hover:shadow-md hover:from-indigo-100 hover:to-blue-100'
+          }`}
+          aria-pressed={activeTab === 'invoicing'}
+        >
+          <div className="flex flex-col items-center text-center space-y-1">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${activeTab === 'invoicing' ? 'bg-indigo-200' : 'bg-indigo-100'}`}
+            >
+              📄
+            </div>
+            <div>
+              <h3
+                className={`font-bold text-base transition-colors ${activeTab === 'invoicing' ? 'text-indigo-900' : 'text-indigo-800'}`}
+              >
+                Invoicing
+              </h3>
+              <p
+                className={`text-sm mt-1 transition-colors opacity-75 ${activeTab === 'invoicing' ? 'text-indigo-700' : 'text-indigo-600'}`}
+              >
+                Invoice and receipt management
               </p>
             </div>
           </div>

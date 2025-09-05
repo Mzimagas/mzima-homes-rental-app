@@ -25,10 +25,26 @@ export class AcquisitionFinancialsService {
     PAYMENT_INSTALLMENTS_API: true, // ✅ Enabled - API routes exist
   }
 
+  // Circuit breaker for 403 errors
+  private static authFailure = false
+  private static authFailureTime = 0
+  private static readonly AUTH_RETRY_DELAY = 30000 // 30 seconds
+
   private static async makeRequest(
     url: string,
     options: import('../../../lib/types/fetch').FetchOptions = {}
   ) {
+    // Check circuit breaker for auth failures
+    if (this.authFailure) {
+      const timeSinceFailure = Date.now() - this.authFailureTime
+      if (timeSinceFailure < this.AUTH_RETRY_DELAY) {
+        throw new Error('Authentication failed. Please refresh the page and try again.')
+      } else {
+        // Reset circuit breaker after delay
+        this.authFailure = false
+      }
+    }
+
     // Get the auth token and CSRF token
     const {
       data: { session },
@@ -55,6 +71,14 @@ export class AcquisitionFinancialsService {
       headers,
       credentials: 'same-origin',
     })
+
+    // Handle 403 errors with circuit breaker
+    if (response.status === 403) {
+      this.authFailure = true
+      this.authFailureTime = Date.now()
+      console.warn('[AcquisitionFinancialsService] 403 detected, activating circuit breaker')
+      throw new Error('Access denied. Please check your permissions or refresh the page.')
+    }
 
     // Check if response has content before trying to parse JSON
     const contentType = response.headers.get('content-type')
@@ -275,13 +299,14 @@ export class AcquisitionFinancialsService {
     costs: AcquisitionCostEntry[]
     payments: PaymentInstallment[]
   }> {
-    // Skip API calls entirely if features are disabled to avoid 403 errors
+    // Skip API calls entirely if auth failed or features are disabled
     if (
-      !this.FEATURE_FLAGS.PURCHASE_PIPELINE_API &&
-      !this.FEATURE_FLAGS.ACQUISITION_COSTS_API &&
-      !this.FEATURE_FLAGS.PAYMENT_INSTALLMENTS_API
+      this.authFailure ||
+      (!this.FEATURE_FLAGS.PURCHASE_PIPELINE_API &&
+        !this.FEATURE_FLAGS.ACQUISITION_COSTS_API &&
+        !this.FEATURE_FLAGS.PAYMENT_INSTALLMENTS_API)
     ) {
-      // Return empty data immediately if no APIs are available
+      // Return empty data immediately if no APIs are available or auth failed
       return { costs: [], payments: [] }
     }
 

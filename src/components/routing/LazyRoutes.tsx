@@ -41,13 +41,7 @@ const AdminLoading = () => (
 )
 
 // Core dashboard routes (higher priority, smaller chunks)
-export const LazyDashboardGrid = dynamic(
-  () => import('../dashboard/ResponsiveDashboardGrid'),
-  {
-    loading: DashboardLoading,
-    ssr: true, // Dashboard should be SSR for better SEO
-  }
-)
+// Note: Dashboard components have been removed - using placeholder
 
 export const LazyPropertyManagement = dynamic(
   () => import('../properties/PropertyManagementTabs'),
@@ -71,29 +65,20 @@ export const LazyTenantManagement = dynamic(
 )
 
 // Reports and analytics (separate bundle)
-export const LazyReportsPage = dynamic(
-  () => import('../../app/dashboard/reports/page'),
-  {
-    loading: ReportsLoading,
-    ssr: false, // Reports don't need SSR
-  }
-)
+export const LazyReportsPage = dynamic(() => import('../../app/dashboard/reports/page'), {
+  loading: ReportsLoading,
+  ssr: false, // Reports don't need SSR
+})
 
-export const LazyFinancialReports = dynamic(
-  () => import('../reports/financial-reports'),
-  {
-    loading: ReportsLoading,
-    ssr: false,
-  }
-)
+export const LazyFinancialReports = dynamic(() => import('../reports/financial-reports'), {
+  loading: ReportsLoading,
+  ssr: false,
+})
 
-export const LazyOccupancyReports = dynamic(
-  () => import('../reports/occupancy-reports'),
-  {
-    loading: ReportsLoading,
-    ssr: false,
-  }
-)
+export const LazyOccupancyReports = dynamic(() => import('../reports/occupancy-reports'), {
+  loading: ReportsLoading,
+  ssr: false,
+})
 
 // Admin features (separate bundle, lazy loaded)
 export const LazyAdministrationPage = dynamic(
@@ -104,54 +89,42 @@ export const LazyAdministrationPage = dynamic(
   }
 )
 
-export const LazyUserManagementPage = dynamic(
-  () => import('../administration/UserManagement'),
-  {
-    loading: AdminLoading,
-    ssr: false,
-  }
-)
+export const LazyUserManagementPage = dynamic(() => import('../administration/UserManagement'), {
+  loading: AdminLoading,
+  ssr: false,
+})
 
 // Payment features
-export const LazyPaymentsPage = dynamic(
-  () => import('../../app/dashboard/payments/page'),
-  {
-    loading: () => (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-        <span className="ml-3 text-gray-600">Loading payments...</span>
-      </div>
-    ),
-    ssr: false,
-  }
-)
+export const LazyPaymentsPage = dynamic(() => import('../../app/dashboard/payments/page'), {
+  loading: () => (
+    <div className="flex items-center justify-center p-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+      <span className="ml-3 text-gray-600">Loading payments...</span>
+    </div>
+  ),
+  ssr: false,
+})
 
 // Utilities and settings
-export const LazyUtilitiesPage = dynamic(
-  () => import('../../app/dashboard/utilities/page'),
-  {
-    loading: () => (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-        <span className="ml-3 text-gray-600">Loading utilities...</span>
-      </div>
-    ),
-    ssr: false,
-  }
-)
+export const LazyUtilitiesPage = dynamic(() => import('../../app/dashboard/utilities/page'), {
+  loading: () => (
+    <div className="flex items-center justify-center p-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+      <span className="ml-3 text-gray-600">Loading utilities...</span>
+    </div>
+  ),
+  ssr: false,
+})
 
-export const LazySettingsPage = dynamic(
-  () => import('../../app/settings/security/page'),
-  {
-    loading: () => (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
-        <span className="ml-3 text-gray-600">Loading settings...</span>
-      </div>
-    ),
-    ssr: false,
-  }
-)
+export const LazySettingsPage = dynamic(() => import('../../app/settings/security/page'), {
+  loading: () => (
+    <div className="flex items-center justify-center p-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
+      <span className="ml-3 text-gray-600">Loading settings...</span>
+    </div>
+  ),
+  ssr: false,
+})
 
 // Route preloading hook
 export const useRoutePreloader = () => {
@@ -160,11 +133,10 @@ export const useRoutePreloader = () => {
     const coreRoutes = [
       () => import('../properties/PropertyManagementTabs'),
       () => import('../rental-management/components/TenantManagement'),
-      () => import('../dashboard/ResponsiveDashboardGrid'),
     ]
 
-    coreRoutes.forEach(route => {
-      route().catch(error => {
+    coreRoutes.forEach((route) => {
+      route().catch((error) => {
         console.warn('Failed to preload route:', error)
       })
     })
@@ -178,8 +150,8 @@ export const useRoutePreloader = () => {
       () => import('../properties/components/AuditTrailDashboard'),
     ]
 
-    adminRoutes.forEach(route => {
-      route().catch(error => {
+    adminRoutes.forEach((route) => {
+      route().catch((error) => {
         console.warn('Failed to preload admin route:', error)
       })
     })
@@ -194,8 +166,8 @@ export const useRoutePreloader = () => {
       () => import('../reports/property-reports'),
     ]
 
-    reportRoutes.forEach(route => {
-      route().catch(error => {
+    reportRoutes.forEach((route) => {
+      route().catch((error) => {
         console.warn('Failed to preload report route:', error)
       })
     })
@@ -204,7 +176,7 @@ export const useRoutePreloader = () => {
   return {
     preloadRoutes,
     preloadAdminRoutes,
-    preloadReportRoutes
+    preloadReportRoutes,
   }
 }
 
@@ -230,34 +202,36 @@ export class RouteErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error(`Route error in ${this.props.routeName}:`, error, errorInfo)
-    
+
     // Send error to analytics
     if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'route_error', {
+      ;(window as any).gtag('event', 'route_error', {
         route_name: this.props.routeName,
-        error_message: error.message
+        error_message: error.message,
       })
     }
   }
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-red-600 text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
-            <p className="text-gray-600 mb-4">
-              Failed to load {this.props.routeName || 'this page'}
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Reload Page
-            </button>
+      return (
+        this.props.fallback || (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-red-600 text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
+              <p className="text-gray-600 mb-4">
+                Failed to load {this.props.routeName || 'this page'}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Reload Page
+              </button>
+            </div>
           </div>
-        </div>
+        )
       )
     }
 
@@ -277,7 +251,7 @@ export const LazyRouteWrapper: React.FC<LazyRouteWrapperProps> = ({
   children,
   routeName,
   preloadOnHover = false,
-  preloadFn
+  preloadFn,
 }) => {
   const handleMouseEnter = React.useCallback(() => {
     if (preloadOnHover && preloadFn) {
@@ -288,9 +262,7 @@ export const LazyRouteWrapper: React.FC<LazyRouteWrapperProps> = ({
   return (
     <RouteErrorBoundary routeName={routeName}>
       <div onMouseEnter={handleMouseEnter}>
-        <Suspense fallback={<DashboardLoading />}>
-          {children}
-        </Suspense>
+        <Suspense fallback={<DashboardLoading />}>{children}</Suspense>
       </div>
     </RouteErrorBoundary>
   )
@@ -300,21 +272,21 @@ export const LazyRouteWrapper: React.FC<LazyRouteWrapperProps> = ({
 export const useRoutePerformance = (routeName: string) => {
   React.useEffect(() => {
     const startTime = performance.now()
-    
+
     return () => {
       const endTime = performance.now()
       const loadTime = endTime - startTime
-      
+
       // Log route load time
       if (process.env.NODE_ENV === 'development') {
         console.log(`Route ${routeName} loaded in ${loadTime.toFixed(2)}ms`)
       }
-      
+
       // Send to analytics
       if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('event', 'route_load_time', {
+        ;(window as any).gtag('event', 'route_load_time', {
           route_name: routeName,
-          load_time: Math.round(loadTime)
+          load_time: Math.round(loadTime),
         })
       }
     }

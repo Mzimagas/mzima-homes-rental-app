@@ -249,21 +249,7 @@ export function useCachedTenants(filters?: { property_id?: string; status?: stri
   })
 }
 
-export function useCachedDashboard(options?: { refreshInterval?: number }) {
-  const fetcher = useCallback(async () => {
-    const response = await fetch('/api/batch/dashboard')
-    if (!response.ok) throw new Error('Failed to fetch dashboard data')
-    return response.json()
-  }, [])
-
-  return useCachedData({
-    cacheKey: 'dashboard_data',
-    fetcher,
-    ttl: 180000, // 3 minutes for dashboard
-    tags: ['dashboard', 'data'],
-    refreshInterval: options?.refreshInterval, // Only refresh if explicitly requested
-  })
-}
+// useCachedDashboard removed with dashboard cleanup
 
 // Cache management hooks
 

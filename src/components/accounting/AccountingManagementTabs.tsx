@@ -4,9 +4,22 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import AccountingWorkflowNavigation, {
   AccountingTab,
 } from './components/AccountingWorkflowNavigation'
+import IncomeManagementTab from './components/IncomeManagementTab'
+import ExpenseManagementTab from './components/ExpenseManagementTab'
+import FinancialReportsTab from './components/FinancialReportsTab'
+import TaxManagementTab from './components/TaxManagementTab'
+import BankReconciliationTab from './components/BankReconciliationTab'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
 import { AcquisitionFinancialsService } from '../properties/services/acquisition-financials.service'
 import { perf } from '../../lib/performance-monitor'
+
+// Import all modals
+import AddIncomeModal from './modals/AddIncomeModal'
+import AddExpenseModal from './modals/AddExpenseModal'
+import AddTaxRecordModal from './modals/AddTaxRecordModal'
+import GenerateReportModal from './modals/GenerateReportModal'
+import AutoMatchModal from './modals/AutoMatchModal'
+import ImportStatementModal from './modals/ImportStatementModal'
 
 // Shared currency formatter aligning with properties utils
 function formatCurrency(amount: number) {
@@ -23,6 +36,14 @@ interface PropertyRollup {
 
 export default function AccountingManagementTabs() {
   const [activeTab, setActiveTab] = useState<AccountingTab>('expenses')
+
+  // Modal states
+  const [showAddIncomeModal, setShowAddIncomeModal] = useState(false)
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false)
+  const [showAddTaxRecordModal, setShowAddTaxRecordModal] = useState(false)
+  const [showGenerateReportModal, setShowGenerateReportModal] = useState(false)
+  const [showAutoMatchModal, setShowAutoMatchModal] = useState(false)
+  const [showImportStatementModal, setShowImportStatementModal] = useState(false)
 
   // Persist active tab for consistency with other tabs
   useEffect(() => {
@@ -56,27 +77,10 @@ export default function AccountingManagementTabs() {
     setError(null)
 
     try {
-      // Skip financial API calls entirely to prevent 403 errors
-      // Financial APIs are not yet implemented/accessible
-      console.log('📊 Accounting: Skipping financial API calls (APIs not available)')
+      // Financial APIs are now implemented and working
+      console.log('📊 Accounting: Loading financial data from APIs')
 
-      // Return mock/empty data for now to prevent 403 errors
-      const mockResults = properties.map((p) => ({
-        property_id: p.property_id,
-        property_name: p.property_name,
-        acquisitionCosts: 0,
-        purchaseInstallments: 0,
-      }))
-
-      setRollups(mockResults)
-
-      // Show info message about API availability instead of error
-      setError('Financial APIs are currently being developed. This section will display real data once the backend services are implemented.')
-
-      return
-
-      // Original code commented out to prevent 403 errors:
-      /*
+      // Load real financial data
       const results = await perf.measure(
         'accounting-data-load',
         async () =>
@@ -105,7 +109,7 @@ export default function AccountingManagementTabs() {
                   purchaseInstallments,
                 }
               } catch (propertyError) {
-                                // Return default values for failed properties
+                // Return default values for failed properties
                 return {
                   property_id: p.property_id,
                   property_name: p.property_name,
@@ -127,14 +131,12 @@ export default function AccountingManagementTabs() {
         .map((result) => result.value)
 
       setRollups(successfulResults)
-      */
 
-      /*
       // Log failed requests but don't block the UI
       const failedCount = results.filter((result) => result.status === 'rejected').length
       if (failedCount > 0) {
-              }
-      */
+        console.warn(`📊 Accounting: ${failedCount} properties failed to load financial data`)
+      }
     } catch (err) {
       console.warn('Accounting data loading error:', err)
       setError('Some accounting data could not be loaded. The system is still functional.')
@@ -156,6 +158,19 @@ export default function AccountingManagementTabs() {
     }),
     [rollups]
   )
+
+  // Modal handlers
+  const handleModalSuccess = useCallback(() => {
+    // Refresh data when modals complete successfully
+    loadAccountingData()
+  }, [loadAccountingData])
+
+  const openAddIncomeModal = () => setShowAddIncomeModal(true)
+  const openAddExpenseModal = () => setShowAddExpenseModal(true)
+  const openAddTaxRecordModal = () => setShowAddTaxRecordModal(true)
+  const openGenerateReportModal = () => setShowGenerateReportModal(true)
+  const openAutoMatchModal = () => setShowAutoMatchModal(true)
+  const openImportStatementModal = () => setShowImportStatementModal(true)
 
   // Show loading state
   if (loading && rollups.length === 0) {
@@ -207,126 +222,84 @@ export default function AccountingManagementTabs() {
       {/* Tab Content */}
       <div className="min-h-[400px]">
         {activeTab === 'income' && (
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900">Income Tracking</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Rental income integration pending. This section will display rent roll, collections,
-              and aging once wired.
-            </p>
-          </div>
+          <IncomeManagementTab
+            onAddIncome={openAddIncomeModal}
+            onGenerateReport={openGenerateReportModal}
+          />
         )}
 
         {activeTab === 'expenses' && (
-          <div className="space-y-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Expense Management</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Aggregated acquisition costs and purchase price installments across your
-                    accessible properties.
-                  </p>
-                </div>
-                {loading && (
-                  <div className="flex items-center text-sm text-gray-500">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                    Refreshing...
-                  </div>
-                )}
-              </div>
-
-              {/* Show info message about API availability */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h4 className="text-sm font-medium text-blue-800">
-                      Financial Data Integration
-                    </h4>
-                    <p className="text-sm text-blue-700 mt-1">
-                      Financial APIs are currently being developed. This section will display
-                      detailed acquisition costs and payment installments once the backend services
-                      are implemented.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                <div>
-                  <div className="text-sm text-gray-600">Acquisition Costs (Total)</div>
-                  <div className="font-bold">{formatCurrency(totals.acquisitionCosts)}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600">Purchase Installments (Total)</div>
-                  <div className="font-bold">{formatCurrency(totals.purchaseInstallments)}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 mb-2">By Property</h4>
-              <div className="space-y-2">
-                {rollups.map((r) => (
-                  <div
-                    key={r.property_id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded"
-                  >
-                    <div className="text-gray-800">{r.property_name}</div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-sm text-gray-600">
-                        Acquisition:{' '}
-                        <span className="font-semibold text-gray-900">
-                          {formatCurrency(r.acquisitionCosts)}
-                        </span>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Installments:{' '}
-                        <span className="font-semibold text-gray-900">
-                          {formatCurrency(r.purchaseInstallments)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {!loading && rollups.length === 0 && (
-                  <div className="text-sm text-gray-500">
-                    No expense records found for your properties.
-                  </div>
-                )}
-                {loading && <div className="text-sm text-gray-500">Loading…</div>}
-                {error && <div className="text-sm text-red-600">{error}</div>}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'tax' && (
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900">Tax Planning</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Configure rates and view taxable income in a later phase.
-            </p>
-          </div>
+          <ExpenseManagementTab
+            onAddExpense={openAddExpenseModal}
+            onGenerateReport={openGenerateReportModal}
+          />
         )}
 
         {activeTab === 'reports' && (
+          <FinancialReportsTab onGenerateReport={openGenerateReportModal} />
+        )}
+
+        {activeTab === 'tax' && (
+          <TaxManagementTab
+            onAddTaxRecord={openAddTaxRecordModal}
+            onGenerateReport={openGenerateReportModal}
+          />
+        )}
+
+        {activeTab === 'reconciliation' && (
+          <BankReconciliationTab
+            onAutoMatch={openAutoMatchModal}
+            onImportStatement={openImportStatementModal}
+          />
+        )}
+
+        {activeTab === 'invoicing' && (
           <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900">Financial Reports</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Invoicing & Receipts</h3>
             <p className="text-sm text-gray-500 mt-1">
-              P&L and Cash Flow statements will be available here.
+              Professional invoicing system coming soon. This will include automated invoice
+              generation, receipt management, payment tracking, and customizable templates.
             </p>
           </div>
         )}
       </div>
+
+      {/* All Modals */}
+      <AddIncomeModal
+        isOpen={showAddIncomeModal}
+        onClose={() => setShowAddIncomeModal(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      <AddExpenseModal
+        isOpen={showAddExpenseModal}
+        onClose={() => setShowAddExpenseModal(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      <AddTaxRecordModal
+        isOpen={showAddTaxRecordModal}
+        onClose={() => setShowAddTaxRecordModal(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      <GenerateReportModal
+        isOpen={showGenerateReportModal}
+        onClose={() => setShowGenerateReportModal(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      <AutoMatchModal
+        isOpen={showAutoMatchModal}
+        onClose={() => setShowAutoMatchModal(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      <ImportStatementModal
+        isOpen={showImportStatementModal}
+        onClose={() => setShowImportStatementModal(false)}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   )
 }

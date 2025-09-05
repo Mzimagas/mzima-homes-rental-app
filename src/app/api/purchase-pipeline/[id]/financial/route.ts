@@ -40,22 +40,43 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 }
 
 // Helper function to check purchase pipeline access
-async function checkPurchaseAccess(userId: string, purchaseId: string): Promise<boolean> {
+async function checkPurchaseAccess(userId: string, idParam: string): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
-    console.log('checkPurchaseAccess - userId:', userId, 'purchaseId:', purchaseId)
+    console.log('checkPurchaseAccess - userId:', userId, 'idParam:', idParam)
 
-    const { data: purchase, error } = await admin
+    // First try to find by purchase pipeline ID
+    let { data: purchase, error } = await admin
       .from('purchase_pipeline')
       .select('created_by, property_id, completed_property_id')
-      .eq('id', purchaseId)
+      .eq('id', idParam)
       .single()
+
+    // If not found by purchase ID, try to find by property ID
+    if (error && error.code === 'PGRST116') {
+      console.log('checkPurchaseAccess - not found by purchase ID, trying property ID')
+      const { data: purchaseByProperty, error: propertyError } = await admin
+        .from('purchase_pipeline')
+        .select('created_by, property_id, completed_property_id')
+        .or(`property_id.eq.${idParam},completed_property_id.eq.${idParam}`)
+        .single()
+
+      if (!propertyError && purchaseByProperty) {
+        purchase = purchaseByProperty
+        error = null
+        console.log('checkPurchaseAccess - found purchase by property ID:', purchase)
+      }
+    }
 
     console.log('checkPurchaseAccess - purchase data:', purchase, 'error:', error)
 
     if (error || !purchase) {
-      console.log('checkPurchaseAccess - no purchase found or error')
-      return false
+      console.log(
+        'checkPurchaseAccess - no purchase pipeline record found, allowing access for regular property'
+      )
+      // Allow access for properties that don't have purchase pipeline records
+      // These are just regular properties without purchase workflows
+      return true
     }
 
     // Check if user created this purchase pipeline entry
@@ -121,43 +142,97 @@ export const GET = compose(
   withAuth
 )(async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const userId = await resolveUserId(req)
-    if (!userId) return errors.unauthorized()
+    console.log('[financial] Starting auth check...')
+    console.log('[financial] headers.authorization =', req.headers.get('authorization'))
+    console.log('[financial] cookies present =', req.headers.get('cookie') ? 'yes' : 'no')
 
-    // Extract purchase id from path
+    const userId = await resolveUserId(req)
+    console.log('[financial] userId from resolveUserId:', userId)
+
+    if (!userId) {
+      console.warn('[financial] 403 — no userId from resolveUserId')
+      return errors.unauthorized()
+    }
+
+    // Extract id from path (could be purchase pipeline ID or property ID)
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
     const pipelineIdx = segments.findIndex((s) => s === 'purchase-pipeline')
-    const purchaseId =
+    const idParam =
       pipelineIdx >= 0 && segments[pipelineIdx + 1] ? segments[pipelineIdx + 1] : undefined
-    if (!purchaseId) return errors.badRequest('Missing purchase id in path')
+    if (!idParam) return errors.badRequest('Missing id in path')
 
-    const hasAccess = await checkPurchaseAccess(userId, purchaseId)
-    if (!hasAccess) return errors.forbidden()
+    console.log('GET purchase-pipeline financial - idParam:', idParam)
+
+    const hasAccess = await checkPurchaseAccess(userId, idParam)
+    console.log('[financial] hasAccess check result:', hasAccess)
+
+    if (!hasAccess) {
+      console.warn('[financial] No purchase pipeline record found for:', idParam)
+      // Return empty financial data for properties without purchase pipeline records
+      console.log(
+        '[financial] Returning empty financial data for property without purchase pipeline'
+      )
+      return Response.json({
+        costs: [],
+        payments: [],
+        purchase_price_agreement_kes: 0,
+        purchase_price_history: [],
+      })
+    }
 
     const admin = createClient(supabaseUrl, serviceKey)
 
-    // Get purchase pipeline data
-    const { data: purchase, error: purchaseError } = await admin
+    // Get purchase pipeline data - try by ID first, then by property ID
+    let purchase: any = null
+    let actualPurchaseId: string = idParam
+
+    // First try to get by purchase pipeline ID
+    let { data: purchaseData, error: purchaseError } = await admin
       .from('purchase_pipeline')
       .select('*')
-      .eq('id', purchaseId)
+      .eq('id', idParam)
       .single()
 
-    if (purchaseError || !purchase) {
+    if (purchaseError && purchaseError.code === 'PGRST116') {
+      // If not found by purchase ID, try by property ID
+      console.log('Trying to find purchase by property ID:', idParam)
+      const { data: purchaseByProperty, error: propertyError } = await admin
+        .from('purchase_pipeline')
+        .select('*')
+        .or(`property_id.eq.${idParam},completed_property_id.eq.${idParam}`)
+        .single()
+
+      if (!propertyError && purchaseByProperty) {
+        purchaseData = purchaseByProperty
+        actualPurchaseId = purchaseByProperty.id
+        purchaseError = null
+        console.log('Found purchase by property ID:', actualPurchaseId)
+      }
+    }
+
+    if (purchaseError || !purchaseData) {
+      console.log('Purchase pipeline entry not found for:', idParam)
       return errors.notFound('Purchase pipeline entry not found')
     }
 
-    // Get real financial data from the shared tables using purchase pipeline ID as property_id
+    purchase = purchaseData
+
+    // Get the property ID to use for financial data queries
+    const propertyIdForFinancials =
+      purchase.property_id || purchase.completed_property_id || actualPurchaseId
+    console.log('Using property ID for financial queries:', propertyIdForFinancials)
+
+    // Get real financial data from the shared tables using the property ID
     const [costsResult, paymentsResult] = await Promise.all([
       admin
         .from('property_acquisition_costs')
         .select('*')
-        .eq('property_id', purchaseId)
+        .eq('property_id', propertyIdForFinancials)
         .order('created_at', { ascending: true }),
       admin
         .from('property_payment_installments')
         .select('*')
-        .eq('property_id', purchaseId)
+        .eq('property_id', propertyIdForFinancials)
         .order('payment_date', { ascending: true }),
     ])
 

@@ -36,10 +36,10 @@ export function withAuth(handler: Handler): Handler {
   return async (req: NextRequest) => {
     // Primary: cookie-based session
     try {
-      const supabase = createServerSupabaseClient()
+      const supabase = await createServerSupabaseClient()
       const {
         data: { user },
-      } = await (await supabase).auth.getUser()
+      } = await supabase.auth.getUser()
       if (user) return handler(req)
     } catch {}
 

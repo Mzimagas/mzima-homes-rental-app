@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
-import { useNavigationOptimization, setGlobalNavigationOptimization } from '../../hooks/useNavigationOptimization'
+import {
+  useNavigationOptimization,
+  setGlobalNavigationOptimization,
+} from '../../hooks/useNavigationOptimization'
 import { useSubdivisionPrefetch } from '../../hooks/useSubdivisionPrefetch'
 import { DashboardProvider } from '../../contexts/DashboardContext'
-import ContextualHeader from '../../components/dashboard/ContextualHeader'
-import EnhancedGlobalSearch from '../../components/dashboard/EnhancedGlobalSearch'
 import { useSidebarSwipe } from '../../hooks/useSwipeGesture'
 import MobileMenu from '../../components/mobile/MobileMenu'
 import MobileMenuButton from '../../components/mobile/MobileMenuButton'
@@ -206,7 +207,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     enablePrefetch: true,
     enablePreload: true,
     preloadDelay: 100,
-    enableLogging: false // Disable logging in production
+    enableLogging: false, // Disable logging in production
   })
 
   // Set global instance for optimized links
@@ -218,7 +219,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useSubdivisionPrefetch({
     enabled: true,
     prefetchOnHover: true,
-    prefetchDelay: 1000 // Longer delay to avoid aggressive prefetching
+    prefetchDelay: 1000, // Longer delay to avoid aggressive prefetching
   })
 
   // Initialize search service
@@ -541,20 +542,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             />
 
             <ResponsiveContainer maxWidth="full" padding="md" className="py-2 md:py-6">
-              {/* Desktop Global Search */}
-              <div className="hidden md:block mb-4 md:mb-6">
-                <EnhancedGlobalSearch
-                  className="max-w-md"
-                  qualityThreshold="moderate"
-                  maxResults={12}
-                />
-              </div>
-
-              {/* Contextual Header */}
-              <div className="mb-4 md:mb-6">
-                <ContextualHeader />
-              </div>
-
               {/* Page Content */}
               <div className="min-h-0 flex-1">{children}</div>
             </ResponsiveContainer>
