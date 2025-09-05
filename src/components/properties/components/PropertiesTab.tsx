@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Button } from '../../ui'
 import Modal from '../../ui/Modal'
 import PropertyList from './PropertyList'
