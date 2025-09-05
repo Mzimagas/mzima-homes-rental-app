@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Button } from '../../ui'
 import Modal from '../../ui/Modal'
 import PropertyList from './PropertyList'
@@ -87,11 +87,16 @@ export default function PropertiesTab({
     persistKey: 'properties-tab-filters',
   })
 
-  // Filter panel state - auto-hide by default
-  const { isCollapsed, toggleCollapse, setCollapsed } = useFilterPanel({
+  // Ref for search component to exclude from click-outside detection
+  const searchRef = useRef<HTMLDivElement>(null)
+
+  // Filter panel state - auto-hide by default with click-outside detection
+  const { isCollapsed, toggleCollapse, setCollapsed, panelRef } = useFilterPanel({
     defaultCollapsed: true,
     persistKey: 'properties-filter-panel',
     autoCollapseOnMobile: true,
+    enableClickOutside: true,
+    excludeRefs: [searchRef],
   })
 
   // Saved filters
@@ -99,8 +104,8 @@ export default function PropertiesTab({
     persistKey: 'properties-saved-filters',
   })
 
-  // Handle loading saved filters
-  const handleLoadSavedFilter = (id: string) => {
+  // Handle loading saved filters (memoized to prevent infinite loops)
+  const handleLoadSavedFilter = useCallback((id: string) => {
     const savedFilterData = loadFilter(id)
     if (savedFilterData) {
       setPipelineFilter(savedFilterData.pipeline)
@@ -109,54 +114,43 @@ export default function PropertiesTab({
       setSearchTerm(savedFilterData.searchTerm)
       setLastInteraction(Date.now()) // Track interaction
     }
-  }
+  }, [loadFilter, setPipelineFilter, setStatusFilter, setPropertyTypesFilter, setSearchTerm])
 
-  // Enhanced filter setters with interaction tracking
-  const handlePipelineFilter = (pipeline: PropertyPipelineFilter) => {
+  // Enhanced filter setters with interaction tracking (memoized to prevent infinite loops)
+  const handlePipelineFilter = useCallback((pipeline: PropertyPipelineFilter) => {
     setPipelineFilter(pipeline)
     setLastInteraction(Date.now())
-  }
+  }, [setPipelineFilter])
 
-  const handleStatusFilter = (status: PropertyStatusFilter) => {
+  const handleStatusFilter = useCallback((status: PropertyStatusFilter) => {
     setStatusFilter(status)
     setLastInteraction(Date.now())
-  }
+  }, [setStatusFilter])
 
-  const handlePropertyTypesFilter = (types: string[]) => {
+  const handlePropertyTypesFilter = useCallback((types: string[]) => {
     setPropertyTypesFilter(types)
     setLastInteraction(Date.now())
-  }
+  }, [setPropertyTypesFilter])
 
-  const handleSearchTerm = (term: string) => {
+  const handleSearchTerm = useCallback((term: string) => {
     setSearchTerm(term)
     setLastInteraction(Date.now())
-  }
+  }, [setSearchTerm])
 
-  const handleApplyPreset = (
+  const handleApplyPreset = useCallback((
     preset: 'active' | 'purchase' | 'subdivision' | 'handover' | 'completed'
   ) => {
     applyPreset(preset)
     setLastInteraction(Date.now())
-  }
+  }, [applyPreset])
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     clearFilters()
     setLastInteraction(Date.now())
-  }
+  }, [clearFilters])
 
-  // Sync search term with parent component
-  useMemo(() => {
-    if (filters.searchTerm !== searchTerm) {
-      setSearchTerm(searchTerm)
-    }
-  }, [searchTerm, filters.searchTerm, setSearchTerm])
-
-  // Update parent when search term changes
-  useMemo(() => {
-    if (filters.searchTerm !== searchTerm) {
-      onSearchChange(filters.searchTerm)
-    }
-  }, [filters.searchTerm, searchTerm, onSearchChange])
+  // Note: Search term sync removed to prevent infinite loops
+  // PropertySearch component manages its own internal state
 
   // Auto-hide filter panel with intelligent timing based on user interaction
   useEffect(() => {
@@ -234,29 +228,31 @@ export default function PropertiesTab({
 
       {/* Search and Filter Controls */}
       <div className="space-y-4">
-        <PropertySearch
-          onSearchChange={handleSearchTerm}
-          placeholder="Search properties by name, address, type, or notes..."
-          resultsCount={filteredCount}
-          totalCount={totalCount}
-          showFilterToggle={true}
-          onFilterToggle={() => {
-            toggleCollapse()
-            setLastInteraction(Date.now())
-          }}
-          hasActiveFilters={hasActiveFilters}
-          filterCount={[
-            filters.pipeline !== 'all' ? 1 : 0,
-            filters.status !== 'all' ? 1 : 0,
-            filters.propertyTypes.length,
-          ].reduce((a, b) => a + b, 0)}
-          showQuickFilters={true}
-          onQuickFilter={handleApplyPreset}
-        />
+        <div ref={searchRef}>
+          <PropertySearch
+            onSearchChange={handleSearchTerm}
+            placeholder="Search properties by name, address, type, or notes..."
+            resultsCount={filteredCount}
+            totalCount={totalCount}
+            showFilterToggle={true}
+            onFilterToggle={() => {
+              toggleCollapse()
+              setLastInteraction(Date.now())
+            }}
+            hasActiveFilters={hasActiveFilters}
+            filterCount={[
+              filters.pipeline !== 'all' ? 1 : 0,
+              filters.status !== 'all' ? 1 : 0,
+              filters.propertyTypes.length,
+            ].reduce((a, b) => a + b, 0)}
+            showQuickFilters={true}
+            onQuickFilter={handleApplyPreset}
+          />
+        </div>
 
         {/* Filter and Saved Filters Panels - Only show when expanded */}
         {!isCollapsed && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div ref={panelRef} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Main Filter Panel */}
             <div className="lg:col-span-2">
               <PropertyFilterPanel

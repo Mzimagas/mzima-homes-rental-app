@@ -41,9 +41,10 @@ export default function PropertySearch({
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
 
   // Call the parent's search handler when debounced value changes
+  // Note: onSearchChange excluded from deps to prevent infinite loops
   useEffect(() => {
     onSearchChange(debouncedSearchTerm)
-  }, [debouncedSearchTerm, onSearchChange])
+  }, [debouncedSearchTerm])
 
   const handleClear = () => {
     setSearchTerm('')

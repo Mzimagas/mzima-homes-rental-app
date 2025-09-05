@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 
 export interface UseFilterPanelOptions {
   defaultCollapsed?: boolean
   persistKey?: string
   autoCollapseOnMobile?: boolean
   autoHideDelay?: number
+  enableClickOutside?: boolean
+  excludeRefs?: React.RefObject<HTMLElement>[]
 }
 
 export interface UseFilterPanelReturn {
@@ -14,6 +16,7 @@ export interface UseFilterPanelReturn {
   toggleCollapse: () => void
   setCollapsed: (collapsed: boolean) => void
   isMobile: boolean
+  panelRef: React.RefObject<HTMLDivElement>
 }
 
 export function useFilterPanel(options: UseFilterPanelOptions = {}): UseFilterPanelReturn {
@@ -21,8 +24,13 @@ export function useFilterPanel(options: UseFilterPanelOptions = {}): UseFilterPa
     defaultCollapsed = true, // Changed default to true for auto-hide behavior
     persistKey = 'filter-panel-state',
     autoCollapseOnMobile = true,
-    autoHideDelay = 1000
+    autoHideDelay = 1000,
+    enableClickOutside = true,
+    excludeRefs = []
   } = options
+
+  // Ref for click-outside detection
+  const panelRef = useRef<HTMLDivElement>(null)
 
   // Check if we're on mobile
   const [isMobile, setIsMobile] = useState(false)
@@ -90,10 +98,45 @@ export function useFilterPanel(options: UseFilterPanelOptions = {}): UseFilterPa
     setIsCollapsed(collapsed)
   }, [])
 
+  // Click-outside detection to auto-hide filter panel
+  useEffect(() => {
+    if (!enableClickOutside || isCollapsed) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node
+
+      // Check if click is inside the main panel
+      if (panelRef.current && panelRef.current.contains(target)) {
+        return
+      }
+
+      // Check if click is inside any excluded elements
+      const isInsideExcluded = excludeRefs.some(ref =>
+        ref.current && ref.current.contains(target)
+      )
+
+      if (!isInsideExcluded) {
+        // Only auto-hide if the click is outside the panel and excluded elements
+        setIsCollapsed(true)
+      }
+    }
+
+    // Add event listener with a small delay to avoid immediate closure
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+    }, 100)
+
+    return () => {
+      clearTimeout(timeoutId)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [enableClickOutside, isCollapsed, excludeRefs])
+
   return {
     isCollapsed,
     toggleCollapse,
     setCollapsed,
-    isMobile
+    isMobile,
+    panelRef
   }
 }

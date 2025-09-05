@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { PropertyStateService, PropertyState } from '../../../services/propertyStateService'
 
 interface PropertyStateIndicatorProps {
@@ -21,11 +21,7 @@ export default function PropertyStateIndicator({
   const [propertyState, setPropertyState] = useState<PropertyState | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadPropertyState()
-  }, [propertyId])
-
-  const loadPropertyState = async () => {
+  const loadPropertyState = useCallback(async () => {
     setLoading(true)
     try {
       const state = await PropertyStateService.getPropertyState(propertyId)
@@ -36,7 +32,11 @@ export default function PropertyStateIndicator({
     } finally {
       setLoading(false)
     }
-  }
+  }, [propertyId])
+
+  useEffect(() => {
+    loadPropertyState()
+  }, [loadPropertyState])
 
   if (loading) {
     return (
