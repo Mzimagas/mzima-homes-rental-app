@@ -246,6 +246,175 @@ export function calculateWorkflowProgress(
 }
 
 /**
+ * Property filter types and utilities for enhanced filtering
+ */
+export type PropertyPipelineFilter = 'all' | 'direct_addition' | 'purchase_pipeline' | 'subdivision' | 'handover'
+export type PropertyStatusFilter = 'all' | 'active' | 'inactive' | 'pending' | 'completed'
+
+export interface PropertyFilters {
+  pipeline: PropertyPipelineFilter
+  status: PropertyStatusFilter
+  propertyTypes: string[]
+  searchTerm: string
+  dateRange?: {
+    start: Date | null
+    end: Date | null
+  }
+}
+
+/**
+ * Get pipeline type for filtering purposes
+ */
+export function getPropertyPipelineType(property: PropertyWithLifecycle): PropertyPipelineFilter {
+  const workflowType = getWorkflowType(property)
+
+  switch (workflowType) {
+    case 'subdivision':
+      return 'subdivision'
+    case 'handover':
+      return 'handover'
+    case 'purchase_pipeline':
+      return 'purchase_pipeline'
+    case 'direct_addition':
+    default:
+      return 'direct_addition'
+  }
+}
+
+/**
+ * Get property status for filtering purposes
+ */
+export function getPropertyStatusForFilter(property: PropertyWithLifecycle): PropertyStatusFilter {
+  // Check if property is in an active pipeline
+  if (property.subdivision_status === 'SUB_DIVISION_STARTED') {
+    return 'active'
+  }
+
+  if (property.handover_status === 'IN_PROGRESS') {
+    return 'active'
+  }
+
+  // Check if property is completed
+  if (property.subdivision_status === 'SUBDIVIDED') {
+    return 'completed'
+  }
+
+  if (property.handover_status === 'COMPLETED') {
+    return 'completed'
+  }
+
+  // Check if property is pending
+  if (property.lifecycle_status === 'PENDING_PURCHASE') {
+    return 'pending'
+  }
+
+  // Default to active for properties in normal state
+  return 'active'
+}
+
+/**
+ * Filter properties based on pipeline type
+ */
+export function filterByPipeline(properties: PropertyWithLifecycle[], pipelineFilter: PropertyPipelineFilter): PropertyWithLifecycle[] {
+  if (pipelineFilter === 'all') {
+    return properties
+  }
+
+  return properties.filter(property => {
+    const propertyPipeline = getPropertyPipelineType(property)
+    return propertyPipeline === pipelineFilter
+  })
+}
+
+/**
+ * Filter properties based on status
+ */
+export function filterByStatus(properties: PropertyWithLifecycle[], statusFilter: PropertyStatusFilter): PropertyWithLifecycle[] {
+  if (statusFilter === 'all') {
+    return properties
+  }
+
+  return properties.filter(property => {
+    const propertyStatus = getPropertyStatusForFilter(property)
+    return propertyStatus === statusFilter
+  })
+}
+
+/**
+ * Filter properties based on property types
+ */
+export function filterByPropertyTypes(properties: PropertyWithLifecycle[], propertyTypes: string[]): PropertyWithLifecycle[] {
+  if (propertyTypes.length === 0) {
+    return properties
+  }
+
+  return properties.filter(property => {
+    return propertyTypes.includes(property.property_type || '')
+  })
+}
+
+/**
+ * Filter properties based on search term
+ */
+export function filterBySearchTerm(properties: PropertyWithLifecycle[], searchTerm: string): PropertyWithLifecycle[] {
+  if (!searchTerm.trim()) {
+    return properties
+  }
+
+  const lower = searchTerm.toLowerCase()
+  return properties.filter(property => {
+    return (
+      property.name.toLowerCase().includes(lower) ||
+      (property.physical_address?.toLowerCase().includes(lower) ?? false) ||
+      (property.property_type?.toLowerCase().includes(lower) ?? false) ||
+      (property.notes?.toLowerCase().includes(lower) ?? false) ||
+      (property.acquisition_notes?.toLowerCase().includes(lower) ?? false)
+    )
+  })
+}
+
+/**
+ * Apply all filters to properties
+ */
+export function applyPropertyFilters(properties: PropertyWithLifecycle[], filters: PropertyFilters): PropertyWithLifecycle[] {
+  let filtered = properties
+
+  // Apply pipeline filter
+  filtered = filterByPipeline(filtered, filters.pipeline)
+
+  // Apply status filter
+  filtered = filterByStatus(filtered, filters.status)
+
+  // Apply property type filter
+  filtered = filterByPropertyTypes(filtered, filters.propertyTypes)
+
+  // Apply search term filter
+  filtered = filterBySearchTerm(filtered, filters.searchTerm)
+
+  return filtered
+}
+
+/**
+ * Get filter counts for each pipeline type
+ */
+export function getFilterCounts(properties: PropertyWithLifecycle[]): Record<PropertyPipelineFilter, number> {
+  const counts: Record<PropertyPipelineFilter, number> = {
+    all: properties.length,
+    direct_addition: 0,
+    purchase_pipeline: 0,
+    subdivision: 0,
+    handover: 0
+  }
+
+  properties.forEach(property => {
+    const pipelineType = getPropertyPipelineType(property)
+    counts[pipelineType]++
+  })
+
+  return counts
+}
+
+/**
  * Get stage filtering summary for debugging/logging
  */
 export function getStageFilteringSummary(property: PropertyWithLifecycle): {

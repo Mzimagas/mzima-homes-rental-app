@@ -5,8 +5,13 @@ import { Button } from '../../ui'
 import Modal from '../../ui/Modal'
 import PropertyList from './PropertyList'
 import PropertySearch from './PropertySearch'
+import PropertyFilterPanel from './PropertyFilterPanel'
+import SavedFiltersPanel from './SavedFiltersPanel'
 import PropertyForm from '../property-form'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
+import { usePropertyFilters } from '../../../hooks/usePropertyFilters'
+import { useFilterPanel } from '../../../hooks/useFilterPanel'
+import { useSavedFilters } from '../../../hooks/useSavedFilters'
 import supabase from '../../../lib/supabase-client'
 
 interface PropertiesTabProps {
@@ -40,11 +45,9 @@ export default function PropertiesTab({
   onNavigateToTabs,
   onRefresh,
 }: PropertiesTabProps) {
-  // Filter properties based on search term and lifecycle status
-  const filteredProperties = useMemo(() => {
-    // Filter out properties that are back in the purchase pipeline or fully subdivided
-    // Keep properties that are just starting subdivision (they may not complete the process)
-    const activeProperties = properties.filter((property) => {
+  // Filter out properties that are back in the purchase pipeline or fully subdivided
+  const activeProperties = useMemo(() => {
+    return properties.filter((property) => {
       const lifecycleStatus = property.lifecycle_status
       const subdivisionStatus = property.subdivision_status
 
@@ -54,7 +57,6 @@ export default function PropertiesTab({
       }
 
       // Filter out properties that are fully subdivided (completed the process)
-      // Use subdivision_status as the primary indicator since it's more specific
       if (subdivisionStatus === 'Subdivided') {
         return false
       }
@@ -62,20 +64,79 @@ export default function PropertiesTab({
       // Keep all other properties (including those starting subdivision)
       return true
     })
+  }, [properties])
 
-    if (!searchTerm.trim()) return activeProperties
+  // Initialize filter system
+  const {
+    filters,
+    filteredProperties,
+    filterCounts,
+    totalCount,
+    filteredCount,
+    setPipelineFilter,
+    setStatusFilter,
+    setPropertyTypesFilter,
+    setSearchTerm,
+    clearFilters,
+    hasActiveFilters,
+    applyPreset
+  } = usePropertyFilters(activeProperties, {
+    initialFilters: { searchTerm },
+    persistKey: 'properties-tab-filters'
+  })
 
-    const lower = searchTerm.toLowerCase()
-    return activeProperties.filter((property) => {
-      return (
-        property.name.toLowerCase().includes(lower) ||
-        (property.physical_address?.toLowerCase().includes(lower) ?? false) ||
-        (property.property_type?.toLowerCase().includes(lower) ?? false) ||
-        (property.notes?.toLowerCase().includes(lower) ?? false) ||
-        (property.acquisition_notes?.toLowerCase().includes(lower) ?? false)
-      )
-    })
-  }, [properties, searchTerm])
+  // Filter panel state - auto-hide by default
+  const { isCollapsed, toggleCollapse, setCollapsed } = useFilterPanel({
+    defaultCollapsed: true,
+    persistKey: 'properties-filter-panel',
+    autoCollapseOnMobile: true
+  })
+
+  // Saved filters
+  const {
+    savedFilters,
+    saveFilter,
+    loadFilter,
+    deleteFilter
+  } = useSavedFilters({
+    persistKey: 'properties-saved-filters'
+  })
+
+  // Handle loading saved filters
+  const handleLoadSavedFilter = (id: string) => {
+    const savedFilterData = loadFilter(id)
+    if (savedFilterData) {
+      setPipelineFilter(savedFilterData.pipeline)
+      setStatusFilter(savedFilterData.status)
+      setPropertyTypesFilter(savedFilterData.propertyTypes)
+      setSearchTerm(savedFilterData.searchTerm)
+    }
+  }
+
+  // Sync search term with parent component
+  useMemo(() => {
+    if (filters.searchTerm !== searchTerm) {
+      setSearchTerm(searchTerm)
+    }
+  }, [searchTerm, filters.searchTerm, setSearchTerm])
+
+  // Update parent when search term changes
+  useMemo(() => {
+    if (filters.searchTerm !== searchTerm) {
+      onSearchChange(filters.searchTerm)
+    }
+  }, [filters.searchTerm, searchTerm, onSearchChange])
+
+  // Auto-hide filter panel when no active filters
+  useMemo(() => {
+    if (!hasActiveFilters && !isCollapsed) {
+      // Auto-collapse after a short delay when filters are cleared
+      const timer = setTimeout(() => {
+        setCollapsed(true)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [hasActiveFilters, isCollapsed, setCollapsed])
 
   // State for property form modal
   const [showPropertyForm, setShowPropertyForm] = useState(false)
@@ -131,13 +192,100 @@ export default function PropertiesTab({
         </div>
       </div>
 
-      {/* Search */}
-      <PropertySearch
-        onSearchChange={onSearchChange}
-        placeholder="Search properties by name, address, type, or notes..."
-        resultsCount={filteredProperties.length}
-        totalCount={filteredProperties.length}
-      />
+      {/* Search and Filter Controls */}
+      <div className="space-y-4">
+        <PropertySearch
+          onSearchChange={setSearchTerm}
+          placeholder="Search properties by name, address, type, or notes..."
+          resultsCount={filteredCount}
+          totalCount={totalCount}
+          showFilterToggle={true}
+          onFilterToggle={toggleCollapse}
+          hasActiveFilters={hasActiveFilters}
+          filterCount={[
+            filters.pipeline !== 'all' ? 1 : 0,
+            filters.status !== 'all' ? 1 : 0,
+            filters.propertyTypes.length
+          ].reduce((a, b) => a + b, 0)}
+          showQuickFilters={true}
+          onQuickFilter={applyPreset}
+        />
+
+        {/* Filter and Saved Filters Panels - Only show when expanded */}
+        {!isCollapsed && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Main Filter Panel */}
+            <div className="lg:col-span-2">
+              <PropertyFilterPanel
+                pipelineFilter={filters.pipeline}
+                statusFilter={filters.status}
+                propertyTypes={filters.propertyTypes}
+                filterCounts={filterCounts}
+                onPipelineChange={setPipelineFilter}
+                onStatusChange={setStatusFilter}
+                onPropertyTypesChange={setPropertyTypesFilter}
+                onClearFilters={clearFilters}
+                onApplyPreset={applyPreset}
+                isCollapsed={false}
+                onToggleCollapse={toggleCollapse}
+              />
+            </div>
+
+            {/* Saved Filters Panel */}
+            <div className="lg:col-span-1">
+              <SavedFiltersPanel
+                savedFilters={savedFilters}
+                currentFilters={filters}
+                onLoadFilter={handleLoadSavedFilter}
+                onSaveFilter={saveFilter}
+                onDeleteFilter={deleteFilter}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Collapsed Filter Summary */}
+        {isCollapsed && hasActiveFilters && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-blue-900">Active Filters:</span>
+                <div className="flex items-center space-x-2">
+                  {filters.pipeline !== 'all' && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Pipeline: {filters.pipeline}
+                    </span>
+                  )}
+                  {filters.status !== 'all' && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Status: {filters.status}
+                    </span>
+                  )}
+                  {filters.propertyTypes.length > 0 && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Types: {filters.propertyTypes.length}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={clearFilters}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={toggleCollapse}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Edit Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Properties List */}
       <PropertyList
