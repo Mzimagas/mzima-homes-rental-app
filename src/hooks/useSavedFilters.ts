@@ -33,9 +33,9 @@ const DEFAULT_FILTERS: Omit<SavedFilter, 'id' | 'createdAt'>[] = [
       pipeline: 'all',
       status: 'all',
       propertyTypes: [],
-      searchTerm: ''
+      searchTerm: '',
     },
-    isDefault: true
+    isDefault: true,
   },
   {
     name: 'Active Properties',
@@ -43,9 +43,9 @@ const DEFAULT_FILTERS: Omit<SavedFilter, 'id' | 'createdAt'>[] = [
       pipeline: 'all',
       status: 'active',
       propertyTypes: [],
-      searchTerm: ''
+      searchTerm: '',
     },
-    isDefault: true
+    isDefault: true,
   },
   {
     name: 'Purchase Pipeline',
@@ -53,9 +53,9 @@ const DEFAULT_FILTERS: Omit<SavedFilter, 'id' | 'createdAt'>[] = [
       pipeline: 'purchase_pipeline',
       status: 'all',
       propertyTypes: [],
-      searchTerm: ''
+      searchTerm: '',
     },
-    isDefault: true
+    isDefault: true,
   },
   {
     name: 'Subdivision Properties',
@@ -63,9 +63,9 @@ const DEFAULT_FILTERS: Omit<SavedFilter, 'id' | 'createdAt'>[] = [
       pipeline: 'subdivision',
       status: 'all',
       propertyTypes: [],
-      searchTerm: ''
+      searchTerm: '',
     },
-    isDefault: true
+    isDefault: true,
   },
   {
     name: 'Handover Properties',
@@ -73,9 +73,9 @@ const DEFAULT_FILTERS: Omit<SavedFilter, 'id' | 'createdAt'>[] = [
       pipeline: 'handover',
       status: 'all',
       propertyTypes: [],
-      searchTerm: ''
+      searchTerm: '',
     },
-    isDefault: true
+    isDefault: true,
   },
   {
     name: 'Completed Properties',
@@ -83,19 +83,25 @@ const DEFAULT_FILTERS: Omit<SavedFilter, 'id' | 'createdAt'>[] = [
       pipeline: 'all',
       status: 'completed',
       propertyTypes: [],
-      searchTerm: ''
+      searchTerm: '',
     },
-    isDefault: true
-  }
+    isDefault: true,
+  },
 ]
 
 export function useSavedFilters(options: UseSavedFiltersOptions = {}): UseSavedFiltersReturn {
-  const {
-    persistKey = 'saved-property-filters',
-    maxSavedFilters = 20
-  } = options
+  const { persistKey = 'saved-property-filters', maxSavedFilters = 20 } = options
 
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([])
+
+  // Define getDefaultFilters before using it
+  const getDefaultFilters = useCallback((): SavedFilter[] => {
+    return DEFAULT_FILTERS.map((filter, index) => ({
+      ...filter,
+      id: `default-${index}`,
+      createdAt: new Date(),
+    }))
+  }, [])
 
   // Load saved filters from localStorage
   useEffect(() => {
@@ -107,7 +113,7 @@ export function useSavedFilters(options: UseSavedFiltersOptions = {}): UseSavedF
           const filters = parsed.map((filter: any) => ({
             ...filter,
             createdAt: new Date(filter.createdAt),
-            lastUsed: filter.lastUsed ? new Date(filter.lastUsed) : undefined
+            lastUsed: filter.lastUsed ? new Date(filter.lastUsed) : undefined,
           }))
           setSavedFilters(filters)
         } else {
@@ -136,64 +142,54 @@ export function useSavedFilters(options: UseSavedFiltersOptions = {}): UseSavedF
     }
   }, [savedFilters, persistKey])
 
-  const getDefaultFilters = useCallback((): SavedFilter[] => {
-    return DEFAULT_FILTERS.map((filter, index) => ({
-      ...filter,
-      id: `default-${index}`,
-      createdAt: new Date()
-    }))
-  }, [])
-
-  const saveFilter = useCallback((name: string, filters: PropertyFilters) => {
-    const newFilter: SavedFilter = {
-      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name,
-      filters,
-      createdAt: new Date()
-    }
-
-    setSavedFilters(prev => {
-      // Remove oldest custom filter if we exceed the limit
-      const customFilters = prev.filter(f => !f.isDefault)
-      if (customFilters.length >= maxSavedFilters) {
-        const sortedCustom = customFilters.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-        const toRemove = sortedCustom.slice(0, customFilters.length - maxSavedFilters + 1)
-        const filtered = prev.filter(f => f.isDefault || !toRemove.some(r => r.id === f.id))
-        return [...filtered, newFilter]
+  const saveFilter = useCallback(
+    (name: string, filters: PropertyFilters) => {
+      const newFilter: SavedFilter = {
+        id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name,
+        filters,
+        createdAt: new Date(),
       }
-      
-      return [...prev, newFilter]
-    })
-  }, [maxSavedFilters])
 
-  const loadFilter = useCallback((id: string): PropertyFilters | null => {
-    const filter = savedFilters.find(f => f.id === id)
-    if (filter) {
-      // Update last used timestamp
-      setSavedFilters(prev => 
-        prev.map(f => 
-          f.id === id 
-            ? { ...f, lastUsed: new Date() }
-            : f
+      setSavedFilters((prev) => {
+        // Remove oldest custom filter if we exceed the limit
+        const customFilters = prev.filter((f) => !f.isDefault)
+        if (customFilters.length >= maxSavedFilters) {
+          const sortedCustom = customFilters.sort(
+            (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+          )
+          const toRemove = sortedCustom.slice(0, customFilters.length - maxSavedFilters + 1)
+          const filtered = prev.filter((f) => f.isDefault || !toRemove.some((r) => r.id === f.id))
+          return [...filtered, newFilter]
+        }
+
+        return [...prev, newFilter]
+      })
+    },
+    [maxSavedFilters]
+  )
+
+  const loadFilter = useCallback(
+    (id: string): PropertyFilters | null => {
+      const filter = savedFilters.find((f) => f.id === id)
+      if (filter) {
+        // Update last used timestamp
+        setSavedFilters((prev) =>
+          prev.map((f) => (f.id === id ? { ...f, lastUsed: new Date() } : f))
         )
-      )
-      return filter.filters
-    }
-    return null
-  }, [savedFilters])
+        return filter.filters
+      }
+      return null
+    },
+    [savedFilters]
+  )
 
   const deleteFilter = useCallback((id: string) => {
-    setSavedFilters(prev => prev.filter(f => f.id !== id && f.isDefault !== true))
+    setSavedFilters((prev) => prev.filter((f) => f.id !== id && f.isDefault !== true))
   }, [])
 
   const updateFilter = useCallback((id: string, updates: Partial<SavedFilter>) => {
-    setSavedFilters(prev => 
-      prev.map(f => 
-        f.id === id 
-          ? { ...f, ...updates }
-          : f
-      )
-    )
+    setSavedFilters((prev) => prev.map((f) => (f.id === id ? { ...f, ...updates } : f)))
   }, [])
 
   return {
@@ -202,6 +198,6 @@ export function useSavedFilters(options: UseSavedFiltersOptions = {}): UseSavedF
     loadFilter,
     deleteFilter,
     updateFilter,
-    getDefaultFilters
+    getDefaultFilters,
   }
 }

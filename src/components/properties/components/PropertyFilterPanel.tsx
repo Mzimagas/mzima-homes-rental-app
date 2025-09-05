@@ -9,31 +9,62 @@ export interface PropertyFilterPanelProps {
   pipelineFilter: PropertyPipelineFilter
   statusFilter: PropertyStatusFilter
   propertyTypes: string[]
-  
+
   // Filter counts for display
   filterCounts?: Record<PropertyPipelineFilter, number>
-  
+
   // Filter setters
   onPipelineChange: (pipeline: PropertyPipelineFilter) => void
   onStatusChange: (status: PropertyStatusFilter) => void
   onPropertyTypesChange: (types: string[]) => void
-  
+
   // Utility functions
   onClearFilters: () => void
   onApplyPreset: (preset: 'active' | 'purchase' | 'subdivision' | 'handover' | 'completed') => void
-  
+
   // UI props
   isCollapsed?: boolean
   onToggleCollapse?: () => void
+  onUserInteraction?: () => void
   className?: string
 }
 
-const PIPELINE_OPTIONS: { value: PropertyPipelineFilter; label: string; icon: string; description: string }[] = [
-  { value: 'all', label: 'All Properties', icon: '🏠', description: 'Show all properties regardless of pipeline' },
-  { value: 'direct_addition', label: 'Direct Addition', icon: '➕', description: 'Properties added directly to the system' },
-  { value: 'purchase_pipeline', label: 'Purchase Pipeline', icon: '🏢', description: 'Properties being acquired through purchase' },
-  { value: 'subdivision', label: 'Subdivision', icon: '📐', description: 'Properties created through subdivision' },
-  { value: 'handover', label: 'Handover', icon: '🤝', description: 'Properties in handover process' }
+const PIPELINE_OPTIONS: {
+  value: PropertyPipelineFilter
+  label: string
+  icon: string
+  description: string
+}[] = [
+  {
+    value: 'all',
+    label: 'All Properties',
+    icon: '🏠',
+    description: 'Show all properties regardless of pipeline',
+  },
+  {
+    value: 'direct_addition',
+    label: 'Direct Addition',
+    icon: '➕',
+    description: 'Properties added directly to the system',
+  },
+  {
+    value: 'purchase_pipeline',
+    label: 'Purchase Pipeline',
+    icon: '🏢',
+    description: 'Properties being acquired through purchase',
+  },
+  {
+    value: 'subdivision',
+    label: 'Subdivision',
+    icon: '📐',
+    description: 'Properties created through subdivision',
+  },
+  {
+    value: 'handover',
+    label: 'Handover',
+    icon: '🤝',
+    description: 'Properties in handover process',
+  },
 ]
 
 const STATUS_OPTIONS: { value: PropertyStatusFilter; label: string; color: string }[] = [
@@ -41,7 +72,7 @@ const STATUS_OPTIONS: { value: PropertyStatusFilter; label: string; color: strin
   { value: 'active', label: 'Active', color: 'green' },
   { value: 'pending', label: 'Pending', color: 'yellow' },
   { value: 'completed', label: 'Completed', color: 'blue' },
-  { value: 'inactive', label: 'Inactive', color: 'red' }
+  { value: 'inactive', label: 'Inactive', color: 'red' },
 ]
 
 const PROPERTY_TYPE_OPTIONS = [
@@ -49,7 +80,7 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: 'HOUSE', label: 'House' },
   { value: 'COMMERCIAL', label: 'Commercial' },
   { value: 'LAND', label: 'Land' },
-  { value: 'TOWNHOUSE', label: 'Townhouse' }
+  { value: 'TOWNHOUSE', label: 'Townhouse' },
 ]
 
 const PRESET_FILTERS = [
@@ -57,7 +88,7 @@ const PRESET_FILTERS = [
   { key: 'purchase', label: 'Purchase Pipeline', icon: '🏢' },
   { key: 'subdivision', label: 'Subdivision', icon: '📐' },
   { key: 'handover', label: 'Handover', icon: '🤝' },
-  { key: 'completed', label: 'Completed', icon: '✅' }
+  { key: 'completed', label: 'Completed', icon: '✅' },
 ] as const
 
 export default function PropertyFilterPanel({
@@ -72,30 +103,32 @@ export default function PropertyFilterPanel({
   onApplyPreset,
   isCollapsed = false,
   onToggleCollapse,
-  className = ''
+  onUserInteraction,
+  className = '',
 }: PropertyFilterPanelProps) {
   const [expandedSections, setExpandedSections] = useState({
     pipeline: true,
     status: true,
     propertyTypes: false,
-    presets: false
+    presets: false,
   })
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }))
   }
 
   const handlePropertyTypeToggle = (type: string) => {
     const newTypes = propertyTypes.includes(type)
-      ? propertyTypes.filter(t => t !== type)
+      ? propertyTypes.filter((t) => t !== type)
       : [...propertyTypes, type]
     onPropertyTypesChange(newTypes)
   }
 
-  const hasActiveFilters = pipelineFilter !== 'all' || statusFilter !== 'all' || propertyTypes.length > 0
+  const hasActiveFilters =
+    pipelineFilter !== 'all' || statusFilter !== 'all' || propertyTypes.length > 0
 
   if (isCollapsed) {
     return (
@@ -120,7 +153,11 @@ export default function PropertyFilterPanel({
   }
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg shadow-sm ${className}`}>
+    <div
+      className={`bg-white border border-gray-200 rounded-lg shadow-sm ${className}`}
+      onMouseEnter={onUserInteraction}
+      onFocus={onUserInteraction}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex items-center space-x-2">
@@ -128,7 +165,12 @@ export default function PropertyFilterPanel({
           <h3 className="font-medium text-gray-900">Property Filters</h3>
           {hasActiveFilters && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {[pipelineFilter !== 'all' ? 1 : 0, statusFilter !== 'all' ? 1 : 0, propertyTypes.length].reduce((a, b) => a + b, 0)} active
+              {[
+                pipelineFilter !== 'all' ? 1 : 0,
+                statusFilter !== 'all' ? 1 : 0,
+                propertyTypes.length,
+              ].reduce((a, b) => a + b, 0)}{' '}
+              active
             </span>
           )}
         </div>
@@ -143,10 +185,7 @@ export default function PropertyFilterPanel({
             </button>
           )}
           {onToggleCollapse && (
-            <button
-              onClick={onToggleCollapse}
-              className="text-gray-500 hover:text-gray-700"
-            >
+            <button onClick={onToggleCollapse} className="text-gray-500 hover:text-gray-700">
               <ChevronUpIcon className="h-5 w-5" />
             </button>
           )}
@@ -170,7 +209,7 @@ export default function PropertyFilterPanel({
 
           {expandedSections.presets && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {PRESET_FILTERS.map(preset => (
+              {PRESET_FILTERS.map((preset) => (
                 <button
                   key={preset.key}
                   onClick={() => onApplyPreset(preset.key)}
@@ -197,11 +236,14 @@ export default function PropertyFilterPanel({
               <ChevronDownIcon className="h-4 w-4 text-gray-500" />
             )}
           </button>
-          
+
           {expandedSections.pipeline && (
             <div className="space-y-3">
-              {PIPELINE_OPTIONS.map(option => (
-                <label key={option.value} className="flex items-start space-x-3 cursor-pointer group touch-manipulation min-h-[44px]">
+              {PIPELINE_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex items-start space-x-3 cursor-pointer group touch-manipulation min-h-[44px]"
+                >
                   <input
                     type="radio"
                     name="pipeline"
@@ -223,7 +265,9 @@ export default function PropertyFilterPanel({
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{option.description}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                        {option.description}
+                      </p>
                     </div>
                   </div>
                 </label>
@@ -245,11 +289,14 @@ export default function PropertyFilterPanel({
               <ChevronDownIcon className="h-4 w-4 text-gray-500" />
             )}
           </button>
-          
+
           {expandedSections.status && (
             <div className="space-y-2">
-              {STATUS_OPTIONS.map(option => (
-                <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
+              {STATUS_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex items-center space-x-3 cursor-pointer group"
+                >
                   <input
                     type="radio"
                     name="status"
@@ -283,11 +330,14 @@ export default function PropertyFilterPanel({
               <ChevronDownIcon className="h-4 w-4 text-gray-500" />
             )}
           </button>
-          
+
           {expandedSections.propertyTypes && (
             <div className="space-y-2">
-              {PROPERTY_TYPE_OPTIONS.map(option => (
-                <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
+              {PROPERTY_TYPE_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex items-center space-x-3 cursor-pointer group"
+                >
                   <input
                     type="checkbox"
                     value={option.value}

@@ -45,6 +45,8 @@ export default function PropertiesTab({
   onNavigateToTabs,
   onRefresh,
 }: PropertiesTabProps) {
+  // Track user interaction to prevent auto-hide during active use
+  const [lastInteraction, setLastInteraction] = useState<number>(Date.now())
   // Filter out properties that are back in the purchase pipeline or fully subdivided
   const activeProperties = useMemo(() => {
     return properties.filter((property) => {
@@ -79,27 +81,22 @@ export default function PropertiesTab({
     setSearchTerm,
     clearFilters,
     hasActiveFilters,
-    applyPreset
+    applyPreset,
   } = usePropertyFilters(activeProperties, {
     initialFilters: { searchTerm },
-    persistKey: 'properties-tab-filters'
+    persistKey: 'properties-tab-filters',
   })
 
   // Filter panel state - auto-hide by default
   const { isCollapsed, toggleCollapse, setCollapsed } = useFilterPanel({
     defaultCollapsed: true,
     persistKey: 'properties-filter-panel',
-    autoCollapseOnMobile: true
+    autoCollapseOnMobile: true,
   })
 
   // Saved filters
-  const {
-    savedFilters,
-    saveFilter,
-    loadFilter,
-    deleteFilter
-  } = useSavedFilters({
-    persistKey: 'properties-saved-filters'
+  const { savedFilters, saveFilter, loadFilter, deleteFilter } = useSavedFilters({
+    persistKey: 'properties-saved-filters',
   })
 
   // Handle loading saved filters
@@ -110,7 +107,41 @@ export default function PropertiesTab({
       setStatusFilter(savedFilterData.status)
       setPropertyTypesFilter(savedFilterData.propertyTypes)
       setSearchTerm(savedFilterData.searchTerm)
+      setLastInteraction(Date.now()) // Track interaction
     }
+  }
+
+  // Enhanced filter setters with interaction tracking
+  const handlePipelineFilter = (pipeline: PropertyPipelineFilter) => {
+    setPipelineFilter(pipeline)
+    setLastInteraction(Date.now())
+  }
+
+  const handleStatusFilter = (status: PropertyStatusFilter) => {
+    setStatusFilter(status)
+    setLastInteraction(Date.now())
+  }
+
+  const handlePropertyTypesFilter = (types: string[]) => {
+    setPropertyTypesFilter(types)
+    setLastInteraction(Date.now())
+  }
+
+  const handleSearchTerm = (term: string) => {
+    setSearchTerm(term)
+    setLastInteraction(Date.now())
+  }
+
+  const handleApplyPreset = (
+    preset: 'active' | 'purchase' | 'subdivision' | 'handover' | 'completed'
+  ) => {
+    applyPreset(preset)
+    setLastInteraction(Date.now())
+  }
+
+  const handleClearFilters = () => {
+    clearFilters()
+    setLastInteraction(Date.now())
   }
 
   // Sync search term with parent component
@@ -127,16 +158,25 @@ export default function PropertiesTab({
     }
   }, [filters.searchTerm, searchTerm, onSearchChange])
 
-  // Auto-hide filter panel when no active filters
-  useMemo(() => {
+  // Auto-hide filter panel with intelligent timing based on user interaction
+  useEffect(() => {
     if (!hasActiveFilters && !isCollapsed) {
-      // Auto-collapse after a short delay when filters are cleared
-      const timer = setTimeout(() => {
-        setCollapsed(true)
-      }, 1000)
-      return () => clearTimeout(timer)
+      // Only auto-hide if user hasn't interacted recently
+      const timeSinceLastInteraction = Date.now() - lastInteraction
+      const minInteractionDelay = 3000 // Wait at least 3 seconds after last interaction
+
+      if (timeSinceLastInteraction >= minInteractionDelay) {
+        const timer = setTimeout(() => {
+          // Double-check that user still hasn't interacted and no filters are active
+          const currentTimeSinceInteraction = Date.now() - lastInteraction
+          if (currentTimeSinceInteraction >= minInteractionDelay && !hasActiveFilters) {
+            setCollapsed(true)
+          }
+        }, 2000) // Give users 2 more seconds to interact with filters
+        return () => clearTimeout(timer)
+      }
     }
-  }, [hasActiveFilters, isCollapsed, setCollapsed])
+  }, [hasActiveFilters, isCollapsed, setCollapsed, lastInteraction])
 
   // State for property form modal
   const [showPropertyForm, setShowPropertyForm] = useState(false)
@@ -195,20 +235,23 @@ export default function PropertiesTab({
       {/* Search and Filter Controls */}
       <div className="space-y-4">
         <PropertySearch
-          onSearchChange={setSearchTerm}
+          onSearchChange={handleSearchTerm}
           placeholder="Search properties by name, address, type, or notes..."
           resultsCount={filteredCount}
           totalCount={totalCount}
           showFilterToggle={true}
-          onFilterToggle={toggleCollapse}
+          onFilterToggle={() => {
+            toggleCollapse()
+            setLastInteraction(Date.now())
+          }}
           hasActiveFilters={hasActiveFilters}
           filterCount={[
             filters.pipeline !== 'all' ? 1 : 0,
             filters.status !== 'all' ? 1 : 0,
-            filters.propertyTypes.length
+            filters.propertyTypes.length,
           ].reduce((a, b) => a + b, 0)}
           showQuickFilters={true}
-          onQuickFilter={applyPreset}
+          onQuickFilter={handleApplyPreset}
         />
 
         {/* Filter and Saved Filters Panels - Only show when expanded */}
@@ -221,13 +264,17 @@ export default function PropertiesTab({
                 statusFilter={filters.status}
                 propertyTypes={filters.propertyTypes}
                 filterCounts={filterCounts}
-                onPipelineChange={setPipelineFilter}
-                onStatusChange={setStatusFilter}
-                onPropertyTypesChange={setPropertyTypesFilter}
-                onClearFilters={clearFilters}
-                onApplyPreset={applyPreset}
+                onPipelineChange={handlePipelineFilter}
+                onStatusChange={handleStatusFilter}
+                onPropertyTypesChange={handlePropertyTypesFilter}
+                onClearFilters={handleClearFilters}
+                onApplyPreset={handleApplyPreset}
                 isCollapsed={false}
-                onToggleCollapse={toggleCollapse}
+                onToggleCollapse={() => {
+                  toggleCollapse()
+                  setLastInteraction(Date.now())
+                }}
+                onUserInteraction={() => setLastInteraction(Date.now())}
               />
             </div>
 
@@ -270,13 +317,16 @@ export default function PropertiesTab({
               </div>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={clearFilters}
+                  onClick={handleClearFilters}
                   className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                 >
                   Clear All
                 </button>
                 <button
-                  onClick={toggleCollapse}
+                  onClick={() => {
+                    toggleCollapse()
+                    setLastInteraction(Date.now())
+                  }}
                   className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                 >
                   Edit Filters

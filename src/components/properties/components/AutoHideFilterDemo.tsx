@@ -18,7 +18,7 @@ const demoProperties: PropertyWithLifecycle[] = [
     lifecycle_status: 'RENTAL_READY',
     subdivision_status: 'NOT_STARTED',
     handover_status: 'NOT_STARTED',
-    notes: 'Modern apartment complex'
+    notes: 'Modern apartment complex',
   },
   {
     id: '2',
@@ -29,7 +29,7 @@ const demoProperties: PropertyWithLifecycle[] = [
     lifecycle_status: 'ACQUISITION',
     subdivision_status: 'NOT_STARTED',
     handover_status: 'NOT_STARTED',
-    notes: 'Family house in Karen'
+    notes: 'Family house in Karen',
   },
   {
     id: '3',
@@ -40,8 +40,8 @@ const demoProperties: PropertyWithLifecycle[] = [
     lifecycle_status: 'SUBDIVISION',
     subdivision_status: 'SUB_DIVISION_STARTED',
     handover_status: 'NOT_STARTED',
-    notes: 'Land being subdivided'
-  }
+    notes: 'Land being subdivided',
+  },
 ] as PropertyWithLifecycle[]
 
 export default function AutoHideFilterDemo() {
@@ -58,16 +58,16 @@ export default function AutoHideFilterDemo() {
     setSearchTerm,
     clearFilters,
     hasActiveFilters,
-    applyPreset
+    applyPreset,
   } = usePropertyFilters(demoProperties, {
-    persistKey: 'auto-hide-demo-filters'
+    persistKey: 'auto-hide-demo-filters',
   })
 
   // Auto-hiding filter panel
   const { isCollapsed, toggleCollapse, setCollapsed } = useFilterPanel({
     defaultCollapsed: true,
     persistKey: 'auto-hide-demo-panel',
-    autoCollapseOnMobile: true
+    autoCollapseOnMobile: true,
   })
 
   // Auto-hide when no filters are active
@@ -101,7 +101,7 @@ export default function AutoHideFilterDemo() {
           filterCount={[
             filters.pipeline !== 'all' ? 1 : 0,
             filters.status !== 'all' ? 1 : 0,
-            filters.propertyTypes.length
+            filters.propertyTypes.length,
           ].reduce((a, b) => a + b, 0)}
           showQuickFilters={true}
           onQuickFilter={applyPreset}
@@ -179,7 +179,7 @@ export default function AutoHideFilterDemo() {
         <div className="p-6">
           {filteredProperties.length > 0 ? (
             <div className="space-y-3">
-              {filteredProperties.map(property => (
+              {filteredProperties.map((property) => (
                 <div key={property.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div>
@@ -189,9 +189,7 @@ export default function AutoHideFilterDemo() {
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {property.property_type}
                         </span>
-                        <span className="text-xs text-gray-500">
-                          {property.property_source}
-                        </span>
+                        <span className="text-xs text-gray-500">{property.property_source}</span>
                       </div>
                     </div>
                   </div>
@@ -208,13 +206,30 @@ export default function AutoHideFilterDemo() {
 
       {/* Instructions */}
       <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-medium text-gray-900 mb-2">Try the Auto-Hide Feature:</h3>
+        <h3 className="font-medium text-gray-900 mb-2">Improved Auto-Hide UX:</h3>
         <ul className="text-sm text-gray-600 space-y-1">
-          <li>• Click on quick filter buttons (🟢 Active, 🏢 Purchase, etc.) to apply filters</li>
-          <li>• Use the filter toggle button to open/close the detailed filter panel</li>
-          <li>• Clear all filters to see the panel auto-hide after 1 second</li>
-          <li>• The filter panel automatically collapses on mobile devices</li>
-          <li>• Active filters are shown in a compact summary when collapsed</li>
+          <li>
+            • <strong>Smart Timing:</strong> Panel waits 3+ seconds after your last interaction
+            before auto-hiding
+          </li>
+          <li>
+            • <strong>Hover Protection:</strong> Panel won&apos;t auto-hide while you&apos;re
+            hovering over it
+          </li>
+          <li>
+            • <strong>Quick Filters:</strong> Use colored buttons (🟢 Active, 🏢 Purchase, etc.) for
+            instant filtering
+          </li>
+          <li>
+            • <strong>Consistent Behavior:</strong> Same timing whether filters are active or not
+          </li>
+          <li>
+            • <strong>Mobile Optimized:</strong> Automatically collapses on mobile devices
+          </li>
+          <li>
+            • <strong>Visual Feedback:</strong> Active filters shown in compact summary when
+            collapsed
+          </li>
         </ul>
       </div>
     </div>
