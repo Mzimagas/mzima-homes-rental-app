@@ -30,7 +30,7 @@ class PerformanceMonitor {
   endMeasurement(name: string): number {
     performance.mark(`${name}-end`)
     performance.measure(name, `${name}-start`, `${name}-end`)
-    
+
     const measure = performance.getEntriesByName(name)[0] as PerformanceMeasure
     const duration = measure.duration
 
@@ -72,15 +72,11 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
-      mutations: { retry: false }
-    }
+      mutations: { retry: false },
+    },
   })
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  )
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 }
 
 describe('Dashboard Performance Tests', () => {
@@ -90,15 +86,15 @@ describe('Dashboard Performance Tests', () => {
   beforeEach(() => {
     performanceMonitor = new PerformanceMonitor()
     performanceMonitor.setMemoryBaseline()
-    
+
     mockDashboardService = dashboardService as jest.Mocked<typeof dashboardService>
-    
+
     // Setup mock responses
     mockDashboardService.getDashboardMetrics.mockResolvedValue({
       totalProperties: 25,
       activeTenants: 68,
       monthlyRevenue: 2450000,
-      occupancyRate: 94.1
+      occupancyRate: 94.1,
     })
   })
 
@@ -129,14 +125,14 @@ describe('Dashboard Performance Tests', () => {
         value: Math.random() * 1000000,
         format: 'currency' as const,
         trend: 'up' as const,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       }))
 
       performanceMonitor.startMeasurement('metrics-grid-render')
 
       render(
         <TestWrapper>
-          <MetricsGrid metricIds={mockMetrics.map(m => m.id)} />
+          <MetricsGrid metricIds={mockMetrics.map((m) => m.id)} />
         </TestWrapper>
       )
 
@@ -151,7 +147,7 @@ describe('Dashboard Performance Tests', () => {
       const largeDataset = Array.from({ length: 1000 }, (_, i) => ({
         id: `item-${i}`,
         name: `Property ${i}`,
-        value: Math.random() * 1000000
+        value: Math.random() * 1000000,
       }))
 
       mockDashboardService.getPropertyAnalytics.mockResolvedValue(largeDataset)
@@ -159,7 +155,7 @@ describe('Dashboard Performance Tests', () => {
       performanceMonitor.startMeasurement('large-dataset-render')
 
       const { result } = renderHook(() => useDashboardData(), {
-        wrapper: TestWrapper
+        wrapper: TestWrapper,
       })
 
       await waitFor(() => {
@@ -178,7 +174,7 @@ describe('Dashboard Performance Tests', () => {
       performanceMonitor.startMeasurement('data-fetch')
 
       const { result } = renderHook(() => useDashboardData(), {
-        wrapper: TestWrapper
+        wrapper: TestWrapper,
       })
 
       await waitFor(() => {
@@ -212,7 +208,7 @@ describe('Dashboard Performance Tests', () => {
 
     it('should implement efficient caching', async () => {
       const { result } = renderHook(() => useDashboardData(), {
-        wrapper: TestWrapper
+        wrapper: TestWrapper,
       })
 
       // First fetch
@@ -240,13 +236,13 @@ describe('Dashboard Performance Tests', () => {
 
       const updates = Array.from({ length: 100 }, (_, i) => ({
         activeTenants: 68 + i,
-        timestamp: Date.now() + i
+        timestamp: Date.now() + i,
       }))
 
       performanceMonitor.startMeasurement('rapid-updates')
 
       act(() => {
-        updates.forEach(update => {
+        updates.forEach((update) => {
           result.current.updateMetrics(update)
         })
       })
@@ -261,13 +257,13 @@ describe('Dashboard Performance Tests', () => {
       const { result } = renderHook(() => useDashboardStore())
 
       const rapidUpdates = Array.from({ length: 10 }, (_, i) => ({
-        activeTenants: 68 + i
+        activeTenants: 68 + i,
       }))
 
       performanceMonitor.startMeasurement('debounced-updates')
 
       act(() => {
-        rapidUpdates.forEach(update => {
+        rapidUpdates.forEach((update) => {
           result.current.updateMetrics(update)
         })
       })
@@ -281,8 +277,8 @@ describe('Dashboard Performance Tests', () => {
 
     it('should optimize re-renders with memoization', async () => {
       let renderCount = 0
-      
-      const TestComponent = React.memo(() => {
+
+      const TestComponent = React.memo(function TestComponent() {
         renderCount++
         const store = useDashboardStore()
         return <div>{store.metrics?.activeTenants}</div>
@@ -340,35 +336,43 @@ describe('Dashboard Performance Tests', () => {
     })
 
     it('should cleanup subscriptions and timers', async () => {
-      const { result } = renderHook(() => useDashboardData({
-        autoRefresh: true,
-        refreshInterval: 100
-      }), {
-        wrapper: TestWrapper
-      })
+      const { result } = renderHook(
+        () =>
+          useDashboardData({
+            autoRefresh: true,
+            refreshInterval: 100,
+          }),
+        {
+          wrapper: TestWrapper,
+        }
+      )
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
       })
 
       // Unmount should cleanup timers
-      const { unmount } = renderHook(() => useDashboardData({
-        autoRefresh: true,
-        refreshInterval: 100
-      }), {
-        wrapper: TestWrapper
-      })
+      const { unmount } = renderHook(
+        () =>
+          useDashboardData({
+            autoRefresh: true,
+            refreshInterval: 100,
+          }),
+        {
+          wrapper: TestWrapper,
+        }
+      )
 
       unmount()
 
       // Wait longer than refresh interval
-      await new Promise(resolve => setTimeout(resolve, 200))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       // Should not make additional API calls after unmount
       const callCount = mockDashboardService.getDashboardMetrics.mock.calls.length
-      
-      await new Promise(resolve => setTimeout(resolve, 200))
-      
+
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
       expect(mockDashboardService.getDashboardMetrics.mock.calls.length).toBe(callCount)
     })
 
@@ -379,12 +383,12 @@ describe('Dashboard Performance Tests', () => {
         properties: Array.from({ length: 1000 }, (_, i) => ({
           id: `prop-${i}`,
           name: `Property ${i}`,
-          data: new Array(100).fill(Math.random())
+          data: new Array(100).fill(Math.random()),
         })),
         metrics: Array.from({ length: 100 }, (_, i) => ({
           id: `metric-${i}`,
-          value: Math.random() * 1000000
-        }))
+          value: Math.random() * 1000000,
+        })),
       }
 
       performanceMonitor.startMeasurement('large-state-update')
@@ -405,7 +409,7 @@ describe('Dashboard Performance Tests', () => {
     it('should lazy load dashboard sections', async () => {
       // Mock dynamic imports
       const mockImport = jest.fn().mockResolvedValue({
-        default: () => <div>Lazy Component</div>
+        default: () => <div>Lazy Component</div>,
       })
 
       // Simulate lazy loading
@@ -420,7 +424,7 @@ describe('Dashboard Performance Tests', () => {
     it('should optimize chart rendering', async () => {
       const chartData = Array.from({ length: 100 }, (_, i) => ({
         name: `Point ${i}`,
-        value: Math.random() * 1000
+        value: Math.random() * 1000,
       }))
 
       performanceMonitor.startMeasurement('chart-render')
@@ -428,7 +432,7 @@ describe('Dashboard Performance Tests', () => {
       // Simulate chart rendering
       render(
         <div data-testid="chart">
-          {chartData.map(point => (
+          {chartData.map((point) => (
             <div key={point.name}>{point.value}</div>
           ))}
         </div>
@@ -448,7 +452,7 @@ describe('Dashboard Performance Tests', () => {
 
       for (let i = 0; i < runs; i++) {
         performanceMonitor.startMeasurement(`run-${i}`)
-        
+
         const { unmount } = render(
           <TestWrapper>
             <DashboardLayout />
@@ -457,12 +461,12 @@ describe('Dashboard Performance Tests', () => {
 
         const renderTime = performanceMonitor.endMeasurement(`run-${i}`)
         renderTimes.push(renderTime)
-        
+
         unmount()
       }
 
       const averageTime = renderTimes.reduce((sum, time) => sum + time, 0) / runs
-      const maxDeviation = Math.max(...renderTimes.map(time => Math.abs(time - averageTime)))
+      const maxDeviation = Math.max(...renderTimes.map((time) => Math.abs(time - averageTime)))
 
       // Performance should be consistent (deviation < 50% of average)
       expect(maxDeviation).toBeLessThan(averageTime * 0.5)
@@ -475,7 +479,7 @@ describe('Dashboard Performance Tests', () => {
 
       for (let i = 0; i < baselineRuns; i++) {
         performanceMonitor.startMeasurement(`baseline-${i}`)
-        
+
         render(
           <TestWrapper>
             <MetricsGrid />
@@ -489,7 +493,7 @@ describe('Dashboard Performance Tests', () => {
 
       // Current performance should not be significantly worse than baseline
       performanceMonitor.startMeasurement('current-performance')
-      
+
       render(
         <TestWrapper>
           <MetricsGrid />
@@ -509,28 +513,28 @@ describe('Dashboard Performance Tests', () => {
         {
           area: 'Component Memoization',
           recommendation: 'Use React.memo for expensive components',
-          impact: 'High'
+          impact: 'High',
         },
         {
           area: 'Data Fetching',
           recommendation: 'Implement request deduplication',
-          impact: 'Medium'
+          impact: 'Medium',
         },
         {
           area: 'Bundle Splitting',
           recommendation: 'Split dashboard sections into separate chunks',
-          impact: 'Medium'
+          impact: 'Medium',
         },
         {
           area: 'Virtual Scrolling',
           recommendation: 'Implement virtual scrolling for large lists',
-          impact: 'High'
-        }
+          impact: 'High',
+        },
       ]
 
       // Verify optimization strategies are documented
       expect(optimizations).toHaveLength(4)
-      expect(optimizations.every(opt => opt.impact)).toBe(true)
+      expect(optimizations.every((opt) => opt.impact)).toBe(true)
     })
   })
 })

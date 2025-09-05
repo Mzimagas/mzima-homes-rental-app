@@ -6,12 +6,10 @@ import Modal from '../../ui/Modal'
 import PropertyList from './PropertyList'
 import PropertySearch from './PropertySearch'
 import PropertyFilterPanel from './PropertyFilterPanel'
-import SavedFiltersPanel from './SavedFiltersPanel'
 import PropertyForm from '../property-form'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 import { usePropertyFilters } from '../../../hooks/usePropertyFilters'
 import { useFilterPanel } from '../../../hooks/useFilterPanel'
-import { useSavedFilters } from '../../../hooks/useSavedFilters'
 import supabase from '../../../lib/supabase-client'
 
 interface PropertiesTabProps {
@@ -99,50 +97,46 @@ export default function PropertiesTab({
     excludeRefs: [searchRef],
   })
 
-  // Saved filters
-  const { savedFilters, saveFilter, loadFilter, deleteFilter } = useSavedFilters({
-    persistKey: 'properties-saved-filters',
-  })
-
-  // Handle loading saved filters (memoized to prevent infinite loops)
-  const handleLoadSavedFilter = useCallback((id: string) => {
-    const savedFilterData = loadFilter(id)
-    if (savedFilterData) {
-      setPipelineFilter(savedFilterData.pipeline)
-      setStatusFilter(savedFilterData.status)
-      setPropertyTypesFilter(savedFilterData.propertyTypes)
-      setSearchTerm(savedFilterData.searchTerm)
-      setLastInteraction(Date.now()) // Track interaction
-    }
-  }, [loadFilter, setPipelineFilter, setStatusFilter, setPropertyTypesFilter, setSearchTerm])
-
   // Enhanced filter setters with interaction tracking (memoized to prevent infinite loops)
-  const handlePipelineFilter = useCallback((pipeline: PropertyPipelineFilter) => {
-    setPipelineFilter(pipeline)
-    setLastInteraction(Date.now())
-  }, [setPipelineFilter])
+  const handlePipelineFilter = useCallback(
+    (pipeline: PropertyPipelineFilter) => {
+      setPipelineFilter(pipeline)
+      setLastInteraction(Date.now())
+    },
+    [setPipelineFilter]
+  )
 
-  const handleStatusFilter = useCallback((status: PropertyStatusFilter) => {
-    setStatusFilter(status)
-    setLastInteraction(Date.now())
-  }, [setStatusFilter])
+  const handleStatusFilter = useCallback(
+    (status: PropertyStatusFilter) => {
+      setStatusFilter(status)
+      setLastInteraction(Date.now())
+    },
+    [setStatusFilter]
+  )
 
-  const handlePropertyTypesFilter = useCallback((types: string[]) => {
-    setPropertyTypesFilter(types)
-    setLastInteraction(Date.now())
-  }, [setPropertyTypesFilter])
+  const handlePropertyTypesFilter = useCallback(
+    (types: string[]) => {
+      setPropertyTypesFilter(types)
+      setLastInteraction(Date.now())
+    },
+    [setPropertyTypesFilter]
+  )
 
-  const handleSearchTerm = useCallback((term: string) => {
-    setSearchTerm(term)
-    setLastInteraction(Date.now())
-  }, [setSearchTerm])
+  const handleSearchTerm = useCallback(
+    (term: string) => {
+      setSearchTerm(term)
+      setLastInteraction(Date.now())
+    },
+    [setSearchTerm]
+  )
 
-  const handleApplyPreset = useCallback((
-    preset: 'active' | 'purchase' | 'subdivision' | 'handover' | 'completed'
-  ) => {
-    applyPreset(preset)
-    setLastInteraction(Date.now())
-  }, [applyPreset])
+  const handleApplyPreset = useCallback(
+    (preset: 'active' | 'subdivision' | 'handover' | 'completed') => {
+      applyPreset(preset)
+      setLastInteraction(Date.now())
+    },
+    [applyPreset]
+  )
 
   const handleClearFilters = useCallback(() => {
     clearFilters()
@@ -271,17 +265,6 @@ export default function PropertiesTab({
                   setLastInteraction(Date.now())
                 }}
                 onUserInteraction={() => setLastInteraction(Date.now())}
-              />
-            </div>
-
-            {/* Saved Filters Panel */}
-            <div className="lg:col-span-1">
-              <SavedFiltersPanel
-                savedFilters={savedFilters}
-                currentFilters={filters}
-                onLoadFilter={handleLoadSavedFilter}
-                onSaveFilter={saveFilter}
-                onDeleteFilter={deleteFilter}
               />
             </div>
           </div>

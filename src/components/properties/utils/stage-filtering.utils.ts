@@ -14,26 +14,24 @@ export type WorkflowType = 'direct_addition' | 'purchase_pipeline' | 'handover' 
  * Stage 10 (registered title) is the prerequisite first step for subdivision
  */
 export const SUBDIVISION_DOC_KEYS: DocTypeKey[] = [
-  'registered_title',  // Stage 10 -> Display Stage 1 (PREREQUISITE: Must have title to subdivide)
+  'registered_title', // Stage 10 -> Display Stage 1 (PREREQUISITE: Must have title to subdivide)
   'minutes_decision_subdivision',
   'search_certificate_subdivision',
   'lcb_consent_subdivision',
   'mutation_forms',
   'beaconing_docs',
-  'title_registration_subdivision'
+  'title_registration_subdivision',
 ]
 
 /**
  * Regular workflow document keys (stages 1-10)
  * Note: registered_title (stage 10) appears in BOTH regular and subdivision workflows
  */
-export const REGULAR_DOC_KEYS: DocTypeKey[] = DOC_TYPES
-  .filter(docType => {
-    // Exclude subdivision-only docs, but keep registered_title for both workflows
-    const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
-    return !subdivisionOnlyDocs.includes(docType.key)
-  })
-  .map(docType => docType.key)
+export const REGULAR_DOC_KEYS: DocTypeKey[] = DOC_TYPES.filter((docType) => {
+  // Exclude subdivision-only docs, but keep registered_title for both workflows
+  const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter((key) => key !== 'registered_title')
+  return !subdivisionOnlyDocs.includes(docType.key)
+}).map((docType) => docType.key)
 
 /**
  * Determine workflow type from property data
@@ -86,11 +84,11 @@ export function getStageRange(workflowType: WorkflowType): { min: number; max: n
 export function getFilteredDocTypes(workflowType: WorkflowType): typeof DOC_TYPES {
   if (workflowType === 'subdivision') {
     // Return subdivision-specific document types (stages 10-16)
-    return DOC_TYPES.filter(docType => SUBDIVISION_DOC_KEYS.includes(docType.key))
+    return DOC_TYPES.filter((docType) => SUBDIVISION_DOC_KEYS.includes(docType.key))
   } else {
     // Return regular document types (stages 1-10) - hide subdivision-only docs
-    const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter(key => key !== 'registered_title')
-    return DOC_TYPES.filter(docType => !subdivisionOnlyDocs.includes(docType.key))
+    const subdivisionOnlyDocs = SUBDIVISION_DOC_KEYS.filter((key) => key !== 'registered_title')
+    return DOC_TYPES.filter((docType) => !subdivisionOnlyDocs.includes(docType.key))
   }
 }
 
@@ -150,9 +148,10 @@ export function getStageConfig(property: PropertyWithLifecycle): StageConfig {
   const docTypes = getFilteredDocTypes(workflowType)
   const stageNumbers = getStageNumbers(workflowType)
 
-  const displayRange = workflowType === 'subdivision'
-    ? { min: 1, max: 7 }  // Display stages 10-16 as 1-7
-    : stageRange
+  const displayRange =
+    workflowType === 'subdivision'
+      ? { min: 1, max: 7 } // Display stages 10-16 as 1-7
+      : stageRange
 
   return {
     workflowType,
@@ -160,7 +159,7 @@ export function getStageConfig(property: PropertyWithLifecycle): StageConfig {
     displayRange,
     docTypes,
     stageNumbers,
-    visibleStageCount: stageNumbers.length
+    visibleStageCount: stageNumbers.length,
   }
 }
 
@@ -180,9 +179,9 @@ export function getOverriddenStageRange(workflowType: WorkflowType): number[] {
  */
 export const WORKFLOW_LABELS: Record<WorkflowType, string> = {
   direct_addition: 'Direct Addition',
-  purchase_pipeline: 'Purchase Pipeline', 
+  purchase_pipeline: 'Purchase Pipeline',
   handover: 'Property Handover',
-  subdivision: 'Subdivision Process'
+  subdivision: 'Subdivision Process',
 }
 
 /**
@@ -192,7 +191,7 @@ export const WORKFLOW_COLORS: Record<WorkflowType, string> = {
   direct_addition: 'blue',
   purchase_pipeline: 'green',
   handover: 'purple',
-  subdivision: 'orange'
+  subdivision: 'orange',
 }
 
 /**
@@ -215,9 +214,12 @@ export function getPipelineName(workflowType: WorkflowType): string {
 /**
  * Validate if a document type is allowed for the workflow
  */
-export function isDocTypeAllowedForWorkflow(docTypeKey: DocTypeKey, workflowType: WorkflowType): boolean {
+export function isDocTypeAllowedForWorkflow(
+  docTypeKey: DocTypeKey,
+  workflowType: WorkflowType
+): boolean {
   const allowedDocTypes = getFilteredDocTypes(workflowType)
-  return allowedDocTypes.some(docType => docType.key === docTypeKey)
+  return allowedDocTypes.some((docType) => docType.key === docTypeKey)
 }
 
 /**
@@ -248,7 +250,12 @@ export function calculateWorkflowProgress(
 /**
  * Property filter types and utilities for enhanced filtering
  */
-export type PropertyPipelineFilter = 'all' | 'direct_addition' | 'purchase_pipeline' | 'subdivision' | 'handover'
+export type PropertyPipelineFilter =
+  | 'all'
+  | 'direct_addition'
+  | 'purchase_pipeline'
+  | 'subdivision'
+  | 'handover'
 export type PropertyStatusFilter = 'all' | 'active' | 'inactive' | 'pending' | 'completed'
 
 export interface PropertyFilters {
@@ -267,18 +274,6 @@ export interface PropertyFilters {
  */
 export function getPropertyPipelineType(property: PropertyWithLifecycle): PropertyPipelineFilter {
   const workflowType = getWorkflowType(property)
-
-  // Debug logging to help identify filtering issues
-  if (property.property_source === 'PURCHASE_PIPELINE') {
-    console.log('🔍 Purchase pipeline property detected:', {
-      id: property.id,
-      name: property.name,
-      property_source: property.property_source,
-      workflowType,
-      subdivision_status: property.subdivision_status,
-      handover_status: property.handover_status
-    })
-  }
 
   switch (workflowType) {
     case 'subdivision':
@@ -327,51 +322,32 @@ export function getPropertyStatusForFilter(property: PropertyWithLifecycle): Pro
 /**
  * Filter properties based on pipeline type
  */
-export function filterByPipeline(properties: PropertyWithLifecycle[], pipelineFilter: PropertyPipelineFilter): PropertyWithLifecycle[] {
+export function filterByPipeline(
+  properties: PropertyWithLifecycle[],
+  pipelineFilter: PropertyPipelineFilter
+): PropertyWithLifecycle[] {
   if (pipelineFilter === 'all') {
     return properties
   }
 
-  const filtered = properties.filter(property => {
+  return properties.filter((property) => {
     const propertyPipeline = getPropertyPipelineType(property)
-    const matches = propertyPipeline === pipelineFilter
-
-    // Debug logging for purchase pipeline filtering
-    if (pipelineFilter === 'purchase_pipeline') {
-      console.log('🔍 Purchase pipeline filter check:', {
-        propertyId: property.id,
-        propertyName: property.name,
-        property_source: property.property_source,
-        propertyPipeline,
-        pipelineFilter,
-        matches
-      })
-    }
-
-    return matches
+    return propertyPipeline === pipelineFilter
   })
-
-  // Log filter results
-  if (pipelineFilter === 'purchase_pipeline') {
-    console.log('🔍 Purchase pipeline filter results:', {
-      totalProperties: properties.length,
-      filteredProperties: filtered.length,
-      purchaseProperties: properties.filter(p => p.property_source === 'PURCHASE_PIPELINE').length
-    })
-  }
-
-  return filtered
 }
 
 /**
  * Filter properties based on status
  */
-export function filterByStatus(properties: PropertyWithLifecycle[], statusFilter: PropertyStatusFilter): PropertyWithLifecycle[] {
+export function filterByStatus(
+  properties: PropertyWithLifecycle[],
+  statusFilter: PropertyStatusFilter
+): PropertyWithLifecycle[] {
   if (statusFilter === 'all') {
     return properties
   }
 
-  return properties.filter(property => {
+  return properties.filter((property) => {
     const propertyStatus = getPropertyStatusForFilter(property)
     return propertyStatus === statusFilter
   })
@@ -380,12 +356,15 @@ export function filterByStatus(properties: PropertyWithLifecycle[], statusFilter
 /**
  * Filter properties based on property types
  */
-export function filterByPropertyTypes(properties: PropertyWithLifecycle[], propertyTypes: string[]): PropertyWithLifecycle[] {
+export function filterByPropertyTypes(
+  properties: PropertyWithLifecycle[],
+  propertyTypes: string[]
+): PropertyWithLifecycle[] {
   if (propertyTypes.length === 0) {
     return properties
   }
 
-  return properties.filter(property => {
+  return properties.filter((property) => {
     return propertyTypes.includes(property.property_type || '')
   })
 }
@@ -393,13 +372,16 @@ export function filterByPropertyTypes(properties: PropertyWithLifecycle[], prope
 /**
  * Filter properties based on search term
  */
-export function filterBySearchTerm(properties: PropertyWithLifecycle[], searchTerm: string): PropertyWithLifecycle[] {
+export function filterBySearchTerm(
+  properties: PropertyWithLifecycle[],
+  searchTerm: string
+): PropertyWithLifecycle[] {
   if (!searchTerm.trim()) {
     return properties
   }
 
   const lower = searchTerm.toLowerCase()
-  return properties.filter(property => {
+  return properties.filter((property) => {
     return (
       property.name.toLowerCase().includes(lower) ||
       (property.physical_address?.toLowerCase().includes(lower) ?? false) ||
@@ -413,7 +395,10 @@ export function filterBySearchTerm(properties: PropertyWithLifecycle[], searchTe
 /**
  * Apply all filters to properties
  */
-export function applyPropertyFilters(properties: PropertyWithLifecycle[], filters: PropertyFilters): PropertyWithLifecycle[] {
+export function applyPropertyFilters(
+  properties: PropertyWithLifecycle[],
+  filters: PropertyFilters
+): PropertyWithLifecycle[] {
   let filtered = properties
 
   // Apply pipeline filter
@@ -434,16 +419,18 @@ export function applyPropertyFilters(properties: PropertyWithLifecycle[], filter
 /**
  * Get filter counts for each pipeline type
  */
-export function getFilterCounts(properties: PropertyWithLifecycle[]): Record<PropertyPipelineFilter, number> {
+export function getFilterCounts(
+  properties: PropertyWithLifecycle[]
+): Record<PropertyPipelineFilter, number> {
   const counts: Record<PropertyPipelineFilter, number> = {
     all: properties.length,
     direct_addition: 0,
     purchase_pipeline: 0,
     subdivision: 0,
-    handover: 0
+    handover: 0,
   }
 
-  properties.forEach(property => {
+  properties.forEach((property) => {
     const pipelineType = getPropertyPipelineType(property)
     counts[pipelineType]++
   })
@@ -463,9 +450,9 @@ export function getStageFilteringSummary(property: PropertyWithLifecycle): {
   visibleDocuments: DocTypeKey[]
 } {
   const config = getStageConfig(property)
-  const allDocKeys = DOC_TYPES.map(d => d.key)
-  const visibleDocKeys = config.docTypes.map(d => d.key)
-  const hiddenDocKeys = allDocKeys.filter(key => !visibleDocKeys.includes(key))
+  const allDocKeys = DOC_TYPES.map((d) => d.key)
+  const visibleDocKeys = config.docTypes.map((d) => d.key)
+  const hiddenDocKeys = allDocKeys.filter((key) => !visibleDocKeys.includes(key))
 
   return {
     workflowType: config.workflowType,
@@ -473,6 +460,6 @@ export function getStageFilteringSummary(property: PropertyWithLifecycle): {
     displayRange: `${config.displayRange.min}-${config.displayRange.max}`,
     documentCount: config.docTypes.length,
     hiddenDocuments: hiddenDocKeys,
-    visibleDocuments: visibleDocKeys
+    visibleDocuments: visibleDocKeys,
   }
 }

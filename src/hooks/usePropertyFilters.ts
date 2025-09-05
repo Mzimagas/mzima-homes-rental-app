@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { PropertyWithLifecycle } from '../components/properties/types/property-management.types'
 import {
   PropertyFilters,
   PropertyPipelineFilter,
   PropertyStatusFilter,
   applyPropertyFilters,
-  getFilterCounts
+  getFilterCounts,
 } from '../components/properties/utils/stage-filtering.utils'
 
 export interface UsePropertyFiltersOptions {
@@ -22,21 +22,13 @@ export interface UsePropertyFiltersReturn {
   filterCounts: Record<PropertyPipelineFilter, number>
   totalCount: number
   filteredCount: number
-  
-  // Filter setters
   setPipelineFilter: (pipeline: PropertyPipelineFilter) => void
   setStatusFilter: (status: PropertyStatusFilter) => void
   setPropertyTypesFilter: (types: string[]) => void
   setSearchTerm: (term: string) => void
-  setDateRange: (range: { start: Date | null; end: Date | null }) => void
-  
-  // Utility functions
   clearFilters: () => void
-  resetFilters: () => void
   hasActiveFilters: boolean
-  
-  // Preset filters
-  applyPreset: (preset: 'active' | 'purchase' | 'subdivision' | 'handover' | 'completed') => void
+  applyPreset: (preset: 'active' | 'subdivision' | 'handover' | 'completed') => void
 }
 
 const defaultFilters: PropertyFilters = {
@@ -44,52 +36,46 @@ const defaultFilters: PropertyFilters = {
   status: 'all',
   propertyTypes: [],
   searchTerm: '',
-  dateRange: {
-    start: null,
-    end: null
-  }
 }
 
 export function usePropertyFilters(
   properties: PropertyWithLifecycle[],
   options: UsePropertyFiltersOptions = {}
 ): UsePropertyFiltersReturn {
-  const {
-    initialFilters = {},
-    persistKey = 'property-filters',
-    debounceMs = 300
-  } = options
+  const { initialFilters = {}, persistKey, debounceMs = 300 } = options
 
-  // Initialize filters from localStorage or defaults
+  // Initialize filters
   const [filters, setFilters] = useState<PropertyFilters>(() => {
-    if (typeof window !== 'undefined' && persistKey) {
+    const initial = { ...defaultFilters, ...initialFilters }
+
+    // Load from localStorage if persistKey is provided
+    if (persistKey && typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem(persistKey)
         if (saved) {
           const parsed = JSON.parse(saved)
-          return { ...defaultFilters, ...parsed, ...initialFilters }
+          return { ...initial, ...parsed }
         }
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.warn('Failed to load saved filters:', error)
+        // Silently fail to load saved filters
       }
     }
-    return { ...defaultFilters, ...initialFilters }
+
+    return initial
   })
 
-  // Persist filters to localStorage
+  // Save filters to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined' && persistKey) {
+    if (persistKey && typeof window !== 'undefined') {
       try {
         localStorage.setItem(persistKey, JSON.stringify(filters))
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.warn('Failed to save filters:', error)
+        // Silently fail to save filters
       }
     }
   }, [filters, persistKey])
 
-  // Apply filters to properties
+  // Apply filters to get filtered properties
   const filteredProperties = useMemo(() => {
     return applyPropertyFilters(properties, filters)
   }, [properties, filters])
@@ -105,59 +91,65 @@ export function usePropertyFilters(
       filters.pipeline !== 'all' ||
       filters.status !== 'all' ||
       filters.propertyTypes.length > 0 ||
-      filters.searchTerm.trim() !== '' ||
-      filters.dateRange?.start !== null ||
-      filters.dateRange?.end !== null
+      filters.searchTerm.trim() !== ''
     )
   }, [filters])
 
   // Filter setters
   const setPipelineFilter = useCallback((pipeline: PropertyPipelineFilter) => {
-    setFilters(prev => ({ ...prev, pipeline }))
+    setFilters((prev) => ({ ...prev, pipeline }))
   }, [])
 
   const setStatusFilter = useCallback((status: PropertyStatusFilter) => {
-    setFilters(prev => ({ ...prev, status }))
+    setFilters((prev) => ({ ...prev, status }))
   }, [])
 
   const setPropertyTypesFilter = useCallback((propertyTypes: string[]) => {
-    setFilters(prev => ({ ...prev, propertyTypes }))
+    setFilters((prev) => ({ ...prev, propertyTypes }))
   }, [])
 
   const setSearchTerm = useCallback((searchTerm: string) => {
-    setFilters(prev => ({ ...prev, searchTerm }))
+    setFilters((prev) => ({ ...prev, searchTerm }))
   }, [])
 
-  const setDateRange = useCallback((dateRange: { start: Date | null; end: Date | null }) => {
-    setFilters(prev => ({ ...prev, dateRange }))
-  }, [])
-
-  // Utility functions
   const clearFilters = useCallback(() => {
     setFilters(defaultFilters)
   }, [])
 
-  const resetFilters = useCallback(() => {
-    setFilters({ ...defaultFilters, ...initialFilters })
-  }, [initialFilters])
-
-  // Preset filters
-  const applyPreset = useCallback((preset: 'active' | 'purchase' | 'subdivision' | 'handover' | 'completed') => {
+  // Apply preset filters (excluding purchase pipeline)
+  const applyPreset = useCallback((preset: 'active' | 'subdivision' | 'handover' | 'completed') => {
     switch (preset) {
       case 'active':
-        setFilters(prev => ({ ...prev, status: 'active', pipeline: 'all' }))
-        break
-      case 'purchase':
-        setFilters(prev => ({ ...prev, pipeline: 'purchase_pipeline', status: 'all' }))
+        setFilters({
+          pipeline: 'all',
+          status: 'active',
+          propertyTypes: [],
+          searchTerm: '',
+        })
         break
       case 'subdivision':
-        setFilters(prev => ({ ...prev, pipeline: 'subdivision', status: 'all' }))
+        setFilters({
+          pipeline: 'subdivision',
+          status: 'all',
+          propertyTypes: [],
+          searchTerm: '',
+        })
         break
       case 'handover':
-        setFilters(prev => ({ ...prev, pipeline: 'handover', status: 'all' }))
+        setFilters({
+          pipeline: 'handover',
+          status: 'all',
+          propertyTypes: [],
+          searchTerm: '',
+        })
         break
       case 'completed':
-        setFilters(prev => ({ ...prev, status: 'completed', pipeline: 'all' }))
+        setFilters({
+          pipeline: 'all',
+          status: 'completed',
+          propertyTypes: [],
+          searchTerm: '',
+        })
         break
     }
   }, [])
@@ -168,20 +160,12 @@ export function usePropertyFilters(
     filterCounts,
     totalCount: properties.length,
     filteredCount: filteredProperties.length,
-    
-    // Filter setters
     setPipelineFilter,
     setStatusFilter,
     setPropertyTypesFilter,
     setSearchTerm,
-    setDateRange,
-    
-    // Utility functions
     clearFilters,
-    resetFilters,
     hasActiveFilters,
-    
-    // Preset filters
-    applyPreset
+    applyPreset,
   }
 }

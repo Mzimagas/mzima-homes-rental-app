@@ -20,7 +20,7 @@ interface PropertySearchProps {
 
   // Quick filters
   showQuickFilters?: boolean
-  onQuickFilter?: (preset: 'active' | 'purchase' | 'subdivision' | 'handover' | 'completed') => void
+  onQuickFilter?: (preset: 'active' | 'subdivision' | 'handover' | 'completed') => void
 }
 
 export default function PropertySearch({
@@ -44,6 +44,7 @@ export default function PropertySearch({
   // Note: onSearchChange excluded from deps to prevent infinite loops
   useEffect(() => {
     onSearchChange(debouncedSearchTerm)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm])
 
   const handleClear = () => {
@@ -91,7 +92,9 @@ export default function PropertySearch({
                   ? 'border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100'
                   : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
               }`}
-              title={hasActiveFilters ? `${filterCount} filters active - Click to edit` : 'Open filters'}
+              title={
+                hasActiveFilters ? `${filterCount} filters active - Click to edit` : 'Open filters'
+              }
             >
               <FunnelIcon className="h-5 w-5" />
               {hasActiveFilters && filterCount > 0 && (
@@ -117,21 +120,16 @@ export default function PropertySearch({
             >
               🟢 Active
             </button>
-            <button
-              onClick={() => onQuickFilter('purchase')}
-              className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full hover:bg-blue-100 transition-colors"
-            >
-              🏢 Purchase
-            </button>
+
             <button
               onClick={() => onQuickFilter('subdivision')}
-              className="inline-flex items-center px-3 py-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-full hover:bg-purple-100 transition-colors"
+              className="inline-flex items-center px-3 py-1 text-xs font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded-full hover:bg-orange-100 transition-colors"
             >
               📐 Subdivision
             </button>
             <button
               onClick={() => onQuickFilter('handover')}
-              className="inline-flex items-center px-3 py-1 text-xs font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded-full hover:bg-orange-100 transition-colors"
+              className="inline-flex items-center px-3 py-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-full hover:bg-purple-100 transition-colors"
             >
               🤝 Handover
             </button>
@@ -151,11 +149,15 @@ export default function PropertySearch({
               <div>
                 {searchTerm ? (
                   resultsCount === 0 ? (
-                    <span className="text-gray-500">No results found for &quot;{searchTerm}&quot;</span>
+                    <span className="text-gray-500">
+                      No results found for &quot;{searchTerm}&quot;
+                    </span>
                   ) : (
                     <span>
                       Showing {resultsCount} of {totalCount} properties
-                      {searchTerm && <span className="text-gray-500"> for &quot;{searchTerm}&quot;</span>}
+                      {searchTerm && (
+                        <span className="text-gray-500"> for &quot;{searchTerm}&quot;</span>
+                      )}
                     </span>
                   )
                 ) : (

@@ -6,7 +6,11 @@
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
-import { useDashboardData, useDashboardMetrics, useRealTimeDashboard } from '../../../hooks/useDashboardData'
+import {
+  useDashboardData,
+  useDashboardMetrics,
+  useRealTimeDashboard,
+} from '../../../hooks/useDashboardData'
 import { dashboardService } from '../../../services/DashboardService'
 
 // Mock dashboard service
@@ -18,7 +22,7 @@ const mockWebSocket = {
   removeEventListener: jest.fn(),
   send: jest.fn(),
   close: jest.fn(),
-  readyState: WebSocket.OPEN
+  readyState: WebSocket.OPEN,
 }
 
 global.WebSocket = jest.fn(() => mockWebSocket) as any
@@ -28,15 +32,15 @@ const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
-      mutations: { retry: false }
-    }
+      mutations: { retry: false },
+    },
   })
 
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+  const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
+
+  return TestWrapper
 }
 
 describe('Dashboard Hooks Integration', () => {
@@ -54,7 +58,7 @@ describe('Dashboard Hooks Integration', () => {
           totalProperties: 25,
           activeTenants: 68,
           monthlyRevenue: 2450000,
-          occupancyRate: 94.1
+          occupancyRate: 94.1,
         },
         properties: [
           {
@@ -63,16 +67,16 @@ describe('Dashboard Hooks Integration', () => {
             location: 'Test Location',
             units: 10,
             occupancyRate: 90,
-            monthlyRevenue: 100000
-          }
-        ]
+            monthlyRevenue: 100000,
+          },
+        ],
       }
 
       mockDashboardService.getDashboardMetrics.mockResolvedValue(mockData.metrics)
       mockDashboardService.getPropertyAnalytics.mockResolvedValue(mockData.properties)
 
       const { result } = renderHook(() => useDashboardData(), {
-        wrapper: createWrapper()
+        wrapper: createWrapper(),
       })
 
       expect(result.current.loading).toBe(true)
@@ -91,7 +95,7 @@ describe('Dashboard Hooks Integration', () => {
       mockDashboardService.getDashboardMetrics.mockRejectedValue(new Error(errorMessage))
 
       const { result } = renderHook(() => useDashboardData(), {
-        wrapper: createWrapper()
+        wrapper: createWrapper(),
       })
 
       await waitFor(() => {
@@ -107,13 +111,13 @@ describe('Dashboard Hooks Integration', () => {
         totalProperties: 25,
         activeTenants: 68,
         monthlyRevenue: 2450000,
-        occupancyRate: 94.1
+        occupancyRate: 94.1,
       }
 
       mockDashboardService.getDashboardMetrics.mockResolvedValue(mockData)
 
       const { result } = renderHook(() => useDashboardData(), {
-        wrapper: createWrapper()
+        wrapper: createWrapper(),
       })
 
       await waitFor(() => {
@@ -133,7 +137,7 @@ describe('Dashboard Hooks Integration', () => {
         totalProperties: 25,
         activeTenants: 68,
         monthlyRevenue: 2450000,
-        occupancyRate: 94.1
+        occupancyRate: 94.1,
       }
 
       mockDashboardService.getDashboardMetrics.mockResolvedValue(mockData)
@@ -152,7 +156,7 @@ describe('Dashboard Hooks Integration', () => {
 
       expect(result2.current.loading).toBe(false)
       expect(result2.current.data).toEqual(result1.current.data)
-      
+
       // Should only call service once due to caching
       expect(mockDashboardService.getDashboardMetrics).toHaveBeenCalledTimes(1)
     })
@@ -165,14 +169,17 @@ describe('Dashboard Hooks Integration', () => {
         activeTenants: 68,
         monthlyRevenue: 2450000,
         occupancyRate: 94.1,
-        collectionRate: 96.5
+        collectionRate: 96.5,
       }
 
       mockDashboardService.getDashboardMetrics.mockResolvedValue(mockMetrics)
 
-      const { result } = renderHook(() => useDashboardMetrics(['totalProperties', 'activeTenants']), {
-        wrapper: createWrapper()
-      })
+      const { result } = renderHook(
+        () => useDashboardMetrics(['totalProperties', 'activeTenants']),
+        {
+          wrapper: createWrapper(),
+        }
+      )
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
@@ -188,26 +195,33 @@ describe('Dashboard Hooks Integration', () => {
         totalProperties: 25,
         activeTenants: 68,
         monthlyRevenue: 2450000,
-        occupancyRate: 94.1
+        occupancyRate: 94.1,
       }
 
       mockDashboardService.getDashboardMetrics.mockResolvedValue(mockMetrics)
 
-      const { result } = renderHook(() => useDashboardMetrics(undefined, {
-        autoRefresh: true,
-        refreshInterval: 100 // 100ms for testing
-      }), {
-        wrapper: createWrapper()
-      })
+      const { result } = renderHook(
+        () =>
+          useDashboardMetrics(undefined, {
+            autoRefresh: true,
+            refreshInterval: 100, // 100ms for testing
+          }),
+        {
+          wrapper: createWrapper(),
+        }
+      )
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
       })
 
       // Wait for auto-refresh
-      await waitFor(() => {
-        expect(mockDashboardService.getDashboardMetrics).toHaveBeenCalledTimes(2)
-      }, { timeout: 200 })
+      await waitFor(
+        () => {
+          expect(mockDashboardService.getDashboardMetrics).toHaveBeenCalledTimes(2)
+        },
+        { timeout: 200 }
+      )
     })
 
     it('should handle metric filtering', async () => {
@@ -217,14 +231,17 @@ describe('Dashboard Hooks Integration', () => {
         monthlyRevenue: 2450000,
         occupancyRate: 94.1,
         collectionRate: 96.5,
-        outstandingAmount: 135000
+        outstandingAmount: 135000,
       }
 
       mockDashboardService.getDashboardMetrics.mockResolvedValue(mockMetrics)
 
-      const { result } = renderHook(() => useDashboardMetrics(['totalProperties', 'activeTenants']), {
-        wrapper: createWrapper()
-      })
+      const { result } = renderHook(
+        () => useDashboardMetrics(['totalProperties', 'activeTenants']),
+        {
+          wrapper: createWrapper(),
+        }
+      )
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
@@ -233,17 +250,19 @@ describe('Dashboard Hooks Integration', () => {
       // Should only include requested metrics
       expect(result.current.data).toEqual({
         totalProperties: 25,
-        activeTenants: 68
+        activeTenants: 68,
       })
     })
   })
 
   describe('useRealTimeDashboard Hook', () => {
     it('should establish WebSocket connection', () => {
-      const { result } = renderHook(() => useRealTimeDashboard({
-        autoConnect: true,
-        subscriptions: ['dashboard', 'metrics']
-      }))
+      const { result } = renderHook(() =>
+        useRealTimeDashboard({
+          autoConnect: true,
+          subscriptions: ['dashboard', 'metrics'],
+        })
+      )
 
       expect(global.WebSocket).toHaveBeenCalled()
       expect(result.current.connected).toBe(false) // Initially false until connection established
@@ -252,11 +271,13 @@ describe('Dashboard Hooks Integration', () => {
     it('should handle real-time metric updates', async () => {
       const onMetricUpdate = jest.fn()
 
-      renderHook(() => useRealTimeDashboard({
-        autoConnect: true,
-        subscriptions: ['metrics'],
-        onMetricUpdate
-      }))
+      renderHook(() =>
+        useRealTimeDashboard({
+          autoConnect: true,
+          subscriptions: ['metrics'],
+          onMetricUpdate,
+        })
+      )
 
       // Simulate WebSocket message
       const messageEvent = new MessageEvent('message', {
@@ -264,47 +285,53 @@ describe('Dashboard Hooks Integration', () => {
           type: 'metric_update',
           data: {
             activeTenants: 69,
-            occupancyRate: 94.5
-          }
-        })
+            occupancyRate: 94.5,
+          },
+        }),
       })
 
       act(() => {
-        mockWebSocket.addEventListener.mock.calls
-          .find(call => call[0] === 'message')?.[1](messageEvent)
+        mockWebSocket.addEventListener.mock.calls.find((call) => call[0] === 'message')?.[1](
+          messageEvent
+        )
       })
 
       expect(onMetricUpdate).toHaveBeenCalledWith({
         activeTenants: 69,
-        occupancyRate: 94.5
+        occupancyRate: 94.5,
       })
     })
 
     it('should handle connection errors', async () => {
       const onError = jest.fn()
 
-      renderHook(() => useRealTimeDashboard({
-        autoConnect: true,
-        subscriptions: ['dashboard'],
-        onError
-      }))
+      renderHook(() =>
+        useRealTimeDashboard({
+          autoConnect: true,
+          subscriptions: ['dashboard'],
+          onError,
+        })
+      )
 
       // Simulate WebSocket error
       const errorEvent = new Event('error')
 
       act(() => {
-        mockWebSocket.addEventListener.mock.calls
-          .find(call => call[0] === 'error')?.[1](errorEvent)
+        mockWebSocket.addEventListener.mock.calls.find((call) => call[0] === 'error')?.[1](
+          errorEvent
+        )
       })
 
       expect(onError).toHaveBeenCalled()
     })
 
     it('should cleanup on unmount', () => {
-      const { unmount } = renderHook(() => useRealTimeDashboard({
-        autoConnect: true,
-        subscriptions: ['dashboard']
-      }))
+      const { unmount } = renderHook(() =>
+        useRealTimeDashboard({
+          autoConnect: true,
+          subscriptions: ['dashboard'],
+        })
+      )
 
       unmount()
 
@@ -313,12 +340,13 @@ describe('Dashboard Hooks Integration', () => {
 
     it('should support subscription management', () => {
       const { result, rerender } = renderHook(
-        ({ subscriptions }) => useRealTimeDashboard({
-          autoConnect: true,
-          subscriptions
-        }),
+        ({ subscriptions }) =>
+          useRealTimeDashboard({
+            autoConnect: true,
+            subscriptions,
+          }),
         {
-          initialProps: { subscriptions: ['dashboard'] }
+          initialProps: { subscriptions: ['dashboard'] },
         }
       )
 
@@ -329,7 +357,7 @@ describe('Dashboard Hooks Integration', () => {
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         JSON.stringify({
           type: 'subscribe',
-          subscriptions: ['dashboard', 'metrics', 'alerts']
+          subscriptions: ['dashboard', 'metrics', 'alerts'],
         })
       )
     })
@@ -341,23 +369,26 @@ describe('Dashboard Hooks Integration', () => {
         totalProperties: 25,
         activeTenants: 68,
         monthlyRevenue: 2450000,
-        occupancyRate: 94.1
+        occupancyRate: 94.1,
       }
 
       mockDashboardService.getDashboardMetrics.mockResolvedValue(mockMetrics)
 
       // Use both hooks together
-      const { result } = renderHook(() => {
-        const dashboardData = useDashboardData()
-        const realTime = useRealTimeDashboard({
-          autoConnect: true,
-          subscriptions: ['dashboard']
-        })
+      const { result } = renderHook(
+        () => {
+          const dashboardData = useDashboardData()
+          const realTime = useRealTimeDashboard({
+            autoConnect: true,
+            subscriptions: ['dashboard'],
+          })
 
-        return { dashboardData, realTime }
-      }, {
-        wrapper: createWrapper()
-      })
+          return { dashboardData, realTime }
+        },
+        {
+          wrapper: createWrapper(),
+        }
+      )
 
       // Wait for data to load
       await waitFor(() => {
@@ -373,7 +404,7 @@ describe('Dashboard Hooks Integration', () => {
         totalProperties: 25,
         activeTenants: 68,
         monthlyRevenue: 2450000,
-        occupancyRate: 94.1
+        occupancyRate: 94.1,
       }
 
       const mockProperties = [
@@ -383,21 +414,24 @@ describe('Dashboard Hooks Integration', () => {
           location: 'Test Location',
           units: 10,
           occupancyRate: 90,
-          monthlyRevenue: 100000
-        }
+          monthlyRevenue: 100000,
+        },
       ]
 
       mockDashboardService.getDashboardMetrics.mockResolvedValue(mockMetrics)
       mockDashboardService.getPropertyAnalytics.mockResolvedValue(mockProperties)
 
-      const { result } = renderHook(() => {
-        const metrics = useDashboardMetrics()
-        const data = useDashboardData()
+      const { result } = renderHook(
+        () => {
+          const metrics = useDashboardMetrics()
+          const data = useDashboardData()
 
-        return { metrics, data }
-      }, {
-        wrapper: createWrapper()
-      })
+          return { metrics, data }
+        },
+        {
+          wrapper: createWrapper(),
+        }
+      )
 
       await waitFor(() => {
         expect(result.current.metrics.loading).toBe(false)
@@ -417,15 +451,19 @@ describe('Dashboard Hooks Integration', () => {
           totalProperties: 25,
           activeTenants: 68,
           monthlyRevenue: 2450000,
-          occupancyRate: 94.1
+          occupancyRate: 94.1,
         })
 
-      const { result } = renderHook(() => useDashboardData({
-        retry: 1,
-        retryDelay: 100
-      }), {
-        wrapper: createWrapper()
-      })
+      const { result } = renderHook(
+        () =>
+          useDashboardData({
+            retry: 1,
+            retryDelay: 100,
+          }),
+        {
+          wrapper: createWrapper(),
+        }
+      )
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
@@ -440,35 +478,42 @@ describe('Dashboard Hooks Integration', () => {
         totalProperties: 20,
         activeTenants: 60,
         monthlyRevenue: 2000000,
-        occupancyRate: 90.0
+        occupancyRate: 90.0,
       }
 
       const freshData = {
         totalProperties: 25,
         activeTenants: 68,
         monthlyRevenue: 2450000,
-        occupancyRate: 94.1
+        occupancyRate: 94.1,
       }
 
       mockDashboardService.getDashboardMetrics
         .mockResolvedValueOnce(staleData)
         .mockResolvedValueOnce(freshData)
 
-      const { result } = renderHook(() => useDashboardData({
-        staleTime: 100,
-        refetchInterval: 200
-      }), {
-        wrapper: createWrapper()
-      })
+      const { result } = renderHook(
+        () =>
+          useDashboardData({
+            staleTime: 100,
+            refetchInterval: 200,
+          }),
+        {
+          wrapper: createWrapper(),
+        }
+      )
 
       await waitFor(() => {
         expect(result.current.data).toEqual(staleData)
       })
 
       // Wait for refetch
-      await waitFor(() => {
-        expect(result.current.data).toEqual(freshData)
-      }, { timeout: 300 })
+      await waitFor(
+        () => {
+          expect(result.current.data).toEqual(freshData)
+        },
+        { timeout: 300 }
+      )
     })
   })
 })

@@ -20,7 +20,7 @@ export interface PropertyFilterPanelProps {
 
   // Utility functions
   onClearFilters: () => void
-  onApplyPreset: (preset: 'active' | 'purchase' | 'subdivision' | 'handover' | 'completed') => void
+  onApplyPreset: (preset: 'active' | 'subdivision' | 'handover' | 'completed') => void
 
   // UI props
   isCollapsed?: boolean
