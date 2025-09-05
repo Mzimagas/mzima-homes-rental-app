@@ -182,12 +182,12 @@ export class DashboardService {
     const defaultStats = this.getEmptyStats()
 
     try {
-      // Get property statistics
+      // Get property statistics - using ACTIVE status for rental-ready properties
       const propertiesResult = await this.executeWithErrorHandling(
         () => supabase
           .from('properties')
           .select('id, property_type')
-          .eq('lifecycle_status', 'RENTAL_READY'),
+          .eq('lifecycle_status', 'ACTIVE'),
         'getDashboardStats:properties',
         []
       )

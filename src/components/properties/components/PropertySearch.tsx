@@ -137,7 +137,7 @@ export default function PropertySearch({
               onClick={() => onQuickFilter('completed')}
               className="inline-flex items-center px-3 py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-full hover:bg-gray-100 transition-colors"
             >
-              ✅ Completed
+              🏁 Retired
             </button>
           </div>
         )}

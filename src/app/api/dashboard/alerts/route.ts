@@ -190,7 +190,7 @@ async function generateSystemAlerts(supabase: any) {
           )
         )
       `)
-      .eq('lifecycle_status', 'RENTAL_READY')
+      .eq('lifecycle_status', 'ACTIVE')
     
     if (properties) {
       let totalVacantUnits = 0

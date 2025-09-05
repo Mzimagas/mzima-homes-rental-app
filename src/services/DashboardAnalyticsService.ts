@@ -198,7 +198,7 @@ class DashboardAnalyticsService {
             )
           )
         `)
-        .eq('lifecycle_status', 'RENTAL_READY')
+        .eq('lifecycle_status', 'ACTIVE')
 
       if (error) throw error
 
