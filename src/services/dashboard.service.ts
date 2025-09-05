@@ -192,12 +192,18 @@ export class DashboardService {
         []
       )
 
-      // Get unit statistics
+      // Get unit statistics - only units from ACTIVE properties
       const unitsResult = await this.executeWithErrorHandling(
         () => supabase
           .from('units')
-          .select('id, is_active, monthly_rent_kes')
-          .eq('is_active', true),
+          .select(`
+            id,
+            is_active,
+            monthly_rent_kes,
+            properties!inner(lifecycle_status)
+          `)
+          .eq('is_active', true)
+          .eq('properties.lifecycle_status', 'ACTIVE'),
         'getDashboardStats:units',
         []
       )

@@ -60,7 +60,7 @@ function DashboardPage() {
         // Calculate dashboard statistics
         const totalProperties = properties.length
         const activeTenants = tenants.filter((t: any) => t.status === 'ACTIVE').length
-        const totalUnits = properties.reduce((sum: number, p: any) => sum + (p.total_units || 0), 0)
+        const totalUnits = properties.reduce((sum: number, p: any) => sum + (p.units?.length || 0), 0)
         const occupiedUnits = tenants.length
         const vacantUnits = totalUnits - occupiedUnits
         const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0
