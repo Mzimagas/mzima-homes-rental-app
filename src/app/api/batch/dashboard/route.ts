@@ -72,6 +72,11 @@ async function fetchDashboardBatch(supabase: any, options: DashboardBatchRequest
           name,
           physical_address,
           property_type,
+          property_source,
+          lifecycle_status,
+          subdivision_status,
+          handover_status,
+          source_reference_id,
           created_at,
           units(
             id,

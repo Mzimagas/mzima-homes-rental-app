@@ -268,6 +268,18 @@ export interface PropertyFilters {
 export function getPropertyPipelineType(property: PropertyWithLifecycle): PropertyPipelineFilter {
   const workflowType = getWorkflowType(property)
 
+  // Debug logging to help identify filtering issues
+  if (property.property_source === 'PURCHASE_PIPELINE') {
+    console.log('🔍 Purchase pipeline property detected:', {
+      id: property.id,
+      name: property.name,
+      property_source: property.property_source,
+      workflowType,
+      subdivision_status: property.subdivision_status,
+      handover_status: property.handover_status
+    })
+  }
+
   switch (workflowType) {
     case 'subdivision':
       return 'subdivision'
@@ -320,10 +332,35 @@ export function filterByPipeline(properties: PropertyWithLifecycle[], pipelineFi
     return properties
   }
 
-  return properties.filter(property => {
+  const filtered = properties.filter(property => {
     const propertyPipeline = getPropertyPipelineType(property)
-    return propertyPipeline === pipelineFilter
+    const matches = propertyPipeline === pipelineFilter
+
+    // Debug logging for purchase pipeline filtering
+    if (pipelineFilter === 'purchase_pipeline') {
+      console.log('🔍 Purchase pipeline filter check:', {
+        propertyId: property.id,
+        propertyName: property.name,
+        property_source: property.property_source,
+        propertyPipeline,
+        pipelineFilter,
+        matches
+      })
+    }
+
+    return matches
   })
+
+  // Log filter results
+  if (pipelineFilter === 'purchase_pipeline') {
+    console.log('🔍 Purchase pipeline filter results:', {
+      totalProperties: properties.length,
+      filteredProperties: filtered.length,
+      purchaseProperties: properties.filter(p => p.property_source === 'PURCHASE_PIPELINE').length
+    })
+  }
+
+  return filtered
 }
 
 /**
