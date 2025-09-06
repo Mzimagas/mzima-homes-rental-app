@@ -100,7 +100,9 @@ export const purchasePipelineSchema = z.object({
     .regex(phoneRegex, 'Enter a valid phone number')
     .optional()
     .or(z.literal('')),
-  sellerEmail: z.string().email('Enter a valid email').optional().or(z.literal('')),
+  // Broker information
+  brokerName: z.string().optional(),
+  brokerContact: z.string().optional(),
   askingPrice: z.number().positive('Asking price must be positive').optional(),
   negotiatedPrice: z.number().positive('Negotiated price must be positive').optional(),
   depositPaid: z.number().min(0, 'Deposit cannot be negative').optional(),
@@ -137,7 +139,8 @@ export interface PurchaseItem {
   property_type: string
   seller_name?: string
   seller_contact?: string
-  seller_email?: string
+  broker_name?: string
+  broker_contact?: string
   asking_price_kes?: number
   negotiated_price_kes?: number
   deposit_paid_kes?: number

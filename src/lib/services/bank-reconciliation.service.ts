@@ -424,6 +424,7 @@ export class BankReconciliationService {
             import_batch_id: batch.id,
             status: 'UNMATCHED',
             amount_kes: transaction.amount_kes || 0,
+            transaction_date: transaction.transaction_date || new Date().toISOString(),
           })
 
           successfulRows++

@@ -16,6 +16,54 @@ export class PropertyManagementService {
     return false
   }
 
+  // Load all properties with succession status for purchase form
+  static async loadPropertiesWithSuccession(): Promise<PropertyWithLifecycle[]> {
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+      if (authError) {
+        const handled = await this.handleAuthError(authError, 'loadPropertiesWithSuccession')
+        if (handled) return []
+      }
+      if (!user) {
+        console.warn('⚠️ No user found in loadPropertiesWithSuccession')
+        window.location.href = '/auth/login?message=Please log in to access properties.'
+        return []
+      }
+
+      console.log('✅ User authenticated:', user.id, user.email)
+
+      // Get properties with succession status
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          *,
+          property_users!inner(role, status)
+        `)
+        .eq('property_users.user_id', user.id)
+        .eq('property_users.status', 'ACTIVE')
+        .is('disabled_at', null)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('❌ Database error in loadPropertiesWithSuccession:', error)
+        throw error
+      }
+
+      console.log('📊 Properties with succession loaded successfully:', data?.length || 0, 'properties')
+
+      // Return the properties data with succession status
+      return (data as PropertyWithLifecycle[]) || []
+    } catch (error) {
+      if (error instanceof Error && isAuthError(error)) {
+        window.location.href = '/auth/login?message=Session expired. Please log in again.'
+      }
+      return []
+    }
+  }
+
   // Load all properties with lifecycle information
   static async loadProperties(): Promise<PropertyWithLifecycle[]> {
     try {

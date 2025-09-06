@@ -405,7 +405,12 @@ export class FinancialReportingService {
           net_margin,
         },
         comparisons: {
-          ...comparisons,
+          previous_period: comparisons.previous_period || {
+            income_change: 0,
+            expense_change: 0,
+            net_income_change: 0,
+            income_change_percentage: 0,
+          },
           year_over_year: {}, // Add missing property
         },
       }
