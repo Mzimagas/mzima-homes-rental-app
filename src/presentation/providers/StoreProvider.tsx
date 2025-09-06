@@ -173,7 +173,7 @@ export function StoreDebugPanel() {
     return null
   }
 
-  const refreshDebugInfo = () => {
+  const refreshDebugInfo = React.useCallback(() => {
     const health = storeProvider.healthCheck()
     const propertyState = usePropertyStore.getState()
     const tenantState = useTenantStore.getState()
@@ -202,13 +202,13 @@ export function StoreDebugPanel() {
         }
       }
     })
-  }
+  }, [storeProvider])
 
   React.useEffect(() => {
     if (isOpen) {
       refreshDebugInfo()
     }
-  }, [isOpen])
+  }, [isOpen, refreshDebugInfo])
 
   return (
     <div className="fixed bottom-4 right-4 z-50">

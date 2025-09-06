@@ -55,11 +55,11 @@ export function normalizeLatLng(inputLat: LatLngInput, inputLng: LatLngInput):
     return { lat: toNumber(v), lng: undefined as any };
   };
 
-  let latObj = unwrap(inputLat);
-  let lngObj = unwrap(inputLng);
+  const latObj = unwrap(inputLat);
+  const lngObj = unwrap(inputLng);
 
-  let lat = toNumber(latObj?.lat ?? inputLat);
-  let lng =
+  const lat = toNumber(latObj?.lat ?? inputLat);
+  const lng =
     toNumber(lngObj?.lng ?? inputLng) ??
     // handle when both come in one object
     (typeof inputLat === 'object' && inputLat && 'lng' in inputLat ? toNumber((inputLat as any).lng) : null) ??

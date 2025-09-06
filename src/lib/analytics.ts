@@ -3,8 +3,8 @@ let posthog: any = null
 
 const loadPostHog = async () => {
   if (!posthog) {
-    const module = await import('posthog-js')
-    posthog = module.default
+    const posthogModule = await import('posthog-js')
+    posthog = posthogModule.default
   }
   return posthog
 }

@@ -31,6 +31,7 @@ interface HandoverCost {
 
 // Global in-memory storage that persists across API calls
 declare global {
+  // eslint-disable-next-line no-var
   var mockStorage:
     | {
         paymentReceipts: Map<string, PaymentReceipt[]>

@@ -819,7 +819,8 @@ export default function SecurePurchaseForm({
                 </FormField>
               )}
             </div>
-          </div>
+              </div>
+            </div>
 
           {/* Legal Information */}
           <div className="space-y-4">

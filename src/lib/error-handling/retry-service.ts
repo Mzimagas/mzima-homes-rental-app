@@ -55,7 +55,7 @@ class RetryService {
         const result = await operation()
 
         const totalTime = Date.now() - startTime
-        logInfo(`Operation succeeded on attempt ${attempt}`, { totalTime })
+        logInfo(`Operation succeeded on attempt ${attempt}`, { additionalData: { totalTime } })
 
         config.onSuccess(attempt)
 
