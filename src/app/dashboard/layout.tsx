@@ -215,37 +215,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setGlobalNavigationOptimization(navigationOptimization)
   }, [navigationOptimization])
 
-  // Subdivision data prefetching for faster navigation (conservative)
+  // Subdivision data prefetching for faster navigation (very conservative)
   useSubdivisionPrefetch({
-    enabled: true,
-    prefetchOnHover: true,
-    prefetchDelay: 1000, // Longer delay to avoid aggressive prefetching
+    enabled: false, // Temporarily disable to prevent dashboard hanging
+    prefetchOnHover: false,
+    prefetchDelay: 2000, // Longer delay to avoid aggressive prefetching
   })
 
-  // Initialize search service
+  // Initialize search service (non-blocking)
   useEffect(() => {
     const initializeSearch = async () => {
       try {
-        // Dynamic import to avoid build issues
-        const { searchInitializationService } = await import(
-          '../../services/SearchInitializationService'
-        )
-        await searchInitializationService.initialize()
+        // Add timeout to prevent search initialization from hanging the dashboard
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Search initialization timeout')), 5000) // 5 second timeout
+        })
+
+        const initPromise = (async () => {
+          // Dynamic import to avoid build issues
+          const { searchInitializationService } = await import(
+            '../../services/SearchInitializationService'
+          )
+          await searchInitializationService.initialize()
+          return 'initialized'
+        })()
+
+        await Promise.race([initPromise, timeoutPromise])
         console.log('✅ Search service initialized in dashboard')
 
-        // Load search test utilities only when explicitly enabled
+        // Load search test utilities only when explicitly enabled (non-blocking)
         if (process.env.NEXT_PUBLIC_ENABLE_SEARCH_DEBUG === '1') {
           import('../../utils/searchTestUtils').catch((error) => {
             console.warn('⚠️ Failed to load search test utilities:', error)
           })
         }
       } catch (error) {
-        console.warn('⚠️ Search service initialization failed:', error)
+        console.warn('⚠️ Search service initialization failed or timed out:', error)
         // App continues to work, search just won't be available initially
       }
     }
 
-    initializeSearch()
+    // Run search initialization in background without blocking dashboard
+    setTimeout(() => {
+      initializeSearch()
+    }, 100) // Small delay to let dashboard render first
   }, [])
 
   // Add swipe gesture support for sidebar

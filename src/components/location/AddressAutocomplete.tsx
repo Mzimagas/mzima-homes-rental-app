@@ -103,6 +103,12 @@ export default function AddressAutocomplete({
     return 'ok'
   }
 
+  const tryGeolocation = (options: PositionOptions, isRetry = false) => {
+    return new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, options)
+    })
+  }
+
   const useCurrentLocation = async () => {
     if (!navigator.geolocation) {
       setLocalError('Geolocation is not supported in this browser.')
@@ -137,83 +143,61 @@ export default function AddressAutocomplete({
     setLoading(true)
 
     try {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const { latitude, longitude } = pos.coords
+      let position: GeolocationPosition
 
-            const address = await reverseGeocode(latitude, longitude)
+      try {
+        // First try with high accuracy
+        position = await tryGeolocation({
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 300000
+        })
+      } catch (highAccuracyError) {
+        console.log('High accuracy failed, trying with lower accuracy:', highAccuracyError)
+        // Fallback to lower accuracy
+        position = await tryGeolocation({
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 600000
+        })
+      }
 
-            if (address && address !== `${latitude}, ${longitude}`) {
-              // Successfully got a real address
-              const result: GeocodeResult = {
-                address,
-                lat: latitude,
-                lng: longitude,
-              }
-              setValidated(result)
-              onChange(address)
-              handleSelect(result)
-            } else {
-                            const result: GeocodeResult = {
-                address: `${latitude}, ${longitude}`,
-                lat: latitude,
-                lng: longitude,
-              }
-              setValidated(result)
-              onChange(result.address)
-              handleSelect(result)
-            }
-            setLoading(false)
-          } catch (geocodeError) {
-                        const { latitude, longitude } = pos.coords
-            const result: GeocodeResult = {
-              address: `${latitude}, ${longitude}`,
-              lat: latitude,
-              lng: longitude,
-            }
-            setValidated(result)
-            onChange(result.address)
-            handleSelect(result)
-            setLoading(false)
+      const { latitude, longitude } = position.coords
+      try {
+        const address = await reverseGeocode(latitude, longitude)
+
+        if (address && address !== `${latitude}, ${longitude}`) {
+          // Successfully got a real address
+          const result: GeocodeResult = {
+            address,
+            lat: latitude,
+            lng: longitude,
           }
-        },
-        (err) => {
-          setLoading(false)
-          const msg = String((err && (err as any).message) || '')
-          if (
-            msg.toLowerCase().includes('permissions policy') ||
-            msg.toLowerCase().includes('feature policy')
-          ) {
-            const iframeNote = isInIframe()
-              ? ' This page appears to be embedded (iframe), which often blocks geolocation.'
-              : ''
-            setPolicyBlocked(true)
-            setLocalError(
-              `Geolocation is blocked by the browser's Permissions Policy.${iframeNote} Please open the app directly in a new tab or contact your administrator.`
-            )
-            return
+          setValidated(result)
+          onChange(address)
+          handleSelect(result)
+        } else {
+          const result: GeocodeResult = {
+            address: `${latitude}, ${longitude}`,
+            lat: latitude,
+            lng: longitude,
           }
-          if ((err as any).code === 1) {
-            setLocalError(
-              `Location permission was denied. ${getGeoHelp()} Or enter coordinates manually below.`
-            )
-          } else if ((err as any).code === 2) {
-            setLocalError(
-              'Location is currently unavailable. Please try again or enter coordinates manually below.'
-            )
-          } else if ((err as any).code === 3) {
-            setLocalError(
-              'Location request timed out. Please try again or enter coordinates manually below.'
-            )
-          } else {
-            setLocalError(
-              'Unable to access your location. Please try again or enter coordinates manually below.'
-            )
-          }
-        },
-        { enableHighAccuracy: true, timeout: 8000 }
-      )
+          setValidated(result)
+          onChange(result.address)
+          handleSelect(result)
+        }
+        setLoading(false)
+      } catch (geocodeError) {
+        const result: GeocodeResult = {
+          address: `${latitude}, ${longitude}`,
+          lat: latitude,
+          lng: longitude,
+        }
+        setValidated(result)
+        onChange(result.address)
+        handleSelect(result)
+        setLoading(false)
+      }
     } catch (e: any) {
       setLoading(false)
       const msg = String(e?.message || '')

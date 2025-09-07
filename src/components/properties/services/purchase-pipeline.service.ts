@@ -58,13 +58,14 @@ export class PurchasePipelineService {
       } else {
               }
 
-      // Enhance purchase data with property coordinates
+      // Enhance purchase data with coordinates (from purchase_pipeline table or linked property)
       const enhancedData = purchaseData.map((purchase) => {
         const property = propertiesMap.get(purchase.property_id)
         const enhanced = {
           ...purchase,
-          property_lat: property?.lat || null,
-          property_lng: property?.lng || null,
+          // Use coordinates from purchase_pipeline table first, then fall back to linked property
+          property_lat: purchase.lat || property?.lat || null,
+          property_lng: purchase.lng || property?.lng || null,
           property_physical_address: property?.physical_address || purchase.property_address,
         }
 
@@ -119,11 +120,22 @@ export class PurchasePipelineService {
         expected_roi_percentage: values.expectedRoi || null,
         risk_assessment: values.riskAssessment || null,
         property_condition_notes: values.propertyConditionNotes || null,
+        // Coordinates - IMPORTANT for location mapping
+        lat: values.lat || null,
+        lng: values.lng || null,
         pipeline_stages: initialStages,
         current_stage: currentStageNum,
         overall_progress: overallProgress,
         purchase_status: determinePurchaseStatus(initialStages),
         created_by: user.id,
+        // Succession fields (temporarily disabled until migration is applied)
+        // is_succession_purchase: values.isSuccessionPurchase || false,
+        // deceased_owner_name: values.deceasedOwnerName || null,
+        // deceased_owner_id: values.deceasedOwnerId || null,
+        // date_of_death: values.dateOfDeath || null,
+        // succession_court: values.successionCourt || null,
+        // succession_case_number: values.successionCaseNumber || null,
+        // succession_notes: values.successionNotes || null,
       }
 
             const { error } = await supabase.from('purchase_pipeline').insert([purchaseData])
@@ -167,7 +179,18 @@ export class PurchasePipelineService {
         expected_roi_percentage: values.expectedRoi || null,
         risk_assessment: values.riskAssessment || null,
         property_condition_notes: values.propertyConditionNotes || null,
+        // Coordinates - IMPORTANT for location mapping
+        lat: values.lat || null,
+        lng: values.lng || null,
         updated_at: new Date().toISOString(),
+        // Succession fields (temporarily disabled until migration is applied)
+        // is_succession_purchase: values.isSuccessionPurchase || false,
+        // deceased_owner_name: values.deceasedOwnerName || null,
+        // deceased_owner_id: values.deceasedOwnerId || null,
+        // date_of_death: values.dateOfDeath || null,
+        // succession_court: values.successionCourt || null,
+        // succession_case_number: values.successionCaseNumber || null,
+        // succession_notes: values.successionNotes || null,
       }
 
       const { error } = await supabase

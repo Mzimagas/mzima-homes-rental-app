@@ -4,6 +4,7 @@ import { errors } from '../../../lib/api/errors'
 import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '../../../lib/supabase-server'
 import { tenantCreateSchema } from '../../../lib/validation/tenant'
+import { memoryCache, CacheKeys, CacheTTL } from '../../../lib/cache/memory-cache'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -39,17 +40,36 @@ export const GET = compose(withRateLimit)(async (req: NextRequest) => {
     const search = url.searchParams.get('q')?.trim() || ''
     const propertyId = url.searchParams.get('propertyId') || ''
     const unitId = url.searchParams.get('unitId') || ''
+    const minimal = url.searchParams.get('minimal') === 'true'
     const includeDeleted = ['1', 'true', 'yes'].includes(
       (url.searchParams.get('includeDeleted') || '').toLowerCase()
     )
 
-    console.info('[GET /api/tenants] params', { search, propertyId, unitId, includeDeleted })
+    console.info('[GET /api/tenants] params', { search, propertyId, unitId, minimal, includeDeleted })
     console.info('[GET /api/tenants] TEMPORARY: Using service role to bypass RLS')
+
+    // Check cache for minimal requests without filters
+    if (minimal && !search && !propertyId && !unitId && !includeDeleted) {
+      const cacheKey = CacheKeys.userTenants('global') // Use global key for minimal tenant data
+      const cachedTenants = memoryCache.get(cacheKey)
+
+      if (cachedTenants) {
+        console.log('👥 Tenants served from cache (minimal)')
+        return NextResponse.json({ ok: true, data: cachedTenants }, {
+          headers: { 'X-Cache': 'HIT' }
+        })
+      }
+    }
+
+    // Select fields based on minimal flag
+    const selectFields = minimal
+      ? 'id, status, monthly_rent, created_at'
+      : '*'
 
     // Exclude soft-deleted tenants by default
     let query = includeDeleted
-      ? (supabaseAdmin.from('tenants').select('*') as any)
-      : (supabaseAdmin.from('tenants').select('*').neq('status', 'DELETED') as any)
+      ? (supabaseAdmin.from('tenants').select(selectFields) as any)
+      : (supabaseAdmin.from('tenants').select(selectFields).neq('status', 'DELETED') as any)
 
     // Read via RLS (query already initialized to exclude DELETED)
 
@@ -76,8 +96,19 @@ export const GET = compose(withRateLimit)(async (req: NextRequest) => {
       return errors.badRequest('Failed to fetch tenants', error)
     }
     console.info('[GET /api/tenants] rows', (data || []).length)
-    console.info('[GET /api/tenants] data:', data)
-    return NextResponse.json({ ok: true, data })
+
+    const result = data || []
+
+    // Cache minimal tenant data for simple queries
+    if (minimal && !search && !propertyId && !unitId && !includeDeleted && result.length > 0) {
+      const cacheKey = CacheKeys.userTenants('global')
+      memoryCache.set(cacheKey, result, CacheTTL.USER_DATA)
+      console.log('👥 Tenants cached (minimal)')
+    }
+
+    return NextResponse.json({ ok: true, data: result }, {
+      headers: minimal ? { 'X-Cache': 'MISS' } : {}
+    })
   } catch (e) {
     console.error('[GET /api/tenants] unhandled', (e as any)?.message || e)
     return errors.internal()

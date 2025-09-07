@@ -129,8 +129,8 @@ export default function PurchaseList({
                     <ViewOnGoogleMapsButton
                       source="Purchase List"
                       name={purchase.property_name}
-                      lat={(purchase as any).property_lat ?? null}
-                      lng={(purchase as any).property_lng ?? null}
+                      lat={(purchase as any).property_lat ?? (purchase as any).lat ?? null}
+                      lng={(purchase as any).property_lng ?? (purchase as any).lng ?? null}
                       onInvalid={onInvalid}
                       compact
                     />

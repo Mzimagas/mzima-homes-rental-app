@@ -20,7 +20,7 @@ function getCsrfToken(): string | null {
 export class AcquisitionFinancialsService {
   // Feature flags to enable financial APIs
   private static readonly FEATURE_FLAGS = {
-    PURCHASE_PIPELINE_API: true, // ✅ Enabled - API routes exist
+    PURCHASE_PIPELINE_API: false, // ❌ Disabled - causing rapid 404 errors
     ACQUISITION_COSTS_API: true, // ✅ Enabled - API routes exist
     PAYMENT_INSTALLMENTS_API: true, // ✅ Enabled - API routes exist
   }
@@ -29,6 +29,13 @@ export class AcquisitionFinancialsService {
   private static authFailure = false
   private static authFailureTime = 0
   private static readonly AUTH_RETRY_DELAY = 30000 // 30 seconds
+
+  // Cache and rate limiting
+  private static cache = new Map<string, { data: any; timestamp: number }>()
+  private static readonly CACHE_TTL = 60000 // 1 minute cache
+  private static requestQueue = new Map<string, Promise<any>>()
+  private static readonly MAX_CONCURRENT_REQUESTS = 3
+  private static activeRequests = 0
 
   private static async makeRequest(
     url: string,
@@ -182,24 +189,28 @@ export class AcquisitionFinancialsService {
     >
   ): Promise<PaymentInstallment> {
     try {
-      // Try purchase pipeline API first
-      try {
-        const data = await this.makeRequest(
-          `/api/purchase-pipeline/${propertyId}/payment-installments`,
-          {
-            method: 'POST',
-            body: JSON.stringify(payment),
-          }
-        )
-        return data.data
-      } catch (pipelineError) {
-        // Fall back to property API
-        const data = await this.makeRequest(`/api/properties/${propertyId}/payment-installments`, {
-          method: 'POST',
-          body: JSON.stringify(payment),
-        })
-        return data.data
+      // Try purchase pipeline API first (only if enabled)
+      if (this.FEATURE_FLAGS.PURCHASE_PIPELINE_API) {
+        try {
+          const data = await this.makeRequest(
+            `/api/purchase-pipeline/${propertyId}/payment-installments`,
+            {
+              method: 'POST',
+              body: JSON.stringify(payment),
+            }
+          )
+          return data.data
+        } catch (pipelineError) {
+          // Fall back to property API
+        }
       }
+
+      // Use property API
+      const data = await this.makeRequest(`/api/properties/${propertyId}/payment-installments`, {
+        method: 'POST',
+        body: JSON.stringify(payment),
+      })
+      return data.data
     } catch (error) {
       throw error
     }
@@ -234,29 +245,33 @@ export class AcquisitionFinancialsService {
     changeReason?: string
   ): Promise<void> {
     try {
-      // Try purchase pipeline API first
-      try {
-        const body: any = { negotiated_price_kes: purchasePrice }
-        if (changeReason) {
-          body.change_reason = changeReason
+      // Try purchase pipeline API first (only if enabled)
+      if (this.FEATURE_FLAGS.PURCHASE_PIPELINE_API) {
+        try {
+          const body: any = { negotiated_price_kes: purchasePrice }
+          if (changeReason) {
+            body.change_reason = changeReason
+          }
+          await this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`, {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+          })
+          return
+        } catch (pipelineError) {
+          // Fall back to property purchase price API
         }
-        await this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`, {
-          method: 'PATCH',
-          body: JSON.stringify(body),
-        })
-        return
-      } catch (pipelineError) {
-        // Fall back to property purchase price API
-        const body: any = { purchase_price_agreement_kes: purchasePrice }
-        if (changeReason) {
-          body.change_reason = changeReason
-        }
-
-        await this.makeRequest(`/api/properties/${propertyId}/purchase-price`, {
-          method: 'PATCH',
-          body: JSON.stringify(body),
-        })
       }
+
+      // Use property purchase price API
+      const body: any = { purchase_price_agreement_kes: purchasePrice }
+      if (changeReason) {
+        body.change_reason = changeReason
+      }
+
+      await this.makeRequest(`/api/properties/${propertyId}/purchase-price`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      })
     } catch (error) {
       throw error
     }
@@ -265,28 +280,32 @@ export class AcquisitionFinancialsService {
   // Get purchase price change history
   static async getPurchasePriceHistory(propertyId: string): Promise<PurchasePriceHistoryEntry[]> {
     try {
-      // Try purchase pipeline API first
-      try {
-        const response = await this.makeRequest(
-          `/api/purchase-pipeline/${propertyId}/purchase-price/history`,
-          {
-            method: 'GET',
-          }
-        )
-        return response.data || []
-      } catch (pipelineError) {
-        // Fall back to property API
+      // Try purchase pipeline API first (only if enabled)
+      if (this.FEATURE_FLAGS.PURCHASE_PIPELINE_API) {
         try {
           const response = await this.makeRequest(
-            `/api/properties/${propertyId}/purchase-price/history`,
+            `/api/purchase-pipeline/${propertyId}/purchase-price/history`,
             {
               method: 'GET',
             }
           )
           return response.data || []
-        } catch (propertyError) {
-          return []
+        } catch (pipelineError) {
+          // Fall back to property API
         }
+      }
+
+      // Use property API
+      try {
+        const response = await this.makeRequest(
+          `/api/properties/${propertyId}/purchase-price/history`,
+          {
+            method: 'GET',
+          }
+        )
+        return response.data || []
+      } catch (propertyError) {
+        return []
       }
     } catch (error) {
       // Return empty array instead of throwing
@@ -299,6 +318,18 @@ export class AcquisitionFinancialsService {
     costs: AcquisitionCostEntry[]
     payments: PaymentInstallment[]
   }> {
+    // Check cache first
+    const cacheKey = `financial_${propertyId}`
+    const cached = this.cache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      return cached.data
+    }
+
+    // Check if request is already in progress
+    if (this.requestQueue.has(cacheKey)) {
+      return this.requestQueue.get(cacheKey)!
+    }
+
     // Skip API calls entirely if auth failed or features are disabled
     if (
       this.authFailure ||
@@ -307,8 +338,34 @@ export class AcquisitionFinancialsService {
         !this.FEATURE_FLAGS.PAYMENT_INSTALLMENTS_API)
     ) {
       // Return empty data immediately if no APIs are available or auth failed
-      return { costs: [], payments: [] }
+      const emptyData = { costs: [], payments: [] }
+      this.cache.set(cacheKey, { data: emptyData, timestamp: Date.now() })
+      return emptyData
     }
+
+    // Rate limiting - wait if too many concurrent requests
+    if (this.activeRequests >= this.MAX_CONCURRENT_REQUESTS) {
+      await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200))
+      return this.loadAllFinancialData(propertyId) // Retry
+    }
+
+    // Create and queue the request
+    const requestPromise = this._executeFinancialDataRequest(propertyId, cacheKey)
+    this.requestQueue.set(cacheKey, requestPromise)
+
+    try {
+      const result = await requestPromise
+      return result
+    } finally {
+      this.requestQueue.delete(cacheKey)
+    }
+  }
+
+  private static async _executeFinancialDataRequest(propertyId: string, cacheKey: string): Promise<{
+    costs: AcquisitionCostEntry[]
+    payments: PaymentInstallment[]
+  }> {
+    this.activeRequests++
 
     try {
       // Add timeout to prevent hanging requests
@@ -321,11 +378,15 @@ export class AcquisitionFinancialsService {
         try {
           const dataPromise = this.makeRequest(`/api/purchase-pipeline/${propertyId}/financial`)
           const data = await Promise.race([dataPromise, timeoutPromise])
-          return {
+          const result = {
             costs: data.costs || [],
             payments: data.payments || [],
           }
-        } catch (pipelineError) {}
+          this.cache.set(cacheKey, { data: result, timestamp: Date.now() })
+          return result
+        } catch (pipelineError) {
+          // Pipeline API failed, continue to fallback
+        }
       }
 
       // Fall back to property financial endpoints with timeout (only if enabled)
@@ -352,7 +413,9 @@ export class AcquisitionFinancialsService {
         results[1].status === 'fulfilled' ? results[1].value : [],
       ])
 
-      return { costs, payments }
+      const result = { costs, payments }
+      this.cache.set(cacheKey, { data: result, timestamp: Date.now() })
+      return result
     } catch (error) {
       // Don't log expected errors to reduce console noise
       if (
@@ -360,9 +423,14 @@ export class AcquisitionFinancialsService {
         !error.message?.includes('404') &&
         !error.message?.includes('timeout')
       ) {
+        console.error('Financial data loading error:', error)
       }
       // Always return empty data instead of throwing to prevent UI blocking
-      return { costs: [], payments: [] }
+      const emptyResult = { costs: [], payments: [] }
+      this.cache.set(cacheKey, { data: emptyResult, timestamp: Date.now() })
+      return emptyResult
+    } finally {
+      this.activeRequests--
     }
   }
 }

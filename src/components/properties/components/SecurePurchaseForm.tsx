@@ -1,25 +1,21 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button, TextField, FormField } from '../../ui'
 import Modal from '../../ui/Modal'
 import AddressAutocomplete from '../../location/AddressAutocomplete'
 import { PropertyTypeEnum } from '../../../lib/validation/property'
-import { FieldSecurityService, ChangeRequest } from '../../../lib/security/field-security.service'
 import {
   PurchasePipelineFormValues,
-  purchasePipelineSchema,
 } from '../types/purchase-pipeline.types'
-import { PropertyManagementService } from '../services/property-management.service'
 
 interface SecurePurchaseFormProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (values: PurchasePipelineFormValues, changeRequests: ChangeRequest[]) => Promise<void>
+  onSubmit: (values: PurchasePipelineFormValues, changeRequests?: any[]) => Promise<void>
   editingPurchase?: any
-  userRole: string
+  userRole?: string
 }
 
 export default function SecurePurchaseForm({
@@ -29,776 +25,323 @@ export default function SecurePurchaseForm({
   editingPurchase,
   userRole,
 }: SecurePurchaseFormProps) {
-  const [fieldSecurity, setFieldSecurity] = useState<Record<string, any>>({})
-  const [originalValues, setOriginalValues] = useState<any>({})
-  const [changeReasons, setChangeReasons] = useState<Record<string, string>>({})
-  const [showApprovalDialog, setShowApprovalDialog] = useState(false)
-  const [pendingChanges, setPendingChanges] = useState<ChangeRequest[]>([])
-  const [availableProperties, setAvailableProperties] = useState<any[]>([])
-  const [selectedProperty, setSelectedProperty] = useState<any>(null)
-  const [useExistingProperty, setUseExistingProperty] = useState(false)
-  const [propertyFilter, setPropertyFilter] = useState<'all' | 'with_succession' | 'without_succession'>('all')
+  const [isSuccessionProperty, setIsSuccessionProperty] = useState(false)
 
   const {
     register,
     handleSubmit,
     reset,
-    watch,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<PurchasePipelineFormValues>({
-    resolver: zodResolver(purchasePipelineSchema),
-  })
+  } = useForm<PurchasePipelineFormValues>()
 
-  const watchedValues = watch()
-
-  // Load available properties with succession status
-  useEffect(() => {
-    const loadProperties = async () => {
-      if (isOpen) {
-        try {
-          const properties = await PropertyManagementService.loadPropertiesWithSuccession()
-          setAvailableProperties(properties)
-        } catch (error) {
-          console.error('Error loading properties:', error)
-          // Fallback to regular property loading
-          try {
-            const fallbackProperties = await PropertyManagementService.loadProperties()
-            setAvailableProperties(fallbackProperties.map(p => ({ ...p, succession_status: 'NOT_STARTED' })))
-          } catch (fallbackError) {
-            console.error('Error loading fallback properties:', fallbackError)
-          }
-        }
-      }
-    }
-    loadProperties()
-  }, [isOpen])
-
-  // Load field security configuration
-  useEffect(() => {
-    const loadFieldSecurity = async () => {
-      if (isOpen) {
-        try {
-          const fieldNames = Object.keys(purchasePipelineSchema.shape)
-          const security = await FieldSecurityService.getFieldSecuritySummary(
-            fieldNames,
-            userRole,
-            editingPurchase?.current_stage
-          )
-          setFieldSecurity(security)
-        } catch (error) {
-          console.error('Error loading field security:', error)
-          // Set safe defaults if field security loading fails
-          const fieldNames = Object.keys(purchasePipelineSchema.shape)
-          const defaultSecurity = fieldNames.reduce((acc, fieldName) => {
-            acc[fieldName] = {
-              canModify: true,
-              requiresReason: false,
-              requiresApproval: false,
-              isLocked: false,
-            }
-            return acc
-          }, {} as Record<string, any>)
-          setFieldSecurity(defaultSecurity)
-        }
-      }
-    }
-    loadFieldSecurity()
-  }, [isOpen, userRole, editingPurchase])
-
-  // Reset form and track original values
-  useEffect(() => {
-    if (isOpen) {
-      if (editingPurchase) {
-        const formValues = {
-          propertyId: editingPurchase.property_id || '',
-          propertyName: editingPurchase.property_name,
-          propertyAddress: editingPurchase.property_address,
-          propertyType: editingPurchase.property_type,
-          sellerName: editingPurchase.seller_name || '',
-          sellerPhone: editingPurchase.seller_contact || '',
-          brokerName: editingPurchase.broker_name || '',
-          brokerContact: editingPurchase.broker_contact || '',
-          askingPrice: editingPurchase.asking_price_kes || undefined,
-          negotiatedPrice: editingPurchase.negotiated_price_kes || undefined,
-          depositPaid: editingPurchase.deposit_paid_kes || undefined,
-          targetCompletionDate: editingPurchase.target_completion_date || '',
-          legalRepresentative: editingPurchase.legal_representative || '',
-          financingSource: editingPurchase.financing_source || '',
-          contractReference: editingPurchase.contract_reference || '',
-          titleDeedStatus: editingPurchase.title_deed_status || '',
-          surveyStatus: editingPurchase.survey_status || '',
-          expectedRentalIncome: editingPurchase.expected_rental_income_kes || undefined,
-          expectedRoi: editingPurchase.expected_roi_percentage || undefined,
-          riskAssessment: editingPurchase.risk_assessment || '',
-          propertyConditionNotes: editingPurchase.property_condition_notes || '',
-        }
-        reset(formValues)
-        setOriginalValues(formValues)
-
-        // Set property selection state
-        if (editingPurchase.property_id) {
-          setUseExistingProperty(true)
-          const property = availableProperties.find((p) => p.id === editingPurchase.property_id)
-          if (property) {
-            setSelectedProperty(property)
-          }
-        } else {
-          setUseExistingProperty(false)
-          setSelectedProperty(null)
-        }
-      } else {
-        const emptyValues = {
-          propertyId: '',
-          propertyName: '',
-          propertyAddress: '',
-          propertyType: 'HOME' as any,
-          sellerName: '',
-          sellerPhone: '',
-          sellerEmail: '',
-          askingPrice: undefined,
-          negotiatedPrice: undefined,
-          depositPaid: undefined,
-          targetCompletionDate: '',
-          legalRepresentative: '',
-          financingSource: '',
-          contractReference: '',
-          titleDeedStatus: '',
-          surveyStatus: '',
-          expectedRentalIncome: undefined,
-          expectedRoi: undefined,
-          riskAssessment: '',
-          propertyConditionNotes: '',
-        }
-        reset(emptyValues)
-        setOriginalValues(emptyValues)
-
-        // Reset property selection state
-        setUseExistingProperty(false)
-        setSelectedProperty(null)
-      }
-      setChangeReasons({})
-    }
-  }, [isOpen, editingPurchase, reset, availableProperties])
-
-  // Handle property selection
-  const handlePropertySelection = (propertyId: string) => {
-    const property = availableProperties.find((p) => p.id === propertyId)
-    if (property) {
-      setSelectedProperty(property)
-      setValue('propertyId', propertyId)
-      setValue('propertyName', property.name)
-      setValue('propertyAddress', property.physical_address || '')
-      setValue('propertyType', property.property_type || 'HOME')
-    }
-  }
-
-  const handleUseExistingPropertyToggle = (use: boolean) => {
-    setUseExistingProperty(use)
-    if (!use) {
-      setSelectedProperty(null)
-      setValue('propertyId', '')
-      // Don't clear other fields to allow manual entry
-    }
-  }
-
-  // Filter properties based on succession status (with fallback for missing column)
-  const filteredProperties = availableProperties.filter(property => {
-    // If succession_status doesn't exist in database, treat all properties as 'NOT_STARTED'
-    const successionStatus = property.succession_status || 'NOT_STARTED'
-
-    switch (propertyFilter) {
-      case 'with_succession':
-        return successionStatus && successionStatus !== 'NOT_STARTED'
-      case 'without_succession':
-        return !successionStatus || successionStatus === 'NOT_STARTED'
-      default:
-        return true
-    }
-  })
-
-  // Detect changes and build change requests
-  const detectChanges = (): ChangeRequest[] => {
-    const changes: ChangeRequest[] = []
-
-    Object.keys(watchedValues).forEach((fieldName) => {
-      const oldValue = originalValues[fieldName]
-      const newValue = watchedValues[fieldName as keyof PurchasePipelineFormValues]
-
-      if (oldValue !== newValue) {
-        changes.push({
-          field_name: fieldName,
-          old_value: oldValue,
-          new_value: newValue,
-          reason: changeReasons[fieldName],
-        })
-      }
-    })
-
-    return changes
-  }
-
-  // Handle form submission with security validation
-  const handleSecureSubmit = async (values: PurchasePipelineFormValues) => {
-    const changes = detectChanges()
-
-    if (changes.length === 0) {
-      // No changes, proceed normally
-      await onSubmit(values, [])
-      return
-    }
-
-    // Validate changes
-    const validation = await FieldSecurityService.validateChangeRequest(
-      editingPurchase?.id,
-      changes,
-      userRole,
-      editingPurchase?.current_stage
-    )
-
-    if (!validation.valid) {
-      alert(`Cannot save changes:\n${validation.errors.join('\n')}`)
-      return
-    }
-
-    if (validation.requiresApproval) {
-      setPendingChanges(changes)
-      setShowApprovalDialog(true)
-      return
-    }
-
-    // Proceed with changes
-    await onSubmit(values, changes)
-  }
-
-  // Handle approval request submission
-  const handleApprovalRequest = async (businessJustification: string, riskAssessment?: string) => {
+  const handleFormSubmit = async (values: PurchasePipelineFormValues) => {
     try {
-      const approvalId = await FieldSecurityService.createChangeApprovalRequest(
-        editingPurchase.id,
-        pendingChanges,
-        businessJustification,
-        riskAssessment
-      )
-
-      alert(
-        `Change approval request submitted (ID: ${approvalId}). Changes will be applied once approved.`
-      )
-      setShowApprovalDialog(false)
+      await onSubmit(values)
+      reset()
       onClose()
     } catch (error) {
-            alert('Failed to submit approval request')
+      console.error('Error submitting form:', error)
     }
-  }
-
-  // Render field with security indicators
-  const renderSecureField = (fieldName: string, component: React.ReactNode) => {
-    const security = fieldSecurity[fieldName]
-    if (!security) return component
-
-    const isChanged =
-      originalValues[fieldName] !== watchedValues[fieldName as keyof PurchasePipelineFormValues]
-
-    return (
-      <div className="relative">
-        {component}
-
-        {/* Security indicators */}
-        <div className="flex items-center gap-2 mt-1 text-xs">
-          {security.isLocked && (
-            <span className="bg-red-100 text-red-800 px-2 py-1 rounded">🔒 Locked</span>
-          )}
-          {security.requiresApproval && (
-            <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-              ⚠️ Requires Approval
-            </span>
-          )}
-          {security.requiresReason && isChanged && (
-            <input
-              type="text"
-              placeholder="Reason for change (required)"
-              className="border rounded px-2 py-1 text-xs flex-1"
-              value={changeReasons[fieldName] || ''}
-              onChange={(e) =>
-                setChangeReasons((prev) => ({
-                  ...prev,
-                  [fieldName]: e.target.value,
-                }))
-              }
-            />
-          )}
-        </div>
-      </div>
-    )
   }
 
   return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        title={editingPurchase ? 'Edit Purchase (Secure)' : 'New Purchase'}
-        size="lg"
-      >
-        <div className="p-8">
-          <form onSubmit={handleSubmit(handleSecureSubmit)} className="space-y-8">
-            {/* Property Information Section */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-t-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <span className="text-lg">🏢</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Property Information</h3>
-                    <p className="text-blue-100 text-sm">Basic details about the property you're considering for purchase</p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6 space-y-6">
-
-            {/* Property Selection Toggle */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold text-gray-900">Property Source</h4>
-                <div className="text-sm text-gray-500">Choose how to define the property</div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors bg-white">
-                  <input
-                    type="radio"
-                    name="propertySource"
-                    checked={!useExistingProperty}
-                    onChange={() => handleUseExistingPropertyToggle(false)}
-                    className="text-blue-600 focus:ring-blue-500 w-4 h-4"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-gray-900">Create New Property</span>
-                    <p className="text-xs text-gray-500 mt-1">Define a completely new property</p>
-                  </div>
-                </label>
-                <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors bg-white">
-                  <input
-                    type="radio"
-                    name="propertySource"
-                    checked={useExistingProperty}
-                    onChange={() => handleUseExistingPropertyToggle(true)}
-                    className="text-blue-600 focus:ring-blue-500 w-4 h-4"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-gray-900">Link to Existing Property</span>
-                    <p className="text-xs text-gray-500 mt-1">Connect to a property already in the system</p>
-                  </div>
-                </label>
-              </div>
-
-              {useExistingProperty && (
-                <div className="space-y-4 bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <h5 className="font-medium text-gray-900">Property Selection</h5>
-                    <div className="flex items-center space-x-2">
-                      <label className="text-sm text-gray-600">Filter by succession:</label>
-                      <select
-                        value={propertyFilter}
-                        onChange={(e) => setPropertyFilter(e.target.value as any)}
-                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        <option value="all">All Properties</option>
-                        <option value="with_succession">With Succession</option>
-                        <option value="without_succession">Without Succession</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <FormField
-                    name="propertyId"
-                    label="Select Property"
-                    error={errors.propertyId?.message}
-                  >
-                    {({ id }) => (
-                      <select
-                        id={id}
-                        value={watchedValues.propertyId || ''}
-                        onChange={(e) => handlePropertySelection(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select a property...</option>
-                        {filteredProperties.map((property) => (
-                          <option key={property.id} value={property.id}>
-                            {property.name} - {property.physical_address || 'No address'}
-                            {property.succession_status && property.succession_status !== 'NOT_STARTED' &&
-                              ` (Succession: ${property.succession_status})`
-                            }
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </FormField>
-
-                  {filteredProperties.length === 0 && (
-                    <div className="text-sm text-gray-500 italic p-2 bg-gray-50 rounded">
-                      No properties match the selected filter criteria.
-                    </div>
-                  )}
-
-                  {selectedProperty && (
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-gray-900 flex items-center">
-                          <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                          Selected Property Details
-                        </h4>
-                        {selectedProperty.succession_status && selectedProperty.succession_status !== 'NOT_STARTED' && (
-                          <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">
-                            Succession: {selectedProperty.succession_status}
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                        <div className="space-y-2">
-                          <div>
-                            <span className="font-medium text-gray-700">Name:</span>
-                            <span className="ml-2 text-gray-900">{selectedProperty.name}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-700">Type:</span>
-                            <span className="ml-2 text-gray-900">{selectedProperty.property_type || 'Not specified'}</span>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div>
-                            <span className="font-medium text-gray-700">Address:</span>
-                            <span className="ml-2 text-gray-900">{selectedProperty.physical_address || 'Not specified'}</span>
-                          </div>
-                          {selectedProperty.lat && selectedProperty.lng && (
-                            <div>
-                              <span className="font-medium text-gray-700">Coordinates:</span>
-                              <span className="ml-2 text-gray-900">{selectedProperty.lat}, {selectedProperty.lng}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+    <Modal isOpen={isOpen} onClose={onClose} title="New Purchase Opportunity" size="xl">
+      <div className="max-w-5xl mx-auto">
+        {/* Header Section */}
+        <div className="bg-blue-50 p-6 rounded-lg mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
             </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Create New Purchase Opportunity</h3>
+              <p className="text-sm text-gray-600">Add a new property to your purchase pipeline with comprehensive tracking</p>
+            </div>
+          </div>
+        </div>
 
-            {renderSecureField(
-              'propertyName',
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+          {/* Property Type Selection */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="bg-blue-100 p-1 rounded">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h4 className="font-medium text-gray-900">Property Type</h4>
+            </div>
+            <p className="text-sm text-blue-600 mb-4">Choose whether this property involves succession or is a standard purchase</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className={`relative flex cursor-pointer rounded-lg border p-4 focus:outline-none ${
+                !isSuccessionProperty ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'
+              }`}>
+                <input
+                  type="radio"
+                  name="propertyType"
+                  value="without_succession"
+                  checked={!isSuccessionProperty}
+                  onChange={() => setIsSuccessionProperty(false)}
+                  className="sr-only"
+                />
+                <div className="flex items-center">
+                  <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                    !isSuccessionProperty ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                  }`}>
+                    {!isSuccessionProperty && (
+                      <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">Property without Succession</div>
+                    <div className="text-sm text-gray-500">Standard property purchase without inheritance matters</div>
+                  </div>
+                </div>
+              </label>
+
+              <label className={`relative flex cursor-pointer rounded-lg border p-4 focus:outline-none ${
+                isSuccessionProperty ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'
+              }`}>
+                <input
+                  type="radio"
+                  name="propertyType"
+                  value="with_succession"
+                  checked={isSuccessionProperty}
+                  onChange={() => setIsSuccessionProperty(true)}
+                  className="sr-only"
+                />
+                <div className="flex items-center">
+                  <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                    isSuccessionProperty ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                  }`}>
+                    {isSuccessionProperty && (
+                      <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">Property with Succession</div>
+                    <div className="text-sm text-gray-500">Property involving inheritance or succession matters</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Succession Property Notice */}
+          {isSuccessionProperty && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-orange-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-orange-800">Succession Property Notice</h4>
+                  <p className="text-sm text-orange-700 mt-1">
+                    This property involves succession matters. Additional documentation and legal processes will be required, including succession case numbers, court tracking, beneficiary information, and required legal documents.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Basic Property Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              name="propertyName"
+              label="Property Name"
+              error={errors.propertyName?.message}
+            >
+              {({ id }) => (
+                <TextField
+                  id={id}
+                  {...register('propertyName')}
+                  placeholder="e.g., Westlands Apartment Block A"
+                  className="w-full"
+                />
+              )}
+            </FormField>
+
+            <FormField
+              name="propertyType"
+              label="Property Type"
+              error={errors.propertyType?.message}
+            >
+              {({ id }) => (
+                <select
+                  id={id}
+                  {...register('propertyType')}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select property type</option>
+                  {PropertyTypeEnum.options.map((type) => (
+                    <option key={type} value={type}>
+                      {type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </FormField>
+          </div>
+
+          {/* Seller Information Section */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="bg-blue-100 p-1 rounded">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h4 className="font-medium text-gray-900">Seller Information</h4>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">Contact details and information about the property seller</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
-                name="propertyName"
-                label="Property Name"
-                error={errors.propertyName?.message}
+                name="sellerName"
+                label="Seller Full Name"
+                error={errors.sellerName?.message}
               >
                 {({ id }) => (
                   <TextField
                     id={id}
-                    {...register('propertyName')}
-                    disabled={
-                      fieldSecurity.propertyName?.isLocked || !fieldSecurity.propertyName?.canModify
-                    }
-                    placeholder="Enter property name"
+                    {...register('sellerName')}
+                    placeholder="e.g., John Doe or ABC Real Estate Ltd"
+                    className="w-full"
                   />
                 )}
               </FormField>
-            )}
 
-            {renderSecureField(
-              'propertyAddress',
               <FormField
-                name="propertyAddress"
-                label="Property Address"
-                error={errors.propertyAddress?.message}
+                name="sellerPhone"
+                label="Phone Number"
+                error={errors.sellerPhone?.message}
               >
                 {({ id }) => (
-                  <AddressAutocomplete
+                  <TextField
                     id={id}
-                    value={watchedValues.propertyAddress || ''}
-                    onChange={(address) => setValue('propertyAddress', address)}
-                    disabled={
-                      fieldSecurity.propertyAddress?.isLocked ||
-                      !fieldSecurity.propertyAddress?.canModify
-                    }
-                    placeholder="Enter property address"
+                    {...register('sellerPhone')}
+                    placeholder="+254 712 345 678"
+                    className="w-full"
                   />
                 )}
               </FormField>
-            )}
+            </div>
+          </div>
 
-            {renderSecureField(
-              'propertyType',
+          {/* Financial Information Section */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="bg-blue-100 p-1 rounded">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+              </div>
+              <h4 className="font-medium text-gray-900">Financial Information</h4>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">Pricing details and financial terms for the purchase</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
-                name="propertyType"
-                label="Property Type"
-                error={errors.propertyType?.message}
+                name="askingPrice"
+                label="Asking Price (KES)"
+                error={errors.askingPrice?.message}
+              >
+                {({ id }) => (
+                  <TextField
+                    id={id}
+                    {...register('askingPrice', { valueAsNumber: true })}
+                    placeholder="KES10,000"
+                    className="w-full"
+                  />
+                )}
+              </FormField>
+
+              <FormField
+                name="negotiatedPrice"
+                label="Negotiated Price (KES)"
+                error={errors.negotiatedPrice?.message}
+              >
+                {({ id }) => (
+                  <TextField
+                    id={id}
+                    {...register('negotiatedPrice', { valueAsNumber: true })}
+                    placeholder="KES10,000"
+                    className="w-full"
+                  />
+                )}
+              </FormField>
+
+              <FormField
+                name="depositPaid"
+                label="Deposit Paid (KES)"
+                error={errors.depositPaid?.message}
+              >
+                {({ id }) => (
+                  <TextField
+                    id={id}
+                    {...register('depositPaid', { valueAsNumber: true })}
+                    placeholder="KES6,000"
+                    className="w-full"
+                  />
+                )}
+              </FormField>
+
+              <FormField
+                name="financingSource"
+                label="Financing Source"
+                error={errors.financingSource?.message}
               >
                 {({ id }) => (
                   <select
                     id={id}
-                    {...register('propertyType')}
-                    disabled={
-                      fieldSecurity.propertyType?.isLocked || !fieldSecurity.propertyType?.canModify
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    {...register('financingSource')}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="">Select property type</option>
-                    {PropertyTypeEnum.options.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
+                    <option value="">Select financing source</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank_loan">Bank Loan</option>
+                    <option value="mortgage">Mortgage</option>
+                    <option value="mixed">Mixed Financing</option>
+                    <option value="other">Other</option>
                   </select>
                 )}
               </FormField>
-            )}
-              </div>
             </div>
 
-            {/* Seller Information Section */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-t-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <span className="text-lg">👤</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Seller & Broker Information</h3>
-                    <p className="text-green-100 text-sm">Contact details for the property seller and broker/agent</p>
-                  </div>
+            {/* Investment Analysis */}
+            <div className="mt-6 bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center space-x-2 mb-3">
+                <div className="bg-blue-100 p-1 rounded">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
                 </div>
-              </div>
-              <div className="p-6 space-y-6">
-
-              {/* Seller Information Sub-section */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-4 flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Seller Details
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderSecureField(
-                    'sellerName',
-                    <FormField name="sellerName" label="Seller Name" error={errors.sellerName?.message}>
-                      {({ id }) => (
-                        <TextField
-                          id={id}
-                          {...register('sellerName')}
-                          disabled={
-                            fieldSecurity.sellerName?.isLocked || !fieldSecurity.sellerName?.canModify
-                          }
-                          placeholder="Enter seller name"
-                        />
-                      )}
-                    </FormField>
-                  )}
-
-                  {renderSecureField(
-                    'sellerPhone',
-                    <FormField
-                      name="sellerPhone"
-                      label="Seller Contact"
-                      error={errors.sellerPhone?.message}
-                    >
-                      {({ id }) => (
-                        <TextField
-                          id={id}
-                          {...register('sellerPhone')}
-                          disabled={
-                            fieldSecurity.sellerPhone?.isLocked || !fieldSecurity.sellerPhone?.canModify
-                          }
-                          placeholder="+254712345678"
-                        />
-                      )}
-                    </FormField>
-                  )}
-                </div>
+                <h5 className="font-medium text-blue-900">Investment Analysis</h5>
               </div>
 
-              {/* Broker Information Sub-section */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-4 flex items-center">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                  Broker/Agent Details
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderSecureField(
-                    'brokerName',
-                    <FormField name="brokerName" label="Broker Name" error={errors.brokerName?.message}>
-                      {({ id }) => (
-                        <TextField
-                          id={id}
-                          {...register('brokerName')}
-                          disabled={
-                            fieldSecurity.brokerName?.isLocked || !fieldSecurity.brokerName?.canModify
-                          }
-                          placeholder="Enter broker/agent name"
-                        />
-                      )}
-                    </FormField>
-                  )}
-
-                  {renderSecureField(
-                    'brokerContact',
-                    <FormField
-                      name="brokerContact"
-                      label="Broker Contact"
-                      error={errors.brokerContact?.message}
-                    >
-                      {({ id }) => (
-                        <TextField
-                          id={id}
-                          {...register('brokerContact')}
-                          disabled={
-                            fieldSecurity.brokerContact?.isLocked || !fieldSecurity.brokerContact?.canModify
-                          }
-                          placeholder="+254712345678"
-                        />
-                      )}
-                    </FormField>
-                  )}
-                </div>
-              </div>
-              </div>
-            </div>
-
-            {/* Financial Information Section */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-              <div className="bg-gradient-to-r from-yellow-600 to-orange-600 text-white px-6 py-4 rounded-t-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <span className="text-lg">💰</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Financial Information</h3>
-                    <p className="text-yellow-100 text-sm">Pricing details and financial terms for the purchase</p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6 space-y-6">
-
-              {/* Pricing Sub-section */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-4 flex items-center">
-                  <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
-                  Pricing Details
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderSecureField(
-                    'askingPrice',
-                    <FormField
-                      name="askingPrice"
-                      label="Asking Price (KES)"
-                      error={errors.askingPrice?.message}
-                    >
-                      {({ id }) => (
-                        <TextField
-                          id={id}
-                          type="number"
-                          {...register('askingPrice', { valueAsNumber: true })}
-                          disabled={
-                            fieldSecurity.askingPrice?.isLocked || !fieldSecurity.askingPrice?.canModify
-                          }
-                          placeholder="0"
-                        />
-                      )}
-                    </FormField>
-                  )}
-
-                  {renderSecureField(
-                    'negotiatedPrice',
-                    <FormField
-                      name="negotiatedPrice"
-                      label="Negotiated Price (KES)"
-                      error={errors.negotiatedPrice?.message}
-                    >
-                      {({ id }) => (
-                        <TextField
-                          id={id}
-                          type="number"
-                          {...register('negotiatedPrice', { valueAsNumber: true })}
-                          disabled={
-                            fieldSecurity.negotiatedPrice?.isLocked ||
-                            !fieldSecurity.negotiatedPrice?.canModify
-                          }
-                          placeholder="0"
-                        />
-                      )}
-                    </FormField>
-                  )}
-                </div>
-              </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderSecureField(
-                'depositPaid',
-                <FormField
-                  name="depositPaid"
-                  label="Deposit Paid (KES)"
-                  error={errors.depositPaid?.message}
-                >
-                  {({ id }) => (
-                    <TextField
-                      id={id}
-                      type="number"
-                      {...register('depositPaid', { valueAsNumber: true })}
-                      disabled={
-                        fieldSecurity.depositPaid?.isLocked || !fieldSecurity.depositPaid?.canModify
-                      }
-                      placeholder="0"
-                    />
-                  )}
-                </FormField>
-              )}
-
-              {renderSecureField(
-                'financingSource',
-                <FormField
-                  name="financingSource"
-                  label="Financing Source"
-                  error={errors.financingSource?.message}
-                >
-                  {({ id }) => (
-                    <TextField
-                      id={id}
-                      {...register('financingSource')}
-                      disabled={
-                        fieldSecurity.financingSource?.isLocked ||
-                        !fieldSecurity.financingSource?.canModify
-                      }
-                      placeholder="Bank loan, cash, etc."
-                    />
-                  )}
-                </FormField>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderSecureField(
-                'expectedRentalIncome',
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   name="expectedRentalIncome"
-                  label="Expected Rental Income (KES/month)"
+                  label="Expected Monthly Rental Income (KES)"
                   error={errors.expectedRentalIncome?.message}
                 >
                   {({ id }) => (
                     <TextField
                       id={id}
-                      type="number"
                       {...register('expectedRentalIncome', { valueAsNumber: true })}
-                      disabled={
-                        fieldSecurity.expectedRentalIncome?.isLocked ||
-                        !fieldSecurity.expectedRentalIncome?.canModify
-                      }
-                      placeholder="0"
+                      placeholder="KES5,000"
+                      className="w-full"
                     />
                   )}
                 </FormField>
-              )}
 
-              {renderSecureField(
-                'expectedRoi',
                 <FormField
                   name="expectedRoi"
                   label="Expected ROI (%)"
@@ -807,279 +350,259 @@ export default function SecurePurchaseForm({
                   {({ id }) => (
                     <TextField
                       id={id}
-                      type="number"
-                      step="0.1"
                       {...register('expectedRoi', { valueAsNumber: true })}
-                      disabled={
-                        fieldSecurity.expectedRoi?.isLocked || !fieldSecurity.expectedRoi?.canModify
-                      }
-                      placeholder="0.0"
+                      placeholder="12.5"
+                      className="w-full"
                     />
                   )}
                 </FormField>
-              )}
-            </div>
               </div>
-            </div>
-
-          {/* Legal Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Legal Information</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderSecureField(
-                'legalRepresentative',
-                <FormField
-                  name="legalRepresentative"
-                  label="Legal Representative"
-                  error={errors.legalRepresentative?.message}
-                >
-                  {({ id }) => (
-                    <TextField
-                      id={id}
-                      {...register('legalRepresentative')}
-                      disabled={
-                        fieldSecurity.legalRepresentative?.isLocked ||
-                        !fieldSecurity.legalRepresentative?.canModify
-                      }
-                      placeholder="Lawyer or legal firm"
-                    />
-                  )}
-                </FormField>
-              )}
-
-              {renderSecureField(
-                'targetCompletionDate',
-                <FormField
-                  name="targetCompletionDate"
-                  label="Target Completion Date"
-                  error={errors.targetCompletionDate?.message}
-                >
-                  {({ id }) => (
-                    <TextField
-                      id={id}
-                      type="date"
-                      {...register('targetCompletionDate')}
-                      disabled={
-                        fieldSecurity.targetCompletionDate?.isLocked ||
-                        !fieldSecurity.targetCompletionDate?.canModify
-                      }
-                    />
-                  )}
-                </FormField>
-              )}
             </div>
           </div>
 
-            {/* Legal & Administrative Section */}
-            <div className="space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h3 className="text-lg font-medium text-gray-900">Legal & Administrative</h3>
-                <p className="text-sm text-gray-600 mt-1">Legal representation, documentation status, and administrative details</p>
+          {/* Property Address */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900">Property Address</h4>
+            <FormField
+              name="propertyAddress"
+              label="Physical Address *"
+              error={errors.propertyAddress?.message}
+            >
+              {() => (
+                <AddressAutocomplete
+                  value={watch('propertyAddress') || ''}
+                  onChange={(address) => setValue('propertyAddress', address)}
+                  onSelect={(result) => {
+                    setValue('propertyAddress', result.address)
+                    if (typeof result.lat === 'number' && typeof result.lng === 'number') {
+                      setValue('lat', result.lat)
+                      setValue('lng', result.lng)
+                    }
+                  }}
+                  allowCurrentLocation={true}
+                  label=""
+                />
+              )}
+            </FormField>
+
+            <FormField
+              name="coordinates"
+              label="Manual coordinates"
+              error={errors.lat?.message || errors.lng?.message}
+            >
+              {({ id }) => (
+                <div>
+                  <TextField
+                    id={id}
+                    placeholder="e.g., -1.2921, 36.8219"
+                    className="w-full"
+                    disabled
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Decimal degrees only, comma optional. Example: -1.2921, 36.8219</p>
+                </div>
+              )}
+            </FormField>
+          </div>
+
+          {/* Legal & Administrative Section */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="bg-blue-100 p-1 rounded">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h4 className="font-medium text-gray-900">Legal & Administrative</h4>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">Legal representation, documentation status, and administrative details</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                name="legalRepresentative"
+                label="Legal Representative"
+                error={errors.legalRepresentative?.message}
+              >
+                {({ id }) => (
+                  <TextField
+                    id={id}
+                    {...register('legalRepresentative')}
+                    placeholder="e.g., Kiprotich & Associates Advocates"
+                    className="w-full"
+                  />
+                )}
+              </FormField>
+
+              <FormField
+                name="targetCompletionDate"
+                label="Target Completion Date"
+                error={errors.targetCompletionDate?.message}
+              >
+                {({ id }) => (
+                  <TextField
+                    id={id}
+                    {...register('targetCompletionDate')}
+                    type="date"
+                    className="w-full"
+                  />
+                )}
+              </FormField>
+
+              <FormField
+                name="contractReference"
+                label="Contract Reference"
+                error={errors.contractReference?.message}
+              >
+                {({ id }) => (
+                  <TextField
+                    id={id}
+                    {...register('contractReference')}
+                    placeholder="e.g., SA/2024/001"
+                    className="w-full"
+                  />
+                )}
+              </FormField>
+
+              <FormField
+                name="titleDeedStatus"
+                label="Title Deed Status"
+                error={errors.titleDeedStatus?.message}
+              >
+                {({ id }) => (
+                  <select
+                    id={id}
+                    {...register('titleDeedStatus')}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select status</option>
+                    <option value="available">Available</option>
+                    <option value="pending">Pending</option>
+                    <option value="in_process">In Process</option>
+                    <option value="issues_found">Issues Found</option>
+                  </select>
+                )}
+              </FormField>
+
+              <FormField
+                name="surveyStatus"
+                label="Survey Status"
+                error={errors.surveyStatus?.message}
+              >
+                {({ id }) => (
+                  <select
+                    id={id}
+                    {...register('surveyStatus')}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select status</option>
+                    <option value="not_started">Not Started</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="issues_found">Issues Found</option>
+                  </select>
+                )}
+              </FormField>
+            </div>
+          </div>
+
+          {/* Risk Assessment & Notes Section */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="bg-blue-100 p-1 rounded">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h4 className="font-medium text-gray-900">Risk Assessment & Notes</h4>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">Property condition assessment and additional observations</p>
+
+            {/* Investment Risk Assessment */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <div className="bg-yellow-100 p-1 rounded">
+                  <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h5 className="font-medium text-yellow-800">Investment Risk Assessment</h5>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {renderSecureField(
-                'contractReference',
-                <FormField
-                  name="contractReference"
-                  label="Contract Reference"
-                  error={errors.contractReference?.message}
-                >
-                  {({ id }) => (
-                    <TextField
-                      id={id}
-                      {...register('contractReference')}
-                      disabled={
-                        fieldSecurity.contractReference?.isLocked ||
-                        !fieldSecurity.contractReference?.canModify
-                      }
-                      placeholder="Contract/Agreement number"
-                    />
-                  )}
-                </FormField>
-              )}
-
-              {renderSecureField(
-                'titleDeedStatus',
-                <FormField
-                  name="titleDeedStatus"
-                  label="Title Deed Status"
-                  error={errors.titleDeedStatus?.message}
-                >
-                  {({ id }) => (
-                    <select
-                      id={id}
-                      {...register('titleDeedStatus')}
-                      disabled={
-                        fieldSecurity.titleDeedStatus?.isLocked ||
-                        !fieldSecurity.titleDeedStatus?.canModify
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select status</option>
-                      <option value="VERIFIED">Verified</option>
-                      <option value="PENDING">Pending</option>
-                      <option value="ISSUES">Issues Found</option>
-                      <option value="NOT_AVAILABLE">Not Available</option>
-                    </select>
-                  )}
-                </FormField>
-              )}
-
-              {renderSecureField(
-                'surveyStatus',
-                <FormField
-                  name="surveyStatus"
-                  label="Survey Status"
-                  error={errors.surveyStatus?.message}
-                >
-                  {({ id }) => (
-                    <select
-                      id={id}
-                      {...register('surveyStatus')}
-                      disabled={
-                        fieldSecurity.surveyStatus?.isLocked ||
-                        !fieldSecurity.surveyStatus?.canModify
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select status</option>
-                      <option value="COMPLETED">Completed</option>
-                      <option value="SCHEDULED">Scheduled</option>
-                      <option value="PENDING">Pending</option>
-                      <option value="NOT_REQUIRED">Not Required</option>
-                    </select>
-                  )}
-                </FormField>
-              )}
-            </div>
-
-            {renderSecureField(
-              'riskAssessment',
               <FormField
                 name="riskAssessment"
-                label="Risk Assessment"
+                label="Overall Risk Level"
                 error={errors.riskAssessment?.message}
               >
                 {({ id }) => (
-                  <textarea
+                  <select
                     id={id}
                     {...register('riskAssessment')}
-                    disabled={
-                      fieldSecurity.riskAssessment?.isLocked ||
-                      !fieldSecurity.riskAssessment?.canModify
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    placeholder="Identify potential risks and mitigation strategies"
-                  />
+                    className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 bg-white"
+                  >
+                    <option value="">Assess the investment risk level</option>
+                    <option value="low">Low Risk</option>
+                    <option value="medium">Medium Risk</option>
+                    <option value="high">High Risk</option>
+                    <option value="very_high">Very High Risk</option>
+                  </select>
                 )}
               </FormField>
-            )}
-
-            {renderSecureField(
-              'propertyConditionNotes',
-              <FormField
-                name="propertyConditionNotes"
-                label="Property Condition Notes"
-                error={errors.propertyConditionNotes?.message}
-              >
-                {({ id }) => (
-                  <textarea
-                    id={id}
-                    {...register('propertyConditionNotes')}
-                    disabled={
-                      fieldSecurity.propertyConditionNotes?.isLocked ||
-                      !fieldSecurity.propertyConditionNotes?.canModify
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    placeholder="Current condition and any required improvements"
-                  />
-                )}
-              </FormField>
-            )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="px-6 py-2"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-6 py-2"
-              >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Modal>
-
-      {/* Approval Request Dialog */}
-      {showApprovalDialog && (
-        <Modal
-          isOpen={showApprovalDialog}
-          onClose={() => setShowApprovalDialog(false)}
-          title="Approval Required"
-        >
-          <div className="space-y-4">
-            <p>The following changes require approval:</p>
-            <ul className="list-disc pl-5">
-              {pendingChanges.map((change, index) => (
-                <li key={index}>
-                  <strong>{change.field_name}:</strong> {change.old_value} → {change.new_value}
-                </li>
-              ))}
-            </ul>
-
-            <FormField label="Business Justification (Required)">
-              <textarea
-                className="w-full border rounded px-3 py-2"
-                rows={3}
-                placeholder="Explain why this change is necessary..."
-                id="businessJustification"
-              />
+            <FormField
+              name="propertyConditionNotes"
+              label="Property Condition & Additional Notes"
+              error={errors.propertyConditionNotes?.message}
+            >
+              {({ id }) => (
+                <textarea
+                  id={id}
+                  {...register('propertyConditionNotes')}
+                  rows={4}
+                  placeholder="Describe the property condition, any issues found, renovation needs, neighborhood analysis, or additional observations that might affect the investment decision..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                />
+              )}
             </FormField>
-
-            <FormField label="Risk Assessment (Optional)">
-              <textarea
-                className="w-full border rounded px-3 py-2"
-                rows={2}
-                placeholder="Assess any risks associated with this change..."
-                id="riskAssessment"
-              />
-            </FormField>
-
-            <div className="flex justify-end space-x-3">
-              <Button type="button" variant="outline" onClick={() => setShowApprovalDialog(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  const justification = (
-                    document.getElementById('businessJustification') as HTMLTextAreaElement
-                  ).value
-                  const risk = (document.getElementById('riskAssessment') as HTMLTextAreaElement)
-                    .value
-                  handleApprovalRequest(justification, risk)
-                }}
-              >
-                Submit for Approval
-              </Button>
-            </div>
           </div>
-        </Modal>
-      )}
-    </>
+
+          {/* Hidden coordinate fields */}
+          <input type="hidden" {...register('lat', { valueAsNumber: true })} />
+          <input type="hidden" {...register('lng', { valueAsNumber: true })} />
+          <input type="hidden" {...register('isSuccessionPurchase')} value={isSuccessionProperty.toString()} />
+
+          {/* Form Actions */}
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 disabled:opacity-50"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isSubmitting}
+              className="px-6 py-2 text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <div className="flex items-center space-x-2">
+                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Creating...</span>
+                </div>
+              ) : (
+                'Create Purchase'
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </Modal>
   )
 }
+

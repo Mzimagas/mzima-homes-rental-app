@@ -182,6 +182,12 @@ export default function PropertiesTab({
     setShowPropertyForm(true)
   }
 
+  const proceedWithSuccessionProperty = () => {
+    setShowWorkflowWarning(false)
+    setEditingProperty(null)
+    setShowPropertyForm(true)
+  }
+
   const cancelDirectAddition = () => {
     setShowWorkflowWarning(false)
   }
@@ -340,63 +346,36 @@ export default function PropertiesTab({
         onSuccess={handlePropertyFormSuccess}
       />
 
-      {/* Workflow Warning Modal */}
+      {/* Property Type Selection Modal */}
       <Modal
         isOpen={showWorkflowWarning}
         onClose={cancelDirectAddition}
-        title="Property Creation Workflow"
-        size="lg"
+        title="Add Property Directly"
+        size="md"
       >
         <div className="p-6 space-y-6">
-          {/* Warning Icon and Header */}
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              <svg className="h-8 w-8 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+              <span className="text-2xl">🏠</span>
             </div>
             <div>
-              <h3 className="text-lg font-medium text-amber-800">
-                Recommended Property Creation Workflow
+              <h3 className="text-lg font-medium text-gray-900">
+                Direct Property Addition
               </h3>
-              <p className="text-sm text-amber-600 mt-1">
-                Please consider the recommended approach for new properties
+              <p className="text-sm text-gray-600 mt-1">
+                Add a property that you already own or have clear title to. This is for properties where ownership is established.
               </p>
             </div>
           </div>
 
-          {/* Recommended Workflows */}
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-900 mb-2">🏢 Purchase Pipeline</h4>
-              <p className="text-sm text-blue-700">
-                For properties being acquired through purchase. Includes comprehensive workflow
-                management, document tracking, financial management, and legal compliance.
-              </p>
-            </div>
-
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <h4 className="font-medium text-purple-900 mb-2">📐 Subdivision Pipeline</h4>
-              <p className="text-sm text-purple-700">
-                For properties created through land subdivision. Manages subdivision processes,
-                regulatory approvals, and proper documentation.
-              </p>
-            </div>
-          </div>
-
-          {/* Direct Addition Use Cases */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2">✅ When to Use Direct Addition</h4>
-            <ul className="text-sm text-gray-700 space-y-1">
-              <li>• Managing existing properties already in your portfolio</li>
-              <li>• Properties inherited or gifted (not purchased)</li>
-              <li>• Emergency situations requiring immediate property entry</li>
-              <li>• Properties with completed acquisition processes</li>
-            </ul>
+          {/* Information Note */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-2">ℹ️ Need Other Workflows?</h4>
+            <p className="text-sm text-blue-700">
+              For purchase acquisitions, use the Purchase Pipeline. For land subdivision, use the Subdivision Pipeline.
+              These specialized workflows provide comprehensive tracking and management features.
+            </p>
           </div>
 
           {/* Action Buttons */}
@@ -408,8 +387,9 @@ export default function PropertiesTab({
                   setShowWorkflowWarning(false)
                   onNavigateToTabs('purchase')
                 }}
+                className="text-sm"
               >
-                🏢 Use Purchase Pipeline
+                🏢 Purchase Pipeline
               </Button>
               <Button
                 variant="outline"
@@ -417,8 +397,9 @@ export default function PropertiesTab({
                   setShowWorkflowWarning(false)
                   onNavigateToTabs('subdivision')
                 }}
+                className="text-sm"
               >
-                📐 Use Subdivision Pipeline
+                📐 Subdivision Pipeline
               </Button>
             </div>
 
@@ -426,8 +407,11 @@ export default function PropertiesTab({
               <Button variant="outline" onClick={cancelDirectAddition}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={proceedWithDirectAddition}>
-                Proceed with Direct Addition
+              <Button
+                variant="primary"
+                onClick={proceedWithDirectAddition}
+              >
+                🏠 Add Property
               </Button>
             </div>
           </div>

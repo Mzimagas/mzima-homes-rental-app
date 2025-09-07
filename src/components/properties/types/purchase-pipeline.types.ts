@@ -116,6 +116,25 @@ export const purchasePipelineSchema = z.object({
   expectedRoi: z.number().min(0).max(100, 'ROI must be between 0-100%').optional(),
   riskAssessment: z.string().optional(),
   propertyConditionNotes: z.string().optional(),
+  // Coordinates (optional but captured when available)
+  lat: z
+    .number({ invalid_type_error: 'Latitude must be a number' })
+    .min(-90, 'Latitude must be >= -90')
+    .max(90, 'Latitude must be <= 90')
+    .optional(),
+  lng: z
+    .number({ invalid_type_error: 'Longitude must be a number' })
+    .min(-180, 'Longitude must be >= -180')
+    .max(180, 'Longitude must be <= 180')
+    .optional(),
+  // Succession fields
+  isSuccessionPurchase: z.boolean().default(false),
+  deceasedOwnerName: z.string().max(120).optional().or(z.literal('')),
+  deceasedOwnerId: z.string().max(50).optional().or(z.literal('')),
+  dateOfDeath: z.string().optional().or(z.literal('')),
+  successionCourt: z.string().max(120).optional().or(z.literal('')),
+  successionCaseNumber: z.string().max(50).optional().or(z.literal('')),
+  successionNotes: z.string().max(1000).optional().or(z.literal('')),
 })
 
 export type PurchasePipelineFormValues = z.infer<typeof purchasePipelineSchema>
@@ -162,6 +181,14 @@ export interface PurchaseItem {
   current_stage?: number
   pipeline_stages?: PipelineStageData[]
   completed_property_id?: string
+  // Succession fields
+  is_succession_purchase?: boolean
+  deceased_owner_name?: string
+  deceased_owner_id?: string
+  date_of_death?: string
+  succession_court?: string
+  succession_case_number?: string
+  succession_notes?: string
   created_at: string
   updated_at: string
 }

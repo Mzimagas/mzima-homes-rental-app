@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TaxManagementService } from '../../../../lib/services/tax-management.service'
+// import { TaxManagementService } from '../../../../lib/services/tax-management.service'
 
 export async function GET(request: NextRequest) {
   try {
-    const complianceSummary = await TaxManagementService.getTaxComplianceSummary()
+    // const complianceSummary = await TaxManagementService.getTaxComplianceSummary()
+    const complianceSummary = { success: false, error: 'Tax service temporarily disabled' }
 
     return NextResponse.json({
       success: true,

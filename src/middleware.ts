@@ -38,13 +38,33 @@ export async function middleware(req: NextRequest) {
     !supabaseKey.includes('your-anon-key-here')
   )
 
-  const session: any = null
-  // Temporarily disabled to fix edge runtime issues
-  // if (authConfigured) {
-  //   const supabase = createMiddlewareClient({ req, res }, { supabaseUrl, supabaseKey })
-  //   const result = await supabase.auth.getSession()
-  //   session = result.data.session
-  // }
+  let session: any = null
+
+  // Try to get session if auth is configured
+  if (authConfigured) {
+    try {
+      // Use a simpler approach that works with edge runtime
+      const { createServerClient } = await import('@supabase/ssr')
+      const supabase = createServerClient(supabaseUrl, supabaseKey, {
+        cookies: {
+          getAll() {
+            return req.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              res.cookies.set(name, value, options)
+            })
+          },
+        },
+      })
+
+      const result = await supabase.auth.getSession()
+      session = result.data.session
+    } catch (error) {
+      console.warn('Middleware: Failed to get session:', error)
+      // Continue without session
+    }
+  }
 
   const url = req.nextUrl
   const pathname = url.pathname

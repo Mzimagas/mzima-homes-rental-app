@@ -163,15 +163,10 @@ export function useStoreProvider() {
 /**
  * Store Debug Component (Development only)
  */
-export function StoreDebugPanel() {
+function StoreDebugPanelContent() {
   const storeProvider = useStoreProvider()
   const [debugInfo, setDebugInfo] = React.useState<any>(null)
   const [isOpen, setIsOpen] = React.useState(false)
-
-  // Only show in development
-  if (process.env.NODE_ENV !== 'development') {
-    return null
-  }
 
   const refreshDebugInfo = React.useCallback(() => {
     const health = storeProvider.healthCheck()
@@ -312,4 +307,13 @@ export function StoreDebugPanel() {
       )}
     </div>
   )
+}
+
+export function StoreDebugPanel() {
+  // Only show in development
+  if (process.env.NODE_ENV !== 'development') {
+    return null
+  }
+
+  return <StoreDebugPanelContent />
 }

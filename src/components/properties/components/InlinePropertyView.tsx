@@ -612,8 +612,8 @@ export default function InlinePropertyView({ property, onClose }: InlineProperty
                             <ViewOnGoogleMapsButton
                               source="Purchase Pipeline"
                               name={purchaseData.property_name}
-                              lat={(purchaseData as any).property_lat ?? null}
-                              lng={(purchaseData as any).property_lng ?? null}
+                              lat={(purchaseData as any).property_lat ?? (purchaseData as any).lat ?? null}
+                              lng={(purchaseData as any).property_lng ?? (purchaseData as any).lng ?? null}
                               compact
                             />
                           </div>

@@ -4,6 +4,7 @@ import { errors } from '../../../lib/api/errors'
 import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '../../../lib/supabase-server'
 import { propertySchema } from '../../../lib/validation/property'
+import { memoryCache, CacheKeys, CacheTTL } from '../../../lib/cache/memory-cache'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -42,6 +43,22 @@ export async function GET(req: NextRequest) {
     const userId = await getUserId(req)
     if (!userId) return errors.unauthorized()
 
+    const url = new URL(req.url)
+    const minimal = url.searchParams.get('minimal') === 'true'
+
+    // Check cache for minimal requests
+    if (minimal) {
+      const cacheKey = CacheKeys.userProperties(userId)
+      const cachedProperties = memoryCache.get(cacheKey)
+
+      if (cachedProperties) {
+        console.log('🏠 Properties served from cache (minimal)')
+        return NextResponse.json({ ok: true, data: cachedProperties }, {
+          headers: { 'X-Cache': 'HIT' }
+        })
+      }
+    }
+
     const admin = createClient(supabaseUrl, serviceKey)
 
     // Get user's accessible properties
@@ -61,11 +78,10 @@ export async function GET(req: NextRequest) {
 
     const propertyIds = accessibleProperties.map((p: any) => p.property_id).filter(Boolean)
 
-    // Fetch full property details
-    const { data: properties, error: propertiesError } = await admin
-      .from('properties')
-      .select(
-        `
+    // Fetch property details (minimal or full based on query param)
+    const selectFields = minimal
+      ? 'id, name, property_type, units:units(id, status)'
+      : `
         id,
         name,
         physical_address,
@@ -74,7 +90,11 @@ export async function GET(req: NextRequest) {
         lng,
         notes,
         default_billing_day,
-        default_align_billing_to_start,
+        default_align_billing_to_start,`
+
+    const { data: properties, error: propertiesError } = await admin
+      .from('properties')
+      .select(selectFields)
         created_at,
         updated_at
       `
@@ -88,7 +108,18 @@ export async function GET(req: NextRequest) {
       return errors.internal('Failed to fetch properties')
     }
 
-    return NextResponse.json({ ok: true, data: properties || [] })
+    const result = properties || []
+
+    // Cache minimal property data
+    if (minimal && result.length > 0) {
+      const cacheKey = CacheKeys.userProperties(userId)
+      memoryCache.set(cacheKey, result, CacheTTL.PROPERTY_DATA)
+      console.log('🏠 Properties cached (minimal)')
+    }
+
+    return NextResponse.json({ ok: true, data: result }, {
+      headers: minimal ? { 'X-Cache': 'MISS' } : {}
+    })
   } catch (error: any) {
     console.error('GET /api/properties error:', error)
     return errors.internal(error?.message || 'Failed to fetch properties')

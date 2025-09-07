@@ -54,10 +54,12 @@ export default function PropertyForm({
           notes: property.notes || '',
           default_billing_day: property.default_billing_day || undefined,
           default_align_billing_to_start: property.default_align_billing_to_start ?? true,
+
         }
       : {
           property_type: 'HOME',
           default_align_billing_to_start: true,
+
         },
   })
 
@@ -76,11 +78,13 @@ export default function PropertyForm({
           notes: property.notes || '',
           default_billing_day: property.default_billing_day || undefined,
           default_align_billing_to_start: property.default_align_billing_to_start ?? true,
+
         })
       } else {
         reset({
           property_type: 'HOME',
           default_align_billing_to_start: true,
+
         })
       }
     }
@@ -295,6 +299,8 @@ export default function PropertyForm({
               </div>
             </div>
           </div>
+
+
 
           {/* Additional Information Section */}
           <div className="space-y-6">

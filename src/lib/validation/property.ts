@@ -21,6 +21,7 @@ export const propertySchema = z
     notes: z.string().max(1000).optional().or(z.literal('')),
     default_billing_day: z.number().int().min(1).max(31).optional(),
     default_align_billing_to_start: z.boolean().default(true),
+
   })
   .refine(
     (val) => {

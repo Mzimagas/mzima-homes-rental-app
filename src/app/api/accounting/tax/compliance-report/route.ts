@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TaxManagementService } from '../../../../lib/services/tax-management.service'
+// import { TaxManagementService } from '../../../../lib/services/tax-management.service'
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,10 +47,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const complianceReport = await TaxManagementService.generateTaxComplianceReport(
-      startDate,
-      endDate
-    )
+    // const complianceReport = await TaxManagementService.generateTaxComplianceReport(
+    //   startDate,
+    //   endDate
+    // )
+    const complianceReport = { success: false, error: 'Tax service temporarily disabled' }
 
     return NextResponse.json({
       success: true,

@@ -80,12 +80,12 @@ export default function PurchasePipelineManager({
   // Handle secure form submission with change tracking
   const handleSecureFormSubmit = async (
     values: PurchasePipelineFormValues,
-    changeRequests: ChangeRequest[]
+    changeRequests?: ChangeRequest[]
   ) => {
     try {
       if (editingPurchase) {
         // For updates, validate changes first
-        if (changeRequests.length > 0) {
+        if (changeRequests && changeRequests.length > 0) {
           const validation = await FieldSecurityService.validateChangeRequest(
             editingPurchase.id,
             changeRequests,

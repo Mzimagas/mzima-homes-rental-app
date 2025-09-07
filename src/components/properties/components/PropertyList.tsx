@@ -327,6 +327,8 @@ export default function PropertyList({
             {property.acquisition_notes && (
               <p className="text-sm text-gray-600 mt-2 italic">{property.acquisition_notes}</p>
             )}
+
+
           </PropertyCardContent>
 
           <PropertyCardFooter>
