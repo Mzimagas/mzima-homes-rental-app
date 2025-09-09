@@ -20,6 +20,7 @@ import { useToast } from '../../ui/Toast'
 interface PropertyAcquisitionFinancialsProps {
   property: PropertyWithLifecycle
   onUpdate?: (propertyId: string) => void
+  readOnly?: boolean
 }
 
 interface NewCostEntry {
@@ -42,6 +43,7 @@ interface NewPaymentInstallment {
 const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancials({
   property,
   onUpdate,
+  readOnly = false,
 }: PropertyAcquisitionFinancialsProps) {
   // Surgical read-only status for completed properties
   const {
@@ -56,8 +58,8 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   } = useFinancialReadOnlyStatus(property.id)
 
   // Surgical controls - disable specific functions when processes are completed
-  const isAddDisabled = financialsReadOnly || !canAdd
-  const isDeleteDisabled = financialsReadOnly || !canDelete
+  const isAddDisabled = financialsReadOnly || !canAdd || readOnly
+  const isDeleteDisabled = financialsReadOnly || !canDelete || readOnly
 
   const [costEntries, setCostEntries] = useState<AcquisitionCostEntry[]>([])
   const [paymentInstallments, setPaymentInstallments] = useState<PaymentInstallment[]>([])
@@ -77,6 +79,8 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
   const [error, setError] = useState<string | null>(null)
   const [showAddCost, setShowAddCost] = useState(false)
   const [showAddPayment, setShowAddPayment] = useState(false)
+  const [deletingCostId, setDeletingCostId] = useState<string | null>(null)
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null)
   // Collapsible sections state
   const [collapsedPayments, setCollapsedPayments] = useState(true)
   const [collapsedCosts, setCollapsedCosts] = useState(true)
@@ -525,15 +529,13 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       setShowAddCost(false)
       onUpdate?.(property.id)
 
-      // Refresh data from server to ensure consistency
-      setTimeout(async () => {
-        await loadFinancialData()
-        // Attempt to scroll to costs section
+      // Scroll to costs section immediately
+      setTimeout(() => {
         const section = document.getElementById(`costs-section-${property.id}`)
         if (section && section.scrollIntoView) {
           section.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }
-      }, 300)
+      }, 100)
     } catch (error) {
       setError('Failed to add cost entry. Please try again.')
     } finally {
@@ -610,9 +612,14 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       return
     }
 
+    // Prevent multiple delete requests for the same cost
+    if (deletingCostId === costId) {
+      return
+    }
+
     if (!confirm('Are you sure you want to delete this cost entry?')) return
 
-    setLoading(true)
+    setDeletingCostId(costId)
     setError(null)
 
     try {
@@ -620,14 +627,13 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       setCostEntries((prev) => prev.filter((entry) => entry.id !== costId))
       onUpdate?.(property.id)
 
-      // Refresh data from server to ensure consistency
-      setTimeout(() => {
-        loadFinancialData()
-      }, 500)
+      // Show success message
+      console.log(`Successfully deleted cost entry ${costId}`)
     } catch (error) {
+      console.error(`Failed to delete cost entry ${costId}:`, error)
       setError('Failed to delete cost entry. Please try again.')
     } finally {
-      setLoading(false)
+      setDeletingCostId(null)
     }
   }
 
@@ -638,9 +644,14 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
       return
     }
 
+    // Prevent multiple delete requests for the same payment
+    if (deletingPaymentId === paymentId) {
+      return
+    }
+
     if (!confirm('Are you sure you want to delete this payment?')) return
 
-    setLoading(true)
+    setDeletingPaymentId(paymentId)
     setError(null)
 
     try {
@@ -652,7 +663,7 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
     } catch (error) {
       setError('Failed to delete payment installment. Please try again.')
     } finally {
-      setLoading(false)
+      setDeletingPaymentId(null)
     }
   }
 
@@ -956,9 +967,9 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                             variant="secondary"
                             size="sm"
                             onClick={() => handleDeletePayment(payment.id)}
-                            disabled={loading}
+                            disabled={deletingPaymentId === payment.id}
                           >
-                            Delete
+                            {deletingPaymentId === payment.id ? 'Deleting...' : 'Delete'}
                           </Button>
                         </div>
                       </div>
@@ -1151,9 +1162,9 @@ const PropertyAcquisitionFinancials = memo(function PropertyAcquisitionFinancial
                             variant="secondary"
                             size="sm"
                             onClick={() => handleDeleteCost(entry.id)}
-                            disabled={loading}
+                            disabled={deletingCostId === entry.id}
                           >
-                            Delete
+                            {deletingCostId === entry.id ? 'Deleting...' : 'Delete'}
                           </Button>
                         </div>
                       </div>

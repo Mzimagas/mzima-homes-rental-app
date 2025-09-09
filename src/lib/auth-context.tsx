@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import supabase from './supabase-client'
+import { supabase } from './supabase/client'
 import { validateEmailSimple } from './email-validation'
 import { logger, shouldLogAuth, redactEmail } from './logger'
 import { logAuthState } from './auth-logs'
@@ -68,13 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Handle different auth events - only if component is mounted
       if (isMounted) {
-        if (event === 'SIGNED_IN') {
-          logAuthState('REDIRECTING_TO_DASHBOARD')
-          router.push('/dashboard')
-        } else if (event === 'SIGNED_OUT') {
-          logAuthState('REDIRECTING_TO_LOGIN')
-          router.push('/auth/login')
-        }
+        // Note: Sign out redirect is now handled by the server-side API route
+        // Note: Removed automatic redirect on SIGNED_IN to let pages handle their own redirects
       }
     })
 
@@ -209,14 +204,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (shouldLogAuth()) logger.info('AuthContext signOut called')
       setLoading(true)
 
-      const { error } = await supabase.auth.signOut()
+      // Use server-side sign out to properly clear cookies
+      const response = await fetch('/api/auth/signout', {
+        method: 'POST',
+        credentials: 'include',
+        redirect: 'manual' // Don't follow redirects automatically
+      })
 
-      if (error) {
-        logger.warn('AuthContext signOut error', { message: error.message })
+      if (!response.ok && response.status !== 302) {
+        logger.warn('AuthContext signOut error', { status: response.status })
         return { error: 'Unable to sign out at this time. Please try again.' }
       }
 
       if (shouldLogAuth()) logger.info('AuthContext signOut successful')
+
+      // Small delay to ensure auth state is cleared before redirect
+      setTimeout(() => {
+        router.push('/auth/login?msg=signout')
+      }, 200)
+
       return { error: null }
     } catch (err) {
       logger.error('AuthContext signOut exception', err)

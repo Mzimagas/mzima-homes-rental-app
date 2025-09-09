@@ -5,9 +5,10 @@ import DirectAdditionDocumentsV2 from './DirectAdditionDocumentsV2'
 interface HandoverDocumentsV2Props {
   propertyId: string
   propertyName: string
+  readOnly?: boolean
 }
 
-export default function HandoverDocumentsV2({ propertyId, propertyName }: HandoverDocumentsV2Props) {
+export default function HandoverDocumentsV2({ propertyId, propertyName, readOnly = false }: HandoverDocumentsV2Props) {
   // Mirror image of DirectAdditionDocumentsV2, with handover pipeline and stage filtering
   return (
     <DirectAdditionDocumentsV2
@@ -15,6 +16,7 @@ export default function HandoverDocumentsV2({ propertyId, propertyName }: Handov
       propertyName={propertyName}
       pipeline="handover"
       stageFilter="stages_1_10"
+      readOnly={readOnly}
     />
   )
 }

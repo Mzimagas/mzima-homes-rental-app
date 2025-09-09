@@ -405,7 +405,7 @@ export class FinancialReportingService {
           net_margin,
         },
         comparisons: {
-          previous_period: comparisons.previous_period || {
+          previous_period: comparisons?.previous_period || {
             income_change: 0,
             expense_change: 0,
             net_income_change: 0,
@@ -859,5 +859,130 @@ export class FinancialReportingService {
     const direction = absolute > 0 ? 'up' : absolute < 0 ? 'down' : 'neutral'
 
     return { absolute, percentage, direction }
+  }
+
+  // Generate Cash Flow Statement
+  static async generateCashFlowStatement(
+    startDate: string,
+    endDate: string
+  ): Promise<any> {
+    try {
+      // Get income data (cash inflows)
+      const incomeData = await IncomeManagementService.getIncomeTransactions({
+        startDate,
+        endDate,
+        status: 'RECEIVED',
+      })
+
+      // Get expense data (cash outflows)
+      const expenseData = await ExpenseManagementService.getExpenseTransactions({
+        startDate,
+        endDate,
+        status: 'PAID',
+      })
+
+      // Calculate cash flows
+      const totalInflows = incomeData.data.reduce((sum, transaction) => sum + transaction.amount_kes, 0)
+      const totalOutflows = expenseData.data.reduce((sum, transaction) => sum + transaction.amount_kes, 0)
+      const netCashFlow = totalInflows - totalOutflows
+
+      return {
+        period: {
+          start_date: startDate,
+          end_date: endDate,
+        },
+        operating_activities: {
+          operating_inflows: totalInflows,
+          operating_outflows: -totalOutflows,
+          net_operating_cash_flow: totalInflows - totalOutflows,
+        },
+        investing_activities: {
+          investing_inflows: 0, // Property sales, etc.
+          investing_outflows: 0, // Property acquisitions, etc.
+          net_investing_cash_flow: 0,
+        },
+        financing_activities: {
+          financing_inflows: 0, // Loans, member investments, etc.
+          financing_outflows: 0, // Loan payments, distributions, etc.
+          net_financing_cash_flow: 0,
+        },
+        net_cash_flow: netCashFlow,
+        cash_inflows: {
+          total: totalInflows,
+          breakdown: incomeData.data,
+        },
+        cash_outflows: {
+          total: totalOutflows,
+          breakdown: expenseData.data,
+        },
+      }
+    } catch (error) {
+      console.error('Error generating cash flow statement:', error)
+      throw new Error('Failed to generate cash flow statement')
+    }
+  }
+
+  // Generate Member Contribution Report
+  static async generateMemberContributionReport(
+    startDate: string,
+    endDate: string
+  ): Promise<any> {
+    try {
+      // Get member contributions data
+      const contributionsData = await IncomeManagementService.getMemberContributions({
+        startDate,
+        endDate,
+      })
+
+      // Calculate summary statistics
+      const totalContributions = contributionsData.data.reduce((sum, contribution) => sum + contribution.amount_kes, 0)
+      const paidContributions = contributionsData.data
+        .filter(c => c.status === 'RECEIVED')
+        .reduce((sum, contribution) => sum + contribution.amount_kes, 0)
+      const pendingContributions = contributionsData.data
+        .filter(c => c.status === 'PENDING')
+        .reduce((sum, contribution) => sum + contribution.amount_kes, 0)
+
+      // Group by member
+      const memberSummary = contributionsData.data.reduce((acc, contribution) => {
+        const memberId = contribution.member_id
+        if (!acc[memberId]) {
+          acc[memberId] = {
+            member_id: memberId,
+            member_name: contribution.member?.full_name || 'Unknown',
+            total_contributions: 0,
+            paid_contributions: 0,
+            pending_contributions: 0,
+            contribution_count: 0,
+          }
+        }
+        acc[memberId].total_contributions += contribution.amount_kes
+        acc[memberId].contribution_count += 1
+        if (contribution.status === 'RECEIVED') {
+          acc[memberId].paid_contributions += contribution.amount_kes
+        } else if (contribution.status === 'PENDING') {
+          acc[memberId].pending_contributions += contribution.amount_kes
+        }
+        return acc
+      }, {} as any)
+
+      return {
+        period: {
+          start_date: startDate,
+          end_date: endDate,
+        },
+        summary: {
+          total_contributions: totalContributions,
+          paid_contributions: paidContributions,
+          pending_contributions: pendingContributions,
+          total_members: Object.keys(memberSummary).length,
+        },
+        member_breakdown: Object.values(memberSummary),
+        detailed_contributions: contributionsData.data,
+      }
+    } catch (error) {
+      console.error('Error generating member contribution report:', error)
+      throw new Error('Failed to generate member contribution report')
+    }
   }
 }

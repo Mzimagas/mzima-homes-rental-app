@@ -121,16 +121,18 @@ export default function QuickActions({ hasData }: QuickActionsProps) {
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <button
-          onClick={() => router.push('/dashboard/properties')}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          onClick={() => router.push('/marketplace')}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
         >
-          {hasData ? 'Manage Properties' : 'Add Your First Property'}
+          <span>🏠</span>
+          <span>Browse Properties</span>
         </button>
         <button
-          onClick={() => router.push('/dashboard/rental-management')}
-          className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+          onClick={() => router.push('/dashboard/client-management')}
+          className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
         >
-          {hasData ? 'Manage Tenants' : 'Add Your First Tenant'}
+          <span>👥</span>
+          <span>Manage Client Interests</span>
         </button>
       </div>
     </div>

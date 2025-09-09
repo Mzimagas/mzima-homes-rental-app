@@ -90,15 +90,14 @@ export async function GET(req: NextRequest) {
         lng,
         notes,
         default_billing_day,
-        default_align_billing_to_start,`
+        default_align_billing_to_start,
+        created_at,
+        updated_at
+      `
 
     const { data: properties, error: propertiesError } = await admin
       .from('properties')
       .select(selectFields)
-        created_at,
-        updated_at
-      `
-      )
       .in('id', propertyIds)
       .is('disabled_at', null)
       .order('name')
@@ -192,7 +191,9 @@ export const POST = compose(
 
     // Log the property creation
     try {
-      await fetch(`${new URL(req.url).origin}/api/security/audit`, {
+      const baseUrl = new URL(req.url).origin
+      const auditUrl = baseUrl + '/api/security/audit'
+      await fetch(auditUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

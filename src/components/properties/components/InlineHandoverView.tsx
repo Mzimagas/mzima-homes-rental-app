@@ -22,6 +22,7 @@ interface InlineHandoverViewProps {
     newStatus: string,
     notes?: string
   ) => Promise<void>
+  readOnly?: boolean
 }
 
 export default function InlineHandoverView({
@@ -29,6 +30,7 @@ export default function InlineHandoverView({
   onClose,
   onStageClick,
   onStageUpdate,
+  readOnly = false,
 }: InlineHandoverViewProps) {
   const { activeTab, setActiveTab } = useTabState({
     defaultTab: 'details',
@@ -181,7 +183,11 @@ export default function InlineHandoverView({
 
         <TabContent activeTab={activeTab} tabId="documents">
           <div className="space-y-6">
-            <HandoverDocumentsV2 propertyId={handover.property_id} propertyName={handover.property_name} />
+            <HandoverDocumentsV2
+              propertyId={handover.property_id}
+              propertyName={handover.property_name}
+              readOnly={readOnly}
+            />
           </div>
         </TabContent>
 
@@ -200,6 +206,7 @@ export default function InlineHandoverView({
                 created_at: handover.created_at,
                 updated_at: handover.updated_at,
               } as any}
+              readOnly={readOnly}
             />
           </div>
         </TabContent>

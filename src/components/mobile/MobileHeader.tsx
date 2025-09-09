@@ -117,7 +117,7 @@ export default function MobileHeader({ onMenuToggle, isMenuOpen }: MobileHeaderP
                   <div className="py-1">
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">
-                        {user?.user_metadata?.full_name || 'User'}
+                        {(typeof user?.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null) || 'User'}
                       </p>
                       <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                     </div>

@@ -20,7 +20,7 @@ function getCsrfToken(): string | null {
 export class AcquisitionFinancialsService {
   // Feature flags to enable financial APIs
   private static readonly FEATURE_FLAGS = {
-    PURCHASE_PIPELINE_API: false, // ❌ Disabled - causing rapid 404 errors
+    PURCHASE_PIPELINE_API: false, // ❌ Disabled - causing 403 errors, use property API instead
     ACQUISITION_COSTS_API: true, // ✅ Enabled - API routes exist
     PAYMENT_INSTALLMENTS_API: true, // ✅ Enabled - API routes exist
   }
@@ -79,12 +79,24 @@ export class AcquisitionFinancialsService {
       credentials: 'same-origin',
     })
 
-    // Handle 403 errors with circuit breaker
+    // Handle 403 errors with circuit breaker (but allow fallback for pipeline APIs)
     if (response.status === 403) {
       this.authFailure = true
       this.authFailureTime = Date.now()
       console.warn('[AcquisitionFinancialsService] 403 detected, activating circuit breaker')
+
+      // For pipeline APIs, throw a specific error that can be caught for fallback
+      if (url.includes('/api/purchase-pipeline/')) {
+        throw new Error('PIPELINE_API_FORBIDDEN')
+      }
+
       throw new Error('Access denied. Please check your permissions or refresh the page.')
+    }
+
+    // Handle 404 errors with better logging
+    if (response.status === 404) {
+      console.error(`[AcquisitionFinancialsService] 404 Not Found: ${url}`)
+      throw new Error(`API endpoint not found: ${url}`)
     }
 
     // Check if response has content before trying to parse JSON
@@ -129,24 +141,34 @@ export class AcquisitionFinancialsService {
     cost: Omit<AcquisitionCostEntry, 'id' | 'property_id' | 'created_at' | 'updated_at'>
   ): Promise<AcquisitionCostEntry> {
     try {
-      // Try purchase pipeline API first
-      try {
-        const data = await this.makeRequest(
-          `/api/purchase-pipeline/${propertyId}/acquisition-costs`,
-          {
-            method: 'POST',
-            body: JSON.stringify(cost),
+      // Try purchase pipeline API first (only if enabled)
+      if (this.FEATURE_FLAGS.PURCHASE_PIPELINE_API) {
+        try {
+          const data = await this.makeRequest(
+            `/api/purchase-pipeline/${propertyId}/acquisition-costs`,
+            {
+              method: 'POST',
+              body: JSON.stringify(cost),
+            }
+          )
+          return data.data
+        } catch (pipelineError) {
+          // Pipeline API failed, continue to fallback
+          const errorMessage = pipelineError instanceof Error ? pipelineError.message : String(pipelineError)
+          if (errorMessage === 'PIPELINE_API_FORBIDDEN' || errorMessage.includes('403')) {
+            console.log('Purchase pipeline API access denied, falling back to property API')
+          } else {
+            console.log('Purchase pipeline API failed, falling back to property API:', errorMessage)
           }
-        )
-        return data.data
-      } catch (pipelineError) {
-        // Fall back to property API
-        const data = await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs`, {
-          method: 'POST',
-          body: JSON.stringify(cost),
-        })
-        return data.data
+        }
       }
+
+      // Use property API as fallback
+      const data = await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs`, {
+        method: 'POST',
+        body: JSON.stringify(cost),
+      })
+      return data.data
     } catch (error) {
       throw error
     }
@@ -154,19 +176,27 @@ export class AcquisitionFinancialsService {
 
   static async deleteAcquisitionCost(propertyId: string, costId: string): Promise<void> {
     try {
-      // Try purchase pipeline API first
-      try {
-        await this.makeRequest(`/api/purchase-pipeline/${propertyId}/acquisition-costs/${costId}`, {
-          method: 'DELETE',
-        })
-        return
-      } catch (pipelineError) {
-        // Fall back to property API
-        await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs/${costId}`, {
-          method: 'DELETE',
-        })
+      // Try purchase pipeline API first (only if enabled)
+      if (this.FEATURE_FLAGS.PURCHASE_PIPELINE_API) {
+        try {
+          await this.makeRequest(`/api/purchase-pipeline/${propertyId}/acquisition-costs/${costId}`, {
+            method: 'DELETE',
+          })
+          return
+        } catch (pipelineError) {
+          // Pipeline API failed, continue to fallback
+          console.log('Purchase pipeline API failed for delete, falling back to property API')
+        }
       }
+
+      // Use property API as fallback
+      console.log(`[AcquisitionFinancialsService] Attempting to delete cost ${costId} for property ${propertyId}`)
+      await this.makeRequest(`/api/properties/${propertyId}/acquisition-costs/${costId}`, {
+        method: 'DELETE',
+      })
+      console.log(`[AcquisitionFinancialsService] Successfully deleted cost ${costId}`)
     } catch (error) {
+      console.error(`[AcquisitionFinancialsService] Failed to delete cost ${costId}:`, error)
       throw error
     }
   }
@@ -218,21 +248,26 @@ export class AcquisitionFinancialsService {
 
   static async deletePaymentInstallment(propertyId: string, paymentId: string): Promise<void> {
     try {
-      // Try purchase pipeline API first
-      try {
-        await this.makeRequest(
-          `/api/purchase-pipeline/${propertyId}/payment-installments/${paymentId}`,
-          {
-            method: 'DELETE',
-          }
-        )
-        return
-      } catch (pipelineError) {
-        // Fall back to property API
-        await this.makeRequest(`/api/properties/${propertyId}/payment-installments/${paymentId}`, {
-          method: 'DELETE',
-        })
+      // Try purchase pipeline API first (only if enabled)
+      if (this.FEATURE_FLAGS.PURCHASE_PIPELINE_API) {
+        try {
+          await this.makeRequest(
+            `/api/purchase-pipeline/${propertyId}/payment-installments/${paymentId}`,
+            {
+              method: 'DELETE',
+            }
+          )
+          return
+        } catch (pipelineError) {
+          // Pipeline API failed, continue to fallback
+          console.log('Purchase pipeline API failed for delete, falling back to property API')
+        }
       }
+
+      // Use property API as fallback
+      await this.makeRequest(`/api/properties/${propertyId}/payment-installments/${paymentId}`, {
+        method: 'DELETE',
+      })
     } catch (error) {
       throw error
     }

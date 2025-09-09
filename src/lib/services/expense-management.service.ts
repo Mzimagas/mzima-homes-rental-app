@@ -274,6 +274,40 @@ export class ExpenseManagementService {
     }
   }
 
+  // Get properties for dropdowns
+  static async getProperties(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name')
+        .eq('lifecycle_status', 'ACTIVE')
+        .order('name', { ascending: true })
+
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error fetching properties:', error)
+      throw new Error('Failed to load properties')
+    }
+  }
+
+  // Get vendors for dropdowns
+  static async getVendors(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('id, vendor_name, contact_person, phone, email')
+        .eq('is_active', true)
+        .order('vendor_name', { ascending: true })
+
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error fetching vendors:', error)
+      throw new Error('Failed to load vendors')
+    }
+  }
+
   // Create new expense transaction
   static async createExpenseTransaction(
     transaction: Omit<ExpenseTransaction, 'id' | 'created_at' | 'updated_at'>

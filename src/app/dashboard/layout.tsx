@@ -504,7 +504,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="ml-3 relative">
                   <div className="flex items-center space-x-4">
                     <span className="text-sm text-gray-700">
-                      {user.user_metadata?.full_name || user.email}
+                      {(typeof user?.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null) || user?.email || 'User'}
                     </span>
                     <button
                       onClick={async () => {

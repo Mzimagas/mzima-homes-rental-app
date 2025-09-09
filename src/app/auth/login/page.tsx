@@ -14,21 +14,85 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { signIn, user } = useAuth()
+  const { signIn, user, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [showMfa, setShowMfa] = useState(false)
   const [pendingEmail, setPendingEmail] = useState('')
+  const [showingLoginPage, setShowingLoginPage] = useState(false)
+  const [hasAttemptedRedirect, setHasAttemptedRedirect] = useState(false)
 
   const [token, setToken] = useState<string | null>(null)
 
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
+  const redirectTo = searchParams.get('redirectTo')
+  const msg = searchParams.get('msg')
 
   useEffect(() => {
-    if (user) {
-      router.push(redirectTo)
+    console.log('🔍 Login page useEffect:', {
+      hasUser: !!user,
+      userId: user?.id,
+      loading,
+      hasAttemptedRedirect,
+      showingLoginPage,
+      userEmail: user?.email,
+      msg
+    })
+
+    // If we have a signout message, don't auto-redirect regardless of user state
+    if (msg === 'signout') {
+      console.log('🔍 Login page: Signout message detected, staying on login page')
+      setHasAttemptedRedirect(true) // Prevent any auto-redirect
+      setShowingLoginPage(false)
+      return
     }
-  }, [user, router, redirectTo])
+
+    // Only attempt redirect if:
+    // 1. We have a user
+    // 2. Auth is not loading (to avoid stale state)
+    // 3. We haven't already attempted a redirect
+    // 4. We're not currently showing the login page
+    // 5. No signout message
+    if (user && !loading && !hasAttemptedRedirect && !showingLoginPage) {
+      console.log('🔍 Login page: User detected, attempting redirect...')
+      // Add a small delay to allow users to see the login page briefly
+      // This prevents the jarring immediate redirect experience
+      setShowingLoginPage(true)
+      setHasAttemptedRedirect(true)
+      setTimeout(() => {
+        // Always use user type detection for smart routing
+        // Only respect explicit redirectTo for specific use cases (not automatic redirects)
+        detectUserTypeAndRedirect()
+      }, 1500) // 1.5 second delay
+    }
+
+    // Reset redirect attempt when user becomes null (after sign out)
+    if (!user && !loading) {
+      console.log('🔍 Login page: User cleared, resetting flags')
+      setHasAttemptedRedirect(false)
+      setShowingLoginPage(false)
+    }
+  }, [user, loading, hasAttemptedRedirect, showingLoginPage, msg])
+
+  const detectUserTypeAndRedirect = async () => {
+    try {
+      console.log('🔍 Detecting user type for redirect...')
+
+      const response = await fetch('/api/auth/user-type')
+      const data = await response.json()
+
+      if (data.success) {
+        console.log('✅ User type detected:', data.userType, 'Redirecting to:', data.redirectPath)
+        router.push(data.redirectPath)
+      } else {
+        console.warn('❌ Failed to detect user type, defaulting to client portal')
+        router.push('/client-portal')
+      }
+    } catch (error) {
+      console.error('❌ Error detecting user type:', error)
+      // Fallback to client portal on error
+      router.push('/client-portal')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -133,6 +197,9 @@ function LoginForm() {
           setIsLoading(false)
           return
         }
+
+        // Successful login - always use user type detection for smart routing
+        await detectUserTypeAndRedirect()
       }
     } catch {
       setError('An unexpected error occurred during login')
@@ -164,6 +231,20 @@ function LoginForm() {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">KodiRent</p>
+
+          {msg === 'signout' ? (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-800 text-center">
+                ✅ Successfully signed out. Please sign in again.
+              </p>
+            </div>
+          ) : showingLoginPage ? (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800 text-center">
+                ✅ Already signed in! Redirecting you to your dashboard...
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -220,7 +301,8 @@ function LoginForm() {
                           })
                           if (!error) {
                             setShowMfa(false)
-                            router.push('/dashboard')
+                            // Redirect based on user type after MFA
+                            await detectUserTypeAndRedirect()
                           }
                         }
                       } finally {

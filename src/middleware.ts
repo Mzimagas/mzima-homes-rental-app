@@ -58,8 +58,14 @@ export async function middleware(req: NextRequest) {
         },
       })
 
+      // Get and refresh the session
       const result = await supabase.auth.getSession()
       session = result.data.session
+
+      // If we have a session, refresh it to ensure cookies are up to date
+      if (session) {
+        await supabase.auth.refreshSession()
+      }
     } catch (error) {
       console.warn('Middleware: Failed to get session:', error)
       // Continue without session
@@ -73,11 +79,18 @@ export async function middleware(req: NextRequest) {
   const publicPrefixes = [
     '/',
     '/auth/',
+    '/marketplace/', // Public property marketplace
     '/api/', // Allow all API routes to handle their own auth
     '/api/auth/confirm-user', // dev-only API
   ]
 
+  // Protected routes that require authentication but are not admin-only
+  const clientProtectedPrefixes = [
+    '/client-portal/',
+  ]
+
   const isPublic = publicPrefixes.some((p) => pathname === p || pathname.startsWith(p))
+  const isClientProtected = clientProtectedPrefixes.some((p) => pathname.startsWith(p))
 
   // Protect non-public routes (but skip API routes since they handle their own auth)
   if (!isPublic && !session && !pathname.startsWith('/api/')) {
@@ -86,9 +99,24 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
+  // For client protected routes, ensure user has client access
+  if (isClientProtected && session) {
+    // Client portal routes are accessible to authenticated users
+    // Additional role checking can be added here if needed
+  }
+
   return res
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public/).*)'],
+  matcher: [
+    // Include API routes that need auth cookies
+    '/api/clients/:path*',
+    '/api/auth/:path*',
+    // Include protected pages
+    '/client-portal/:path*',
+    '/dashboard/:path*',
+    // Include marketplace for session refresh
+    '/marketplace/:path*',
+  ],
 }

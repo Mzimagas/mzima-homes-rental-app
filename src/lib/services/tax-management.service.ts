@@ -189,6 +189,23 @@ export interface PropertyTaxSummary {
 }
 
 export class TaxManagementService {
+  // Get properties for dropdowns
+  static async getProperties(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name')
+        .eq('lifecycle_status', 'ACTIVE')
+        .order('name', { ascending: true })
+
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error fetching properties:', error)
+      throw new Error('Failed to load properties')
+    }
+  }
+
   // Get tax configurations
   static async getTaxConfigurations(
     filters: {

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { XMarkIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { TaxManagementService } from '../../../lib/services/tax-management.service'
+import SearchableDropdown, { DropdownOption } from '../../ui/SearchableDropdown'
 
 interface AddTaxRecordModalProps {
   isOpen: boolean
@@ -191,24 +192,18 @@ export default function AddTaxRecordModal({ isOpen, onClose, onSuccess }: AddTax
           {/* Land Rates Form */}
           {recordType === 'LAND_RATES' && (
             <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Property *</label>
-                <select
-                  value={landRatesData.property_id}
-                  onChange={(e) =>
-                    setLandRatesData((prev) => ({ ...prev, property_id: e.target.value }))
-                  }
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select property</option>
-                  {properties.map((property) => (
-                    <option key={property.id} value={property.id}>
-                      {property.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SearchableDropdown
+                label="Property"
+                required
+                options={properties.map((property): DropdownOption => ({
+                  id: property.id,
+                  label: property.name,
+                }))}
+                value={landRatesData.property_id}
+                onChange={(value) => setLandRatesData((prev) => ({ ...prev, property_id: value }))}
+                placeholder="Select property"
+                emptyMessage="No properties found"
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

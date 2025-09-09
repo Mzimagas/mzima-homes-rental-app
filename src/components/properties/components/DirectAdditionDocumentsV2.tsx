@@ -44,6 +44,7 @@ interface DirectAdditionDocumentsV2Props {
   pipeline?: 'direct_addition' | 'handover' | 'subdivision'
   property?: any // For workflow type detection
   stageFilter?: 'all' | 'stages_1_10' | 'stages_11_16'
+  readOnly?: boolean
 }
 
 interface PropertyDocument {
@@ -104,6 +105,7 @@ export default function DirectAdditionDocumentsV2({
   pipeline = 'direct_addition',
   property,
   stageFilter,
+  readOnly = false,
 }: DirectAdditionDocumentsV2Props) {
   const [documentStates, setDocumentStates] = useState<Record<DocTypeKey, DocumentTypeState>>(
     {} as Record<DocTypeKey, DocumentTypeState>
@@ -137,9 +139,9 @@ export default function DirectAdditionDocumentsV2({
   } = useDocumentReadOnlyStatus(propertyId)
 
   // Surgical controls - disable specific functions when processes are completed
-  const isUploadDisabled = documentsReadOnly || !canUpload
-  const isDeleteDisabled = documentsReadOnly || !canDelete
-  const isPaymentDisabled = documentsReadOnly // Disable payment buttons when completed
+  const isUploadDisabled = documentsReadOnly || !canUpload || readOnly
+  const isDeleteDisabled = documentsReadOnly || !canDelete || readOnly
+  const isPaymentDisabled = documentsReadOnly || readOnly // Disable payment buttons when completed
 
   // Enhanced workflow integration
   const {

@@ -11,25 +11,59 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
 async function handler(request: NextRequest) {
+  console.log('🔧 Confirm user API called')
+
   // Only allow in development
   if (process.env.NODE_ENV !== 'development') {
+    console.log('❌ Confirm user API blocked - not in development mode')
     return errors.forbidden('This endpoint is only available in development')
   }
 
-  const schema = z.object({ userId: z.string().uuid(), email: z.string().email() })
+  const schema = z.object({ email: z.string().email() })
   const json = await request.json().catch(() => ({}))
+  console.log('🔧 Request body:', json)
+
   const parsed = schema.safeParse(json)
-  if (!parsed.success) return errors.validation(parsed.error.flatten())
+  if (!parsed.success) {
+    console.log('❌ Validation failed:', parsed.error.flatten())
+    return errors.validation(parsed.error.flatten())
+  }
 
-  const { userId } = parsed.data
+  const { email } = parsed.data
+  console.log('🔧 Confirming email for:', email)
 
-  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+  // First, find the user by email
+  console.log('🔧 Listing users to find:', email)
+  const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+
+  if (listError) {
+    console.log('❌ Failed to list users:', listError)
+    return errors.internal('Failed to list users')
+  }
+
+  console.log('🔧 Found', users.users.length, 'users total')
+  const user = users.users.find(u => u.email === email)
+
+  if (!user) {
+    console.log('❌ User not found with email:', email)
+    console.log('🔧 Available emails:', users.users.map(u => u.email))
+    return errors.notFound('User not found')
+  }
+
+  console.log('✅ Found user:', user.id, 'email confirmed:', user.email_confirmed_at)
+
+  // Confirm the user's email
+  console.log('🔧 Confirming email for user:', user.id)
+  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
     email_confirm: true,
   })
 
   if (error) {
+    console.log('❌ Failed to confirm user email:', error)
     return errors.internal('Failed to confirm user email')
   }
+
+  console.log('✅ Email confirmed successfully for user:', user.id)
 
   return NextResponse.json({
     success: true,
@@ -41,4 +75,4 @@ async function handler(request: NextRequest) {
   })
 }
 
-export const POST = compose(withCsrf)(handler)
+export const POST = handler

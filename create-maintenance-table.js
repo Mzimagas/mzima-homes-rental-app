@@ -69,39 +69,38 @@ async function createMaintenanceRequestsTable() {
     // This is a workaround - we'll create the table by trying to insert data
     // and handling the error if the table doesn't exist
     return true
-    
+
     // Verify the table was created
     console.log('\n🔍 Verifying table creation...')
-    const { data: tableCheck, error: checkError } = await supabase.rpc('exec_sql', {
-      sql: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'maintenance_requests';`
+    const { data: tableCheck, error: verifyError } = await supabase.rpc('exec_sql', {
+      sql: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'maintenance_requests';`,
     })
-    
-    if (checkError) {
-      console.error('❌ Error checking table:', checkError)
+
+    if (verifyError) {
+      console.error('❌ Error checking table:', verifyError)
       return false
     }
-    
+
     if (tableCheck && tableCheck.length > 0) {
       console.log('✅ maintenance_requests table created successfully!')
-      
+
       // Check the table structure
       const { data: columns, error: colError } = await supabase.rpc('exec_sql', {
-        sql: `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'maintenance_requests' ORDER BY ordinal_position;`
+        sql: `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'maintenance_requests' ORDER BY ordinal_position;`,
       })
-      
+
       if (!colError && columns) {
         console.log('\n📋 Table structure:')
-        columns.forEach(col => {
+        columns.forEach((col) => {
           console.log(`   - ${col.column_name}: ${col.data_type}`)
         })
       }
-      
+
       return true
     } else {
       console.log('❌ Table was not created')
       return false
     }
-    
   } catch (error) {
     console.error('❌ Failed to create maintenance_requests table:', error)
     return false
@@ -111,9 +110,9 @@ async function createMaintenanceRequestsTable() {
 async function main() {
   console.log('🚀 Maintenance Requests Table Creation Script')
   console.log('============================================')
-  
+
   const success = await createMaintenanceRequestsTable()
-  
+
   if (success) {
     console.log('\n🎉 Maintenance requests table setup completed successfully!')
     console.log('The dashboard should now work without the "maintenance_requests" table error.')

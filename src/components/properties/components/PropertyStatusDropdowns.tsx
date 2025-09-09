@@ -11,6 +11,7 @@ import {
   getDisabledSelectStyles,
 } from '../../../hooks/usePropertyMutualExclusivity'
 import { PropertyStatusUpdateService } from '../../../services/propertyStatusUpdateService'
+import StartHandoverForm from './StartHandoverForm'
 
 interface PropertyStatusDropdownsProps {
   property: PropertyWithLifecycle
@@ -42,6 +43,7 @@ export default function PropertyStatusDropdowns({
   const [pendingHandoverChange, setPendingHandoverChange] = useState<string | null>(null)
   const [showSubdivisionConfirm, setShowSubdivisionConfirm] = useState(false)
   const [showHandoverConfirm, setShowHandoverConfirm] = useState(false)
+  const [showStartHandoverForm, setShowStartHandoverForm] = useState(false)
   // Get mutual exclusivity state
   const {
     subdivisionDisabled,
@@ -276,6 +278,19 @@ export default function PropertyStatusDropdowns({
             🤝 Manage in Pipeline
           </button>
         )}
+
+        {/* Start Handover button for eligible properties */}
+        {(property.handover_status === 'PENDING' ||
+          (property.handover_status !== 'IN_PROGRESS' && property.handover_status !== 'COMPLETED')) &&
+          !handoverDisabled && (
+          <button
+            onClick={() => setShowStartHandoverForm(true)}
+            className="mt-2 text-xs bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200 transition-colors duration-200 flex items-center gap-1"
+            title="Start the handover process for this property"
+          >
+            🚀 Start Handover
+          </button>
+        )}
       </div>
 
       {/* Subdivision Confirmation Dialog */}
@@ -285,7 +300,7 @@ export default function PropertyStatusDropdowns({
             <h3 className="text-lg font-semibold mb-4">Confirm Subdivision Status Change</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to change the subdivision status to{' '}
-              <strong>"{pendingSubdivisionChange}"</strong>?
+              <strong>&quot;{pendingSubdivisionChange}&quot;</strong>?
             </p>
             <p className="text-sm text-gray-500 mb-6">
               This action will update the property status and may affect related processes.
@@ -318,7 +333,7 @@ export default function PropertyStatusDropdowns({
             <h3 className="text-lg font-semibold mb-4">Confirm Handover Status Change</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to change the handover status to{' '}
-              <strong>"{pendingHandoverChange}"</strong>?
+              <strong>&quot;{pendingHandoverChange}&quot;</strong>?
             </p>
             <p className="text-sm text-gray-500 mb-6">
               This action will update the property status and may affect related processes.
@@ -342,6 +357,19 @@ export default function PropertyStatusDropdowns({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Start Handover Form */}
+      {showStartHandoverForm && (
+        <StartHandoverForm
+          isOpen={showStartHandoverForm}
+          onClose={() => setShowStartHandoverForm(false)}
+          property={property}
+          onSuccess={() => {
+            setShowStartHandoverForm(false)
+            onRefresh?.()
+          }}
+        />
       )}
     </div>
   )

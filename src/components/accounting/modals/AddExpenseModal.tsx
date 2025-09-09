@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { XMarkIcon, CreditCardIcon } from '@heroicons/react/24/outline'
 import { ExpenseManagementService } from '../../../lib/services/expense-management.service'
+import SearchableDropdown, { DropdownOption } from '../../ui/SearchableDropdown'
 
 interface AddExpenseModalProps {
   isOpen: boolean
@@ -226,36 +227,30 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
 
           {/* Vendor and Property */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
-              <select
-                value={formData.vendor_id}
-                onChange={(e) => setFormData((prev) => ({ ...prev, vendor_id: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                <option value="">Select vendor</option>
-                {vendors.map((vendor) => (
-                  <option key={vendor.id} value={vendor.id}>
-                    {vendor.vendor_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Property</label>
-              <select
-                value={formData.property_id}
-                onChange={(e) => setFormData((prev) => ({ ...prev, property_id: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                <option value="">Select property</option>
-                {properties.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SearchableDropdown
+              label="Vendor"
+              options={vendors.map((vendor): DropdownOption => ({
+                id: vendor.id,
+                label: vendor.vendor_name,
+                sublabel: vendor.contact_person ? `Contact: ${vendor.contact_person}` : undefined,
+              }))}
+              value={formData.vendor_id}
+              onChange={(value) => setFormData((prev) => ({ ...prev, vendor_id: value }))}
+              placeholder="Select vendor"
+              emptyMessage="No vendors found"
+            />
+
+            <SearchableDropdown
+              label="Property"
+              options={properties.map((property): DropdownOption => ({
+                id: property.id,
+                label: property.name,
+              }))}
+              value={formData.property_id}
+              onChange={(value) => setFormData((prev) => ({ ...prev, property_id: value }))}
+              placeholder="Select property"
+              emptyMessage="No properties found"
+            />
           </div>
 
           {/* Reference Numbers */}

@@ -83,22 +83,51 @@ export const useFinancialStatus = (propertyId: string, pipeline: string) => {
         ]
 
         setFinancialRecords(financialRecords)
-      } else {
-        // For other pipelines, use the generic property_financials table
-        const { data, error } = await supabase
-          .from('property_financials')
-          .select('*')
-          .eq('property_id', propertyId)
-          .eq('pipeline', pipeline)
+      } else if (pipeline === 'direct_addition' || pipeline === 'purchase_pipeline') {
+        // For acquisition pipelines, use acquisition-specific tables
+        const [costsResult, paymentsResult] = await Promise.allSettled([
+          supabase.from('property_acquisition_costs').select('*').eq('property_id', propertyId),
+          supabase.from('property_payment_installments').select('*').eq('property_id', propertyId),
+        ])
 
-        if (error && error.code !== '42P01') {
-          // 42P01 = relation does not exist
-          setError(error.message)
-          setFinancialRecords([])
-        } else {
-          // If table doesn't exist or no data, use empty array
-          setFinancialRecords(data || [])
-        }
+        // Convert acquisition data to financial records format
+        const costs = costsResult.status === 'fulfilled' ? costsResult.value.data || [] : []
+        const payments = paymentsResult.status === 'fulfilled' ? paymentsResult.value.data || [] : []
+
+        const financialRecords = [
+          ...costs.map((cost: any) => ({
+            id: cost.id,
+            property_id: cost.property_id,
+            pipeline: pipeline,
+            payment_type: cost.cost_type_id,
+            amount: cost.amount_kes,
+            currency: 'KES',
+            status: 'completed',
+            description: cost.notes || `${cost.cost_type_id} cost`,
+            created_at: cost.created_at,
+            updated_at: cost.updated_at,
+            category: 'cost',
+          })),
+          ...payments.map((payment: any) => ({
+            id: payment.id,
+            property_id: payment.property_id,
+            pipeline: pipeline,
+            payment_type: 'payment_installment',
+            amount: payment.amount_kes,
+            currency: 'KES',
+            status: 'completed',
+            description: payment.notes || `Payment installment #${payment.installment_number}`,
+            created_at: payment.created_at,
+            updated_at: payment.updated_at,
+            category: 'payment',
+          })),
+        ]
+
+        setFinancialRecords(financialRecords)
+      } else {
+        // For unknown pipelines, return empty data to avoid 404 errors
+        console.warn(`[useFinancialStatus] Unknown pipeline: ${pipeline}, returning empty data`)
+        setFinancialRecords([])
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { XMarkIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
 import { IncomeManagementService } from '../../../lib/services/income-management.service'
+import SearchableDropdown, { DropdownOption } from '../../ui/SearchableDropdown'
 
 interface AddIncomeModalProps {
   isOpen: boolean
@@ -236,51 +237,42 @@ export default function AddIncomeModal({ isOpen, onClose, onSuccess }: AddIncome
 
           {/* Related Entities */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Property</label>
-              <select
-                value={formData.property_id}
-                onChange={(e) => setFormData((prev) => ({ ...prev, property_id: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Select property</option>
-                {properties.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Member</label>
-              <select
-                value={formData.member_id}
-                onChange={(e) => setFormData((prev) => ({ ...prev, member_id: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Select member</option>
-                {members.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.full_name} ({member.member_number})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tenant</label>
-              <select
-                value={formData.tenant_id}
-                onChange={(e) => setFormData((prev) => ({ ...prev, tenant_id: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Select tenant</option>
-                {tenants.map((tenant) => (
-                  <option key={tenant.id} value={tenant.id}>
-                    {tenant.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SearchableDropdown
+              label="Property"
+              options={properties.map((property): DropdownOption => ({
+                id: property.id,
+                label: property.name,
+              }))}
+              value={formData.property_id}
+              onChange={(value) => setFormData((prev) => ({ ...prev, property_id: value }))}
+              placeholder="Select property"
+              emptyMessage="No properties found"
+            />
+
+            <SearchableDropdown
+              label="Member"
+              options={members.map((member): DropdownOption => ({
+                id: member.id,
+                label: member.full_name,
+                sublabel: member.member_number,
+              }))}
+              value={formData.member_id}
+              onChange={(value) => setFormData((prev) => ({ ...prev, member_id: value }))}
+              placeholder="Select member"
+              emptyMessage="No members found"
+            />
+
+            <SearchableDropdown
+              label="Tenant"
+              options={tenants.map((tenant): DropdownOption => ({
+                id: tenant.id,
+                label: tenant.full_name,
+              }))}
+              value={formData.tenant_id}
+              onChange={(value) => setFormData((prev) => ({ ...prev, tenant_id: value }))}
+              placeholder="Select tenant"
+              emptyMessage="No tenants found"
+            />
           </div>
 
           {/* Reference Number */}
