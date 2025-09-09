@@ -14,7 +14,6 @@ import PropertyCard, {
 import HandoverStageModal from './HandoverStageModal'
 import PropertySearch from './PropertySearch'
 import InlineHandoverView from './InlineHandoverView'
-import StartHandoverForm from './StartHandoverForm'
 import { Property } from '../../../lib/types/database'
 import supabase from '../../../lib/supabase-client'
 import {
@@ -47,9 +46,6 @@ export default function HandoverPipelineManager({
   const [handovers, setHandovers] = useState<HandoverItem[]>([])
   const [handoverLoading, setHandoverLoading] = useState(false)
   const [showHandoverForm, setShowHandoverForm] = useState(false)
-  const [eligibleProperties, setEligibleProperties] = useState<PropertyWithLifecycle[]>([])
-  const [showStartHandoverForm, setShowStartHandoverForm] = useState(false)
-  const [selectedProperty, setSelectedProperty] = useState<PropertyWithLifecycle | null>(null)
 
   const [editingHandover, setEditingHandover] = useState<HandoverItem | null>(null)
   const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null)
@@ -104,7 +100,6 @@ export default function HandoverPipelineManager({
 
   useEffect(() => {
     loadHandovers()
-    loadEligibleProperties()
   }, [])
 
   const loadHandovers = async () => {
@@ -270,35 +265,6 @@ export default function HandoverPipelineManager({
       console.error('Error loading properties with handover status:', error)
       setHandovers([])
     }
-  }
-
-  // Load properties eligible for handover (not yet started)
-  const loadEligibleProperties = async () => {
-    try {
-      const { data: properties, error } = await supabase
-        .from('properties')
-        .select('*')
-        .in('handover_status', ['PENDING', 'NOT_STARTED'])
-        .neq('subdivision_status', 'SUB_DIVISION_STARTED')
-        .neq('subdivision_status', 'SUBDIVIDED')
-        .order('name')
-
-      if (error) {
-        console.warn('Error loading eligible properties:', error)
-        setEligibleProperties([])
-        return
-      }
-
-      setEligibleProperties(properties || [])
-    } catch (error) {
-      console.error('Error loading eligible properties:', error)
-      setEligibleProperties([])
-    }
-  }
-
-  const handleStartHandover = (property: PropertyWithLifecycle) => {
-    setSelectedProperty(property)
-    setShowStartHandoverForm(true)
   }
 
   const handleEditHandover = (handover: HandoverItem) => {
@@ -602,77 +568,24 @@ export default function HandoverPipelineManager({
           <p className="mt-2 text-gray-600">Loading handovers...</p>
         </div>
       ) : filteredHandovers.length === 0 ? (
-        <div className="space-y-6">
-          {/* Show eligible properties for handover */}
-          {eligibleProperties.length > 0 ? (
-            <div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <h3 className="text-lg font-medium text-blue-900 mb-2">Properties Ready for Handover</h3>
-                <p className="text-sm text-blue-700">
-                  The following properties are eligible to start the handover process:
-                </p>
-              </div>
-
-              <div className="grid gap-4">
-                {eligibleProperties.map((property) => (
-                  <div
-                    key={property.id}
-                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h4 className="text-lg font-semibold text-gray-900">{property.name}</h4>
-                          <span className="text-lg">🏠</span>
-                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                            Ready for Handover
-                          </span>
-                        </div>
-                        <p className="text-gray-600 text-sm mb-2">{property.physical_address}</p>
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                          <span>Type: {property.property_type?.replace('_', ' ') || 'Unknown'}</span>
-                          {property.total_area_acres && (
-                            <span>Area: {property.total_area_acres} acres</span>
-                          )}
-                          {property.asking_price_kes && (
-                            <span>Asking Price: KES {property.asking_price_kes.toLocaleString()}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleStartHandover(property)}
-                        >
-                          🚀 Start Handover
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <div className="text-4xl mb-4">🏠</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Handover Opportunities</h3>
-              <div>
-                <p className="text-gray-600 mb-4">
-                  No properties are currently in the handover pipeline or ready for handover.
-                </p>
-                <p className="text-sm text-gray-500 mb-4">
-                  Add properties to the handover pipeline from the Properties tab.
-                </p>
-                <Button
-                  variant="secondary"
-                  onClick={() => (window.location.href = '/dashboard/properties')}
-                >
-                  Go to Properties Tab
-                </Button>
-              </div>
-            </div>
-          )}
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <div className="text-4xl mb-4">🏠</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Handovers</h3>
+          <div>
+            <p className="text-gray-600 mb-4">
+              No properties are currently in the handover pipeline.
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              To start a handover, go to the Properties tab, set a property&apos;s handover status
+              to &quot;In Progress&quot;, then complete the handover setup form.
+            </p>
+            <Button
+              variant="secondary"
+              onClick={() => (window.location.href = '/dashboard/properties')}
+            >
+              Go to Properties Tab
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="grid gap-6">
@@ -1118,25 +1031,6 @@ export default function HandoverPipelineManager({
             )
           })()}
           onStageUpdate={handleHandoverStageUpdate}
-        />
-      )}
-
-      {/* Start Handover Form */}
-      {showStartHandoverForm && selectedProperty && (
-        <StartHandoverForm
-          isOpen={showStartHandoverForm}
-          onClose={() => {
-            setShowStartHandoverForm(false)
-            setSelectedProperty(null)
-          }}
-          property={selectedProperty}
-          onSuccess={() => {
-            setShowStartHandoverForm(false)
-            setSelectedProperty(null)
-            loadHandovers()
-            loadEligibleProperties()
-            onHandoverCreated?.()
-          }}
         />
       )}
     </div>
