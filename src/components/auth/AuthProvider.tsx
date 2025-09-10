@@ -3,31 +3,43 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 
-type AuthCtx = { 
-  session: Session | null; 
+type AuthCtx = {
+  session: Session | null;
   user: User | null;
-  loading: boolean; 
+  loading: boolean;
   signOut: () => Promise<{ error: any }>;
 };
 
-const AuthContext = createContext<AuthCtx>({ 
-  session: null, 
+const AuthContext = createContext<AuthCtx>({
+  session: null,
   user: null,
   loading: true,
   signOut: async () => ({ error: null })
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const supabase = useMemo(() => getSupabaseBrowser(), []);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // Only create supabase client after component mounts (client-side only)
+  const supabase = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return getSupabaseBrowser();
+  }, [mounted]);
 
   useEffect(() => {
-    let mounted = true;
-    
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !supabase) return;
+
+    let isMounted = true;
+
     // Initial fetch
     supabase.auth.getSession().then(({ data, error }) => {
-      if (!mounted) return;
+      if (!isMounted) return;
       if (error) {
         console.warn('⚠️ AuthProvider: Error getting initial session:', error);
       }
@@ -37,19 +49,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Subscribe to changes
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
-      if (!mounted) return;
+      if (!isMounted) return;
       setSession(sess ?? null);
       setLoading(false);
     });
 
     return () => {
-      mounted = false;
+      isMounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, mounted]);
 
   const signOut = async () => {
     try {
+      if (!supabase) {
+        return { error: 'Supabase client not available' };
+      }
       const { error } = await supabase.auth.signOut();
       return { error };
     } catch (error) {
@@ -61,9 +76,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(() => ({
     session,
     user: session?.user ?? null,
-    loading,
+    loading: loading || !mounted,
     signOut
-  }), [session, loading]);
+  }), [session, loading, mounted]);
+
+  // Show loading state during SSR and initial mount
+  if (!mounted) {
+    return (
+      <AuthContext.Provider value={{ session: null, user: null, loading: true, signOut }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>
