@@ -133,41 +133,11 @@ export class PropertyManagementService {
 
       console.log('✅ PropertyManagementService: Properties loaded successfully:', data?.length || 0, 'properties')
       return (data as PropertyWithLifecycle[]) || []
-      }
-      if (!user) {
-        console.warn('⚠️ PropertyManagementService: No user found in loadProperties, returning empty array')
-        // Don't redirect admin users - let them continue
-        // window.location.href = '/auth/login?message=Please log in to access properties.'
-        return []
-      }
-
-      console.log('✅ User authenticated:', user.id, user.email)
-
-      // Get properties the user has access to
-      const { data, error } = await supabase
-        .from('properties')
-        .select(`
-          *,
-          property_users!inner(role, status)
-        `)
-        .eq('property_users.user_id', user.id)
-        .eq('property_users.status', 'ACTIVE')
-        .is('disabled_at', null)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('❌ Database error in loadProperties:', error)
-        throw error
-      }
-
-      console.log('📊 Properties loaded successfully:', data?.length || 0, 'properties')
-
-      // Return the properties data directly
-      return (data as PropertyWithLifecycle[]) || []
     } catch (error) {
-            if (error instanceof Error && isAuthError(error)) {
+      if (error instanceof Error && isAuthError(error)) {
         window.location.href = '/auth/login?message=Session expired. Please log in again.'
       }
+      console.error('❌ PropertyManagementService: Error in loadProperties:', error)
       return []
     }
   }
