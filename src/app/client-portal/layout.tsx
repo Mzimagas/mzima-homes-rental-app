@@ -136,7 +136,7 @@ export default function ClientPortalLayout({ children }: ClientPortalLayoutProps
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
-                  {user.user_metadata?.full_name || user.email}
+                  {user.user_metadata?.full_name?.full_name || user.user_metadata?.full_name || user.email}
                 </p>
                 <p className="text-xs text-gray-500">Client</p>
               </div>
