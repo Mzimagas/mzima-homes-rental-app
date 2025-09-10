@@ -1,4 +1,4 @@
-import supabase from '../../../lib/supabase-client'
+import { getSupabaseBrowser } from '../../../lib/supabase/client'
 import { PropertyWithLifecycle } from '../types/property-management.types'
 import { coerceSupabaseCoords } from '../../../lib/geo'
 import { isAuthError } from '../utils/property-management.utils'
@@ -36,6 +36,7 @@ export class ConsolidatedPropertyService {
     let user = null
     let error = null
     try {
+      const supabase = getSupabaseBrowser()
       const authResult = await supabase.auth.getUser()
       user = authResult.data?.user
       error = authResult.error

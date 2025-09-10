@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useAuth } from '../../../lib/auth-context'
-import supabase from '../../../lib/supabase-client'
+import { useAuth } from '../../../components/auth/AuthProvider'
+import { getSupabaseBrowser } from '../../../lib/supabase/client'
 import { LoadingCard } from '../../ui/loading'
 import { ErrorCard } from '../../ui/error'
 import { Property as DbProperty, Unit as DbUnit } from '../../../lib/types/database'
@@ -130,6 +130,7 @@ export default function InlinePropertiesOverview({
       let currentUser = null
       let authError = null
       try {
+        const supabase = getSupabaseBrowser()
         const { data: authData, error: authErr } = await supabase.auth.getUser()
         currentUser = authData?.user ?? null
         authError = authErr
@@ -152,6 +153,7 @@ export default function InlinePropertiesOverview({
       }
 
       // Get accessible property IDs via RPC
+      const supabase = getSupabaseBrowser()
       const { data: accessibleProperties, error: accessError } = await supabase.rpc<
         AccessibleProperty[]
       >('get_user_properties_simple')

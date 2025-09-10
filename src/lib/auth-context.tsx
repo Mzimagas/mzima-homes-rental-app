@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { supabase } from './supabase/client'
+import { getSupabaseBrowser } from './supabase/client'
 import { validateEmailSimple } from './email-validation'
 import { logger, shouldLogAuth, redactEmail } from './logger'
 import { logAuthState } from './auth-logs'
@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getInitialSession = async () => {
       try {
         if (shouldLogAuth()) logger.info('AuthProvider: Getting initial session')
+        const supabase = getSupabaseBrowser()
         const {
           data: { session },
           error,
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getInitialSession()
 
     // Listen for auth changes
+    const supabase = getSupabaseBrowser()
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event: string, session: Session | null) => {
@@ -84,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (shouldLogAuth()) logger.info('AuthContext signIn called', { email: redactEmail(email) })
       setLoading(true)
 
+      const supabase = getSupabaseBrowser()
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
       if (shouldLogAuth())
@@ -154,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: emailError }
       }
 
+      const supabase = getSupabaseBrowser()
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -238,6 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logger.info('AuthContext resetPassword called', { email: redactEmail(email) })
       setLoading(true)
 
+      const supabase = getSupabaseBrowser()
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       })
@@ -262,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (shouldLogAuth()) logger.info('AuthContext updatePassword called')
       setLoading(true)
 
+      const supabase = getSupabaseBrowser()
       const { error } = await supabase.auth.updateUser({ password })
 
       if (error) {

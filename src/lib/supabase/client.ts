@@ -34,5 +34,5 @@ export function getSupabaseBrowser(): SupabaseClient {
   return globalThis.__supabase_browser__
 }
 
-// Export singleton instance for backward compatibility
-export const supabase = getSupabaseBrowser()
+// Export singleton instance for backward compatibility (only on client)
+export const supabase = typeof window !== 'undefined' ? getSupabaseBrowser() : null

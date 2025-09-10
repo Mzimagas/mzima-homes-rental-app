@@ -1,4 +1,4 @@
-import supabase from '../../../lib/supabase-client'
+import { getSupabaseBrowser } from '../../../lib/supabase/client'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 import { isAuthError, redirectToLogin } from '../utils/property-management.utils'
 
@@ -7,6 +7,7 @@ export class PropertyManagementService {
   static async handleAuthError(error: any, context: string): Promise<boolean> {
         if (isAuthError(error)) {
       try {
+        const supabase = getSupabaseBrowser()
         await supabase.auth.signOut()
       } catch (signOutError) {
               }
@@ -22,6 +23,7 @@ export class PropertyManagementService {
       let user = null
       let authError = null
       try {
+        const supabase = getSupabaseBrowser()
         const authResult = await supabase.auth.getUser()
         user = authResult.data?.user
         authError = authResult.error
@@ -81,6 +83,7 @@ export class PropertyManagementService {
       let user = null
       let authError = null
       try {
+        const supabase = getSupabaseBrowser()
         const authResult = await supabase.auth.getUser()
         user = authResult.data?.user
         authError = authResult.error
@@ -229,6 +232,7 @@ export class PropertyManagementService {
             if (!csrfToken)
         throw new Error('CSRF token not found. Please refresh the page and try again.')
 
+            const supabase = getSupabaseBrowser()
             const {
         data: { session },
         error: sessionError,
