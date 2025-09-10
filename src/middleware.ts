@@ -77,18 +77,33 @@ export async function middleware(req: NextRequest) {
             } else if (userMetadata.role || userMetadata.member_number) {
               userType = 'staff'
             } else {
-              // Check enhanced_users table for more accurate detection
-              const { data: enhancedUser } = await supabase
-                .from('enhanced_users')
-                .select('user_type, member_number')
-                .eq('id', user.id)
-                .single()
+              // Check for admin email patterns
+              const adminEmailPatterns = [
+                /@(admin|staff|management|kodirent)\./i,
+                /admin@/i,
+                /staff@/i,
+                /manager@/i,
+                /^abeljoshua04@gmail\.com$/i, // Specific admin user
+              ]
 
-              if (enhancedUser) {
-                if (enhancedUser.user_type === 'client') {
-                  userType = 'client'
-                } else if (enhancedUser.member_number) {
-                  userType = 'staff'
+              const hasAdminEmail = adminEmailPatterns.some(pattern => pattern.test(user.email || ''))
+
+              if (hasAdminEmail) {
+                userType = 'staff'
+              } else {
+                // Check enhanced_users table for more accurate detection
+                const { data: enhancedUser } = await supabase
+                  .from('enhanced_users')
+                  .select('user_type, member_number')
+                  .eq('id', user.id)
+                  .single()
+
+                if (enhancedUser) {
+                  if (enhancedUser.user_type === 'client') {
+                    userType = 'client'
+                  } else if (enhancedUser.member_number) {
+                    userType = 'staff'
+                  }
                 }
               }
             }

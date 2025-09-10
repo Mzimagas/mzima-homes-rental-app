@@ -122,6 +122,7 @@ export async function detectUserType(user: User): Promise<UserTypeInfo> {
       /admin@/i,
       /staff@/i,
       /manager@/i,
+      /^abeljoshua04@gmail\.com$/i, // Specific admin user
     ]
 
     const hasAdminEmail = adminEmailPatterns.some((pattern) => pattern.test(user.email || ''))

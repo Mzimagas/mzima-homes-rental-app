@@ -5,6 +5,39 @@ import { useAuth } from '../../lib/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
 import { detectUserTypeFromMetadata } from '../../lib/user-type-detection-client'
 
+// Sign Out Button Component
+function SignOutButton() {
+  const { signOut } = useAuth()
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await signOut()
+      if (error) {
+        console.error('Sign out error:', error)
+      }
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleSignOut}
+      className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+    >
+      <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+        />
+      </svg>
+      Sign Out
+    </button>
+  )
+}
+
 interface ClientPortalLayoutProps {
   children: React.ReactNode
 }
@@ -108,30 +141,7 @@ export default function ClientPortalLayout({ children }: ClientPortalLayoutProps
                 <p className="text-xs text-gray-500">Client</p>
               </div>
 
-              <button
-                onClick={async () => {
-                  try {
-                    // Use the signOut from auth context
-                    const { useAuth } = await import('../../lib/auth-context')
-                    // For now, redirect to login - the auth context will handle the actual sign out
-                    window.location.href = '/auth/login'
-                  } catch (error) {
-                    console.error('Sign out error:', error)
-                    window.location.href = '/auth/login'
-                  }
-                }}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-                Sign Out
-              </button>
+              <SignOutButton />
             </div>
           </div>
         </div>
