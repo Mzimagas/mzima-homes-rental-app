@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '../../../lib/auth-context'
+import { useAuth } from '../../../components/auth/AuthProvider'
 import { LoadingCard } from '../../../components/ui/loading'
 import { ErrorCard } from '../../../components/ui/error'
 import PropertyManagementTabs from '../../../components/properties/PropertyManagementTabs'

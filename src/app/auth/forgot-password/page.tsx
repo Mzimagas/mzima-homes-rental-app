@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '../../../lib/auth-context'
+import { useAuth } from '../../../components/auth/AuthProvider'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { validateEmailSimple } from '../../../lib/email-validation'

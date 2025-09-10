@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '../../../lib/auth-context'
+import { useAuth } from '../../auth/AuthProvider'
 import { PropertyCleanupService } from '../../../lib/services/property-cleanup.service'
 import { Button } from '../../ui'
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useAuth } from '../../../lib/auth-context'
+import { useAuth } from '../../../components/auth/AuthProvider'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'

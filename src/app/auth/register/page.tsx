@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from '../../../lib/auth-context'
+import { useAuth } from '../../../components/auth/AuthProvider'
 import { validateEmailSimple } from '../../../lib/email-validation'
 import { Turnstile } from '@marsidev/react-turnstile'
 
