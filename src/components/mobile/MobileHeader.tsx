@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useAuth } from '../../lib/auth-context'
+import { useAuth } from '../auth/AuthProvider'
 import MobileMenuButton from './MobileMenuButton'
 // import EnhancedGlobalSearch from '../dashboard/EnhancedGlobalSearch' // Removed with dashboard cleanup
 import {

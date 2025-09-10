@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuth } from '../../lib/auth-context'
+import { useAuth } from '../../components/auth/AuthProvider'
 import { LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
 import ClientPropertyCard from '../../components/marketplace/ClientPropertyCard'

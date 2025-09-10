@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '../../lib/auth-context'
+import { useAuth } from '../auth/AuthProvider'
 import { useRealTimeOccupancy } from './hooks/useRealTimeOccupancy'
 import RentalWorkflowNavigation from './components/RentalWorkflowNavigation'
 import RentalPropertyList from './components/RentalPropertyList'
