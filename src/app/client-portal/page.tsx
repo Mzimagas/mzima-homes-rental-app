@@ -111,9 +111,13 @@ export default function ClientPortalPage() {
       setError(error instanceof Error ? error.message : 'Failed to load client data')
 
       // Fall back to basic user data
+      const fullName = typeof user?.user_metadata?.full_name === 'object'
+        ? user?.user_metadata?.full_name?.full_name
+        : user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
+
       setClientData({
         id: user?.id || 'unknown',
-        full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
+        full_name: fullName,
         email: user?.email || 'unknown@example.com',
         phone: user?.user_metadata?.phone || null,
         registration_date: user?.created_at || new Date().toISOString(),

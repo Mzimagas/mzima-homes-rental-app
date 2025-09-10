@@ -56,12 +56,19 @@ export function usePropertyAccess(): PropertyAccess {
       } = await supabase.auth.getUser()
 
       if (userError) {
-        throw new Error(`Authentication error: ${userError.message}`)
+        console.error('❌ PropertyAccess: Authentication error:', userError)
+        // Don't throw error for auth issues - let the auth context handle redirects
+        setProperties([])
+        return
       }
 
       if (!user) {
-        throw new Error('No authenticated user found')
+        console.warn('⚠️ PropertyAccess: No authenticated user found')
+        setProperties([])
+        return
       }
+
+      console.log('✅ PropertyAccess: User authenticated:', user.email)
 
       // Call the database function to get accessible properties
       const { data, error: propertiesError } = await supabase.rpc(
@@ -70,7 +77,11 @@ export function usePropertyAccess(): PropertyAccess {
       )
 
       if (propertiesError) {
-        throw new Error(`Failed to fetch accessible properties: ${propertiesError.message}`)
+        console.error('❌ PropertyAccess: Database error:', propertiesError)
+        // For admin users who might not have property access records, return empty array
+        // instead of throwing error
+        setProperties([])
+        return
       }
 
       // The function now returns the correct format, use it directly
@@ -84,6 +95,8 @@ export function usePropertyAccess(): PropertyAccess {
         can_manage_tenants: item.can_manage_tenants,
         can_manage_maintenance: item.can_manage_maintenance,
       }))
+
+      console.log(`✅ PropertyAccess: Found ${accessibleProperties.length} accessible properties`)
       setProperties(accessibleProperties)
 
       // Set current property if none is set and we have properties
@@ -100,8 +113,9 @@ export function usePropertyAccess(): PropertyAccess {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+      console.error('❌ PropertyAccess: Unexpected error:', err)
       setError(errorMessage)
-          } finally {
+    } finally {
       setLoading(false)
     }
   }
