@@ -374,7 +374,7 @@ function PropertiesTab({ properties, clientData }: { properties: ClientProperty[
         <div className="bg-white rounded-lg shadow-sm p-8 text-center">
           <div className="text-gray-400 text-6xl mb-4">🏠</div>
           <h3 className="text-xl font-medium text-gray-900 mb-2">No Properties Yet</h3>
-          <p className="text-gray-600 mb-4">You haven&apos;t expressed interest in any properties yet</p>
+          <p className="text-gray-600 mb-4">You haven't expressed interest in any properties yet</p>
           <button
             onClick={() => window.location.href = '/marketplace'}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"

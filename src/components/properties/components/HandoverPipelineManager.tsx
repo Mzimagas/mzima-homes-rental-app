@@ -3,8 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, TextField, FormField } from '../../ui'
-import Modal from '../../ui/Modal'
+import { Button } from '../../ui'
 import ViewOnGoogleMapsButton from '../../ui/ViewOnGoogleMapsButton'
 import PropertyCard, {
   PropertyCardHeader,
@@ -14,6 +13,7 @@ import PropertyCard, {
 import HandoverStageModal from './HandoverStageModal'
 import PropertySearch from './PropertySearch'
 import InlineHandoverView from './InlineHandoverView'
+import HandoverDetailsForm from './HandoverDetailsForm'
 import { Property } from '../../../lib/types/database'
 import supabase from '../../../lib/supabase-client'
 import {
@@ -44,8 +44,11 @@ export default function HandoverPipelineManager({
   onSearchChange,
 }: HandoverPipelineManagerProps) {
   const [handovers, setHandovers] = useState<HandoverItem[]>([])
+  const [propertiesAwaitingStart, setPropertiesAwaitingStart] = useState<Property[]>([])
   const [handoverLoading, setHandoverLoading] = useState(false)
   const [showHandoverForm, setShowHandoverForm] = useState(false)
+  const [showStartHandoverForm, setShowStartHandoverForm] = useState(false)
+  const [selectedPropertyForStart, setSelectedPropertyForStart] = useState<Property | null>(null)
 
   const [editingHandover, setEditingHandover] = useState<HandoverItem | null>(null)
   const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null)
@@ -58,7 +61,7 @@ export default function HandoverPipelineManager({
     setViewingHandoverId(null)
   )
 
-  // Filter handovers based on search term
+  // Filter handovers and properties based on search term
   const filteredHandovers = useMemo(() => {
     if (!searchTerm.trim()) return handovers
 
@@ -75,16 +78,22 @@ export default function HandoverPipelineManager({
     })
   }, [handovers, searchTerm])
 
-  // Handover Form
-  const {
-    register: registerHandover,
-    handleSubmit: handleHandoverSubmit,
-    reset: resetHandover,
-    watch: watchHandover,
-    formState: { errors: handoverErrors, isSubmitting: isHandoverSubmitting },
-  } = useForm<HandoverPipelineFormValues>({
-    resolver: zodResolver(handoverPipelineSchema),
-  })
+  const filteredPropertiesAwaitingStart = useMemo(() => {
+    if (!searchTerm.trim()) return propertiesAwaitingStart
+
+    const lower = searchTerm.toLowerCase()
+    return propertiesAwaitingStart.filter((property) => {
+      return (
+        property.name.toLowerCase().includes(lower) ||
+        (property.physical_address?.toLowerCase().includes(lower) ?? false)
+      )
+    })
+  }, [propertiesAwaitingStart, searchTerm])
+
+  // Form reset function for cleanup
+  const resetHandover = () => {
+    // Reset function for form cleanup
+  }
 
   // Helper function to handle authentication errors
   const handleAuthError = async (error: any, context: string) => {
@@ -106,7 +115,7 @@ export default function HandoverPipelineManager({
     try {
       setHandoverLoading(true)
 
-      // First, load the handover pipeline data
+      // First, load the handover pipeline data (active handovers)
       const { data: handoverData, error: handoverError } = await supabase
         .from('handover_pipeline')
         .select('*')
@@ -124,7 +133,7 @@ export default function HandoverPipelineManager({
         throw handoverError
       }
 
-      // Also load properties with IN_PROGRESS handover status that don't have pipeline records
+      // Load properties with IN_PROGRESS handover status
       const { data: propertiesInProgress, error: propertiesError } = await supabase
         .from('properties')
         .select('*')
@@ -142,39 +151,16 @@ export default function HandoverPipelineManager({
           .filter((id) => id != null && id !== '')
       )
 
-      // Create handover records for properties that don't have pipeline records yet
+      // Separate properties that don't have pipeline records yet (awaiting start)
       const propertiesWithoutPipeline = (propertiesInProgress || []).filter(
         (property) => !existingPipelinePropertyIds.has(property.id)
       )
 
-      // Convert properties to handover format
-      const syntheticHandovers = propertiesWithoutPipeline.map((property) => ({
-        id: `synthetic-${property.id}`,
-        property_id: property.id,
-        property_name: property.name,
-        property_address: property.physical_address,
-        property_type: property.property_type,
-        handover_status: 'IN_PROGRESS',
-        current_stage: 1,
-        overall_progress: 0,
-        pipeline_stages: [],
-        buyer_name: null,
-        buyer_contact: null,
-        buyer_email: null,
-        buyer_address: null,
-        asking_price_kes: null,
-        negotiated_price_kes: null,
-        deposit_received_kes: null,
-        balance_due_kes: null,
-        target_completion_date: null,
-        actual_completion_date: null,
-        created_at: property.created_at,
-        updated_at: property.updated_at,
-        is_synthetic: true, // Flag to identify synthetic records
-      }))
+      // Set properties awaiting start
+      setPropertiesAwaitingStart(propertiesWithoutPipeline)
 
-      // Combine pipeline data with synthetic handovers
-      const allHandovers = [...(handoverData || []), ...syntheticHandovers]
+      // Only use actual handover pipeline data (no synthetic records)
+      const allHandovers = handoverData || []
 
       // Get unique property IDs from all handover data
       const propertyIds = allHandovers
@@ -264,6 +250,65 @@ export default function HandoverPipelineManager({
     } catch (error) {
       console.error('Error loading properties with handover status:', error)
       setHandovers([])
+    }
+  }
+
+  const handleStartHandover = (property: Property) => {
+    setSelectedPropertyForStart(property)
+    setShowStartHandoverForm(true)
+  }
+
+  const handleStartHandoverSubmit = async (data: any) => {
+    if (!selectedPropertyForStart) return
+
+    try {
+      // Initialize handover pipeline stages
+      const initialStages = initializeHandoverPipelineStages()
+      const currentStageNum = getCurrentHandoverStage(initialStages)
+      const overallProgress = calculateHandoverProgress(initialStages)
+
+      const handoverData = {
+        property_id: selectedPropertyForStart.id,
+        property_name: selectedPropertyForStart.name,
+        property_address: selectedPropertyForStart.physical_address,
+        property_type: selectedPropertyForStart.property_type,
+        buyer_name: data.buyerName,
+        buyer_contact: data.buyerContact || null,
+        buyer_email: data.buyerEmail || null,
+        buyer_address: data.buyerAddress || null,
+        pipeline_stages: initialStages,
+        current_stage: currentStageNum,
+        overall_progress: overallProgress,
+        handover_status: 'IN_PROGRESS',
+        asking_price_kes: data.askingPrice || null,
+        negotiated_price_kes: data.negotiatedPrice || null,
+        deposit_received_kes: data.depositReceived || null,
+        target_completion_date: data.targetCompletionDate || null,
+        legal_representative: data.legalRepresentative || null,
+        risk_assessment: data.riskAssessment || null,
+        property_condition_notes: data.propertyConditionNotes || null,
+        expected_profit_kes: data.expectedProfit || null,
+        expected_profit_percentage: data.expectedProfitPercentage || null,
+      }
+
+      const { error } = await supabase
+        .from('handover_pipeline')
+        .insert([handoverData])
+
+      if (error) throw error
+
+      // Refresh the data
+      await loadHandovers()
+
+      setShowStartHandoverForm(false)
+      setSelectedPropertyForStart(null)
+
+      if (onHandoverCreated) {
+        onHandoverCreated()
+      }
+    } catch (error) {
+      console.error('Error starting handover:', error)
+      alert('Failed to start handover. Please try again.')
     }
   }
 
@@ -552,13 +597,87 @@ export default function HandoverPipelineManager({
       </div>
 
       {/* Search */}
-      {onSearchChange && handovers.length > 0 && (
+      {onSearchChange && (handovers.length > 0 || propertiesAwaitingStart.length > 0) && (
         <PropertySearch
           onSearchChange={onSearchChange}
           placeholder="Search handovers by property, buyer, or notes..."
-          resultsCount={filteredHandovers.length}
-          totalCount={handovers.length}
+          resultsCount={filteredHandovers.length + filteredPropertiesAwaitingStart.length}
+          totalCount={handovers.length + propertiesAwaitingStart.length}
         />
+      )}
+
+      {/* Properties Awaiting Start Section */}
+      {filteredPropertiesAwaitingStart.length > 0 && (
+        <div className="mb-8">
+          <div className="mb-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Properties Ready to Start Handover</h3>
+            <p className="text-sm text-gray-600">
+              These properties have been marked for handover but need details captured before pipeline stages begin.
+            </p>
+          </div>
+          <div className="grid gap-4">
+            {filteredPropertiesAwaitingStart.map((property) => (
+              <PropertyCard
+                key={property.id}
+                status="pending"
+                interactive={true}
+                theme="handover"
+                aria-label={`Property awaiting handover start: ${property.name}`}
+              >
+                <PropertyCardHeader>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                    <div className="md:col-span-2">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">{property.name}</h3>
+                        <span className="text-lg">🏠</span>
+                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-800">
+                          Awaiting Start
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mb-2">{property.physical_address}</p>
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                        <span>Type: {property.property_type}</span>
+                        {property.asking_price_kes && (
+                          <span>Asking: KES {property.asking_price_kes.toLocaleString()}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <ViewOnGoogleMapsButton
+                        source="Handover Pipeline"
+                        name={property.name}
+                        lat={property.lat ?? null}
+                        lng={property.lng ?? null}
+                        compact
+                      />
+                    </div>
+                  </div>
+                </PropertyCardHeader>
+                <PropertyCardFooter>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleStartHandover(property)}
+                    >
+                      🚀 Start Handover
+                    </Button>
+                  </div>
+                </PropertyCardFooter>
+              </PropertyCard>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Active Handovers Section */}
+      {filteredHandovers.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Active Handover Pipeline</h3>
+          <p className="text-sm text-gray-600">
+            Properties currently progressing through the handover pipeline stages.
+          </p>
+        </div>
       )}
 
       {/* Handover List */}
@@ -567,17 +686,17 @@ export default function HandoverPipelineManager({
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-gray-600">Loading handovers...</p>
         </div>
-      ) : filteredHandovers.length === 0 ? (
+      ) : filteredHandovers.length === 0 && filteredPropertiesAwaitingStart.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <div className="text-4xl mb-4">🏠</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Handovers</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Handover Activities</h3>
           <div>
             <p className="text-gray-600 mb-4">
               No properties are currently in the handover pipeline.
             </p>
             <p className="text-sm text-gray-500 mb-4">
-              To start a handover, go to the Properties tab, set a property&apos;s handover status
-              to &quot;In Progress&quot;, then complete the handover setup form.
+              To start a handover, go to the Properties tab, set a property's handover status
+              to "In Progress", then complete the handover setup form.
             </p>
             <Button
               variant="secondary"
@@ -587,7 +706,7 @@ export default function HandoverPipelineManager({
             </Button>
           </div>
         </div>
-      ) : (
+      ) : filteredHandovers.length > 0 ? (
         <div className="grid gap-6">
           {filteredHandovers.map((handover) => (
             <PropertyCard
@@ -685,331 +804,28 @@ export default function HandoverPipelineManager({
             </PropertyCard>
           ))}
         </div>
-      )}
+      ) : null}
 
-      {/* Handover Form Modal */}
-      {showHandoverForm && (
-        <Modal
+      {/* Edit Handover Form Modal */}
+      {showHandoverForm && editingHandover && (
+        <HandoverDetailsForm
           isOpen={showHandoverForm}
           onClose={() => {
             setShowHandoverForm(false)
             setEditingHandover(null)
             resetHandover()
           }}
-          title="Edit Handover Opportunity"
-          size="lg"
-        >
-          <div className="p-8">
-            <form onSubmit={handleHandoverSubmit(onHandoverSubmit)} className="space-y-8">
-              {/* Property Information Section */}
-              <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Property Information</h3>
-                  <p className="text-sm text-gray-600 mt-1">Property details for this handover</p>
-                </div>
-
-                {/* Property Display (Read-only for editing) */}
-                {editingHandover && (
-                  <div className="bg-gray-50 border rounded-lg p-4">
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Property Name:</span>
-                        <span className="ml-2 text-sm text-gray-900">
-                          {editingHandover.property_name}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Address:</span>
-                        <span className="ml-2 text-sm text-gray-900">
-                          {editingHandover.property_address}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Type:</span>
-                        <span className="ml-2 text-sm text-gray-900">
-                          {editingHandover.property_type}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Buyer Information Section */}
-              <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Buyer Information</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Contact details and information about the property buyer
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    name="buyerName"
-                    label="Buyer Name"
-                    error={handoverErrors.buyerName?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('buyerName')}
-                        placeholder="Enter buyer's full name"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                  <FormField
-                    name="buyerContact"
-                    label="Buyer Contact"
-                    error={handoverErrors.buyerContact?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('buyerContact')}
-                        placeholder="+254712345678"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    name="buyerEmail"
-                    label="Buyer Email"
-                    error={handoverErrors.buyerEmail?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('buyerEmail')}
-                        type="email"
-                        placeholder="buyer@example.com"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                  <FormField
-                    name="buyerAddress"
-                    label="Buyer Address"
-                    error={handoverErrors.buyerAddress?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('buyerAddress')}
-                        placeholder="Enter buyer's address"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                </div>
-              </div>
-
-              {/* Financial Information Section */}
-              <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Financial Information</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Pricing details and financial terms for the handover
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    name="askingPrice"
-                    label="Asking Price (KES)"
-                    error={handoverErrors.askingPrice?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('askingPrice', { valueAsNumber: true })}
-                        type="number"
-                        placeholder="Enter asking price"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                  <FormField
-                    name="negotiatedPrice"
-                    label="Negotiated Price (KES)"
-                    error={handoverErrors.negotiatedPrice?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('negotiatedPrice', { valueAsNumber: true })}
-                        type="number"
-                        placeholder="Enter negotiated price"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-
-                  <FormField
-                    name="depositReceived"
-                    label="Deposit Received (KES)"
-                    error={handoverErrors.depositReceived?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('depositReceived', { valueAsNumber: true })}
-                        type="number"
-                        placeholder="Enter deposit amount"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                  <FormField
-                    name="targetCompletionDate"
-                    label="Target Completion Date"
-                    error={handoverErrors.targetCompletionDate?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('targetCompletionDate')}
-                        type="date"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                </div>
-              </div>
-              {/* Legal & Administrative Section */}
-              <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Legal & Administrative</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Legal representation and administrative details
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    name="legalRepresentative"
-                    label="Legal Representative"
-                    error={handoverErrors.legalRepresentative?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('legalRepresentative')}
-                        placeholder="Lawyer/Legal firm name"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                </div>
-              </div>
-
-              {/* Investment Analysis Section */}
-              <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Investment Analysis</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Financial projections and investment assessment
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    name="expectedProfit"
-                    label="Expected Profit (KES)"
-                    error={handoverErrors.expectedProfit?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('expectedProfit', { valueAsNumber: true })}
-                        type="number"
-                        placeholder="Enter expected profit"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                  <FormField
-                    name="expectedProfitPercentage"
-                    label="Expected Profit (%)"
-                    error={handoverErrors.expectedProfitPercentage?.message}
-                  >
-                    {({ id }) => (
-                      <TextField
-                        id={id}
-                        {...registerHandover('expectedProfitPercentage', { valueAsNumber: true })}
-                        type="number"
-                        min="0"
-                        max="100"
-                        placeholder="Enter expected profit percentage"
-                        className="w-full"
-                      />
-                    )}
-                  </FormField>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    name="riskAssessment"
-                    label="Risk Assessment"
-                    error={handoverErrors.riskAssessment?.message}
-                  >
-                    {({ id }) => (
-                      <textarea
-                        id={id}
-                        {...registerHandover('riskAssessment')}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                        rows={4}
-                        placeholder="Identify potential risks and mitigation strategies..."
-                      />
-                    )}
-                  </FormField>
-                  <FormField
-                    name="propertyConditionNotes"
-                    label="Property Condition Notes"
-                    error={handoverErrors.propertyConditionNotes?.message}
-                  >
-                    {({ id }) => (
-                      <textarea
-                        id={id}
-                        {...registerHandover('propertyConditionNotes')}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                        rows={4}
-                        placeholder="Current condition and any required improvements..."
-                      />
-                    )}
-                  </FormField>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowHandoverForm(false)
-                    setEditingHandover(null)
-                    resetHandover()
-                  }}
-                  className="px-6 py-2"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isHandoverSubmitting}
-                  className="px-6 py-2"
-                >
-                  {isHandoverSubmitting ? 'Saving...' : 'Update Handover'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </Modal>
+          onSubmit={onHandoverSubmit}
+          property={{
+            id: editingHandover.property_id,
+            name: editingHandover.property_name,
+            physical_address: editingHandover.property_address,
+            asking_price_kes: editingHandover.asking_price_kes
+          }}
+          handover={editingHandover}
+          mode="edit"
+          context="admin"
+        />
       )}
 
       {/* Handover Stage Modal */}
@@ -1031,6 +847,25 @@ export default function HandoverPipelineManager({
             )
           })()}
           onStageUpdate={handleHandoverStageUpdate}
+        />
+      )}
+
+      {/* Start Handover Form Modal */}
+      {showStartHandoverForm && selectedPropertyForStart && (
+        <HandoverDetailsForm
+          isOpen={showStartHandoverForm}
+          onClose={() => {
+            setShowStartHandoverForm(false)
+            setSelectedPropertyForStart(null)
+          }}
+          onSubmit={handleStartHandoverSubmit}
+          property={{
+            id: selectedPropertyForStart.id,
+            name: selectedPropertyForStart.name,
+            physical_address: selectedPropertyForStart.physical_address || undefined
+          }}
+          mode="start"
+          context="admin"
         />
       )}
     </div>

@@ -20,7 +20,6 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<PropertyDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [imageError, setImageError] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const router = useRouter()
   const params = useParams()
@@ -99,6 +98,7 @@ export default function PropertyDetailPage() {
 
   const images = property.images || []
   const hasImages = images.length > 0
+  const [imageError, setImageError] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50">

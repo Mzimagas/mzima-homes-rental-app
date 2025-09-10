@@ -55,7 +55,7 @@ export default function ClientWelcomeModal({ clientName, onClose, propertyId }: 
                 <h3 className="font-semibold text-blue-900">Property Interest Recorded</h3>
               </div>
               <p className="text-blue-700 text-sm">
-                We&apos;ve recorded your interest in{' '}
+                We've recorded your interest in{' '}
                 <span className="font-medium">
                   {propertyName || 'the selected property'}
                 </span>
@@ -74,7 +74,7 @@ export default function ClientWelcomeModal({ clientName, onClose, propertyId }: 
               </li>
               <li className="flex items-start">
                 <span className="text-green-500 mr-2 mt-0.5">✓</span>
-                You&apos;ll receive detailed property information and documentation
+                You'll receive detailed property information and documentation
               </li>
               <li className="flex items-start">
                 <span className="text-green-500 mr-2 mt-0.5">✓</span>

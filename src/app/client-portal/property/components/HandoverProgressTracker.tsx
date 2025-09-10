@@ -230,7 +230,7 @@ export default function HandoverProgressTracker({ handover, property, onRefresh 
 
       {/* Next Steps */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-3">What&apos;s Next?</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-3">What's Next?</h3>
         
         {handover.handover_status === 'COMPLETED' ? (
           <div className="text-blue-800">
@@ -240,7 +240,7 @@ export default function HandoverProgressTracker({ handover, property, onRefresh 
         ) : (
           <div className="text-blue-800">
             <p className="mb-2">📋 Current focus: <strong>{handover.current_stage}</strong></p>
-            <p>Our team is working on the next steps. You&apos;ll receive updates as progress is made.</p>
+            <p>Our team is working on the next steps. You'll receive updates as progress is made.</p>
             {handover.expected_completion_date && (
               <p className="mt-2">🗓️ Expected completion: <strong>{formatDate(handover.expected_completion_date)}</strong></p>
             )}

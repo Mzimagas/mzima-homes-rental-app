@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState } from 'react'
 import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
 import {
   getPendingSubdivisionValue,
@@ -11,8 +11,6 @@ import {
   getDisabledSelectStyles,
 } from '../../../hooks/usePropertyMutualExclusivity'
 import { PropertyStatusUpdateService } from '../../../services/propertyStatusUpdateService'
-import StartHandoverForm from './StartHandoverForm'
-import { supabase } from '@/lib/supabase-client'
 
 interface PropertyStatusDropdownsProps {
   property: PropertyWithLifecycle
@@ -44,40 +42,6 @@ export default function PropertyStatusDropdowns({
   const [pendingHandoverChange, setPendingHandoverChange] = useState<string | null>(null)
   const [showSubdivisionConfirm, setShowSubdivisionConfirm] = useState(false)
   const [showHandoverConfirm, setShowHandoverConfirm] = useState(false)
-  const [showStartHandoverForm, setShowStartHandoverForm] = useState(false)
-  const [hasHandoverPipeline, setHasHandoverPipeline] = useState<boolean | null>(null)
-
-  // Check if property has an active handover pipeline record
-  useEffect(() => {
-    const checkHandoverPipeline = async () => {
-      if (property.handover_status !== 'IN_PROGRESS') {
-        setHasHandoverPipeline(null)
-        return
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('handover_pipeline')
-          .select('id')
-          .eq('property_id', property.id)
-          .single()
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error checking handover pipeline:', error)
-          setHasHandoverPipeline(false)
-          return
-        }
-
-        setHasHandoverPipeline(!!data)
-      } catch (error) {
-        console.error('Error checking handover pipeline:', error)
-        setHasHandoverPipeline(false)
-      }
-    }
-
-    checkHandoverPipeline()
-  }, [property.id, property.handover_status])
-
   // Get mutual exclusivity state
   const {
     subdivisionDisabled,
@@ -106,40 +70,43 @@ export default function PropertyStatusDropdowns({
   )
 
   // Actual subdivision save function
-  const confirmSubdivisionChange = useCallback(async () => {
-    if (!pendingSubdivisionChange) return
+  const confirmSubdivisionChange = useCallback(
+    async () => {
+      if (!pendingSubdivisionChange) return
 
-    try {
-      const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
-        property.id,
-        pendingSubdivisionChange,
-        undefined
-      )
+      try {
+        const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
+          property.id,
+          pendingSubdivisionChange,
+          undefined
+        )
 
-      if (!result.success) {
-        alert(`Failed to update subdivision status: ${result.error}`)
-        return
+        if (!result.success) {
+          alert(`Failed to update subdivision status: ${result.error}`)
+          return
+        }
+
+        if (result.warnings && result.warnings.length > 0) {
+          console.log('Subdivision update warnings:', result.warnings)
+        }
+
+        // Close confirmation dialog
+        setShowSubdivisionConfirm(false)
+        setPendingSubdivisionChange(null)
+
+        // Refresh the UI
+        if (onRefresh) {
+          onRefresh()
+        } else {
+          window.location.reload()
+        }
+      } catch (error) {
+        console.error('Error updating subdivision status:', error)
+        alert('Failed to update subdivision status. Please try again.')
       }
-
-      if (result.warnings && result.warnings.length > 0) {
-        console.log('Subdivision update warnings:', result.warnings)
-      }
-
-      // Close confirmation dialog
-      setShowSubdivisionConfirm(false)
-      setPendingSubdivisionChange(null)
-
-      // Refresh the UI
-      if (onRefresh) {
-        onRefresh()
-      } else {
-        window.location.reload()
-      }
-    } catch (error) {
-      console.error('Error updating subdivision status:', error)
-      alert('Failed to update subdivision status. Please try again.')
-    }
-  }, [property.id, pendingSubdivisionChange, onRefresh])
+    },
+    [property.id, pendingSubdivisionChange, onRefresh]
+  )
 
   const handleHandoverChange = useCallback(
     (value: string) => {
@@ -158,44 +125,47 @@ export default function PropertyStatusDropdowns({
   )
 
   // Actual handover save function
-  const confirmHandoverChange = useCallback(async () => {
-    if (!pendingHandoverChange) return
+  const confirmHandoverChange = useCallback(
+    async () => {
+      if (!pendingHandoverChange) return
 
-    try {
-      const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
-        property.id,
-        undefined,
-        pendingHandoverChange
-      )
+      try {
+        const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
+          property.id,
+          undefined,
+          pendingHandoverChange
+        )
 
-      if (!result.success) {
-        alert(`Failed to update handover status: ${result.error}`)
-        return
-      }
-
-      if (result.warnings && result.warnings.length > 0) {
-        console.log('Handover update warnings:', result.warnings)
-        // Show important warnings to user
-        if (result.warnings.some((w) => w.includes('locked'))) {
-          alert(`Handover updated successfully. ${result.warnings.join(' ')}`)
+        if (!result.success) {
+          alert(`Failed to update handover status: ${result.error}`)
+          return
         }
-      }
 
-      // Close confirmation dialog
-      setShowHandoverConfirm(false)
-      setPendingHandoverChange(null)
+        if (result.warnings && result.warnings.length > 0) {
+          console.log('Handover update warnings:', result.warnings)
+          // Show important warnings to user
+          if (result.warnings.some((w) => w.includes('locked'))) {
+            alert(`Handover updated successfully. ${result.warnings.join(' ')}`)
+          }
+        }
 
-      // Refresh the UI
-      if (onRefresh) {
-        onRefresh()
-      } else {
-        window.location.reload()
+        // Close confirmation dialog
+        setShowHandoverConfirm(false)
+        setPendingHandoverChange(null)
+
+        // Refresh the UI
+        if (onRefresh) {
+          onRefresh()
+        } else {
+          window.location.reload()
+        }
+      } catch (error) {
+        console.error('Error updating handover status:', error)
+        alert('Failed to update handover status. Please try again.')
       }
-    } catch (error) {
-      console.error('Error updating handover status:', error)
-      alert('Failed to update handover status. Please try again.')
-    }
-  }, [property.id, pendingHandoverChange, onRefresh])
+    },
+    [property.id, pendingHandoverChange, onRefresh]
+  )
 
   // Calculate if dropdowns should be disabled
   const isSubdivisionDisabled =
@@ -296,27 +266,14 @@ export default function PropertyStatusDropdowns({
           </div>
         )}
 
-        {/* Navigation button for active handover with pipeline */}
-        {property.handover_status === 'IN_PROGRESS' &&
-          hasHandoverPipeline === true &&
-          onNavigateToTabs && (
-            <button
-              onClick={() => onNavigateToTabs('handover')}
-              className="mt-2 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 transition-colors duration-200 flex items-center gap-1"
-              title="Go to Handover Pipeline to manage this property"
-            >
-              🤝 Manage in Pipeline
-            </button>
-          )}
-
-        {/* Start Handover button for properties marked as IN_PROGRESS but not yet in pipeline */}
-        {property.handover_status === 'IN_PROGRESS' && hasHandoverPipeline === false && (
+        {/* Navigation button for active handover */}
+        {property.handover_status === 'IN_PROGRESS' && onNavigateToTabs && (
           <button
-            onClick={() => setShowStartHandoverForm(true)}
-            className="mt-2 text-xs bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200 transition-colors duration-200 flex items-center gap-1"
-            title="Complete handover setup to start the pipeline stages"
+            onClick={() => onNavigateToTabs('handover')}
+            className="mt-2 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 transition-colors duration-200 flex items-center gap-1"
+            title="Go to Handover Pipeline to manage this property"
           >
-            🚀 Start Handover
+            🤝 Manage in Pipeline
           </button>
         )}
       </div>
@@ -328,7 +285,7 @@ export default function PropertyStatusDropdowns({
             <h3 className="text-lg font-semibold mb-4">Confirm Subdivision Status Change</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to change the subdivision status to{' '}
-              <strong>&quot;{pendingSubdivisionChange}&quot;</strong>?
+              <strong>"{pendingSubdivisionChange}"</strong>?
             </p>
             <p className="text-sm text-gray-500 mb-6">
               This action will update the property status and may affect related processes.
@@ -361,7 +318,7 @@ export default function PropertyStatusDropdowns({
             <h3 className="text-lg font-semibold mb-4">Confirm Handover Status Change</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to change the handover status to{' '}
-              <strong>&quot;{pendingHandoverChange}&quot;</strong>?
+              <strong>"{pendingHandoverChange}"</strong>?
             </p>
             <p className="text-sm text-gray-500 mb-6">
               This action will update the property status and may affect related processes.
@@ -385,20 +342,6 @@ export default function PropertyStatusDropdowns({
             </div>
           </div>
         </div>
-      )}
-
-      {/* Start Handover Form */}
-      {showStartHandoverForm && (
-        <StartHandoverForm
-          isOpen={showStartHandoverForm}
-          onClose={() => setShowStartHandoverForm(false)}
-          property={property}
-          onSuccess={() => {
-            setShowStartHandoverForm(false)
-            setHasHandoverPipeline(true) // Update state to show pipeline is now active
-            onRefresh?.()
-          }}
-        />
       )}
     </div>
   )
