@@ -197,6 +197,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchDebugOpen, setSearchDebugOpen] = useState(false)
+  const [userTypeChecked, setUserTypeChecked] = useState(false)
   const { user, signOut, loading } = useAuth()
   const propertyAccess = usePropertyAccess()
   const pathname = usePathname()
@@ -328,17 +329,70 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Build navigation array - Administration tab is now included in baseNavigation
   const navigation = [...baseNavigation]
 
+  // Check user authentication and role
   useEffect(() => {
     if (!loading && !user) {
       // Redirect to login with current path as redirect target
       router.push(`/auth/login?redirectTo=${encodeURIComponent(pathname)}`)
+    } else if (!loading && user) {
+      // Check if user should have admin access
+      const checkUserRole = async () => {
+        try {
+          // Import user type detection
+          const { detectUserTypeFromMetadata } = await import(
+            '../../lib/user-type-detection-client'
+          )
+          const userTypeInfo = detectUserTypeFromMetadata(user)
+
+          // If user is client, redirect to client portal
+          if (userTypeInfo.type === 'client') {
+            console.log(`🔄 Client user ${user.email} redirected from dashboard to client portal`)
+            router.replace('/client-portal')
+            return
+          }
+
+          // If user is staff, allow access
+          if (userTypeInfo.type === 'staff') {
+            setUserTypeChecked(true)
+            return
+          }
+
+          // For unknown user types, perform server-side detection
+          const response = await fetch('/api/auth/user-type')
+          const data = await response.json()
+
+          if (data.success) {
+            if (data.userType === 'client') {
+              console.log(
+                `🔄 Client user ${user.email} redirected from dashboard to client portal (server detection)`
+              )
+              router.replace('/client-portal')
+            } else {
+              setUserTypeChecked(true)
+            }
+          } else {
+            // If detection fails, default to allowing access for existing users
+            console.warn('User type detection failed, allowing dashboard access')
+            setUserTypeChecked(true)
+          }
+        } catch (error) {
+          console.error('Error checking user role:', error)
+          // Default to allowing access if check fails
+          setUserTypeChecked(true)
+        }
+      }
+
+      checkUserRole()
     }
   }, [user, loading, router, pathname])
 
-  if (loading) {
+  if (loading || !userTypeChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">{loading ? 'Loading...' : 'Verifying access...'}</p>
+        </div>
       </div>
     )
   }
@@ -504,7 +558,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="ml-3 relative">
                   <div className="flex items-center space-x-4">
                     <span className="text-sm text-gray-700">
-                      {(typeof user?.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null) || user?.email || 'User'}
+                      {(typeof user?.user_metadata?.full_name === 'string'
+                        ? user.user_metadata.full_name
+                        : null) ||
+                        user?.email ||
+                        'User'}
                     </span>
                     <button
                       onClick={async () => {

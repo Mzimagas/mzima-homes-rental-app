@@ -36,8 +36,8 @@ export async function detectUserType(user: User): Promise<UserTypeInfo> {
         redirectPath: '/client-portal',
         metadata: {
           isClient: true,
-          clientId: user.id
-        }
+          clientId: user.id,
+        },
       }
     }
 
@@ -58,8 +58,8 @@ export async function detectUserType(user: User): Promise<UserTypeInfo> {
         redirectPath: '/client-portal',
         metadata: {
           isClient: true,
-          clientId: clientRecord.id
-        }
+          clientId: clientRecord.id,
+        },
       }
     }
 
@@ -77,25 +77,28 @@ export async function detectUserType(user: User): Promise<UserTypeInfo> {
         redirectPath: '/client-portal',
         metadata: {
           isClient: true,
-          clientId: enhancedUserClient.id
-        }
+          clientId: enhancedUserClient.id,
+        },
       }
     }
 
-    // Check if user exists in enhanced_users table as staff
+    // Check if user exists in enhanced_users table as staff (broader check)
     const { data: staffRecord, error: staffError } = await supabase
       .from('enhanced_users')
-      .select('id, member_number, full_name, status')
+      .select('id, member_number, full_name, status, user_type')
       .eq('id', user.id)
       .single()
 
-    if (!staffError && staffRecord && staffRecord.member_number) {
-      return {
-        type: 'staff',
-        redirectPath: '/dashboard',
-        metadata: {
-          isStaff: true,
-          memberNumber: staffRecord.member_number
+    if (!staffError && staffRecord) {
+      // Check if explicitly marked as staff or has member number
+      if (staffRecord.user_type === 'staff' || staffRecord.member_number) {
+        return {
+          type: 'staff',
+          redirectPath: '/dashboard',
+          metadata: {
+            isStaff: true,
+            memberNumber: staffRecord.member_number,
+          },
         }
       }
     }
@@ -108,35 +111,56 @@ export async function detectUserType(user: User): Promise<UserTypeInfo> {
         metadata: {
           isStaff: true,
           role: userMetadata.role,
-          memberNumber: userMetadata.member_number
-        }
+          memberNumber: userMetadata.member_number,
+        },
+      }
+    }
+
+    // Check if user has admin-like email patterns (common for initial admin setup)
+    const adminEmailPatterns = [
+      /@(admin|staff|management|kodirent)\./i,
+      /admin@/i,
+      /staff@/i,
+      /manager@/i,
+    ]
+
+    const hasAdminEmail = adminEmailPatterns.some((pattern) => pattern.test(user.email || ''))
+
+    if (hasAdminEmail) {
+      console.log('User has admin-like email pattern, treating as staff:', user.email)
+      return {
+        type: 'staff',
+        redirectPath: '/dashboard',
+        metadata: {
+          isStaff: true,
+          detectedFromEmail: true,
+        },
       }
     }
 
     // Default fallback - if we can't determine, assume client for marketplace users
     // This is safer as staff users should be explicitly created with proper records
     console.warn('Could not determine user type for user:', user.id, 'defaulting to client')
-    
+
     return {
       type: 'client',
       redirectPath: '/client-portal',
       metadata: {
         isClient: true,
-        clientId: user.id
-      }
+        clientId: user.id,
+      },
     }
-
   } catch (error) {
     console.error('Error detecting user type:', error)
-    
+
     // Fallback to client on error
     return {
       type: 'client',
       redirectPath: '/client-portal',
       metadata: {
         isClient: true,
-        clientId: user.id
-      }
+        clientId: user.id,
+      },
     }
   }
 }
@@ -147,7 +171,7 @@ export async function detectUserType(user: User): Promise<UserTypeInfo> {
  */
 export function detectUserTypeFromMetadata(user: User): UserTypeInfo {
   const userMetadata = user.user_metadata || {}
-  
+
   // Check for explicit client type
   if (userMetadata.user_type === 'client') {
     return {
@@ -155,21 +179,42 @@ export function detectUserTypeFromMetadata(user: User): UserTypeInfo {
       redirectPath: '/client-portal',
       metadata: {
         isClient: true,
-        clientId: user.id
-      }
+        clientId: user.id,
+      },
     }
   }
 
   // Check for staff indicators
-  if (userMetadata.role || userMetadata.member_number) {
+  if (userMetadata.role || userMetadata.member_number || userMetadata.user_type === 'staff') {
     return {
       type: 'staff',
       redirectPath: '/dashboard',
       metadata: {
         isStaff: true,
         role: userMetadata.role,
-        memberNumber: userMetadata.member_number
-      }
+        memberNumber: userMetadata.member_number,
+      },
+    }
+  }
+
+  // Check if user has admin-like email patterns (client-side version)
+  const adminEmailPatterns = [
+    /@(admin|staff|management|kodirent)\./i,
+    /admin@/i,
+    /staff@/i,
+    /manager@/i,
+  ]
+
+  const hasAdminEmail = adminEmailPatterns.some((pattern) => pattern.test(user.email || ''))
+
+  if (hasAdminEmail) {
+    return {
+      type: 'staff',
+      redirectPath: '/dashboard',
+      metadata: {
+        isStaff: true,
+        detectedFromEmail: true,
+      },
     }
   }
 
@@ -179,7 +224,7 @@ export function detectUserTypeFromMetadata(user: User): UserTypeInfo {
     redirectPath: '/client-portal',
     metadata: {
       isClient: true,
-      clientId: user.id
-    }
+      clientId: user.id,
+    },
   }
 }

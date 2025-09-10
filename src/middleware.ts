@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-// Temporarily disabled to fix edge runtime issues
-// import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 
 export async function middleware(req: NextRequest) {
-  // Temporarily simplified middleware to fix edge runtime issues
   const res = NextResponse.next()
 
   // Ensure CSRF token cookie exists (double-submit cookie pattern)
@@ -39,8 +36,9 @@ export async function middleware(req: NextRequest) {
   )
 
   let session: any = null
+  let userType: string | null = null
 
-  // Try to get session if auth is configured
+  // Try to get session and user type if auth is configured
   if (authConfigured) {
     try {
       // Use a simpler approach that works with edge runtime
@@ -65,6 +63,45 @@ export async function middleware(req: NextRequest) {
       // If we have a session, refresh it to ensure cookies are up to date
       if (session) {
         await supabase.auth.refreshSession()
+
+        // Detect user type for role-based access control
+        try {
+          const user = session.user
+          if (user) {
+            // Quick user type detection based on metadata and database
+            const userMetadata = user.user_metadata || {}
+
+            // Check metadata first for quick detection
+            if (userMetadata.user_type === 'client') {
+              userType = 'client'
+            } else if (userMetadata.role || userMetadata.member_number) {
+              userType = 'staff'
+            } else {
+              // Check enhanced_users table for more accurate detection
+              const { data: enhancedUser } = await supabase
+                .from('enhanced_users')
+                .select('user_type, member_number')
+                .eq('id', user.id)
+                .single()
+
+              if (enhancedUser) {
+                if (enhancedUser.user_type === 'client') {
+                  userType = 'client'
+                } else if (enhancedUser.member_number) {
+                  userType = 'staff'
+                }
+              }
+            }
+
+            // Default to client if we can't determine (safer for marketplace users)
+            if (!userType) {
+              userType = 'client'
+            }
+          }
+        } catch (error) {
+          console.warn('Middleware: Failed to detect user type:', error)
+          userType = 'client' // Safe default
+        }
       }
     } catch (error) {
       console.warn('Middleware: Failed to get session:', error)
@@ -84,13 +121,15 @@ export async function middleware(req: NextRequest) {
     '/api/auth/confirm-user', // dev-only API
   ]
 
-  // Protected routes that require authentication but are not admin-only
-  const clientProtectedPrefixes = [
-    '/client-portal/',
-  ]
+  // Admin-only routes
+  const adminOnlyPrefixes = ['/dashboard/']
+
+  // Client-only routes
+  const clientOnlyPrefixes = ['/client-portal/']
 
   const isPublic = publicPrefixes.some((p) => pathname === p || pathname.startsWith(p))
-  const isClientProtected = clientProtectedPrefixes.some((p) => pathname.startsWith(p))
+  const isAdminOnly = adminOnlyPrefixes.some((p) => pathname.startsWith(p))
+  const isClientOnly = clientOnlyPrefixes.some((p) => pathname.startsWith(p))
 
   // Protect non-public routes (but skip API routes since they handle their own auth)
   if (!isPublic && !session && !pathname.startsWith('/api/')) {
@@ -99,10 +138,23 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // For client protected routes, ensure user has client access
-  if (isClientProtected && session) {
-    // Client portal routes are accessible to authenticated users
-    // Additional role checking can be added here if needed
+  // Role-based access control for authenticated users
+  if (session && userType) {
+    // Prevent clients from accessing admin dashboard
+    if (isAdminOnly && userType === 'client') {
+      console.log(
+        `🚫 Client user ${session.user.email} attempted to access admin route: ${pathname}`
+      )
+      return NextResponse.redirect(new URL('/client-portal', req.url))
+    }
+
+    // Prevent staff from accessing client portal (optional - you might want to allow this)
+    if (isClientOnly && userType === 'staff') {
+      console.log(
+        `🚫 Staff user ${session.user.email} attempted to access client route: ${pathname}`
+      )
+      return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
   }
 
   return res
