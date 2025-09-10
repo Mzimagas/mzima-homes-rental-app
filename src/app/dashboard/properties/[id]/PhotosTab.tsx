@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { useAuth } from '../../../../lib/auth-context'
+import { useAuth } from '../../../../components/auth/AuthProvider'
 import getSupabaseClient from '../../../../lib/supabase-client'
 
 const supabase = getSupabaseClient()

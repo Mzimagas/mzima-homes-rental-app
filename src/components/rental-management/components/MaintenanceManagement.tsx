@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '../../../lib/auth-context'
+import { useAuth } from '../../auth/AuthProvider'
 import supabase from '../../../lib/supabase-client'
 import { LoadingStats, LoadingCard } from '../../ui/loading'
 import { ErrorCard, EmptyState } from '../../ui/error'

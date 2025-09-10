@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, Suspense, lazy, useCallback } from 'react'
-import { useAuth } from '../../lib/auth-context'
+import { useAuth } from '../auth/AuthProvider'
 import { useTabPrefetch } from '../../hooks/useTabPrefetch'
 import WorkflowNavigation from './components/WorkflowNavigation'
 import PropertiesTab from './components/PropertiesTab'

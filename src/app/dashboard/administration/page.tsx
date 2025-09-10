@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuth } from '../../../lib/auth-context'
+import { useAuth } from '../../../components/auth/AuthProvider'
 import { usePropertyAccess } from '../../../hooks/usePropertyAccess'
 
 // Import administration components

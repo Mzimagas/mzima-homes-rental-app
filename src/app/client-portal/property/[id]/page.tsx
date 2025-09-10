@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useAuth } from '../../../../lib/auth-context'
+import { useAuth } from '../../../../components/auth/AuthProvider'
 import { LoadingCard } from '../../../../components/ui/loading'
 import { ErrorCard } from '../../../../components/ui/error'
 import { formatCurrency } from '../../../../lib/export-utils'

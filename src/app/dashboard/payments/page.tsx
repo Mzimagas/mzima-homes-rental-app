@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '../../../lib/auth-context'
+import { useAuth } from '../../../components/auth/AuthProvider'
 import supabase, { clientBusinessFunctions, clientQueries } from '../../../lib/supabase-client'
 
 const supabase = getSupabaseClient()

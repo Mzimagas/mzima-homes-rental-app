@@ -8,7 +8,7 @@ import { Property } from '../../lib/types/database'
 import { formatCurrency } from '../../lib/export-utils'
 import { LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
-import { useAuth } from '../../lib/auth-context'
+import { useAuth } from '../../components/auth/AuthProvider'
 
 interface MarketplaceProperty extends Property {
   images?: string[]
