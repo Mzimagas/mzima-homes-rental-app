@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
+import { AuthProvider } from '../../components/auth/AuthProvider'
 import { usePropertyAccess } from '../../hooks/usePropertyAccess'
 import {
   useNavigationOptimization,
@@ -192,7 +193,7 @@ const icons = {
   ),
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -623,5 +624,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile Menu */}
       <MobileMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
     </DashboardProvider>
+  )
+}
+
+export default function DashboardLayoutWithAuth({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <AuthProvider>
+      <DashboardLayout>{children}</DashboardLayout>
+    </AuthProvider>
   )
 }

@@ -28,6 +28,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   // Do not throw at import time; provide a safe fallback below
 }
 
+// Import the singleton browser client
+import { getSupabaseBrowser } from './supabase/client'
+
 // Build a real client when env vars are present; otherwise a safe stub for dev
 let _supabaseClient: any = null
 
@@ -37,51 +40,56 @@ function getSupabaseClient() {
   }
 
   if (isValidEnv(supabaseUrl, supabaseAnonKey)) {
-    // Enhanced client configuration with better error handling and retry logic
-    // Create single instance to prevent multiple GoTrueClient warnings
-    _supabaseClient = createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'voi-rental-app@1.0.0',
-      },
-      // Custom fetch that logs but does not throw on non-2xx (let supabase-js handle it)
-      fetch: async (url, options = {}) => {
-        try {
-          if (shouldLogAuth()) logger.debug('Supabase fetch', url)
-          const res = await globalThis.fetch(url as any, options as any)
-          if (!res.ok) {
-            // Do not consume body; just log status and url
-            if (shouldLogAuth())
-              logger.warn('Supabase fetch non-OK', {
-                status: res.status,
-                statusText: res.statusText,
-                url: typeof url === 'string' ? url : (url as any)?.toString?.() || '',
-              })
-          }
-          return res
-        } catch (error: any) {
-          // Network or CORS errors
-          logger.error('Supabase fetch error', error)
-          throw error
-        }
-      },
-    },
-    // Add database configuration
-    db: {
-      schema: 'public',
-    },
-    // Add realtime configuration
-    realtime: {
-      params: {
-        eventsPerSecond: 10,
-      },
-    },
-    })
+    // Use the singleton browser client to prevent multiple GoTrueClient instances
+    if (typeof window !== 'undefined') {
+      _supabaseClient = getSupabaseBrowser()
+    } else {
+      // For server-side, create a minimal client
+      _supabaseClient = createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+          storageKey: 'mzima-homes-auth', // Use same storage key
+        },
+        global: {
+          headers: {
+            'X-Client-Info': 'mzima-homes-app@1.0.0',
+          },
+          // Custom fetch that logs but does not throw on non-2xx (let supabase-js handle it)
+          fetch: async (url, options = {}) => {
+            try {
+              if (shouldLogAuth()) logger.debug('Supabase fetch', url)
+              const res = await globalThis.fetch(url as any, options as any)
+              if (!res.ok) {
+                // Do not consume body; just log status and url
+                if (shouldLogAuth())
+                  logger.warn('Supabase fetch non-OK', {
+                    status: res.status,
+                    statusText: res.statusText,
+                    url: typeof url === 'string' ? url : (url as any)?.toString?.() || '',
+                  })
+              }
+              return res
+            } catch (error: any) {
+              // Network or CORS errors
+              logger.error('Supabase fetch error', error)
+              throw error
+            }
+          },
+        },
+        // Add database configuration
+        db: {
+          schema: 'public',
+        },
+        // Add realtime configuration
+        realtime: {
+          params: {
+            eventsPerSecond: 10,
+          },
+        },
+      })
+    }
   } else {
     // Minimal stub client for local/dev when env is missing
     _supabaseClient = {

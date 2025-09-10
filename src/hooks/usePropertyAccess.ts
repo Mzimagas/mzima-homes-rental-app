@@ -1,6 +1,7 @@
 // Hook for managing multi-user property access
 import { useState, useEffect } from 'react'
-import supabase from '../lib/supabase-client'
+import { useAuth } from '../components/auth/AuthProvider'
+import { getSupabaseBrowser } from '../lib/supabase/client'
 
 export type UserRole =
   | 'OWNER'
@@ -37,36 +38,27 @@ export interface PropertyAccess {
 }
 
 export function usePropertyAccess(): PropertyAccess {
+  const { user, loading: authLoading } = useAuth()
   const [properties, setProperties] = useState<AccessibleProperty[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentProperty, setCurrentProperty] = useState<AccessibleProperty | null>(null)
-
-  // supabase client is imported above
 
   const fetchAccessibleProperties = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      // Get current user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-
-      if (userError) {
-        console.error('❌ PropertyAccess: Authentication error:', userError)
-        // Don't throw error for auth issues - let the auth context handle redirects
-        setProperties([])
-        return
-      }
-
+      // Wait for auth to be ready
+      if (authLoading) return
       if (!user) {
-        console.warn('⚠️ PropertyAccess: No authenticated user found')
+        setError('Not authenticated')
         setProperties([])
+        setLoading(false)
         return
       }
+
+      const supabase = getSupabaseBrowser()
 
       console.log('✅ PropertyAccess: User authenticated:', user.email)
 
@@ -161,10 +153,10 @@ export function usePropertyAccess(): PropertyAccess {
     return hasPermission(propertyId, 'manage_maintenance')
   }
 
-  // Fetch accessible properties on mount
+  // Fetch accessible properties when auth state changes
   useEffect(() => {
     fetchAccessibleProperties()
-  }, [])
+  }, [authLoading, user])
 
   return {
     properties,
