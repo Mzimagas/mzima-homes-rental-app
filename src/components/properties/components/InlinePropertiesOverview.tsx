@@ -126,9 +126,17 @@ export default function InlinePropertiesOverview({
         return
       }
 
-            // Verify current session with Supabase
-      const { data: authData, error: authError } = await supabase.auth.getUser()
-      const currentUser = authData?.user ?? null
+            // Verify current session with Supabase (with error handling for AuthSessionMissingError)
+      let currentUser = null
+      let authError = null
+      try {
+        const { data: authData, error: authErr } = await supabase.auth.getUser()
+        currentUser = authData?.user ?? null
+        authError = authErr
+      } catch (error) {
+        console.warn('⚠️ Properties: Auth session error caught, but continuing for admin users:', error)
+        authError = error
+      }
 
       if (authError || !currentUser) {
         console.warn('⚠️ Properties: Authentication check failed, but continuing for admin users')

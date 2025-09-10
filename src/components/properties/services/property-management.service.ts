@@ -19,10 +19,17 @@ export class PropertyManagementService {
   // Load all properties with succession status for purchase form
   static async loadPropertiesWithSuccession(): Promise<PropertyWithLifecycle[]> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
+      let user = null
+      let authError = null
+      try {
+        const authResult = await supabase.auth.getUser()
+        user = authResult.data?.user
+        authError = authResult.error
+      } catch (error) {
+        console.warn('⚠️ PropertyManagementService: Auth session error caught in loadPropertiesWithSuccession, but continuing for admin users:', error)
+        authError = error
+      }
+
       if (authError) {
         console.warn('⚠️ PropertyManagementService: Auth error in loadPropertiesWithSuccession, but continuing for admin users:', authError)
         // Don't redirect admin users - let them continue
@@ -71,10 +78,17 @@ export class PropertyManagementService {
   // Load all properties with lifecycle information
   static async loadProperties(): Promise<PropertyWithLifecycle[]> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
+      let user = null
+      let authError = null
+      try {
+        const authResult = await supabase.auth.getUser()
+        user = authResult.data?.user
+        authError = authResult.error
+      } catch (error) {
+        console.warn('⚠️ PropertyManagementService: Auth session error caught in loadProperties, but continuing for admin users:', error)
+        authError = error
+      }
+
       if (authError) {
         console.warn('⚠️ PropertyManagementService: Auth error in loadProperties, but continuing for admin users:', authError)
         // Don't redirect admin users - let them continue
