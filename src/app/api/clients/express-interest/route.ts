@@ -12,24 +12,34 @@ const expressInterestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🏠 Express Interest API - Starting request processing')
+
     const body = await request.json()
-    console.log('Express Interest API - Request body:', body)
+    console.log('📝 Express Interest API - Request body:', body)
+
     const validatedData = expressInterestSchema.parse(body)
+    console.log('✅ Express Interest API - Data validated:', validatedData)
 
     const supabase = await createServerSupabaseClient()
+    console.log('🔗 Express Interest API - Supabase client created')
 
     // Get the current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    console.log('Express Interest API - Auth check:', {
+    console.log('🔍 Express Interest API - Auth check:', {
       hasUser: !!user,
       userId: user?.id,
+      userEmail: user?.email,
       authError: authError?.message
     })
 
     if (authError || !user) {
-      console.log('Express Interest API - Authentication failed')
+      console.log('❌ Express Interest API - Authentication failed')
       return NextResponse.json(
-        { error: 'Authentication required' },
+        {
+          success: false,
+          error: 'Authentication required',
+          details: authError?.message || 'No user found'
+        },
         { status: 401 }
       )
     }
@@ -96,10 +106,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if property is available (not completed or subdivided)
-    if (property.handover_status === 'COMPLETED' || property.subdivision_status === 'SUBDIVIDED') {
+    // Check property availability with improved logic
+    // Property is available for interest if:
+    // 1. Not completed handover (COMPLETED)
+    // 2. Not fully subdivided (SUBDIVIDED)
+    // 3. No deposit has been paid (which would lock the property)
+
+    // Check for existing deposits that would lock the property
+    const { data: deposits } = await supabase
+      .from('client_property_interests')
+      .select('id, status, deposit_paid, deposit_amount')
+      .eq('property_id', validatedData.propertyId)
+      .eq('status', 'ACTIVE')
+      .not('deposit_paid', 'is', null)
+      .gt('deposit_amount', 0)
+
+    const hasDepositPaid = deposits && deposits.length > 0
+
+    if (property.handover_status === 'COMPLETED' || property.subdivision_status === 'SUBDIVIDED' || hasDepositPaid) {
+      const reason = hasDepositPaid
+        ? 'Property is reserved (deposit paid by another client)'
+        : 'Property is no longer available'
+
       return NextResponse.json(
-        { error: 'Property is no longer available' },
+        {
+          success: false,
+          error: reason,
+          propertyStatus: {
+            handover_status: property.handover_status,
+            subdivision_status: property.subdivision_status,
+            hasDepositPaid
+          }
+        },
         { status: 400 }
       )
     }
@@ -107,14 +145,21 @@ export async function POST(request: NextRequest) {
     // Check if client already has interest in this property
     const { data: existingInterest } = await supabase
       .from('client_property_interests')
-      .select('id, status')
+      .select('id, status, deposit_paid')
       .eq('client_id', clientId)
       .eq('property_id', validatedData.propertyId)
       .single()
 
     if (existingInterest && existingInterest.status === 'ACTIVE') {
       return NextResponse.json(
-        { error: 'You have already expressed interest in this property' },
+        {
+          success: false,
+          error: 'You have already expressed interest in this property',
+          existingInterest: {
+            id: existingInterest.id,
+            hasDeposit: !!existingInterest.deposit_paid
+          }
+        },
         { status: 400 }
       )
     }
@@ -178,24 +223,48 @@ export async function POST(request: NextRequest) {
       await considerHandoverTransition(supabase, validatedData.propertyId, clientId)
     }
 
+    console.log('✅ Express Interest API - Success:', {
+      interestId: interest.id,
+      clientId,
+      propertyId: validatedData.propertyId
+    })
+
     return NextResponse.json({
       success: true,
-      interest,
-      message: 'Interest expressed successfully'
+      interest: {
+        id: interest.id,
+        property_id: validatedData.propertyId,
+        client_id: clientId,
+        status: interest.status,
+        created_at: interest.created_at
+      },
+      message: 'Interest expressed successfully',
+      property: {
+        id: property.id,
+        name: property.name
+      }
     })
 
   } catch (error) {
-    console.error('Express interest error:', error)
-    
+    console.error('❌ Express interest error:', error)
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        {
+          success: false,
+          error: 'Invalid request data',
+          details: error.errors
+        },
         { status: 400 }
       )
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

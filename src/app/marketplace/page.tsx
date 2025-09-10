@@ -172,9 +172,9 @@ export default function MarketplacePage() {
 
     // More explicit authentication check
     if (!user || !user.id) {
-      console.log('User not authenticated, redirecting to registration')
-      // Redirect to login/registration with property context
-      router.push(`/auth/register?property=${propertyId}&action=express-interest`)
+      console.log('User not authenticated, redirecting to login')
+      // Redirect to login with property context
+      router.push(`/auth/login?redirectTo=/marketplace&property=${propertyId}&action=express-interest`)
       return
     }
 
@@ -191,24 +191,22 @@ export default function MarketplacePage() {
         }),
       })
 
-      if (!response.ok) {
-        let errorData
-        try {
-          errorData = await response.json()
-        } catch (jsonError) {
-          // If JSON parsing fails, get the raw text
-          try {
-            errorData = { error: await response.text() }
-          } catch (textError) {
-            errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
-          }
-        }
+      let responseData
+      try {
+        responseData = await response.json()
+      } catch (jsonError) {
+        console.error('Failed to parse response as JSON:', jsonError)
+        responseData = { error: 'Invalid server response' }
+      }
 
-        console.error('API Error Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        })
+      console.log('API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: responseData
+      })
+
+      if (!response.ok) {
+        console.error('API Error Response:', responseData)
 
         // If authentication fails, redirect to login
         if (response.status === 401) {
@@ -216,16 +214,21 @@ export default function MarketplacePage() {
           return
         }
 
-        throw new Error(`Failed to express interest: ${errorData.error || response.statusText}`)
+        // Show user-friendly error message
+        const errorMessage = responseData?.error || `HTTP ${response.status}: ${response.statusText}`
+        alert(`Error: ${errorMessage}`)
+        return
       }
 
-      // Refresh the interests state to update button states
+      // Success - update the UI
       await loadInterests()
       console.log('Interest expressed successfully!')
-      alert('Interest expressed successfully! You can view your properties in the client portal.')
 
-      // Optionally redirect to client portal
-      router.push('/client-portal')
+      // Show success toast/message
+      alert('🎉 Interest expressed successfully! Property added to your portfolio. You can view it in the client portal.')
+
+      // Don't redirect automatically - let user stay on marketplace
+      // They can navigate to client portal if they want
 
     } catch (error) {
       console.error('Error expressing interest:', error)
