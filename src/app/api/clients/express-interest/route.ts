@@ -112,16 +112,17 @@ export async function POST(request: NextRequest) {
     // 2. Not fully subdivided (SUBDIVIDED)
     // 3. No deposit has been paid (which would lock the property)
 
-    // Check for existing deposits that would lock the property
-    const { data: deposits } = await supabase
+    // Check for existing active interests (for now, we'll allow multiple interests)
+    // In the future, deposit logic can be implemented when payment system is ready
+    const { data: activeInterests } = await supabase
       .from('client_property_interests')
-      .select('id, status, deposit_paid, deposit_amount')
+      .select('id, status, interest_type')
       .eq('property_id', validatedData.propertyId)
       .eq('status', 'ACTIVE')
-      .not('deposit_paid', 'is', null)
-      .gt('deposit_amount', 0)
 
-    const hasDepositPaid = deposits && deposits.length > 0
+    // For now, we allow multiple clients to express interest
+    // Property becomes unavailable only when handover is completed or subdivision is done
+    const hasDepositPaid = false // Will be implemented when payment system is ready
 
     if (property.handover_status === 'COMPLETED' || property.subdivision_status === 'SUBDIVIDED' || hasDepositPaid) {
       const reason = hasDepositPaid
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
     // Check if client already has interest in this property
     const { data: existingInterest } = await supabase
       .from('client_property_interests')
-      .select('id, status, deposit_paid')
+      .select('id, status, interest_type')
       .eq('client_id', clientId)
       .eq('property_id', validatedData.propertyId)
       .single()
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
           error: 'You have already expressed interest in this property',
           existingInterest: {
             id: existingInterest.id,
-            hasDeposit: !!existingInterest.deposit_paid
+            interest_type: existingInterest.interest_type
           }
         },
         { status: 400 }

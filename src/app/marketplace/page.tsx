@@ -206,7 +206,14 @@ export default function MarketplacePage() {
       })
 
       if (!response.ok) {
-        console.error('API Error Response:', responseData)
+        // Safe logging to avoid empty object errors
+        const errorDetails = {
+          status: response.status,
+          statusText: response.statusText,
+          error: responseData?.error || 'Unknown error',
+          success: responseData?.success || false
+        }
+        console.error('API Error Response:', JSON.stringify(errorDetails))
 
         // If authentication fails, redirect to login
         if (response.status === 401) {
