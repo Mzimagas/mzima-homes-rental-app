@@ -101,6 +101,7 @@ export default function MarketplacePage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies/session
         body: JSON.stringify({
           propertyIds,
         }),
@@ -185,6 +186,7 @@ export default function MarketplacePage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // This is the key fix - include cookies/session
         body: JSON.stringify({
           propertyId,
           interestType: 'express-interest',
@@ -252,6 +254,7 @@ export default function MarketplacePage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies/session
         body: JSON.stringify({
           propertyId,
         }),
