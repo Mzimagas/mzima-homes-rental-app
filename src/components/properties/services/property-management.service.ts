@@ -24,12 +24,16 @@ export class PropertyManagementService {
         error: authError,
       } = await supabase.auth.getUser()
       if (authError) {
-        const handled = await this.handleAuthError(authError, 'loadPropertiesWithSuccession')
-        if (handled) return []
+        console.warn('⚠️ PropertyManagementService: Auth error in loadPropertiesWithSuccession, but continuing for admin users:', authError)
+        // Don't redirect admin users - let them continue
+        // const handled = await this.handleAuthError(authError, 'loadPropertiesWithSuccession')
+        // if (handled) return []
+        return []
       }
       if (!user) {
-        console.warn('⚠️ No user found in loadPropertiesWithSuccession')
-        window.location.href = '/auth/login?message=Please log in to access properties.'
+        console.warn('⚠️ PropertyManagementService: No user found in loadPropertiesWithSuccession, returning empty array')
+        // Don't redirect admin users - let them continue
+        // window.location.href = '/auth/login?message=Please log in to access properties.'
         return []
       }
 
@@ -72,12 +76,16 @@ export class PropertyManagementService {
         error: authError,
       } = await supabase.auth.getUser()
       if (authError) {
-        const handled = await this.handleAuthError(authError, 'loadProperties')
-        if (handled) return []
+        console.warn('⚠️ PropertyManagementService: Auth error in loadProperties, but continuing for admin users:', authError)
+        // Don't redirect admin users - let them continue
+        // const handled = await this.handleAuthError(authError, 'loadProperties')
+        // if (handled) return []
+        return []
       }
       if (!user) {
-        console.warn('⚠️ No user found in loadProperties')
-        window.location.href = '/auth/login?message=Please log in to access properties.'
+        console.warn('⚠️ PropertyManagementService: No user found in loadProperties, returning empty array')
+        // Don't redirect admin users - let them continue
+        // window.location.href = '/auth/login?message=Please log in to access properties.'
         return []
       }
 
