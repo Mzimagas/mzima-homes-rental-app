@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../lib/auth-context'
+import { useAuth } from '../components/auth/AuthProvider'
 import { detectUserTypeFromMetadata, UserTypeInfo } from '../lib/user-type-detection'
 
 export function useUserType() {

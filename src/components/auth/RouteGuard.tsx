@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAuth } from '../../lib/auth-context'
+import { useAuth } from './AuthProvider'
 import { useRouter } from 'next/navigation'
 import { detectUserTypeFromMetadata } from '../../lib/user-type-detection-client'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { AuthProvider } from '../lib/auth-context'
+import { AuthProvider } from './auth/AuthProvider'
 
 interface AuthWrapperProps {
   children: React.ReactNode

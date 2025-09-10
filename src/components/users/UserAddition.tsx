@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '../ui'
-import { useAuth } from '../../lib/auth-context'
+import { useAuth } from '../auth/AuthProvider'
 
 interface NewUser {
   email: string

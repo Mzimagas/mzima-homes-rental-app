@@ -3,7 +3,7 @@
 // import Image from 'next/image' // Unused import
 import { useRouter } from 'next/navigation'
 
-import { useAuth } from '../lib/auth-context'
+import { useAuth } from '../components/auth/AuthProvider'
 
 export default function Home() {
   const { user, loading } = useAuth()

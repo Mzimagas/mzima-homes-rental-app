@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '../lib/auth-context'
+import { useAuth } from '../components/auth/AuthProvider'
 
 interface PropertyInterest {
   hasInterest: boolean

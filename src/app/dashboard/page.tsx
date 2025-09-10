@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, Suspense, lazy } from 'react'
-import { useAuth } from '../../lib/auth-context'
+import { useAuth } from '../../components/auth/AuthProvider'
 import { withAuth } from '../../lib/withAuth'
 import { useRouter } from 'next/navigation'
 
