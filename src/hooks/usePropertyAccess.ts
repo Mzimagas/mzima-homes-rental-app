@@ -62,16 +62,56 @@ export function usePropertyAccess(): PropertyAccess {
 
       console.log('✅ PropertyAccess: User authenticated:', user.email)
 
-      // Call the database function to get accessible properties
-      const { data, error: propertiesError } = await supabase.rpc(
-        'get_user_accessible_properties',
-        { user_uuid: user.id }
-      )
+      // Try to call the database function to get accessible properties
+      let data = null
+      let propertiesError = null
+
+      try {
+        const result = await supabase.rpc(
+          'get_user_accessible_properties',
+          { user_uuid: user.id }
+        )
+        data = result.data
+        propertiesError = result.error
+      } catch (rpcError) {
+        console.warn('⚠️ PropertyAccess: RPC function not available, trying fallback query:', rpcError)
+
+        // Fallback: try to get properties directly from property_users table
+        const fallbackResult = await supabase
+          .from('property_users')
+          .select(`
+            property_id,
+            role,
+            properties!inner(
+              id,
+              name,
+              property_type
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'ACTIVE')
+
+        if (fallbackResult.error) {
+          console.error('❌ PropertyAccess: Fallback query also failed:', fallbackResult.error)
+          setProperties([])
+          return
+        }
+
+        // Transform fallback data to expected format
+        data = fallbackResult.data?.map((item: any) => ({
+          property_id: item.property_id,
+          property_name: item.properties.name,
+          property_type: item.properties.property_type,
+          user_role: item.role,
+          can_manage_users: item.role === 'OWNER',
+          can_edit_property: ['OWNER', 'PROPERTY_MANAGER'].includes(item.role),
+          can_manage_tenants: ['OWNER', 'PROPERTY_MANAGER', 'LEASING_AGENT'].includes(item.role),
+          can_manage_maintenance: ['OWNER', 'PROPERTY_MANAGER', 'MAINTENANCE_COORDINATOR'].includes(item.role),
+        })) || []
+      }
 
       if (propertiesError) {
         console.error('❌ PropertyAccess: Database error:', propertiesError)
-        // For admin users who might not have property access records, return empty array
-        // instead of throwing error
         setProperties([])
         return
       }

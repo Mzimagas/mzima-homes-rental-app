@@ -80,24 +80,59 @@ export class PropertyManagementService {
   // Load all properties with lifecycle information
   static async loadProperties(): Promise<PropertyWithLifecycle[]> {
     try {
-      let user = null
-      let authError = null
-      try {
-        const supabase = getSupabaseBrowser()
-        const authResult = await supabase.auth.getUser()
-        user = authResult.data?.user
-        authError = authResult.error
-      } catch (error) {
-        console.warn('⚠️ PropertyManagementService: Auth session error caught in loadProperties, but continuing for admin users:', error)
-        authError = error
-      }
+      const supabase = getSupabaseBrowser()
+
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
 
       if (authError) {
-        console.warn('⚠️ PropertyManagementService: Auth error in loadProperties, but continuing for admin users:', authError)
-        // Don't redirect admin users - let them continue
-        // const handled = await this.handleAuthError(authError, 'loadProperties')
-        // if (handled) return []
+        console.error('❌ PropertyManagementService: Auth error in loadProperties:', authError)
+        throw authError
+      }
+
+      if (!user) {
+        console.warn('⚠️ PropertyManagementService: No user found in loadProperties')
         return []
+      }
+
+      console.log('✅ PropertyManagementService: User authenticated:', user.email)
+
+      // Try to load properties directly from the properties table with user access
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          *,
+          property_users!inner(role, status)
+        `)
+        .eq('property_users.user_id', user.id)
+        .eq('property_users.status', 'ACTIVE')
+        .is('disabled_at', null)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('❌ PropertyManagementService: Database error in loadProperties:', error)
+
+        // If the property_users table doesn't exist or user has no access records,
+        // try loading all properties for admin users
+        console.log('🔄 PropertyManagementService: Trying fallback query for admin users...')
+
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('properties')
+          .select('*')
+          .is('disabled_at', null)
+          .order('created_at', { ascending: false })
+
+        if (fallbackError) {
+          console.error('❌ PropertyManagementService: Fallback query also failed:', fallbackError)
+          return []
+        }
+
+        console.log('✅ PropertyManagementService: Fallback query successful, loaded', fallbackData?.length || 0, 'properties')
+        return (fallbackData as PropertyWithLifecycle[]) || []
+      }
+
+      console.log('✅ PropertyManagementService: Properties loaded successfully:', data?.length || 0, 'properties')
+      return (data as PropertyWithLifecycle[]) || []
       }
       if (!user) {
         console.warn('⚠️ PropertyManagementService: No user found in loadProperties, returning empty array')
