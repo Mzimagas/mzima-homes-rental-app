@@ -8,6 +8,7 @@ import { Property } from '../../../../lib/types/database'
 import { formatCurrency } from '../../../../lib/export-utils'
 import { LoadingCard } from '../../../../components/ui/loading'
 import { ErrorCard } from '../../../../components/ui/error'
+import { GoogleMapsButton } from '../../../../components/ui/GoogleMapsButton'
 
 interface PropertyDetail extends Property {
   images?: string[]
@@ -21,6 +22,7 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [imageError, setImageError] = useState(false)
   const router = useRouter()
   const params = useParams()
   const propertyId = params.id as string
@@ -98,7 +100,6 @@ export default function PropertyDetailPage() {
 
   const images = property.images || []
   const hasImages = images.length > 0
-  const [imageError, setImageError] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -195,10 +196,15 @@ export default function PropertyDetailPage() {
                 {property.name || 'Unnamed Property'}
               </h1>
               
-              <p className="text-gray-600 mb-4 flex items-center">
-                <span className="mr-2">📍</span>
-                {property.location || 'Location not specified'}
-              </p>
+              <div className="text-gray-600 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center text-gray-600">
+                    <span className="mr-2">📍</span>
+                    {property.location || 'Location not specified'}
+                  </span>
+                  <GoogleMapsButton property={property} />
+                </div>
+              </div>
 
               <div className="mb-6">
                 <p className="text-3xl font-bold text-green-600">

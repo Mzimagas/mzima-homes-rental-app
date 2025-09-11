@@ -7,7 +7,7 @@ import PropertyList from './PropertyList'
 import PropertySearch from './PropertySearch'
 import PropertyFilterPanel from './PropertyFilterPanel'
 import PropertyForm from '../property-form'
-import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
+import { PropertyWithLifecycle } from '../types/property-management.types'
 import { usePropertyFilters } from '../../../hooks/usePropertyFilters'
 import { useFilterPanel } from '../../../hooks/useFilterPanel'
 import supabase from '../../../lib/supabase-client'
@@ -15,15 +15,12 @@ import supabase from '../../../lib/supabase-client'
 interface PropertiesTabProps {
   properties: PropertyWithLifecycle[]
   loading: boolean
-  pendingChanges: PendingChanges
   savingChanges: { [propertyId: string]: boolean }
   searchTerm: string
   onSearchChange: (searchTerm: string) => void
   onPropertyCreated: (propertyId: string) => void
   onSubdivisionChange: (propertyId: string, value: string) => void
   onHandoverChange: (propertyId: string, value: string) => void
-  onSaveChanges: (propertyId: string) => void
-  onCancelChanges: (propertyId: string) => void
   onNavigateToTabs: (tab: string) => void
   onRefresh?: () => void
 }
@@ -31,15 +28,12 @@ interface PropertiesTabProps {
 export default function PropertiesTab({
   properties,
   loading,
-  pendingChanges,
   savingChanges,
   searchTerm,
   onSearchChange,
   onPropertyCreated,
   onSubdivisionChange,
   onHandoverChange,
-  onSaveChanges,
-  onCancelChanges,
   onNavigateToTabs,
   onRefresh,
 }: PropertiesTabProps) {
@@ -326,14 +320,11 @@ export default function PropertiesTab({
       <PropertyList
         properties={filteredProperties}
         loading={loading}
-        pendingChanges={pendingChanges}
         savingChanges={savingChanges}
         onAddProperty={handleAddProperty}
         onEditProperty={handleEditProperty}
         onSubdivisionChange={onSubdivisionChange}
         onHandoverChange={onHandoverChange}
-        onSaveChanges={onSaveChanges}
-        onCancelChanges={onCancelChanges}
         onNavigateToTabs={onNavigateToTabs}
         onRefresh={onRefresh}
       />

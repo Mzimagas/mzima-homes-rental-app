@@ -43,6 +43,17 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        // inform server about session (so SSR routes get cookies)
+        const { data: sessionData } = await supabase.auth.getSession()
+        try {
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ event: 'SIGNED_IN', session: sessionData.session }),
+          })
+        } catch {}
+
         // Detect user type and redirect accordingly
         const userType = await detectUserTypeFromMetadata(data.user)
 

@@ -1,11 +1,8 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
-import {
-  getPendingSubdivisionValue,
-  getPendingHandoverValue,
-} from '../utils/property-management.utils'
+import { PropertyWithLifecycle } from '../types/property-management.types'
+import { getSubdivisionValue, getHandoverValue } from '../utils/property-management.utils'
 import {
   usePropertyMutualExclusivity,
   getDisabledSelectStyles,
@@ -14,7 +11,6 @@ import { PropertyStatusUpdateService } from '../../../services/propertyStatusUpd
 
 interface PropertyStatusDropdownsProps {
   property: PropertyWithLifecycle
-  pendingChanges: PendingChanges
   savingChanges: Record<string, boolean>
   propertiesWithPipelineIssues: Set<string>
   onSubdivisionChange: (propertyId: string, value: string) => void
@@ -29,7 +25,6 @@ interface PropertyStatusDropdownsProps {
  */
 export default function PropertyStatusDropdowns({
   property,
-  pendingChanges,
   savingChanges,
   propertiesWithPipelineIssues,
   onSubdivisionChange,
@@ -62,7 +57,7 @@ export default function PropertyStatusDropdowns({
         return
       }
 
-      // Show confirmation dialog instead of immediately saving
+      // Immediate persistence per user preference (no Save button)
       setPendingSubdivisionChange(value)
       setShowSubdivisionConfirm(true)
     },
@@ -195,7 +190,7 @@ export default function PropertyStatusDropdowns({
           className={`text-sm border rounded px-2 py-1 w-full ${
             isSubdivisionDisabled ? getDisabledSelectStyles(true) : getDisabledSelectStyles(false)
           }`}
-          value={getPendingSubdivisionValue(property, pendingChanges)}
+          value={getSubdivisionValue(property)}
           onChange={(e) => handleSubdivisionChange(e.target.value)}
           disabled={isSubdivisionDisabled}
           title={subdivisionDisabledReason || undefined}
@@ -245,7 +240,7 @@ export default function PropertyStatusDropdowns({
           className={`text-sm border rounded px-2 py-1 w-full ${
             isHandoverDisabled ? getDisabledSelectStyles(true) : getDisabledSelectStyles(false)
           }`}
-          value={getPendingHandoverValue(property, pendingChanges)}
+          value={getHandoverValue(property)}
           onChange={(e) => handleHandoverChange(e.target.value)}
           disabled={isHandoverDisabled}
           title={handoverDisabledReason || undefined}

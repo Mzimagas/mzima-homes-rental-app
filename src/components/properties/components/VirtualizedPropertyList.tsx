@@ -9,29 +9,24 @@ import PropertyCard, { PropertyCardHeader, PropertyCardContent, PropertyCardFoot
 import ReverseTransferAction from './ReverseTransferAction'
 import {
   PropertyWithLifecycle,
-  PendingChanges,
-  hasPendingChanges,
-  getPendingSubdivisionValue,
-  getPendingHandoverValue,
 } from '../types/property-management.types'
 import {
   getSourceIcon,
   getSourceLabel,
   getLifecycleStatusColor,
+  getSubdivisionValue,
+  getHandoverValue,
 } from '../utils/property-management.utils'
 
 interface VirtualizedPropertyListProps {
   properties: PropertyWithLifecycle[]
   loading: boolean
-  pendingChanges: PendingChanges
   savingChanges: { [propertyId: string]: boolean }
   onAddProperty: () => void
   onEditProperty: (property: PropertyWithLifecycle) => void
   onSubdivisionChange: (propertyId: string, value: string) => void
   onHandoverChange: (propertyId: string, value: string) => void
   onRefresh?: () => void
-  onSaveChanges: (propertyId: string) => void
-  onCancelChanges: (propertyId: string) => void
   onNavigateToTabs?: (tab: string) => void
   onDeleteProperty?: (propertyId: string) => void
   itemHeight?: number
@@ -40,15 +35,12 @@ interface VirtualizedPropertyListProps {
 
 interface PropertyItemData {
   properties: PropertyWithLifecycle[]
-  pendingChanges: PendingChanges
   savingChanges: { [propertyId: string]: boolean }
   propertiesWithPipelineIssues: Set<string>
   handlers: {
     onEditProperty: (property: PropertyWithLifecycle) => void
     onSubdivisionChange: (propertyId: string, value: string) => void
     onHandoverChange: (propertyId: string, value: string) => void
-    onSaveChanges: (propertyId: string) => void
-    onCancelChanges: (propertyId: string) => void
     onNavigateToTabs?: (tab: string) => void
     onDeleteProperty?: (propertyId: string) => void
     onViewProperty: (propertyId: string) => void
@@ -67,22 +59,19 @@ const VirtualPropertyItem = memo(function VirtualPropertyItem({
   style: React.CSSProperties
   data: PropertyItemData
 }) {
-  const { properties, pendingChanges, savingChanges, propertiesWithPipelineIssues, handlers } = data
+  const { properties, savingChanges, propertiesWithPipelineIssues, handlers } = data
   const property = properties[index]
 
   // Memoize computed values (must be called before any conditional returns)
-  const hasChanges = useMemo(() => property ? hasPendingChanges(property.id, pendingChanges) : false, [property?.id, pendingChanges])
   const isSaving = useMemo(() => property ? savingChanges[property.id] : false, [savingChanges, property?.id])
-  const subdivisionValue = useMemo(() => property ? getPendingSubdivisionValue(property, pendingChanges) : '', [property, pendingChanges])
-  const handoverValue = useMemo(() => property ? getPendingHandoverValue(property, pendingChanges) : '', [property, pendingChanges])
+  const subdivisionValue = useMemo(() => property ? getSubdivisionValue(property) : '', [property])
+  const handoverValue = useMemo(() => property ? getHandoverValue(property) : '', [property])
 
   // Memoized handlers (must be called before any conditional returns)
   const handleEdit = useCallback(() => property && handlers.onEditProperty(property), [handlers.onEditProperty, property])
   const handleView = useCallback(() => property && handlers.onViewProperty(property.id), [handlers.onViewProperty, property?.id])
   const handleSubdivisionChange = useCallback((value: string) => property && handlers.onSubdivisionChange(property.id, value), [handlers.onSubdivisionChange, property?.id])
   const handleHandoverChange = useCallback((value: string) => property && handlers.onHandoverChange(property.id, value), [handlers.onHandoverChange, property?.id])
-  const handleSave = useCallback(() => property && handlers.onSaveChanges(property.id), [handlers.onSaveChanges, property?.id])
-  const handleCancel = useCallback(() => property && handlers.onCancelChanges(property.id), [handlers.onCancelChanges, property?.id])
   const handleDelete = useCallback(() => property && handlers.onDeleteProperty?.(property.id), [handlers.onDeleteProperty, property?.id])
 
   if (!property) {
@@ -117,11 +106,6 @@ const VirtualPropertyItem = memo(function VirtualPropertyItem({
               >
                 {property.lifecycle_status?.replace('_', ' ') || 'Unknown'}
               </span>
-              {hasChanges && (
-                <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                  Unsaved Changes
-                </span>
-              )}
             </div>
           </div>
         </PropertyCardHeader>
@@ -214,25 +198,7 @@ const VirtualPropertyItem = memo(function VirtualPropertyItem({
               )}
             </div>
 
-            {hasChanges && (
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            )}
+            {/* Immediate persistence in effect — Save/Cancel removed in virtualized list */}
 
             {property.property_source === 'REVERSE_TRANSFER' && (
               <ReverseTransferAction
@@ -253,15 +219,12 @@ const VirtualPropertyItem = memo(function VirtualPropertyItem({
 export default function VirtualizedPropertyList({
   properties,
   loading,
-  pendingChanges,
   savingChanges,
   onAddProperty,
   onEditProperty,
   onSubdivisionChange,
   onHandoverChange,
   onRefresh,
-  onSaveChanges,
-  onCancelChanges,
   onNavigateToTabs,
   onDeleteProperty,
   itemHeight = 280,
@@ -296,23 +259,20 @@ export default function VirtualizedPropertyList({
     onEditProperty,
     onSubdivisionChange,
     onHandoverChange,
-    onSaveChanges,
-    onCancelChanges,
     onNavigateToTabs,
     onDeleteProperty,
     onViewProperty: handleViewProperty,
     onPipelineStatusChange: handlePipelineStatusChange,
     onMapInvalid: onInvalid,
-  }), [onEditProperty, onSubdivisionChange, onHandoverChange, onSaveChanges, onCancelChanges, onNavigateToTabs, onDeleteProperty, handleViewProperty, handlePipelineStatusChange, onInvalid])
+  }), [onEditProperty, onSubdivisionChange, onHandoverChange, onNavigateToTabs, onDeleteProperty, handleViewProperty, handlePipelineStatusChange, onInvalid])
 
   // Memoized item data to prevent unnecessary re-renders
   const itemData = useMemo<PropertyItemData>(() => ({
     properties,
-    pendingChanges,
     savingChanges,
     propertiesWithPipelineIssues,
     handlers,
-  }), [properties, pendingChanges, savingChanges, propertiesWithPipelineIssues, handlers])
+  }), [properties, savingChanges, propertiesWithPipelineIssues, handlers])
 
   const handleCloseView = useCallback(() => {
     setViewingPropertyId(null)

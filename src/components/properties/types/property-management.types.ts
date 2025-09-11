@@ -304,13 +304,7 @@ export interface PropertyManagementTabsProps {
   onRefreshProperties?: () => void
 }
 
-// State management types
-export interface PendingChanges {
-  [propertyId: string]: {
-    subdivision?: string
-    handover?: string
-  }
-}
+// PendingChanges removed – immediate persistence in effect
 
 export type ActiveTab = 'properties' | 'purchase' | 'subdivision' | 'handover'
 
@@ -916,23 +910,4 @@ export const SUBDIVISION_COST_CATEGORY_LABELS: Record<SubdivisionCostCategory, s
   OTHER_CHARGES: 'Other Charges',
 }
 
-// Utility functions for property management
-export const hasPendingChanges = (property: PropertyItem): boolean => {
-  // Check if property has any pending changes in any pipeline
-  return (
-    property.direct_addition_pipeline?.some(stage => stage.status === 'In Progress') ||
-    property.purchase_pipeline?.some(stage => stage.status === 'In Progress') ||
-    property.handover_pipeline?.some(stage => stage.status === 'In Progress') ||
-    false
-  )
-}
-
-export const getPendingSubdivisionValue = (property: PropertyItem): number => {
-  // Get pending subdivision value if any
-  return property.subdivision_value || 0
-}
-
-export const getPendingHandoverValue = (property: PropertyItem): number => {
-  // Get pending handover value if any
-  return property.handover_value || 0
-}
+// (Deprecated) Pending change helpers removed – UI uses server state directly

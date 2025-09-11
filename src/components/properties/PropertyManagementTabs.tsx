@@ -21,11 +21,11 @@ const HandoverPipelineManager = lazy(() => import('./components/HandoverPipeline
 
 import { RoleManagementService } from '../../lib/auth/role-management.service'
 
+import { PropertyStatusUpdateService } from '../../services/propertyStatusUpdateService'
 import { PropertyManagementService } from './services/property-management.service'
 import {
   PropertyManagementTabsProps,
   PropertyWithLifecycle,
-  PendingChanges,
   ActiveTab,
 } from './types/property-management.types'
 
@@ -43,8 +43,7 @@ export default function PropertyManagementTabs({
   // Search state
   const [searchTerm, setSearchTerm] = useState('')
 
-  // State for managing pending changes
-  const [pendingChanges, setPendingChanges] = useState<PendingChanges>({})
+  // Saving state retained for UI disable/feedback
   const [savingChanges, setSavingChanges] = useState<{ [propertyId: string]: boolean }>({})
 
   // User role for security features
@@ -111,49 +110,28 @@ export default function PropertyManagementTabs({
     onRefreshProperties?.()
   }
 
-  // Pending changes management
-  const handleSubdivisionChange = (propertyId: string, value: string) => {
-    setPendingChanges((prev) => ({
-      ...prev,
-      [propertyId]: { ...prev[propertyId], subdivision: value },
-    }))
-  }
-
-  const handleHandoverChange = (propertyId: string, value: string) => {
-    setPendingChanges((prev) => ({
-      ...prev,
-      [propertyId]: { ...prev[propertyId], handover: value },
-    }))
-  }
-
-  const cancelChanges = (propertyId: string) => {
-    setPendingChanges((prev) => {
-      const copy = { ...prev }
-      delete copy[propertyId]
-      return copy
-    })
-  }
-
-  const saveChanges = async (propertyId: string) => {
-    const changes = pendingChanges[propertyId]
-    if (!changes) return
-
-    setSavingChanges((prev) => ({ ...prev, [propertyId]: true }))
-
+  // Status change handlers (immediate persistence)
+  const handleSubdivisionChange = async (propertyId: string, value: string) => {
     try {
-      const success = await PropertyManagementService.savePropertyChanges(
-        propertyId,
-        changes,
-        properties
-      )
-
-      if (success) {
-        cancelChanges(propertyId)
-        await loadProperties()
-      }
-    } catch (error) {
+      setSavingChanges((s) => ({ ...s, [propertyId]: true }))
+      await PropertyStatusUpdateService.updatePropertyStatusFromUI(propertyId, value, undefined)
+      await loadProperties()
+    } catch (e) {
+      console.error('Immediate subdivision update failed', e)
     } finally {
-      setSavingChanges((prev) => ({ ...prev, [propertyId]: false }))
+      setSavingChanges((s) => ({ ...s, [propertyId]: false }))
+    }
+  }
+
+  const handleHandoverChange = async (propertyId: string, value: string) => {
+    try {
+      setSavingChanges((s) => ({ ...s, [propertyId]: true }))
+      await PropertyStatusUpdateService.updatePropertyStatusFromUI(propertyId, undefined, value)
+      await loadProperties()
+    } catch (e) {
+      console.error('Immediate handover update failed', e)
+    } finally {
+      setSavingChanges((s) => ({ ...s, [propertyId]: false }))
     }
   }
 
@@ -192,15 +170,12 @@ export default function PropertyManagementTabs({
           <PropertiesTab
             properties={properties}
             loading={loading}
-            pendingChanges={pendingChanges}
             savingChanges={savingChanges}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             onPropertyCreated={handlePropertyCreated}
             onSubdivisionChange={handleSubdivisionChange}
             onHandoverChange={handleHandoverChange}
-            onSaveChanges={saveChanges}
-            onCancelChanges={cancelChanges}
             onNavigateToTabs={handleNavigateToTabs}
             onRefresh={loadProperties}
           />

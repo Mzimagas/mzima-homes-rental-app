@@ -23,11 +23,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Resolve client_id from auth user
+    const { data: clientRecord } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single()
+
+    if (!clientRecord) {
+      return NextResponse.json(
+        { error: 'Client record not found' },
+        { status: 404 }
+      )
+    }
+
     // Check if interest exists
     const { data: existingInterest, error: checkError } = await supabase
       .from('client_property_interests')
       .select('id, status')
-      .eq('client_id', user.id)
+      .eq('client_id', clientRecord.id)
       .eq('property_id', validatedData.propertyId)
       .eq('status', 'ACTIVE')
       .single()

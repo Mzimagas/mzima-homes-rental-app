@@ -9,6 +9,8 @@ import { formatCurrency } from '../../lib/export-utils'
 import { LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
 import { useAuth } from '../../components/auth/AuthProvider'
+import { useToast } from '../../components/ui/Toast'
+import { GoogleMapsCardButton } from '../../components/ui/GoogleMapsButton'
 
 interface MarketplaceProperty extends Property {
   images?: string[]
@@ -28,13 +30,19 @@ interface MarketplaceProperty extends Property {
   // Sale status information
   sale_status?: 'NOT_FOR_SALE' | 'LISTED_FOR_SALE' | 'UNDER_CONTRACT' | 'SOLD'
   deposit_received?: boolean
+  // Extended fields provided by /api/public/properties
+  location?: string
+  description?: string
+  asking_price_kes?: number
+  is_new?: boolean
+  interest_count?: number
 }
 
 export default function MarketplacePage() {
   const router = useRouter()
   const { user } = useAuth()
   const [properties, setProperties] = useState<MarketplaceProperty[]>([])
-  const [interests, setInterests] = useState<{ [key: string]: boolean }>({})
+  const [interests, setInterests] = useState<{ [key: string]: { hasInterest: boolean; totalInterested?: number; othersInterested?: number } }>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -44,6 +52,21 @@ export default function MarketplacePage() {
   useEffect(() => {
     loadProperties()
   }, [])
+
+  // Load interests when user authentication state changes
+  useEffect(() => {
+    if (user && properties.length > 0) {
+      console.log('🔄 User authenticated, loading interests for', properties.length, 'properties')
+      loadInterests(properties)
+    } else if (!user) {
+      // Clear interests when user logs out
+      console.log('🔄 User logged out, clearing interests')
+      setInterests({})
+    }
+  }, [user, properties.length])
+
+  // Toast
+  const { show: showToast } = useToast()
 
   const loadProperties = async () => {
     try {
@@ -120,18 +143,25 @@ export default function MarketplacePage() {
       const data = await response.json()
 
       // Update interests state based on response
-      const newInterests: { [key: string]: boolean } = {}
+      const newInterests: { [key: string]: { hasInterest: boolean; totalInterested?: number; othersInterested?: number } } = {}
       if (data.interests) {
-        // Handle the response format from the API
+        // Handle the keyed response format from the API
         Object.keys(data.interests).forEach(propertyId => {
-          newInterests[propertyId] = data.interests[propertyId].hasInterest
+          const it = data.interests[propertyId]
+          newInterests[propertyId] = {
+            hasInterest: !!it.hasInterest,
+            totalInterested: it.totalInterested ?? 0,
+            othersInterested: it.othersInterested ?? 0,
+          }
         })
       } else if (Array.isArray(data)) {
-        // Handle array format
+        // Handle array format (fallback)
         data.forEach((item: any) => {
-          newInterests[item.property_id] = item.has_interest
+          newInterests[item.property_id] = { hasInterest: !!item.has_interest, totalInterested: 0, othersInterested: 0 }
         })
       }
+
+      console.log('🔄 Marketplace: Updated interests state:', newInterests)
       setInterests(newInterests)
     } catch (error) {
       console.error('Error loading interests:', error)
@@ -140,7 +170,7 @@ export default function MarketplacePage() {
   }
 
   const filteredProperties = properties.filter((property) => {
-    const matchesSearch = 
+    const matchesSearch =
       property.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -168,8 +198,16 @@ export default function MarketplacePage() {
       userId: user?.id,
       userType: typeof user,
       userKeys: user ? Object.keys(user) : 'null',
-      hasId: !!(user?.id)
+      hasId: !!(user?.id),
+      currentInterestState: interests[propertyId]
     })
+
+    // Check if user already has interest before making API call
+    if (interests[propertyId]?.hasInterest) {
+      console.log('🚫 User already has interest in this property, skipping API call')
+      showToast('You have already expressed interest in this property', { variant: 'info' })
+      return
+    }
 
     // More explicit authentication check
     if (!user || !user.id) {
@@ -225,16 +263,42 @@ export default function MarketplacePage() {
 
         // Show user-friendly error message
         const errorMessage = responseData?.error || `HTTP ${response.status}: ${response.statusText}`
-        alert(`Error: ${errorMessage}`)
+        if (response.status === 400 && /already expressed interest/i.test(errorMessage)) {
+          // Soft-handle duplicate interest: inform and optimistically toggle UI
+          console.log('🔄 Duplicate interest detected, updating UI state')
+          showToast('Already in your properties', { variant: 'info' })
+          setInterests((prev) => ({
+            ...prev,
+            [propertyId]: { hasInterest: true, totalInterested: (prev[propertyId]?.totalInterested ?? 1), othersInterested: Math.max(0, (prev[propertyId]?.totalInterested ?? 1) - 1) }
+          }))
+          // Refresh interests to get accurate state from server
+          await loadInterests()
+          return
+        }
+        console.error('API Error Response:', errorMessage)
+        showToast(`Error: ${errorMessage}`, { variant: 'error' })
         return
       }
 
-      // Success - update the UI
-      await loadInterests()
-      console.log('Interest expressed successfully!')
+      // Success - update the UI: optimistically toggle and then refresh counts
+      console.log('✅ Interest expressed successfully, updating UI state')
+      setInterests((prev) => ({
+        ...prev,
+        [propertyId]: {
+          hasInterest: true,
+          totalInterested: (prev[propertyId]?.totalInterested ?? 0) + 1,
+          othersInterested: Math.max(0, (prev[propertyId]?.totalInterested ?? 0))
+        }
+      }))
+      // Also bump the count shown on the card immediately
+      setProperties((prev) => prev.map(p => p.id === propertyId ? { ...p, interest_count: (p.interest_count ?? 0) + 1 } : p))
 
-      // Show success toast/message
-      alert('🎉 Interest expressed successfully! Property added to your portfolio. You can view it in the client portal.')
+      // Refresh interests to get accurate state from server
+      await loadInterests()
+      console.log('Interest state refreshed from server')
+
+      // Show success toast/message (non-blocking)
+      showToast('Property added to your properties', { variant: 'success' })
 
       // Don't redirect automatically - let user stay on marketplace
       // They can navigate to client portal if they want
@@ -264,6 +328,8 @@ export default function MarketplacePage() {
         throw new Error('Failed to remove interest')
       }
 
+      // Optimistically decrement the public count on the card
+      setProperties((prev) => prev.map(p => p.id === propertyId ? { ...p, interest_count: Math.max(0, (p.interest_count ?? 0) - 1) } : p))
       // Refresh the interests state to update button states
       await loadInterests()
       console.log('Interest removed successfully!')
@@ -276,7 +342,7 @@ export default function MarketplacePage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8">
-          <LoadingCard message="Loading available properties..." />
+          <LoadingCard title="Loading available properties..." />
         </div>
       </div>
     )
@@ -303,18 +369,32 @@ export default function MarketplacePage() {
               <p className="text-gray-600 mt-1">Properties ready for handover • Discover your dream property</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Link
-                href="/auth/login"
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/register"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Register
-              </Link>
+              {user ? (
+                <div className="flex items-center space-x-3">
+                  <span className="text-gray-600 text-sm">Signed in</span>
+                  <Link
+                    href="/client-portal?tab=properties"
+                    className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  >
+                    My Properties
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/login"
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Register
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -458,6 +538,9 @@ function PropertyCard({
           <span className="bg-blue-600 text-white px-2 py-1 rounded text-sm font-medium">
             {property.property_type_display || property.property_type || 'Property'}
           </span>
+          {property.is_new ? (
+            <span className="ml-2 bg-yellow-400 text-white px-2 py-1 rounded text-xs font-semibold">NEW</span>
+          ) : null}
         </div>
 
         {/* Handover Status Badge */}
@@ -481,10 +564,11 @@ function PropertyCard({
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           {property.name || 'Unnamed Property'}
         </h3>
-        
-        <p className="text-gray-600 text-sm mb-2">
-          📍 {property.location_display || property.location || 'Location not specified'}
-        </p>
+
+        <div className="flex items-center justify-between text-gray-600 text-sm mb-2">
+          <span>📍 {property.location_display || property.location || 'Location not specified'}</span>
+          <GoogleMapsCardButton property={property} />
+        </div>
 
         {/* Property Features */}
         <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
@@ -522,6 +606,16 @@ function PropertyCard({
             <p className="text-sm text-gray-500">
               {property.property_type_display || 'Property for sale'}
             </p>
+            </div>
+            <div className="text-sm text-gray-600">
+              {typeof property.interest_count === 'number' && property.interest_count > 0 ? (
+                <span title="Total people interested">
+                  👥 {property.interest_count}
+                </span>
+              ) : (
+                <span className="text-gray-400">Be the first to express interest</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -551,10 +645,14 @@ function PropertyCard({
                 </Link>
                 <button
                   onClick={() => onRemoveInterest(property.id)}
-                  className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-                  title="Remove Interest"
+                  className="px-3 py-2 inline-flex items-center justify-center rounded-md border border-red-300 text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-400 transition-colors"
+                  title="Remove from My Properties"
+                  aria-label="Remove from My Properties"
                 >
-                  ✕
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  <span className="ml-2 hidden sm:inline">Remove</span>
                 </button>
               </div>
             ) : (
@@ -575,6 +673,5 @@ function PropertyCard({
           )}
         </div>
       </div>
-    </div>
   )
 }

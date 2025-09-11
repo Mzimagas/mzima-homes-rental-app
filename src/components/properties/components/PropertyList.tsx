@@ -10,15 +10,14 @@ import PropertyCard, {
   PropertyCardContent,
   PropertyCardFooter,
 } from './PropertyCard'
-import { PropertyWithLifecycle, PendingChanges } from '../types/property-management.types'
+import { PropertyWithLifecycle } from '../types/property-management.types'
 import { useAutoCloseWithCountdown } from '../../../hooks/useAutoClose'
 import {
   getSourceIcon,
   getSourceLabel,
   getLifecycleStatusColor,
-  hasPendingChanges,
-  getPendingSubdivisionValue,
-  getPendingHandoverValue,
+  getSubdivisionValue,
+  getHandoverValue,
 } from '../utils/property-management.utils'
 import PropertyStatusDropdowns from './PropertyStatusDropdowns'
 import { PropertyStateCompact } from './PropertyStateIndicator'
@@ -26,29 +25,23 @@ import { PropertyStateCompact } from './PropertyStateIndicator'
 interface PropertyListProps {
   properties: PropertyWithLifecycle[]
   loading: boolean
-  pendingChanges: PendingChanges
   savingChanges: { [propertyId: string]: boolean }
   onAddProperty: () => void
   onEditProperty: (property: PropertyWithLifecycle) => void
   onSubdivisionChange: (propertyId: string, value: string) => void
   onHandoverChange: (propertyId: string, value: string) => void
   onRefresh?: () => void
-  onSaveChanges: (propertyId: string) => void
-  onCancelChanges: (propertyId: string) => void
   onNavigateToTabs: (tab: string) => void
   onDeleteProperty?: (propertyId: string) => void
 }
 
 interface PropertyItemProps {
   property: PropertyWithLifecycle
-  pendingChanges: PendingChanges
   savingChanges: { [propertyId: string]: boolean }
   propertiesWithPipelineIssues: Set<string>
   onEditProperty: (property: PropertyWithLifecycle) => void
   onSubdivisionChange: (propertyId: string, value: string) => void
   onHandoverChange: (propertyId: string, value: string) => void
-  onSaveChanges: (propertyId: string) => void
-  onCancelChanges: (propertyId: string) => void
   onNavigateToTabs?: (tab: string) => void
   onDeleteProperty?: (propertyId: string) => void
   onViewProperty: (propertyId: string) => void
@@ -58,32 +51,25 @@ interface PropertyItemProps {
 // Memoized property item to prevent unnecessary re-renders
 const PropertyItem = memo(function PropertyItem({
   property,
-  pendingChanges,
   savingChanges,
   propertiesWithPipelineIssues,
   onEditProperty,
   onSubdivisionChange,
   onHandoverChange,
-  onSaveChanges,
-  onCancelChanges,
   onNavigateToTabs,
   onDeleteProperty,
   onViewProperty,
   onPipelineStatusChange,
 }: PropertyItemProps) {
   // Memoize computed values
-  const hasChanges = useMemo(
-    () => hasPendingChanges(property.id, pendingChanges),
-    [property.id, pendingChanges]
-  )
   const isSaving = useMemo(() => savingChanges[property.id], [savingChanges, property.id])
   const subdivisionValue = useMemo(
-    () => getPendingSubdivisionValue(property, pendingChanges),
-    [property, pendingChanges]
+    () => getSubdivisionValue(property),
+    [property]
   )
   const handoverValue = useMemo(
-    () => getPendingHandoverValue(property, pendingChanges),
-    [property, pendingChanges]
+    () => getHandoverValue(property),
+    [property]
   )
 
   // Memoized handlers
@@ -96,11 +82,6 @@ const PropertyItem = memo(function PropertyItem({
   const handleHandoverChange = useCallback(
     (value: string) => onHandoverChange(property.id, value),
     [onHandoverChange, property.id]
-  )
-  const handleSave = useCallback(() => onSaveChanges(property.id), [onSaveChanges, property.id])
-  const handleCancel = useCallback(
-    () => onCancelChanges(property.id),
-    [onCancelChanges, property.id]
   )
   const handleDelete = useCallback(
     () => onDeleteProperty?.(property.id),
@@ -124,15 +105,12 @@ const PropertyItem = memo(function PropertyItem({
 export default function PropertyList({
   properties,
   loading,
-  pendingChanges,
   savingChanges,
   onAddProperty,
   onEditProperty,
   onSubdivisionChange,
   onHandoverChange,
   onRefresh,
-  onSaveChanges,
-  onCancelChanges,
   onNavigateToTabs,
   onDeleteProperty,
 }: PropertyListProps) {
@@ -271,7 +249,6 @@ export default function PropertyList({
             {/* Enhanced Status Dropdowns with Mutual Exclusivity */}
             <PropertyStatusDropdowns
               property={property}
-              pendingChanges={pendingChanges}
               savingChanges={savingChanges}
               propertiesWithPipelineIssues={propertiesWithPipelineIssues}
               onSubdivisionChange={onSubdivisionChange}
@@ -294,35 +271,7 @@ export default function PropertyList({
               )}
             </div>
 
-            {/* Save/Cancel */}
-            {hasPendingChanges(property.id, pendingChanges) && (
-              <div className="flex items-center space-x-2 pt-2 border-t border-gray-100">
-                <Button
-                  onClick={() => onSaveChanges(property.id)}
-                  disabled={savingChanges[property.id]}
-                  variant="primary"
-                  size="sm"
-                >
-                  {savingChanges[property.id] ? (
-                    <>
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Changes'
-                  )}
-                </Button>
-                <Button
-                  onClick={() => onCancelChanges(property.id)}
-                  disabled={savingChanges[property.id]}
-                  variant="secondary"
-                  size="sm"
-                >
-                  Cancel
-                </Button>
-                <div className="text-xs text-amber-600">You have unsaved changes</div>
-              </div>
-            )}
+            {/* Immediate persistence in effect — Save/Cancel removed */}
 
             {property.acquisition_notes && (
               <p className="text-sm text-gray-600 mt-2 italic">{property.acquisition_notes}</p>

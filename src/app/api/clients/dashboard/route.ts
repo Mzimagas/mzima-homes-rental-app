@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
     // First, find the client record for this auth user
     const { data: clientRecord, error: clientError } = await supabase
       .from('clients')
-      .select('id')
+      .select('id, full_name, email, phone, notes, next_of_kin, created_at, auth_user_id')
       .eq('auth_user_id', user.id)
-      .single()
+      .single<any>()
 
     if (clientError || !clientRecord) {
       console.warn('❌ Client record not found for user:', user.id, clientError)
@@ -47,15 +47,18 @@ export async function GET(request: NextRequest) {
 
     // Get client properties using the client record ID
     const properties = await getClientProperties(supabase, clientRecord.id)
+    console.log('✅ Client Dashboard API - Properties loaded:', properties.length)
 
     return NextResponse.json({
       success: true,
       client: {
-        id: user.id,
-        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        email: user.email,
-        phone: user.user_metadata?.phone || null,
-        registration_date: user.created_at,
+        id: clientRecord.id,
+        full_name: clientRecord.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        email: clientRecord.email || user.email,
+        phone: clientRecord.phone || user.user_metadata?.phone || null,
+        notes: clientRecord.notes || null,
+        next_of_kin: clientRecord.next_of_kin || [],
+        registration_date: clientRecord.created_at || user.created_at,
         properties: properties
       }
     })
@@ -71,6 +74,8 @@ export async function GET(request: NextRequest) {
 
 async function getClientProperties(supabase: any, clientId: string) {
   try {
+    console.log('🔍 Getting properties for client:', clientId)
+
     // Get property interests
     const { data: interests, error: interestsError } = await supabase
       .from('client_property_interests')
@@ -86,12 +91,21 @@ async function getClientProperties(supabase: any, clientId: string) {
           physical_address,
           property_source,
           handover_status,
+          lat,
+          lng,
+          property_type,
+          sale_price_kes,
+          notes,
+          total_area_acres,
+          total_area_sqm,
           created_at,
           updated_at
         )
       `)
       .eq('client_id', clientId)
       .eq('status', 'ACTIVE')
+
+    console.log('🔍 Property interests query result:', { interests, interestsError })
 
     if (interestsError && interestsError.code !== 'PGRST116') {
       console.warn('Error fetching property interests:', interestsError)
@@ -150,12 +164,24 @@ async function getClientProperties(supabase: any, clientId: string) {
           id: property.id,
           name: property.name,
           location: property.physical_address || 'Location not specified',
-          property_type: 'RESIDENTIAL',
-          asking_price_kes: 5000000, // Default price
+          physical_address: property.physical_address,
+          lat: property.lat,
+          lng: property.lng,
+          property_type: property.property_type || 'RESIDENTIAL',
+          property_type_display: property.property_type || 'Residential',
+          asking_price_kes: property.sale_price_kes || 5000000,
+          description: property.notes,
+          total_area_acres: property.total_area_acres,
+          total_area_sqm: property.total_area_sqm,
+          bedrooms: null, // Not available for land properties
+          bathrooms: null, // Not available for land properties
+          parking_spaces: null, // Not available for land properties
           handover_status: property.handover_status,
+          handover_status_display: property.handover_status,
           handover_progress: progress,
           current_stage: currentStage,
           images: imageUrls,
+          main_image: imageUrls[0] || null,
           interest_date: interest.created_at,
           status
         })

@@ -2,7 +2,6 @@ import {
   PropertyWithLifecycle,
   HandoverPipelineStageData,
   HANDOVER_PIPELINE_STAGES,
-  PendingChanges,
 } from '../types/property-management.types'
 
 // Property source and lifecycle utilities
@@ -98,18 +97,10 @@ export const determineHandoverStatus = (stageData: HandoverPipelineStageData[]):
   return 'IDENTIFIED'
 }
 
-// Pending changes utilities
-export const hasPendingChanges = (propertyId: string, pendingChanges: PendingChanges): boolean => {
-  const changes = pendingChanges[propertyId]
-  return !!(changes && (changes.subdivision !== undefined || changes.handover !== undefined))
-}
-
-export const getPendingSubdivisionValue = (
-  property: PropertyWithLifecycle,
-  pendingChanges: PendingChanges
+// Status value helpers (immediate persistence – no pendingChanges)
+export const getSubdivisionValue = (
+  property: PropertyWithLifecycle
 ): string => {
-  const pending = pendingChanges[property.id]?.subdivision
-  if (pending !== undefined) return pending
   switch (property.subdivision_status) {
     case 'SUBDIVIDED':
       return 'Subdivided'
@@ -121,12 +112,9 @@ export const getPendingSubdivisionValue = (
   }
 }
 
-export const getPendingHandoverValue = (
-  property: PropertyWithLifecycle,
-  pendingChanges: PendingChanges
+export const getHandoverValue = (
+  property: PropertyWithLifecycle
 ): string => {
-  const pending = pendingChanges[property.id]?.handover
-  if (pending !== undefined) return pending
   return property.handover_status === 'COMPLETED'
     ? 'Handed Over'
     : property.handover_status === 'IN_PROGRESS'

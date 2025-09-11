@@ -3,12 +3,14 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function GET(req: NextRequest) {
   try {
     console.log('🏠 Marketplace API: Fetching handover properties only')
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
-    
+    const admin = createClient(supabaseUrl, serviceKey) // server-side client for aggregate counts (bypass RLS)
+
     // Get properties that are available for sale in marketplace
     // Only show properties that have moved to handover status (IN_PROGRESS or COMPLETED)
     const { data: properties, error } = await supabase
@@ -24,6 +26,8 @@ export async function GET(req: NextRequest) {
         notes,
         total_area_sqm,
         total_area_acres,
+        lat,
+        lng,
         created_at
       `)
       .in('handover_status', ['IN_PROGRESS', 'COMPLETED'])
@@ -64,6 +68,13 @@ export async function GET(req: NextRequest) {
             .eq('property_id', property.id)
             .single()
 
+          // Get interest counts for display
+          const { count: interestCount } = await admin
+            .from('client_property_interests')
+            .select('id', { count: 'exact', head: true })
+            .eq('property_id', property.id)
+            .eq('status', 'ACTIVE') as unknown as { count: number }
+
           // Format images
           const imageUrls = (images || []).map(img => img.image_url).filter(Boolean)
           const mainImage = images?.find(img => img.is_primary)?.image_url || imageUrls[0]
@@ -84,7 +95,9 @@ export async function GET(req: NextRequest) {
             status: 'AVAILABLE', // Marketplace status
             // Sale status information
             sale_status: saleInfo?.sale_status || 'LISTED_FOR_SALE',
-            deposit_received: (saleInfo?.deposit_amount && saleInfo.deposit_amount > 0) || false
+            deposit_received: (saleInfo?.deposit_amount && saleInfo.deposit_amount > 0) || false,
+            interest_count: interestCount,
+            is_new: property.created_at ? (new Date().getTime() - new Date(property.created_at).getTime() < 1000 * 60 * 60 * 24 * 7) : false
           }
         } catch (imageError) {
           console.warn(`Error fetching images for property ${property.id}:`, imageError)

@@ -127,41 +127,26 @@ export async function GET(req: NextRequest) {
         console.log('📊 maintenance_requests table missing, using fallback stats calculation...')
 
         // Calculate basic stats without maintenance_requests table
-        const { data: fallbackStats, error: fallbackError } = await admin.rpc('get_basic_dashboard_stats', {
-          user_id: userId
-        })
-
-        if (fallbackError) {
-          console.error('Fallback stats error:', fallbackError)
-          // Return basic hardcoded stats as last resort
-          const basicStats = {
-            total_properties: 0,
-            total_units: 0,
-            occupied_units: 0,
-            monthly_income: 0,
-            maintenance_requests: 0
-          }
-
-          return NextResponse.json({
-            totalProperties: basicStats.total_properties,
-            totalUnits: basicStats.total_units,
-            occupiedUnits: basicStats.occupied_units,
-            vacantUnits: basicStats.total_units - basicStats.occupied_units,
-            occupancyRate: basicStats.total_units > 0 ? (basicStats.occupied_units / basicStats.total_units) * 100 : 0,
-            monthlyIncome: basicStats.monthly_income,
-            outstandingRent: 0,
-            maintenanceRequests: 0,
-            recentActivity: []
-          })
-        }
-
-        // Use fallback stats
-        const dbStats = fallbackStats?.[0] || {
+        // Fall back to zeros if helper function doesn't exist
+        const basicStats = {
           total_properties: 0,
           total_units: 0,
           occupied_units: 0,
-          monthly_income: 0
+          monthly_income: 0,
+          maintenance_requests: 0
         }
+
+        return NextResponse.json({
+          totalProperties: basicStats.total_properties,
+          totalUnits: basicStats.total_units,
+          occupiedUnits: basicStats.occupied_units,
+          vacantUnits: basicStats.total_units - basicStats.occupied_units,
+          occupancyRate: basicStats.total_units > 0 ? (basicStats.occupied_units / basicStats.total_units) * 100 : 0,
+          monthlyIncome: basicStats.monthly_income,
+          outstandingRent: 0,
+          maintenanceRequests: 0,
+          recentActivity: []
+        })
 
         return NextResponse.json({
           totalProperties: dbStats.total_properties || 0,

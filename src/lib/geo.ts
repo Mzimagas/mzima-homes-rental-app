@@ -80,6 +80,34 @@ export function buildGoogleMapsUrl(lat: number, lng: number, label?: string) {
 }
 
 /**
+ * Build Google Maps URL for a property with coordinates or address fallback
+ * Prioritizes exact coordinates over address search
+ */
+export function buildPropertyMapsUrl(property: {
+  lat?: number | null;
+  lng?: number | null;
+  physical_address?: string | null;
+  location?: string | null;
+  name?: string;
+}) {
+  // First try to use exact coordinates
+  if (property.lat && property.lng) {
+    const coords = normalizeLatLng(property.lat, property.lng);
+    if (coords) {
+      return buildGoogleMapsUrl(coords.lat, coords.lng, property.name);
+    }
+  }
+
+  // Fallback to address search
+  const address = property.physical_address || property.location;
+  if (address) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  }
+
+  return null;
+}
+
+/**
  * Coerce Supabase numeric/decimal columns to numbers
  * Use this right after fetching from DB
  */

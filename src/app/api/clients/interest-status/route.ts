@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     // Get the current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -28,11 +28,27 @@ export async function POST(request: NextRequest) {
 
     const propertyIds = validatedData.propertyIds || [validatedData.propertyId!]
 
-    // Get interest status for the properties
+    // Map auth user -> client.id
+    const { data: clientRecord, error: clientErr } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single()
+
+    if (clientErr || !clientRecord) {
+      // No client record yet => no interests
+      const empty = propertyIds.reduce((acc, pid) => {
+        acc[pid] = { hasInterest: false, interestType: null, createdAt: null }
+        return acc
+      }, {} as Record<string, any>)
+      return NextResponse.json({ success: true, interests: empty })
+    }
+
+    // Get interest status for the properties for CURRENT client
     const { data: interests, error: interestError } = await supabase
       .from('client_property_interests')
       .select('property_id, status, interest_type, created_at')
-      .eq('client_id', user.id)
+      .eq('client_id', clientRecord.id)
       .in('property_id', propertyIds)
       .eq('status', 'ACTIVE')
 
@@ -44,6 +60,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get total ACTIVE interests count per property (all clients)
+    const { data: allInterests, error: allErr } = await supabase
+      .from('client_property_interests')
+      .select('property_id, client_id')
+      .in('property_id', propertyIds)
+      .eq('status', 'ACTIVE')
+
+    if (allErr) {
+      console.error('Error fetching interest counts:', allErr)
+    }
+
+    const counts = (allInterests || []).reduce((acc: Record<string, number>, row: any) => {
+      acc[row.property_id] = (acc[row.property_id] || 0) + 1
+      return acc
+    }, {})
+
     // Create a map of property ID to interest status
     const interestMap = (interests || []).reduce((acc, interest) => {
       acc[interest.property_id] = {
@@ -54,12 +86,16 @@ export async function POST(request: NextRequest) {
       return acc
     }, {} as Record<string, any>)
 
-    // Fill in properties without interest
+    // Fill in properties without interest and attach counts
     const result = propertyIds.reduce((acc, propertyId) => {
-      acc[propertyId] = interestMap[propertyId] || {
-        hasInterest: false,
-        interestType: null,
-        createdAt: null
+      const hasInterest = !!interestMap[propertyId]
+      const totalCount = counts[propertyId] || 0
+      acc[propertyId] = {
+        hasInterest,
+        interestType: interestMap[propertyId]?.interestType || null,
+        createdAt: interestMap[propertyId]?.createdAt || null,
+        totalInterested: totalCount,
+        othersInterested: hasInterest ? Math.max(0, totalCount - 1) : totalCount
       }
       return acc
     }, {} as Record<string, any>)

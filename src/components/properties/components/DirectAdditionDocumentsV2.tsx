@@ -1413,57 +1413,81 @@ export default function DirectAdditionDocumentsV2({
                 {/* Expandable Content */}
                 {isExpanded && (
                   <div className="border-t border-gray-100 p-4 space-y-4">
-                    {/* Upload Zone */}
-                    <div>
-                      <label
-                        className={`
-                      block w-full p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200
-                      ${
-                        isUploading
-                          ? 'border-teal-300 bg-teal-50 scale-[0.98]'
-                          : 'border-gray-300 bg-gray-50 hover:border-teal-400 hover:bg-teal-50 hover:scale-[1.01]'
-                      }
-                    `}
-                      >
-                        {isUploading ? (
-                          <div className="flex flex-col items-center gap-3">
-                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-600 border-t-transparent"></div>
-                            <span className="text-sm font-medium text-teal-700">Uploading...</span>
+                    {/* Upload Zone or Client Information */}
+                    {readOnly ? (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <div className="flex items-start space-x-3">
+                          <div className="text-blue-600 text-xl mt-0.5">📋</div>
+                          <div>
+                            <h5 className="font-medium text-blue-900 mb-1">Document Status</h5>
+                            <p className="text-sm text-blue-800">
+                              {state?.documents && state.documents.length > 0
+                                ? `${state.documents.length} document${state.documents.length > 1 ? 's' : ''} uploaded and available for viewing.`
+                                : state?.status?.is_na
+                                  ? 'This document is marked as not applicable for your property.'
+                                  : 'This document is being processed by our team. You will be notified when it becomes available.'
+                              }
+                            </p>
+                            {state?.documents && state.documents.length > 0 && (
+                              <p className="text-xs text-blue-700 mt-1">
+                                Click on any document below to view or download it.
+                              </p>
+                            )}
                           </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <div className="text-4xl">📎</div>
-                            <div>
-                              <span className="text-base font-medium text-gray-700 block">
-                                {docType.multiple ? 'Upload Files' : 'Upload File'}
-                              </span>
-                              <span className="text-sm text-gray-500 mt-1 block">
-                                {docType.accept.join(', ')} • Max 10MB each
-                              </span>
-                              {docType.multiple && (
-                                <span className="text-sm text-teal-600 font-medium block mt-1">
-                                  Multiple files supported
-                                </span>
-                              )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label
+                          className={`
+                        block w-full p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200
+                        ${
+                          isUploading
+                            ? 'border-teal-300 bg-teal-50 scale-[0.98]'
+                            : 'border-gray-300 bg-gray-50 hover:border-teal-400 hover:bg-teal-50 hover:scale-[1.01]'
+                        }
+                      `}
+                        >
+                          {isUploading ? (
+                            <div className="flex flex-col items-center gap-3">
+                              <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-600 border-t-transparent"></div>
+                              <span className="text-sm font-medium text-teal-700">Uploading...</span>
                             </div>
-                          </div>
-                        )}
-                        <input
-                          type="file"
-                          multiple={docType.multiple}
-                          accept={docType.accept.join(',')}
-                          capture={docType.capture as any}
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files.length > 0) {
-                              handleFileUpload(docType.key, e.target.files)
-                              e.target.value = ''
-                            }
-                          }}
-                          className="hidden"
-                          disabled={isUploading || isDocLocked || isReadOnly || isUploadDisabled}
-                        />
-                      </label>
-                    </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="text-4xl">📎</div>
+                              <div>
+                                <span className="text-base font-medium text-gray-700 block">
+                                  {docType.multiple ? 'Upload Files' : 'Upload File'}
+                                </span>
+                                <span className="text-sm text-gray-500 mt-1 block">
+                                  {docType.accept.join(', ')} • Max 10MB each
+                                </span>
+                                {docType.multiple && (
+                                  <span className="text-sm text-teal-600 font-medium block mt-1">
+                                    Multiple files supported
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            multiple={docType.multiple}
+                            accept={docType.accept.join(',')}
+                            capture={docType.capture as any}
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files.length > 0) {
+                                handleFileUpload(docType.key, e.target.files)
+                                e.target.value = ''
+                              }
+                            }}
+                            className="hidden"
+                            disabled={isUploading || isDocLocked || isReadOnly || isUploadDisabled}
+                          />
+                        </label>
+                      </div>
+                    )}
 
                     {/* File Gallery */}
                     {documents.length > 0 && (
@@ -1499,18 +1523,20 @@ export default function DirectAdditionDocumentsV2({
                                 >
                                   View
                                 </button>
-                                <button
-                                  onClick={() => handleFileDelete(doc)}
-                                  disabled={isDeleteDisabled}
-                                  className={`px-2 py-1 text-xs font-medium border rounded transition-colors ${
-                                    isDeleteDisabled
-                                      ? 'text-gray-400 bg-gray-50 border-gray-200 cursor-not-allowed'
-                                      : 'text-red-700 bg-red-50 border-red-200 hover:bg-red-100'
-                                  }`}
-                                  title={isDeleteDisabled ? 'Delete disabled for completed properties' : 'Delete document'}
-                                >
-                                  Delete
-                                </button>
+                                {!readOnly && (
+                                  <button
+                                    onClick={() => handleFileDelete(doc)}
+                                    disabled={isDeleteDisabled}
+                                    className={`px-2 py-1 text-xs font-medium border rounded transition-colors ${
+                                      isDeleteDisabled
+                                        ? 'text-gray-400 bg-gray-50 border-gray-200 cursor-not-allowed'
+                                        : 'text-red-700 bg-red-50 border-red-200 hover:bg-red-100'
+                                    }`}
+                                    title={isDeleteDisabled ? 'Delete disabled for completed properties' : 'Delete document'}
+                                  >
+                                    Delete
+                                  </button>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -1518,42 +1544,69 @@ export default function DirectAdditionDocumentsV2({
                       </div>
                     )}
 
-                    {/* N/A Toggle and Notes */}
-                    <div className="border-t border-gray-100 pt-4 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={state?.status?.is_na || false}
-                            onChange={(e) => updateDocumentStatus(docType.key, e.target.checked)}
-                            className={`rounded border-gray-300 focus:ring-teal-500 ${
-                              isDocLocked || documentsReadOnly
-                                ? 'text-gray-400 cursor-not-allowed'
-                                : 'text-teal-600'
-                            }`}
-                            disabled={isDocLocked || documentsReadOnly}
-                            title={documentsReadOnly ? 'Mark as N/A disabled for completed properties' : undefined}
-                          />
-                          <span className={`text-sm ${
-                            documentsReadOnly ? 'text-gray-400' : 'text-gray-700'
-                          }`}>Mark as N/A</span>
-                        </label>
+                    {/* N/A Toggle and Notes or Client Status Display */}
+                    {readOnly ? (
+                      <div className="border-t border-gray-100 pt-4">
+                        {state?.status?.is_na && (
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center space-x-2">
+                              <div className="text-gray-500">ℹ️</div>
+                              <span className="text-sm font-medium text-gray-700">Not Applicable</span>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1">
+                              This document has been marked as not applicable for your property.
+                            </p>
+                          </div>
+                        )}
+                        {state?.status?.note && (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
+                            <div className="flex items-start space-x-2">
+                              <div className="text-yellow-600 mt-0.5">📝</div>
+                              <div>
+                                <span className="text-sm font-medium text-yellow-800">Note from our team:</span>
+                                <p className="text-sm text-yellow-700 mt-1">{state.status.note}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      <div className="border-t border-gray-100 pt-4 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={state?.status?.is_na || false}
+                              onChange={(e) => updateDocumentStatus(docType.key, e.target.checked)}
+                              className={`rounded border-gray-300 focus:ring-teal-500 ${
+                                isDocLocked || documentsReadOnly
+                                  ? 'text-gray-400 cursor-not-allowed'
+                                  : 'text-teal-600'
+                              }`}
+                              disabled={isDocLocked || documentsReadOnly}
+                              title={documentsReadOnly ? 'Mark as N/A disabled for completed properties' : undefined}
+                            />
+                            <span className={`text-sm ${
+                              documentsReadOnly ? 'text-gray-400' : 'text-gray-700'
+                            }`}>Mark as N/A</span>
+                          </label>
+                        </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Notes (optional)
-                        </label>
-                        <textarea
-                          value={localNotes[docType.key] || ''}
-                          onChange={(e) => handleNoteChange(docType.key, e.target.value)}
-                          placeholder="Add any additional notes about this document..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          rows={2}
-                          disabled={isDocLocked}
-                        />
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Notes (optional)
+                          </label>
+                          <textarea
+                            value={localNotes[docType.key] || ''}
+                            onChange={(e) => handleNoteChange(docType.key, e.target.value)}
+                            placeholder="Add any additional notes about this document..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                            rows={2}
+                            disabled={isDocLocked}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>

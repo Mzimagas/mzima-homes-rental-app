@@ -1,15 +1,14 @@
 'use client'
 
 interface ClientNavigationProps {
-  activeTab: 'overview' | 'properties' | 'documents' | 'profile'
-  onTabChange: (tab: 'overview' | 'properties' | 'documents' | 'profile') => void
+  activeTab: 'profile' | 'properties' | 'completed'
+  onTabChange: (tab: 'profile' | 'properties' | 'completed') => void
 }
 
 export default function ClientNavigation({ activeTab, onTabChange }: ClientNavigationProps) {
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'properties', label: 'My Properties', icon: '🏠' },
-    { id: 'documents', label: 'Documents', icon: '📄' },
+    { id: 'completed', label: 'Completed Projects', icon: '✅' },
     { id: 'profile', label: 'Profile', icon: '👤' },
   ] as const
 

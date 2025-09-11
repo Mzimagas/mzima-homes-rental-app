@@ -4,10 +4,10 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
-    const { id: propertyId } = await params
+    const { id: propertyId } = params
 
     // Get property details - only show properties in handover status
     const { data: property, error } = await supabase
@@ -29,6 +29,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         parking_spaces,
         year_built,
         amenities,
+        lat,
+        lng,
         created_at,
         updated_at
       `)

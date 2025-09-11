@@ -28,6 +28,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return getSupabaseBrowser();
   }, [mounted]);
 
+
+  // helper: sync client session to server cookies for SSR API routes
+  const syncServerSession = async (event: string, sess: Session | null) => {
+    try {
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ event, session: sess }),
+      })
+    } catch (e) {
+      console.warn('AuthProvider: failed to sync server session', e)
+    }
+  }
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -48,10 +63,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Subscribe to changes
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, sess) => {
       if (!isMounted) return;
       setSession(sess ?? null);
       setLoading(false);
+      // sync server cookies so API routes can see the session
+      await syncServerSession(event, sess)
     });
 
     return () => {

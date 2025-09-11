@@ -46,6 +46,21 @@
         "beforeAll": "readonly",
         "afterAll": "readonly"
       }
+    },
+    {
+      "files": [
+        "src/app/api/**/*.{js,ts}",
+        "src/lib/services/**/*.{js,ts}",
+        "src/services/**/*.{js,ts}",
+        "src/utils/**/*.{js,ts}",
+        "src/lib/supabase*.{js,ts}",
+        "src/lib/security/**/*.{js,ts}",
+        "src/middleware.{js,ts}",
+        "src/__tests__/setup/**/*.{js,ts}"
+      ],
+      "rules": {
+        "no-console": "off"
+      }
     }
   ]
 }
