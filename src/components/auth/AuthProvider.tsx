@@ -8,13 +8,15 @@ type AuthCtx = {
   user: User | null;
   loading: boolean;
   signOut: () => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ data: any; error: any }>;
 };
 
 const AuthContext = createContext<AuthCtx>({
   session: null,
   user: null,
   loading: true,
-  signOut: async () => ({ error: null })
+  signOut: async () => ({ error: null }),
+  signUp: async () => ({ data: null, error: 'Not implemented' })
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -90,17 +92,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signUp = async (email: string, password: string, fullName?: string) => {
+    try {
+      if (!supabase) {
+        return { data: null, error: 'Supabase client not available' };
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Sign up error:', error);
+        return { data: null, error };
+      }
+
+      console.log('✅ User signed up successfully');
+      return { data, error: null };
+    } catch (error) {
+      console.error('Sign up failed:', error);
+      return { data: null, error };
+    }
+  };
+
   const value = useMemo(() => ({
     session,
     user: session?.user ?? null,
     loading: loading || !mounted,
-    signOut
+    signOut,
+    signUp
   }), [session, loading, mounted]);
 
   // Show loading state during SSR and initial mount
   if (!mounted) {
     return (
-      <AuthContext.Provider value={{ session: null, user: null, loading: true, signOut }}>
+      <AuthContext.Provider value={{ session: null, user: null, loading: true, signOut, signUp }}>
         {children}
       </AuthContext.Provider>
     );
