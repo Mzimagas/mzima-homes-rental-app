@@ -5,9 +5,11 @@ import { z } from 'zod'
 const expressInterestSchema = z.object({
   propertyId: z.string().uuid('Invalid property ID'),
   clientId: z.string().uuid('Invalid client ID').optional(),
-  interestType: z.enum(['express-interest', 'contact', 'purchase-inquiry']).default('express-interest'),
+  interestType: z
+    .enum(['express-interest', 'contact', 'purchase-inquiry'])
+    .default('express-interest'),
   message: z.string().optional(),
-  contactPreference: z.enum(['email', 'phone', 'both']).default('email')
+  contactPreference: z.enum(['email', 'phone', 'both']).default('email'),
 })
 
 export async function POST(request: NextRequest) {
@@ -24,12 +26,15 @@ export async function POST(request: NextRequest) {
     console.log('🔗 Express Interest API - Supabase client created')
 
     // Get the current authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     console.log('🔍 Express Interest API - Auth check:', {
       hasUser: !!user,
       userId: user?.id,
       userEmail: user?.email,
-      authError: authError?.message
+      authError: authError?.message,
     })
 
     if (authError || !user) {
@@ -38,7 +43,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Authentication required',
-          details: authError?.message || 'No user found'
+          details: authError?.message || 'No user found',
         },
         { status: 401 }
       )
@@ -57,16 +62,18 @@ export async function POST(request: NextRequest) {
       // Auto-create client record
       const { data: newClient, error: createError } = await supabase
         .from('clients')
-        .insert([{
-          auth_user_id: user.id,
-          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-          email: user.email,
-          phone: user.user_metadata?.phone || null,
-          registration_source: 'marketplace',
-          status: 'ACTIVE',
-          email_verified: user.email_confirmed_at ? true : false,
-          phone_verified: false
-        }])
+        .insert([
+          {
+            auth_user_id: user.id,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            email: user.email,
+            phone: user.user_metadata?.phone || null,
+            registration_source: 'marketplace',
+            status: 'ACTIVE',
+            email_verified: user.email_confirmed_at ? true : false,
+            phone_verified: false,
+          },
+        ])
         .select('id')
         .single()
 
@@ -88,7 +95,7 @@ export async function POST(request: NextRequest) {
     // Verify the property exists and is available
     const { data: property, error: propertyError } = await supabase
       .from('properties')
-      .select('id, name, sale_price_kes, handover_status, subdivision_status')
+      .select('id, name, sale_price_kes, handover_status, subdivision_status, committed_client_id')
       .eq('id', validatedData.propertyId)
       .single()
 
@@ -96,7 +103,9 @@ export async function POST(request: NextRequest) {
       propertyId: validatedData.propertyId,
       found: !!property,
       error: propertyError?.message,
-      property: property ? { id: property.id, name: property.name, handover_status: property.handover_status } : null
+      property: property
+        ? { id: property.id, name: property.name, handover_status: property.handover_status }
+        : null,
     })
 
     if (propertyError || !property) {
@@ -120,14 +129,27 @@ export async function POST(request: NextRequest) {
       .eq('property_id', validatedData.propertyId)
       .eq('status', 'ACTIVE')
 
-    // For now, we allow multiple clients to express interest
-    // Property becomes unavailable only when handover is completed or subdivision is done
+    // Check property availability
+    // Property becomes unavailable when:
+    // 1. Handover is completed
+    // 2. Property is subdivided
+    // 3. Property is committed to another client
+    const isCommittedToOtherClient =
+      property.committed_client_id && property.committed_client_id !== clientId
     const hasDepositPaid = false // Will be implemented when payment system is ready
 
-    if (property.handover_status === 'COMPLETED' || property.subdivision_status === 'SUBDIVIDED' || hasDepositPaid) {
-      const reason = hasDepositPaid
-        ? 'Property is reserved (deposit paid by another client)'
-        : 'Property is no longer available'
+    if (
+      property.handover_status === 'COMPLETED' ||
+      property.subdivision_status === 'SUBDIVIDED' ||
+      isCommittedToOtherClient ||
+      hasDepositPaid
+    ) {
+      let reason = 'Property is no longer available'
+      if (isCommittedToOtherClient) {
+        reason = 'Property is already committed to another client'
+      } else if (hasDepositPaid) {
+        reason = 'Property is reserved (deposit paid by another client)'
+      }
 
       return NextResponse.json(
         {
@@ -136,8 +158,9 @@ export async function POST(request: NextRequest) {
           propertyStatus: {
             handover_status: property.handover_status,
             subdivision_status: property.subdivision_status,
-            hasDepositPaid
-          }
+            committed_client_id: property.committed_client_id,
+            hasDepositPaid,
+          },
         },
         { status: 400 }
       )
@@ -158,8 +181,8 @@ export async function POST(request: NextRequest) {
           error: 'You have already expressed interest in this property',
           existingInterest: {
             id: existingInterest.id,
-            interest_type: existingInterest.interest_type
-          }
+            interest_type: existingInterest.interest_type,
+          },
         },
         { status: 400 }
       )
@@ -174,7 +197,7 @@ export async function POST(request: NextRequest) {
       message: validatedData.message,
       contact_preference: validatedData.contactPreference,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     }
 
     let interest
@@ -184,7 +207,7 @@ export async function POST(request: NextRequest) {
         .from('client_property_interests')
         .update({
           ...interestData,
-          id: existingInterest.id
+          id: existingInterest.id,
         })
         .eq('id', existingInterest.id)
         .select()
@@ -192,10 +215,7 @@ export async function POST(request: NextRequest) {
 
       if (updateError) {
         console.error('Error updating interest:', updateError)
-        return NextResponse.json(
-          { error: 'Failed to update interest' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to update interest' }, { status: 500 })
       }
       interest = updatedInterest
     } else {
@@ -208,16 +228,18 @@ export async function POST(request: NextRequest) {
 
       if (createError) {
         console.error('Error creating interest:', createError)
-        return NextResponse.json(
-          { error: 'Failed to express interest' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to express interest' }, { status: 500 })
       }
       interest = newInterest
     }
 
     // Create admin notification
-    await createAdminNotification(supabase, clientId, validatedData.propertyId, validatedData.interestType)
+    await createAdminNotification(
+      supabase,
+      clientId,
+      validatedData.propertyId,
+      validatedData.interestType
+    )
 
     // If this is a purchase inquiry, consider transitioning to handover pipeline
     if (validatedData.interestType === 'purchase-inquiry') {
@@ -227,7 +249,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ Express Interest API - Success:', {
       interestId: interest.id,
       clientId,
-      propertyId: validatedData.propertyId
+      propertyId: validatedData.propertyId,
     })
 
     return NextResponse.json({
@@ -237,15 +259,14 @@ export async function POST(request: NextRequest) {
         property_id: validatedData.propertyId,
         client_id: clientId,
         status: interest.status,
-        created_at: interest.created_at
+        created_at: interest.created_at,
       },
       message: 'Interest expressed successfully',
       property: {
         id: property.id,
-        name: property.name
-      }
+        name: property.name,
+      },
     })
-
   } catch (error) {
     console.error('❌ Express interest error:', error)
 
@@ -254,7 +275,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Invalid request data',
-          details: error.errors
+          details: error.errors,
         },
         { status: 400 }
       )
@@ -264,7 +285,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     )
@@ -281,7 +302,7 @@ async function createAdminNotification(
     // Get client and property details for notification
     const [clientResult, propertyResult] = await Promise.all([
       supabase.from('enhanced_users').select('full_name, email').eq('id', clientId).single(),
-      supabase.from('properties').select('name').eq('id', propertyId).single()
+      supabase.from('properties').select('name').eq('id', propertyId).single(),
     ])
 
     const clientName = clientResult.data?.full_name || 'Unknown Client'
@@ -296,16 +317,14 @@ async function createAdminNotification(
         property_id: propertyId,
         interest_type: interestType,
         client_name: clientName,
-        property_name: propertyName
+        property_name: propertyName,
       },
       created_at: new Date().toISOString(),
       is_read: false,
-      priority: interestType === 'purchase-inquiry' ? 'HIGH' : 'NORMAL'
+      priority: interestType === 'purchase-inquiry' ? 'HIGH' : 'NORMAL',
     }
 
-    const { error } = await supabase
-      .from('admin_notifications')
-      .insert([notificationData])
+    const { error } = await supabase.from('admin_notifications').insert([notificationData])
 
     if (error) {
       console.warn('Failed to create admin notification:', error)
@@ -315,27 +334,21 @@ async function createAdminNotification(
   }
 }
 
-async function considerHandoverTransition(
-  supabase: any,
-  propertyId: string,
-  clientId: string
-) {
+async function considerHandoverTransition(supabase: any, propertyId: string, clientId: string) {
   try {
     // Check if property should be transitioned to handover pipeline
     // This could be based on business rules, admin approval, etc.
-    
+
     // For now, we'll create a pending handover request that admin can approve
     const handoverRequestData = {
       property_id: propertyId,
       client_id: clientId,
       status: 'PENDING_APPROVAL',
       requested_at: new Date().toISOString(),
-      notes: 'Automatic handover request based on purchase inquiry'
+      notes: 'Automatic handover request based on purchase inquiry',
     }
 
-    const { error } = await supabase
-      .from('handover_requests')
-      .insert([handoverRequestData])
+    const { error } = await supabase.from('handover_requests').insert([handoverRequestData])
 
     if (error) {
       console.warn('Failed to create handover request:', error)

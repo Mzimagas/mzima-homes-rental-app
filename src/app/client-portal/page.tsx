@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { LoadingCard } from '../../components/ui/loading'
@@ -8,8 +8,10 @@ import { ErrorCard } from '../../components/ui/error'
 import ClientWelcomeModal from './components/ClientWelcomeModal'
 import ClientNavigation from './components/ClientNavigation'
 import ProfileTab from './components/ProfileTab'
-import ClientPropertyCard from './components/ClientPropertyCard'
+
 import CompletedProjectsTab from './components/CompletedProjectsTab'
+import SavedPropertiesTab from './components/SavedPropertiesTab'
+import MyPropertiesTab from './components/MyPropertiesTab'
 
 interface ClientProperty {
   id: string
@@ -34,7 +36,7 @@ interface ClientProperty {
   images: string[]
   main_image?: string
   interest_date: string
-  status: 'INTERESTED' | 'IN_HANDOVER' | 'COMPLETED'
+  status: 'INTERESTED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED'
 }
 
 interface ClientData {
@@ -51,45 +53,16 @@ export default function ClientPortalPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showWelcome, setShowWelcome] = useState(false)
-  const [activeTab, setActiveTab] = useState<'profile' | 'properties' | 'completed'>('properties')
-  const [authRetryCount, setAuthRetryCount] = useState(0)
+  const [activeTab, setActiveTab] = useState<
+    'profile' | 'saved-properties' | 'my-properties' | 'completed'
+  >('saved-properties')
 
   const { user, signOut } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  useEffect(() => {
-    console.log('🔍 Client Portal - Loading user data')
-    console.log('🔍 Client Portal - User authenticated:', !!user)
-    console.log('🔍 Client Portal - User ID:', user?.id)
-
-    // Check if this is a welcome redirect
-    if (searchParams.get('welcome') === 'true') {
-      setShowWelcome(true)
-    }
-
-    // Load real user data if authenticated, otherwise demo data
-    if (user) {
-      console.log('🔍 Client Portal - Loading authenticated user data')
-      loadUserData()
-    } else {
-      console.log('🔍 Client Portal - Loading demo data (no user)')
-      loadDemoData()
-    }
-  }, [user, router, searchParams])
-
-  const loadClientData = async () => {
-    if (user) {
-      await loadUserData()
-    } else {
-      loadDemoData()
-    }
-  }
-
-  const loadUserData = async () => {
-    console.log('🔍 Client Portal - Loading real user data')
-    console.log('🔍 User object:', user)
-    console.log('🔍 User metadata:', user?.user_metadata)
+  const loadUserData = useCallback(async () => {
+    // Loading real user data
 
     try {
       setLoading(true)
@@ -105,7 +78,7 @@ export default function ClientPortalPage() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.warn('🚫 Client Portal - Authentication required')
+          // Authentication required
           // Fall back to basic user data
           setClientData({
             id: user?.id || 'unknown',
@@ -113,7 +86,7 @@ export default function ClientPortalPage() {
             email: user?.email || 'unknown@example.com',
             phone: user?.user_metadata?.phone || null,
             registration_date: user?.created_at || new Date().toISOString(),
-            properties: []
+            properties: [],
           })
           setLoading(false)
           return
@@ -124,21 +97,20 @@ export default function ClientPortalPage() {
       const data = await response.json()
 
       if (data.success) {
-        console.log('✅ Client Portal - Data loaded successfully:', data.client)
-        console.log('✅ Client Portal - Properties count:', data.client.properties?.length || 0)
+        // Data loaded successfully
         setClientData(data.client)
       } else {
         throw new Error(data.error || 'Failed to load client data')
       }
-
     } catch (error) {
-      console.error('❌ Client Portal - Error loading data:', error)
+      // Error loading data
       setError(error instanceof Error ? error.message : 'Failed to load client data')
 
       // Fall back to basic user data
-      const fullName = typeof user?.user_metadata?.full_name === 'object'
-        ? user?.user_metadata?.full_name?.full_name
-        : user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
+      const fullName =
+        typeof user?.user_metadata?.full_name === 'object'
+          ? user?.user_metadata?.full_name?.full_name
+          : user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
 
       setClientData({
         id: user?.id || 'unknown',
@@ -146,15 +118,41 @@ export default function ClientPortalPage() {
         email: user?.email || 'unknown@example.com',
         phone: user?.user_metadata?.phone || null,
         registration_date: user?.created_at || new Date().toISOString(),
-        properties: []
+        properties: [],
       })
     } finally {
       setLoading(false)
     }
+  }, [user])
+
+  useEffect(() => {
+    // Loading user data
+
+    // Check if this is a welcome redirect
+    if (searchParams.get('welcome') === 'true') {
+      setShowWelcome(true)
+    }
+
+    // Load real user data if authenticated, otherwise demo data
+    if (user) {
+      // Loading authenticated user data
+      loadUserData()
+    } else {
+      // Loading demo data (no user)
+      loadDemoData()
+    }
+  }, [user, router, searchParams, loadUserData])
+
+  const loadClientData = async () => {
+    if (user) {
+      await loadUserData()
+    } else {
+      loadDemoData()
+    }
   }
 
   const loadDemoData = () => {
-    console.log('🔍 Client Portal - Loading demo data')
+    // Loading demo data
     setLoading(false)
     setClientData({
       id: 'demo-user',
@@ -162,7 +160,7 @@ export default function ClientPortalPage() {
       email: 'demo@example.com',
       phone: '+254700000000',
       registration_date: new Date().toISOString(),
-      properties: []
+      properties: [],
     })
   }
 
@@ -172,11 +170,11 @@ export default function ClientPortalPage() {
     try {
       const { error } = await signOut()
       if (error) {
-        console.error('❌ Logout failed:', error)
+        // Logout failed
         alert(`Logout failed: ${error}`)
       }
     } catch (error) {
-      console.error('Error signing out:', error)
+      // Error signing out
     }
   }
 
@@ -236,15 +234,24 @@ export default function ClientPortalPage() {
 
         {/* Content */}
         <div className="mt-8">
-          {activeTab === 'properties' && (
-            <PropertiesTab
-              properties={clientData.properties}
+          {activeTab === 'saved-properties' && (
+            <SavedPropertiesTab
+              properties={clientData.properties.filter((p) => p.status === 'INTERESTED')}
+              onRefresh={loadClientData}
             />
           )}
 
-          {activeTab === 'completed' && (
-            <CompletedProjectsTab properties={clientData.properties} />
+          {activeTab === 'my-properties' && (
+            <MyPropertiesTab
+              properties={clientData.properties.filter(
+                (p) =>
+                  p.status === 'COMMITTED' || p.status === 'IN_HANDOVER' || p.status === 'COMPLETED'
+              )}
+              onRefresh={loadClientData}
+            />
           )}
+
+          {activeTab === 'completed' && <CompletedProjectsTab properties={clientData.properties} />}
 
           {activeTab === 'profile' && (
             <ProfileTab clientData={clientData} onUpdate={loadClientData} />
@@ -259,52 +266,6 @@ export default function ClientPortalPage() {
           onClose={() => setShowWelcome(false)}
           propertyId={searchParams.get('property')}
         />
-      )}
-    </div>
-  )
-}
-
-function PropertiesTab({
-  properties
-}: {
-  properties: ClientProperty[]
-}) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">My Properties</h2>
-          <p className="text-gray-600 text-sm">Properties you have expressed interest in</p>
-        </div>
-        <button
-          onClick={() => window.location.href = '/marketplace'}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Browse Properties
-        </button>
-      </div>
-
-      {properties.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-          <div className="text-gray-400 text-6xl mb-4">🏠</div>
-          <h3 className="text-xl font-medium text-gray-900 mb-2">No Properties Yet</h3>
-          <p className="text-gray-600 mb-4">You haven't expressed interest in any properties yet</p>
-          <button
-            onClick={() => window.location.href = '/marketplace'}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Browse Marketplace
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {properties.map((property) => (
-            <ClientPropertyCard
-              key={property.id}
-              property={property}
-            />
-          ))}
-        </div>
       )}
     </div>
   )

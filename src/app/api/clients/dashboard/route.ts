@@ -8,14 +8,14 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerSupabaseClient()
 
     // Get the current authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
       console.log('🚫 Client Dashboard API - Authentication required')
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     console.log('✅ Client Dashboard API - User authenticated:', user.id)
@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
           email: user.email,
           phone: user.user_metadata?.phone || null,
           registration_date: user.created_at,
-          properties: []
-        }
+          properties: [],
+        },
       })
     }
 
@@ -53,22 +53,22 @@ export async function GET(request: NextRequest) {
       success: true,
       client: {
         id: clientRecord.id,
-        full_name: clientRecord.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        full_name:
+          clientRecord.full_name ||
+          user.user_metadata?.full_name ||
+          user.email?.split('@')[0] ||
+          'User',
         email: clientRecord.email || user.email,
         phone: clientRecord.phone || user.user_metadata?.phone || null,
         notes: clientRecord.notes || null,
         next_of_kin: clientRecord.next_of_kin || [],
         registration_date: clientRecord.created_at || user.created_at,
-        properties: properties
-      }
+        properties: properties,
+      },
     })
-
   } catch (error) {
     console.error('Client Dashboard API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -79,7 +79,8 @@ async function getClientProperties(supabase: any, clientId: string) {
     // Get property interests
     const { data: interests, error: interestsError } = await supabase
       .from('client_property_interests')
-      .select(`
+      .select(
+        `
         property_id,
         interest_type,
         status,
@@ -98,12 +99,14 @@ async function getClientProperties(supabase: any, clientId: string) {
           notes,
           total_area_acres,
           total_area_sqm,
+          committed_client_id,
           created_at,
           updated_at
         )
-      `)
+      `
+      )
       .eq('client_id', clientId)
-      .eq('status', 'ACTIVE')
+      .in('status', ['ACTIVE', 'COMMITTED'])
 
     console.log('🔍 Property interests query result:', { interests, interestsError })
 
@@ -119,7 +122,7 @@ async function getClientProperties(supabase: any, clientId: string) {
         if (!interest.properties) continue
 
         const property = interest.properties
-        
+
         // Get handover pipeline data if exists
         let handoverData = null
         try {
@@ -128,7 +131,7 @@ async function getClientProperties(supabase: any, clientId: string) {
             .select('*')
             .eq('property_id', property.id)
             .single()
-          
+
           handoverData = handover
         } catch (handoverError) {
           // Handover pipeline might not exist yet
@@ -141,12 +144,18 @@ async function getClientProperties(supabase: any, clientId: string) {
           .eq('property_id', property.id)
           .order('is_primary', { ascending: false })
 
-        const imageUrls = (images || []).map(img => img.image_url).filter(Boolean)
+        const imageUrls = (images || []).map((img) => img.image_url).filter(Boolean)
 
         // Determine property status and progress
-        let status: 'INTERESTED' | 'IN_HANDOVER' | 'COMPLETED' = 'INTERESTED'
+        let status: 'INTERESTED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED' = 'INTERESTED'
         let progress = 0
         let currentStage = 'Interest Expressed'
+
+        // Check if client has committed to this property
+        if (interest.status === 'COMMITTED') {
+          status = 'COMMITTED'
+          currentStage = 'Committed - Ready for Handover'
+        }
 
         if (handoverData) {
           if (handoverData.handover_status === 'COMPLETED') {
@@ -183,13 +192,12 @@ async function getClientProperties(supabase: any, clientId: string) {
           images: imageUrls,
           main_image: imageUrls[0] || null,
           interest_date: interest.created_at,
-          status
+          status,
         })
       }
     }
 
     return properties
-
   } catch (error) {
     console.error('Error fetching client properties:', error)
     return []

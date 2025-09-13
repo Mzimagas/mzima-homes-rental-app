@@ -12,10 +12,12 @@ export async function GET(req: NextRequest) {
     const admin = createClient(supabaseUrl, serviceKey) // server-side client for aggregate counts (bypass RLS)
 
     // Get properties that are available for sale in marketplace
-    // Only show properties that have moved to handover status (IN_PROGRESS or COMPLETED)
+    // Only show properties with handover_status 'PENDING' and no committed client
+    // Properties with 'IN_PROGRESS', 'COMPLETED', or committed to a client are unavailable
     const { data: properties, error } = await supabase
       .from('properties')
-      .select(`
+      .select(
+        `
         id,
         name,
         physical_address,
@@ -28,25 +30,31 @@ export async function GET(req: NextRequest) {
         total_area_acres,
         lat,
         lng,
-        created_at
-      `)
-      .in('handover_status', ['IN_PROGRESS', 'COMPLETED'])
+        created_at,
+        committed_client_id
+      `
+      )
+      .eq('handover_status', 'PENDING')
+      .is('committed_client_id', null)
       .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching public properties:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch properties' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to fetch properties' }, { status: 500 })
     }
 
-    console.log(`🏠 Marketplace API: Found ${properties?.length || 0} handover properties`)
+    console.log(
+      `🏠 Marketplace API: Found ${properties?.length || 0} available properties (PENDING handover status, no commitment)`
+    )
     if (properties && properties.length > 0) {
-      console.log('🏠 Sample property handover statuses:', properties.slice(0, 3).map(p => ({
-        name: p.name,
-        handover_status: p.handover_status
-      })))
+      console.log(
+        '🏠 Sample property statuses:',
+        properties.slice(0, 3).map((p) => ({
+          name: p.name,
+          handover_status: p.handover_status,
+          committed_client_id: p.committed_client_id,
+        }))
+      )
     }
 
     // Get property images for each property
@@ -69,21 +77,22 @@ export async function GET(req: NextRequest) {
             .single()
 
           // Get interest counts for display
-          const { count: interestCount } = await admin
+          const { count: interestCount } = (await admin
             .from('client_property_interests')
             .select('id', { count: 'exact', head: true })
             .eq('property_id', property.id)
-            .eq('status', 'ACTIVE') as unknown as { count: number }
+            .eq('status', 'ACTIVE')) as unknown as { count: number }
 
           // Format images
-          const imageUrls = (images || []).map(img => img.image_url).filter(Boolean)
-          const mainImage = images?.find(img => img.is_primary)?.image_url || imageUrls[0]
+          const imageUrls = (images || []).map((img) => img.image_url).filter(Boolean)
+          const mainImage = images?.find((img) => img.is_primary)?.image_url || imageUrls[0]
 
           return {
             ...property,
             location: property.physical_address,
             property_type: property.property_type || 'RESIDENTIAL',
-            asking_price_kes: property.handover_price_agreement_kes || property.sale_price_kes || 5000000,
+            asking_price_kes:
+              property.handover_price_agreement_kes || property.sale_price_kes || 5000000,
             description: property.notes || '',
             images: imageUrls,
             main_image: mainImage,
@@ -91,13 +100,16 @@ export async function GET(req: NextRequest) {
             location_display: property.physical_address || 'Location not specified',
             handover_status_display: formatHandoverStatus(property.handover_status),
             area_display: formatArea(property.total_area_acres, property.total_area_sqm),
-            is_available_for_sale: true, // All handover properties are available
+            is_available_for_sale: true, // Only PENDING properties are available
             status: 'AVAILABLE', // Marketplace status
             // Sale status information
             sale_status: saleInfo?.sale_status || 'LISTED_FOR_SALE',
             deposit_received: (saleInfo?.deposit_amount && saleInfo.deposit_amount > 0) || false,
             interest_count: interestCount,
-            is_new: property.created_at ? (new Date().getTime() - new Date(property.created_at).getTime() < 1000 * 60 * 60 * 24 * 7) : false
+            is_new: property.created_at
+              ? new Date().getTime() - new Date(property.created_at).getTime() <
+                1000 * 60 * 60 * 24 * 7
+              : false,
           }
         } catch (imageError) {
           console.warn(`Error fetching images for property ${property.id}:`, imageError)
@@ -105,7 +117,8 @@ export async function GET(req: NextRequest) {
             ...property,
             location: property.physical_address,
             property_type: property.property_type || 'RESIDENTIAL',
-            asking_price_kes: property.handover_price_agreement_kes || property.sale_price_kes || 5000000,
+            asking_price_kes:
+              property.handover_price_agreement_kes || property.sale_price_kes || 5000000,
             description: property.notes || '',
             images: [],
             main_image: null,
@@ -113,31 +126,27 @@ export async function GET(req: NextRequest) {
             location_display: property.physical_address || 'Location not specified',
             handover_status_display: formatHandoverStatus(property.handover_status),
             area_display: formatArea(property.total_area_acres, property.total_area_sqm),
-            is_available_for_sale: true, // All handover properties are available
+            is_available_for_sale: true, // Only PENDING properties are available
             status: 'AVAILABLE', // Marketplace status
             // Default sale status for error case
             sale_status: 'LISTED_FOR_SALE',
-            deposit_received: false
+            deposit_received: false,
           }
         }
       })
     )
 
-    // All properties are available for now
+    // Only PENDING properties are available for interest
     const availableProperties = propertiesWithImages
 
     return NextResponse.json({
       success: true,
       properties: availableProperties,
-      total: availableProperties.length
+      total: availableProperties.length,
     })
-
   } catch (error) {
     console.error('Unexpected error in public properties API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -145,16 +154,16 @@ function formatPropertyType(type: string | null): string {
   if (!type) return 'Property'
 
   const typeMap: Record<string, string> = {
-    'RESIDENTIAL': 'Residential Property',
-    'COMMERCIAL': 'Commercial Property',
-    'LAND': 'Land',
-    'APARTMENT': 'Apartment',
-    'HOUSE': 'House',
-    'HOME': 'Home',
-    'OFFICE': 'Office',
-    'RETAIL': 'Retail',
-    'WAREHOUSE': 'Warehouse',
-    'INDUSTRIAL': 'Industrial Property'
+    RESIDENTIAL: 'Residential Property',
+    COMMERCIAL: 'Commercial Property',
+    LAND: 'Land',
+    APARTMENT: 'Apartment',
+    HOUSE: 'House',
+    HOME: 'Home',
+    OFFICE: 'Office',
+    RETAIL: 'Retail',
+    WAREHOUSE: 'Warehouse',
+    INDUSTRIAL: 'Industrial Property',
   }
 
   return typeMap[type.toUpperCase()] || type
@@ -164,9 +173,9 @@ function formatHandoverStatus(status: string | null): string {
   if (!status) return 'Available'
 
   const statusMap: Record<string, string> = {
-    'PENDING': 'Coming Soon',
-    'IN_PROGRESS': 'Available Now',
-    'COMPLETED': 'Ready for Sale'
+    PENDING: 'Coming Soon',
+    IN_PROGRESS: 'Available Now',
+    COMPLETED: 'Ready for Sale',
   }
 
   return statusMap[status.toUpperCase()] || status
