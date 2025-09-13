@@ -237,12 +237,21 @@ export default function ReservedPropertyCard({
                       {isExpired ? 'Expired' : `${hoursRemaining}h remaining`}
                     </span>
                   </div>
-                  <p className="text-xs text-orange-700">
-                    {isExpired
-                      ? 'Reservation has expired. Contact support to renew.'
-                      : 'Start handover and sign agreement within 72 hours to secure this property.'
-                    }
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-xs text-orange-700">
+                      Reserved on: {new Date(property.interest_date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                    <p className="text-xs text-orange-700">
+                      {isExpired
+                        ? 'Reservation has expired. Contact support to renew.'
+                        : 'Start handover and sign agreement within 72 hours to secure this property.'
+                      }
+                    </p>
+                  </div>
                 </div>
 
 
@@ -318,7 +327,7 @@ export default function ReservedPropertyCard({
 
       {/* Enhanced Expanded Details - Full Width Mirror of InlineHandoverView */}
       {showDetails && (
-        <div ref={cardRef} className="mt-8 border-t-4 border-gradient-to-r from-orange-500 to-red-500 pt-8 bg-gradient-to-br from-orange-50/50 via-red-50/30 to-orange-50/50 rounded-b-2xl">
+        <div ref={cardRef} className="mt-8 border-t-4 border-gradient-to-r from-teal-500 to-cyan-500 pt-8 bg-gradient-to-br from-teal-50/50 via-cyan-50/30 to-teal-50/50 rounded-b-2xl">
           <div className="px-8 pb-8">
             {handoverLoading ? (
               <div className="flex items-center justify-center py-8">
