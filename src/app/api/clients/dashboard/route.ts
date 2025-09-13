@@ -92,6 +92,9 @@ async function getClientProperties(supabase: any, clientId: string) {
           physical_address,
           property_source,
           handover_status,
+          reservation_status,
+          reserved_by,
+          reserved_date,
           lat,
           lng,
           property_type,
@@ -157,9 +160,10 @@ async function getClientProperties(supabase: any, clientId: string) {
         let currentStage = 'Interest Expressed'
 
         // Check if client has reserved or committed to this property
-        if (interest.status === 'RESERVED') {
+        // Check property reservation status first (takes precedence)
+        if (property.reservation_status === 'RESERVED' && property.reserved_by === clientId) {
           status = 'RESERVED'
-          currentStage = 'Reserved - In My Properties'
+          currentStage = 'Reserved - Awaiting Deposit'
           progress = 25
         } else if (interest.status === 'COMMITTED') {
           status = 'COMMITTED'
