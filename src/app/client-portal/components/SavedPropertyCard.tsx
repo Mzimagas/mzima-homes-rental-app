@@ -28,7 +28,7 @@ interface ClientProperty {
   images: string[]
   main_image?: string
   interest_date: string
-  status: 'INTERESTED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED'
+  status: 'INTERESTED' | 'RESERVED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED'
 }
 
 interface SavedPropertyCardProps {

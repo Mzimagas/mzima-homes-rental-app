@@ -26,7 +26,7 @@ interface ClientProperty {
   images: string[]
   main_image?: string
   interest_date: string
-  status: 'INTERESTED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED'
+  status: 'INTERESTED' | 'RESERVED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED'
 }
 
 interface SavedPropertiesTabProps {
@@ -81,7 +81,7 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
 
           // Retry succeeded
           onRefresh()
-          alert('Property moved to My Properties successfully!')
+          alert('Property reserved and moved to My Properties successfully!')
           return
         }
 
@@ -92,7 +92,7 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
       onRefresh()
 
       // Show success message
-      alert('Property moved to My Properties successfully!')
+      alert('Property reserved and moved to My Properties successfully!')
     } catch (error) {
       console.error('Error committing to property:', error)
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to commit to property'}`)

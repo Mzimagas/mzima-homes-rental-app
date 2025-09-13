@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     // Start transaction-like operations
     try {
-      // 1. Try to update property commitment (skip if fails)
+      // 1. Try to mark property as reserved (not fully committed yet)
       try {
         await supabase
           .from('properties')
@@ -141,18 +141,25 @@ export async function POST(req: NextRequest) {
             committed_client_id: client.id,
             commitment_date: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+            // Mark as reserved instead of fully committed
+            reservation_status: 'RESERVED',
+            reserved_by: client.id,
+            reserved_date: new Date().toISOString(),
           })
           .eq('id', validatedData.propertyId)
+
+        console.log('Property marked as reserved for client:', client.id)
       } catch (propertyUpdateError) {
-        console.warn('Property update failed, continuing with interest update:', propertyUpdateError)
+        console.warn('Property reservation failed, continuing with interest update:', propertyUpdateError)
       }
 
-      // 2. Update client interest status to COMMITTED
+      // 2. Update client interest status to RESERVED (not fully committed yet)
       const { error: interestUpdateError } = await supabase
         .from('client_property_interests')
         .update({
-          status: 'COMMITTED',
+          status: 'RESERVED', // Use RESERVED instead of COMMITTED
           updated_at: new Date().toISOString(),
+          reservation_date: new Date().toISOString(),
         })
         .eq('id', interest.id)
 
@@ -193,11 +200,12 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'Property committed successfully',
-        commitment: {
+        message: 'Property reserved successfully',
+        reservation: {
           property_id: validatedData.propertyId,
           client_id: client.id,
-          commitment_date: new Date().toISOString(),
+          status: 'RESERVED',
+          reservation_date: new Date().toISOString(),
         },
       })
     } catch (transactionError) {

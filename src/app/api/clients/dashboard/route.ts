@@ -106,7 +106,7 @@ async function getClientProperties(supabase: any, clientId: string) {
       `
       )
       .eq('client_id', clientId)
-      .in('status', ['ACTIVE', 'COMMITTED'])
+      .in('status', ['ACTIVE', 'COMMITTED', 'RESERVED'])
 
     console.log('🔍 Property interests query result:', { interests, interestsError })
 
@@ -147,14 +147,19 @@ async function getClientProperties(supabase: any, clientId: string) {
         const imageUrls = (images || []).map((img) => img.image_url).filter(Boolean)
 
         // Determine property status and progress
-        let status: 'INTERESTED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED' = 'INTERESTED'
+        let status: 'INTERESTED' | 'RESERVED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED' = 'INTERESTED'
         let progress = 0
         let currentStage = 'Interest Expressed'
 
-        // Check if client has committed to this property
-        if (interest.status === 'COMMITTED') {
+        // Check if client has reserved or committed to this property
+        if (interest.status === 'RESERVED') {
+          status = 'RESERVED'
+          currentStage = 'Reserved - In My Properties'
+          progress = 25
+        } else if (interest.status === 'COMMITTED') {
           status = 'COMMITTED'
           currentStage = 'Committed - Ready for Handover'
+          progress = 50
         }
 
         if (handoverData) {

@@ -36,7 +36,7 @@ interface ClientProperty {
   images: string[]
   main_image?: string
   interest_date: string
-  status: 'INTERESTED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED'
+  status: 'INTERESTED' | 'RESERVED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED'
 }
 
 interface ClientData {
@@ -245,7 +245,7 @@ export default function ClientPortalPage() {
             <MyPropertiesTab
               properties={clientData.properties.filter(
                 (p) =>
-                  p.status === 'COMMITTED' || p.status === 'IN_HANDOVER' || p.status === 'COMPLETED'
+                  p.status === 'RESERVED' || p.status === 'COMMITTED' || p.status === 'IN_HANDOVER' || p.status === 'COMPLETED'
               )}
               onRefresh={loadClientData}
             />
