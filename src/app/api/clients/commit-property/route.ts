@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Client profile not found' }, { status: 404 })
     }
 
-    // Verify client has active interest in this property
-    const { data: interest, error: interestError } = await supabase
+    // Check for any existing interest (including INACTIVE ones)
+    const { data: existingInterest, error: existingInterestError } = await supabase
       .from('client_property_interests')
       .select(
         `
@@ -65,14 +65,115 @@ export async function POST(req: NextRequest) {
       )
       .eq('client_id', client.id)
       .eq('property_id', validatedData.propertyId)
-      .in('status', ['ACTIVE', 'COMMITTED'])
       .single()
 
-    if (interestError || !interest) {
-      console.error('Interest lookup error:', interestError)
+    let interest = existingInterest
+
+    // If no interest exists at all, create one
+    if (existingInterestError && existingInterestError.code === 'PGRST116') {
+      console.log('No existing interest found, creating new interest...')
+
+      // Get property details first
+      const { data: property, error: propertyError } = await supabase
+        .from('properties')
+        .select('id, name, handover_status, asking_price_kes, committed_client_id')
+        .eq('id', validatedData.propertyId)
+        .single()
+
+      if (propertyError || !property) {
+        console.error('Property lookup error:', propertyError)
+        return NextResponse.json(
+          { error: 'Property not found' },
+          { status: 404 }
+        )
+      }
+
+      // Create new interest
+      const { data: newInterest, error: createError } = await supabase
+        .from('client_property_interests')
+        .insert({
+          client_id: client.id,
+          property_id: validatedData.propertyId,
+          status: 'ACTIVE',
+          interest_type: 'PURCHASE',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select(
+          `
+          id,
+          property_id,
+          status,
+          interest_type,
+          properties!inner (
+            id,
+            name,
+            handover_status,
+            asking_price_kes,
+            committed_client_id
+          )
+        `
+        )
+        .single()
+
+      if (createError || !newInterest) {
+        console.error('Error creating new interest:', createError)
+        return NextResponse.json(
+          { error: 'Failed to create property interest' },
+          { status: 500 }
+        )
+      }
+
+      interest = newInterest
+    } else if (existingInterestError) {
+      console.error('Interest lookup error:', existingInterestError)
       return NextResponse.json(
-        { error: 'No active interest found for this property' },
-        { status: 404 }
+        { error: 'Failed to check property interest' },
+        { status: 500 }
+      )
+    } else if (existingInterest && existingInterest.status === 'INACTIVE') {
+      // Reactivate inactive interest
+      console.log('Reactivating inactive interest...')
+
+      const { data: reactivatedInterest, error: reactivateError } = await supabase
+        .from('client_property_interests')
+        .update({
+          status: 'ACTIVE',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingInterest.id)
+        .select(
+          `
+          id,
+          property_id,
+          status,
+          interest_type,
+          properties!inner (
+            id,
+            name,
+            handover_status,
+            asking_price_kes,
+            committed_client_id
+          )
+        `
+        )
+        .single()
+
+      if (reactivateError || !reactivatedInterest) {
+        console.error('Error reactivating interest:', reactivateError)
+        return NextResponse.json(
+          { error: 'Failed to reactivate property interest' },
+          { status: 500 }
+        )
+      }
+
+      interest = reactivatedInterest
+    }
+
+    if (!interest) {
+      return NextResponse.json(
+        { error: 'Unable to establish property interest' },
+        { status: 500 }
       )
     }
 
