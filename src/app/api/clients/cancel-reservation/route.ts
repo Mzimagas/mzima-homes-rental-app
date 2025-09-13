@@ -97,6 +97,8 @@ export async function POST(request: NextRequest) {
           reserved_date: null,
           committed_client_id: null,
           commitment_date: null,
+          deposit_amount: null,
+          deposit_date: null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', propertyId)

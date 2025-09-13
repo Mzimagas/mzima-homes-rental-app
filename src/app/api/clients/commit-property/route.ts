@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 2. Update client interest status to RESERVED (not fully committed yet)
-      const { error: interestUpdateError } = await supabase
+      const { data: updatedInterest, error: interestUpdateError } = await supabase
         .from('client_property_interests')
         .update({
           status: 'RESERVED', // Use RESERVED instead of COMMITTED
@@ -173,6 +173,9 @@ export async function POST(req: NextRequest) {
           reservation_date: new Date().toISOString(),
         })
         .eq('id', interest.id)
+        .select('*')
+
+      console.log('Interest update result:', { updatedInterest, interestUpdateError })
 
       if (interestUpdateError) {
         throw new Error(`Failed to update interest status: ${interestUpdateError.message}`)

@@ -101,6 +101,8 @@ export async function POST(request: NextRequest) {
         .from('properties')
         .update({
           reservation_status: 'COMMITTED',
+          committed_client_id: client.id,
+          commitment_date: new Date().toISOString(),
           deposit_amount: depositAmount,
           deposit_date: new Date().toISOString(),
           updated_at: new Date().toISOString(),

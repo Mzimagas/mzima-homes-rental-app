@@ -108,7 +108,12 @@ async function getClientProperties(supabase: any, clientId: string) {
       .eq('client_id', clientId)
       .in('status', ['ACTIVE', 'COMMITTED', 'RESERVED'])
 
-    console.log('🔍 Property interests query result:', { interests, interestsError })
+    console.log('🔍 Property interests query result:', {
+      clientId,
+      interestCount: interests?.length || 0,
+      interests: interests?.map(i => ({ id: i.id, property_id: i.property_id, status: i.status })),
+      interestsError
+    })
 
     if (interestsError && interestsError.code !== 'PGRST116') {
       console.warn('Error fetching property interests:', interestsError)
