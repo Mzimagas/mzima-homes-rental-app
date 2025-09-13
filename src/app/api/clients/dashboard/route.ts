@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '../../../../lib/supabase-server'
+import { getUserDisplayName } from '../../../../lib/user-display-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
         success: true,
         client: {
           id: user.id,
-          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+          full_name: getUserDisplayName(user),
           email: user.email,
           phone: user.user_metadata?.phone || null,
           registration_date: user.created_at,
@@ -53,11 +54,7 @@ export async function GET(request: NextRequest) {
       success: true,
       client: {
         id: clientRecord.id,
-        full_name:
-          clientRecord.full_name ||
-          user.user_metadata?.full_name ||
-          user.email?.split('@')[0] ||
-          'User',
+        full_name: clientRecord.full_name || getUserDisplayName(user),
         email: clientRecord.email || user.email,
         phone: clientRecord.phone || user.user_metadata?.phone || null,
         notes: clientRecord.notes || null,

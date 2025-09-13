@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { useRouter, usePathname } from 'next/navigation'
 import { detectUserTypeFromMetadata } from '../../lib/user-type-detection-client'
+import { getUserDisplayName } from '../../lib/user-display-utils'
 
 // Sign Out Button Component
 function SignOutButton() {
@@ -136,7 +137,7 @@ export default function ClientPortalLayout({ children }: ClientPortalLayoutProps
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
-                  {user.user_metadata?.full_name?.full_name || user.user_metadata?.full_name || user.email}
+                  {getUserDisplayName(user)}
                 </p>
                 <p className="text-xs text-gray-500">Client</p>
               </div>

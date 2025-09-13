@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import MobileMenuButton from './MobileMenuButton'
+import { getUserDisplayName, getUserInitials } from '../../lib/user-display-utils'
 // import EnhancedGlobalSearch from '../dashboard/EnhancedGlobalSearch' // Removed with dashboard cleanup
 import {
   BellIcon,
@@ -106,7 +107,7 @@ export default function MobileHeader({ onMenuToggle, isMenuOpen }: MobileHeaderP
                 <span className="sr-only">Open user menu</span>
                 <div className="h-6 w-6 bg-blue-500 rounded-full flex items-center justify-center">
                   <span className="text-xs font-medium text-white">
-                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                    {getUserInitials(user)}
                   </span>
                 </div>
               </button>
@@ -117,7 +118,7 @@ export default function MobileHeader({ onMenuToggle, isMenuOpen }: MobileHeaderP
                   <div className="py-1">
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">
-                        {(typeof user?.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null) || 'User'}
+                        {getUserDisplayName(user)}
                       </p>
                       <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                     </div>

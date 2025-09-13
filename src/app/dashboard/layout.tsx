@@ -18,6 +18,7 @@ import ResponsiveContainer from '../../components/layout/ResponsiveContainer'
 import { SidebarNavLink, MobileNavLink } from '../../components/navigation/OptimizedNavLink'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { getUserDisplayName, getUserInitials } from '../../lib/user-display-utils'
 
 import Image from 'next/image'
 
@@ -473,11 +474,11 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center">
                   <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center">
                     <span className="text-sm font-medium text-white">
-                      {user?.email?.charAt(0).toUpperCase() || 'U'}
+                      {getUserInitials(user)}
                     </span>
                   </div>
                   <div className="ml-3 flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">{user?.email}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{getUserDisplayName(user)}</p>
                     <p className="text-xs text-gray-500">
                       {(propertyAccess as any).accessibleProperties?.length || 0} properties
                     </p>
@@ -559,11 +560,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <div className="ml-3 relative">
                   <div className="flex items-center space-x-4">
                     <span className="text-sm text-gray-700">
-                      {(typeof user?.user_metadata?.full_name === 'string'
-                        ? user.user_metadata.full_name
-                        : null) ||
-                        user?.email ||
-                        'User'}
+                      {getUserDisplayName(user)}
                     </span>
                     <button
                       onClick={async () => {
