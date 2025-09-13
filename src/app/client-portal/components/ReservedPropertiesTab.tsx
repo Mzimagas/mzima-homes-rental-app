@@ -37,33 +37,7 @@ interface ReservedPropertiesTabProps {
 export default function ReservedPropertiesTab({ properties, onRefresh }: ReservedPropertiesTabProps) {
   const [loading, setLoading] = useState(false)
 
-  const handleMakeDeposit = async (propertyId: string, depositAmount: number) => {
-    try {
-      setLoading(true)
 
-      const response = await fetch('/api/clients/make-deposit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ propertyId, depositAmount }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(errorData.error || 'Failed to process deposit')
-      }
-
-      onRefresh()
-      alert('Deposit processed successfully! Property moved to My Properties.')
-    } catch (error) {
-      console.error('Error processing deposit:', error)
-      alert(`Error: ${error instanceof Error ? error.message : 'Failed to process deposit'}`)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleCancelReservation = async (propertyId: string) => {
     if (!confirm('Are you sure you want to cancel this reservation? The property will be returned to the marketplace.')) {
@@ -131,7 +105,6 @@ export default function ReservedPropertiesTab({ properties, onRefresh }: Reserve
             <ReservedPropertyCard
               key={property.id}
               property={property}
-              onMakeDeposit={handleMakeDeposit}
               onCancelReservation={handleCancelReservation}
               loading={loading}
             />

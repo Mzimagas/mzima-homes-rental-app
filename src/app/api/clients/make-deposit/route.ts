@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         throw new Error(`Failed to update interest: ${interestUpdateError.message}`)
       }
 
-      // 2. Update property status
+      // 2. Update property status - transition from AWAITING_START to IN_PROGRESS
       const { error: propertyUpdateError } = await supabase
         .from('properties')
         .update({
@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
           commitment_date: new Date().toISOString(),
           deposit_amount: depositAmount,
           deposit_date: new Date().toISOString(),
+          handover_status: 'IN_PROGRESS', // Move from AWAITING_START to IN_PROGRESS
           updated_at: new Date().toISOString(),
         })
         .eq('id', propertyId)

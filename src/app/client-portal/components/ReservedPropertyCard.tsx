@@ -1,8 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { formatCurrency } from '../../../lib/export-utils'
+import {
+  useTabState,
+  TabNavigation,
+  TabContent,
+  HANDOVER_TABS,
+} from '../../../components/properties/utils/tab-utils'
+import ReadOnlyHandoverView from './ReadOnlyHandoverView'
 
 interface ClientProperty {
   id: string
@@ -32,40 +39,32 @@ interface ClientProperty {
 
 interface ReservedPropertyCardProps {
   property: ClientProperty
-  onMakeDeposit: (propertyId: string, depositAmount: number) => void
   onCancelReservation: (propertyId: string) => void
   loading: boolean
 }
 
 export default function ReservedPropertyCard({
   property,
-  onMakeDeposit,
   onCancelReservation,
   loading,
 }: ReservedPropertyCardProps) {
   const [imageError, setImageError] = useState(false)
-  const [showDepositForm, setShowDepositForm] = useState(false)
-  const [depositAmount, setDepositAmount] = useState('')
+  const [showDetails, setShowDetails] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
   const hasImage = property.images && property.images.length > 0
 
-  // Calculate suggested deposit (10% of asking price)
-  const suggestedDeposit = Math.round(property.asking_price_kes * 0.1)
-  const minimumDeposit = Math.round(property.asking_price_kes * 0.05) // 5% minimum
+  // Tab state for the inline handover view (same as ClientPropertyCard)
+  const { activeTab, setActiveTab } = useTabState({
+    defaultTab: 'details',
+    persistKey: `client-reserved-${property.id}`,
+  })
 
-  const handleDepositSubmit = () => {
-    const amount = parseFloat(depositAmount)
-    if (isNaN(amount) || amount < minimumDeposit) {
-      alert(`Minimum deposit is ${formatCurrency(minimumDeposit)}`)
-      return
-    }
-    if (amount > property.asking_price_kes) {
-      alert('Deposit cannot exceed the property price')
-      return
-    }
-    onMakeDeposit(property.id, amount)
-    setShowDepositForm(false)
-    setDepositAmount('')
-  }
+  // Calculate reservation expiry (72 hours from interest date)
+  const reservationExpiry = new Date(property.interest_date)
+  reservationExpiry.setHours(reservationExpiry.getHours() + 72)
+  const isExpired = new Date() > reservationExpiry
+  const timeRemaining = reservationExpiry.getTime() - new Date().getTime()
+  const hoursRemaining = Math.max(0, Math.floor(timeRemaining / (1000 * 60 * 60)))
 
   return (
     <div className="bg-gradient-to-r from-white via-orange-50/50 to-orange-100/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-orange-200 hover:border-orange-300">
@@ -152,119 +151,92 @@ export default function ReservedPropertyCard({
             {/* Action Buttons Section */}
             <div className="lg:w-80 lg:pl-6">
               <div className="space-y-4">
-                {!showDepositForm ? (
-                  <>
-                    {/* Make Deposit Button */}
-                    <button
-                      onClick={() => setShowDepositForm(true)}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <div className="flex items-center justify-center space-x-3">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-                          <path
-                            fillRule="evenodd"
-                            d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span>Make Deposit</span>
-                      </div>
-                    </button>
-
-                    {/* Secondary Actions */}
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* View Maps */}
-                      <button
-                        onClick={() => {
-                          if (property.lat && property.lng) {
-                            const url = `https://www.google.com/maps?q=${property.lat},${property.lng}`
-                            window.open(url, '_blank')
-                          } else {
-                            alert('Location coordinates not available for this property')
-                          }
-                        }}
-                        className="bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 px-4 py-3 rounded-lg transition-all duration-200 font-medium border border-blue-200 hover:border-blue-300"
-                      >
-                        <div className="flex items-center justify-center space-x-2">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                              fillRule="evenodd"
-                              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          <span className="text-sm">View Maps</span>
-                        </div>
-                      </button>
-
-                      {/* Cancel Reservation */}
-                      <button
-                        onClick={() => onCancelReservation(property.id)}
-                        disabled={loading}
-                        className="bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 px-4 py-3 rounded-lg transition-all duration-200 font-medium border border-red-200 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="flex items-center justify-center space-x-2">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                              fillRule="evenodd"
-                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          <span className="text-sm">Cancel</span>
-                        </div>
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  /* Deposit Form */
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 mb-3">Make Initial Deposit</h4>
-                    
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Deposit Amount (KES)
-                      </label>
-                      <input
-                        type="number"
-                        value={depositAmount}
-                        onChange={(e) => setDepositAmount(e.target.value)}
-                        placeholder={`Minimum: ${formatCurrency(minimumDeposit)}`}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      />
-                      <div className="mt-2 text-xs text-gray-500">
-                        <p>Suggested: {formatCurrency(suggestedDeposit)} (10%)</p>
-                        <p>Minimum: {formatCurrency(minimumDeposit)} (5%)</p>
-                      </div>
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={handleDepositSubmit}
-                        disabled={loading || !depositAmount}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loading ? 'Processing...' : 'Confirm Deposit'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowDepositForm(false)
-                          setDepositAmount('')
-                        }}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                {/* Reservation Status */}
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-orange-800">Reserved</span>
+                    <span className="text-xs text-orange-600">
+                      {isExpired ? 'Expired' : `${hoursRemaining}h remaining`}
+                    </span>
                   </div>
-                )}
+                  <p className="text-xs text-orange-700">
+                    {isExpired
+                      ? 'Reservation has expired. Contact support to renew.'
+                      : 'Complete handover process within 72 hours to secure this property.'
+                    }
+                  </p>
+                </div>
+
+                {/* View Details Button */}
+                <button
+                  onClick={() => setShowDetails(!showDetails)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-4 rounded-lg transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+                >
+                  <div className="flex items-center justify-center space-x-3">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>{showDetails ? 'Hide Details' : 'View Details'}</span>
+                  </div>
+                </button>
+
+                {/* Secondary Actions */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* View Maps */}
+                  <button
+                    onClick={() => {
+                      if (property.lat && property.lng) {
+                        const url = `https://www.google.com/maps?q=${property.lat},${property.lng}`
+                        window.open(url, '_blank')
+                      } else {
+                        alert('Location coordinates not available for this property')
+                      }
+                    }}
+                    className="bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 px-4 py-3 rounded-lg transition-all duration-200 font-medium border border-blue-200 hover:border-blue-300"
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-sm">Pin Location</span>
+                    </div>
+                  </button>
+
+                  {/* Cancel Reservation */}
+                  <button
+                    onClick={() => onCancelReservation(property.id)}
+                    disabled={loading}
+                    className="bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 px-4 py-3 rounded-lg transition-all duration-200 font-medium border border-red-200 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-sm">Cancel</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Inline Handover View (when details are shown) */}
+      {showDetails && (
+        <div ref={cardRef} className="border-t border-orange-200 bg-white">
+          <ReadOnlyHandoverView propertyId={property.id} />
+        </div>
+      )}
     </div>
   )
 }
