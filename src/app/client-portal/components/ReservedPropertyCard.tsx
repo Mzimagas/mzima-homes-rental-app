@@ -57,6 +57,32 @@ export default function ReservedPropertyCard({
   const timeRemaining = reservationExpiry.getTime() - new Date().getTime()
   const hoursRemaining = Math.max(0, Math.floor(timeRemaining / (1000 * 60 * 60)))
 
+  // Create initial handover data structure for reserved properties
+  const createInitialHandoverData = (): HandoverItem => {
+    return {
+      id: `temp-${property.id}`, // Temporary ID for reserved properties
+      property_id: property.id,
+      property_name: property.name,
+      property_address: property.location,
+      property_type: property.property_type_display || 'RESIDENTIAL',
+      asking_price_kes: property.asking_price_kes,
+      negotiated_price_kes: property.asking_price_kes, // Same as asking price initially
+      handover_status: 'AWAITING_START', // Reserved properties are awaiting start
+      current_stage: 1,
+      overall_progress: 0,
+      pipeline_stages: [], // Will be initialized by InlineHandoverView
+      created_at: property.interest_date,
+      updated_at: property.interest_date,
+      client_id: '', // Will be populated by the system
+      client_name: '',
+      client_email: '',
+      client_phone: '',
+      legal_representative: '',
+      expected_completion_date: null,
+      notes: `Reserved property - handover process ready to begin`,
+    }
+  }
+
   // Fetch handover data when details are shown
   const fetchHandoverData = async () => {
     if (!showDetails || handoverData) return
@@ -69,10 +95,18 @@ export default function ReservedPropertyCard({
         const data = await response.json()
         if (data.handovers && data.handovers.length > 0) {
           setHandoverData(data.handovers[0])
+        } else {
+          // No handover data exists yet - create initial structure for reserved property
+          setHandoverData(createInitialHandoverData())
         }
+      } else {
+        // API call failed - create initial structure for reserved property
+        setHandoverData(createInitialHandoverData())
       }
     } catch (error) {
       console.error('Error fetching handover data:', error)
+      // On error, still provide initial structure so client can see the interface
+      setHandoverData(createInitialHandoverData())
     } finally {
       setHandoverLoading(false)
     }
@@ -85,9 +119,44 @@ export default function ReservedPropertyCard({
     }
   }, [showDetails])
 
-  // Dummy handlers for InlineHandoverView (read-only mode)
-  const handleStageClick = () => {}
-  const handleStageUpdate = async () => {}
+  // Real handlers for InlineHandoverView (allow clients to interact with pipeline)
+  const handleStageClick = (stageId: number, handoverId: string) => {
+    // Allow clients to click on stages to view details
+    console.log('Stage clicked:', stageId, handoverId)
+  }
+
+  const handleStageUpdate = async (
+    handoverId: string,
+    stageId: number,
+    newStatus: string,
+    notes?: string
+  ) => {
+    // Allow clients to update stages (this will create real handover pipeline if needed)
+    try {
+      const response = await fetch('/api/handover-pipeline/stage-update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          property_id: property.id,
+          handover_id: handoverId,
+          stage_id: stageId,
+          status: newStatus,
+          notes,
+        }),
+      })
+
+      if (response.ok) {
+        // Refresh handover data after update
+        setHandoverData(null)
+        fetchHandoverData()
+      }
+    } catch (error) {
+      console.error('Error updating stage:', error)
+    }
+  }
+
   const handleClose = () => setShowDetails(false)
 
   return (
@@ -269,7 +338,7 @@ export default function ReservedPropertyCard({
               onClose={handleClose}
               onStageClick={handleStageClick}
               onStageUpdate={handleStageUpdate}
-              readOnly={true}
+              readOnly={false}
             />
           ) : (
             <div className="p-6 text-center text-gray-500">
