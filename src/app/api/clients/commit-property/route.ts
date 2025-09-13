@@ -48,21 +48,7 @@ export async function POST(req: NextRequest) {
     // Check for any existing interest (including INACTIVE ones)
     const { data: existingInterest, error: existingInterestError } = await supabase
       .from('client_property_interests')
-      .select(
-        `
-        id,
-        property_id,
-        status,
-        interest_type,
-        properties!inner (
-          id,
-          name,
-          handover_status,
-          asking_price_kes,
-          committed_client_id
-        )
-      `
-      )
+      .select('id, property_id, status, interest_type')
       .eq('client_id', client.id)
       .eq('property_id', validatedData.propertyId)
       .single()
@@ -72,21 +58,6 @@ export async function POST(req: NextRequest) {
     // If no interest exists at all, create one
     if (existingInterestError && existingInterestError.code === 'PGRST116') {
       console.log('No existing interest found, creating new interest...')
-
-      // Get property details first
-      const { data: property, error: propertyError } = await supabase
-        .from('properties')
-        .select('id, name, handover_status, asking_price_kes, committed_client_id')
-        .eq('id', validatedData.propertyId)
-        .single()
-
-      if (propertyError || !property) {
-        console.error('Property lookup error:', propertyError)
-        return NextResponse.json(
-          { error: 'Property not found' },
-          { status: 404 }
-        )
-      }
 
       // Create new interest
       const { data: newInterest, error: createError } = await supabase
@@ -99,21 +70,7 @@ export async function POST(req: NextRequest) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .select(
-          `
-          id,
-          property_id,
-          status,
-          interest_type,
-          properties!inner (
-            id,
-            name,
-            handover_status,
-            asking_price_kes,
-            committed_client_id
-          )
-        `
-        )
+        .select('id, property_id, status, interest_type')
         .single()
 
       if (createError || !newInterest) {
@@ -142,21 +99,7 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingInterest.id)
-        .select(
-          `
-          id,
-          property_id,
-          status,
-          interest_type,
-          properties!inner (
-            id,
-            name,
-            handover_status,
-            asking_price_kes,
-            committed_client_id
-          )
-        `
-        )
+        .select('id, property_id, status, interest_type')
         .single()
 
       if (reactivateError || !reactivatedInterest) {
@@ -190,7 +133,20 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const property = interest.properties
+    // Get property details
+    const { data: property, error: propertyError } = await supabase
+      .from('properties')
+      .select('id, name, handover_status, asking_price_kes, committed_client_id')
+      .eq('id', validatedData.propertyId)
+      .single()
+
+    if (propertyError || !property) {
+      console.error('Property lookup error:', propertyError)
+      return NextResponse.json(
+        { error: 'Property not found' },
+        { status: 404 }
+      )
+    }
 
     // Check if property is available for commitment
     if (property.handover_status !== 'PENDING') {
