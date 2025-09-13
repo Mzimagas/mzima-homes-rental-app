@@ -133,17 +133,25 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Get property details
+    // Get property details - check if property exists and is available
     const { data: property, error: propertyError } = await supabase
       .from('properties')
       .select('id, name, handover_status, asking_price_kes, committed_client_id')
       .eq('id', validatedData.propertyId)
-      .single()
+      .maybeSingle()
 
-    if (propertyError || !property) {
+    if (propertyError) {
       console.error('Property lookup error:', propertyError)
       return NextResponse.json(
-        { error: 'Property not found' },
+        { error: 'Failed to check property details' },
+        { status: 500 }
+      )
+    }
+
+    if (!property) {
+      console.error('Property not found:', validatedData.propertyId)
+      return NextResponse.json(
+        { error: 'Property not found or no longer available' },
         { status: 404 }
       )
     }
