@@ -133,31 +133,19 @@ export default function HandoverPipelineManager({
         throw handoverError
       }
 
-      // Load properties with IN_PROGRESS handover status
-      const { data: propertiesInProgress, error: propertiesError } = await supabase
+      // Load properties with AWAITING_START handover status (ready to start handover)
+      const { data: propertiesAwaitingStart, error: propertiesError } = await supabase
         .from('properties')
         .select('*')
-        .eq('handover_status', 'IN_PROGRESS')
+        .eq('handover_status', 'AWAITING_START')
         .order('name')
 
       if (propertiesError) {
-        console.warn('Error loading properties with IN_PROGRESS handover status:', propertiesError)
+        console.warn('Error loading properties with AWAITING_START handover status:', propertiesError)
       }
 
-      // Get unique property IDs from handover data (if they exist)
-      const existingPipelinePropertyIds = new Set(
-        (handoverData || [])
-          .map((handover) => handover.property_id)
-          .filter((id) => id != null && id !== '')
-      )
-
-      // Separate properties that don't have pipeline records yet (awaiting start)
-      const propertiesWithoutPipeline = (propertiesInProgress || []).filter(
-        (property) => !existingPipelinePropertyIds.has(property.id)
-      )
-
-      // Set properties awaiting start
-      setPropertiesAwaitingStart(propertiesWithoutPipeline)
+      // Set properties awaiting start (these are properties ready to begin handover process)
+      setPropertiesAwaitingStart(propertiesAwaitingStart || [])
 
       // Only use actual handover pipeline data (no synthetic records)
       const allHandovers = handoverData || []
@@ -212,41 +200,19 @@ export default function HandoverPipelineManager({
   // Helper function to load only properties with handover status
   const loadPropertiesWithHandoverStatus = async () => {
     try {
-      const { data: propertiesInProgress, error: propertiesError } = await supabase
+      const { data: propertiesAwaitingStart, error: propertiesError } = await supabase
         .from('properties')
         .select('*')
-        .eq('handover_status', 'IN_PROGRESS')
+        .eq('handover_status', 'AWAITING_START')
         .order('name')
 
       if (propertiesError) throw propertiesError
 
-      // Convert properties to handover format
-      const syntheticHandovers = (propertiesInProgress || []).map((property) => ({
-        id: `synthetic-${property.id}`,
-        property_id: property.id,
-        property_name: property.name,
-        property_address: property.physical_address,
-        property_type: property.property_type,
-        handover_status: 'IN_PROGRESS',
-        current_stage: 1,
-        overall_progress: 0,
-        pipeline_stages: [],
-        buyer_name: null,
-        buyer_contact: null,
-        buyer_email: null,
-        buyer_address: null,
-        asking_price_kes: null,
-        negotiated_price_kes: null,
-        deposit_received_kes: null,
-        balance_due_kes: null,
-        target_completion_date: null,
-        actual_completion_date: null,
-        created_at: property.created_at,
-        updated_at: property.updated_at,
-        is_synthetic: true,
-      }))
+      // Set properties awaiting start
+      setPropertiesAwaitingStart(propertiesAwaitingStart || [])
 
-      setHandovers(syntheticHandovers)
+      // No handovers to show when pipeline table doesn't exist
+      setHandovers([])
     } catch (error) {
       console.error('Error loading properties with handover status:', error)
       setHandovers([])
@@ -655,13 +621,23 @@ export default function HandoverPipelineManager({
                 </PropertyCardHeader>
                 <PropertyCardFooter>
                   <div className="flex space-x-2">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleStartHandover(property)}
-                    >
-                      🚀 Start Handover
-                    </Button>
+                    {property.reservation_status === 'RESERVED' ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled
+                      >
+                        🔒 Reserved
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleStartHandover(property)}
+                      >
+                        🚀 Start Handover
+                      </Button>
+                    )}
                   </div>
                 </PropertyCardFooter>
               </PropertyCard>
