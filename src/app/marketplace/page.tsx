@@ -36,6 +36,10 @@ interface MarketplaceProperty extends Property {
   asking_price_kes?: number
   is_new?: boolean
   interest_count?: number
+  // Reservation status
+  reservation_status?: string
+  reserved_by?: string
+  reserved_date?: string
 }
 
 export default function MarketplacePage() {
@@ -516,6 +520,9 @@ function PropertyCard({
                  property.deposit_received ||
                  property.handover_status === 'COMPLETED'
 
+  // Determine if property is reserved
+  const isReserved = property.reservation_status === 'RESERVED'
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
       {/* Property Image */}
@@ -543,20 +550,32 @@ function PropertyCard({
           ) : null}
         </div>
 
-        {/* Handover Status Badge */}
-        {property.handover_status_display && (
-          <div className="absolute top-2 left-2">
-            <span className={`px-2 py-1 rounded text-sm font-medium ${
-              property.handover_status === 'COMPLETED'
-                ? 'bg-green-600 text-white'
-                : property.handover_status === 'IN_PROGRESS'
-                ? 'bg-orange-600 text-white'
-                : 'bg-gray-600 text-white'
-            }`}>
-              {property.handover_status_display}
-            </span>
-          </div>
-        )}
+        {/* Status Badges */}
+        <div className="absolute top-2 left-2 space-y-1">
+          {/* Reservation Status Badge */}
+          {isReserved && (
+            <div>
+              <span className="px-2 py-1 rounded text-sm font-medium bg-orange-600 text-white">
+                Reserved
+              </span>
+            </div>
+          )}
+
+          {/* Handover Status Badge */}
+          {property.handover_status_display && (
+            <div>
+              <span className={`px-2 py-1 rounded text-sm font-medium ${
+                property.handover_status === 'COMPLETED'
+                  ? 'bg-green-600 text-white'
+                  : property.handover_status === 'IN_PROGRESS'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-gray-600 text-white'
+              }`}>
+                {property.handover_status_display}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Property Details */}
@@ -633,6 +652,13 @@ function PropertyCard({
               className="flex-1 bg-gray-400 text-white px-4 py-2 rounded-md cursor-not-allowed"
             >
               Sold
+            </button>
+          ) : isReserved ? (
+            <button
+              disabled
+              className="flex-1 bg-orange-500 text-white px-4 py-2 rounded-md cursor-not-allowed"
+            >
+              Reserved
             </button>
           ) : isAuthenticated ? (
             hasInterest ? (

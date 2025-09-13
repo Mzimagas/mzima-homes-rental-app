@@ -12,8 +12,10 @@ export async function GET(req: NextRequest) {
     const admin = createClient(supabaseUrl, serviceKey) // server-side client for aggregate counts (bypass RLS)
 
     // Get properties that are available for sale in marketplace
-    // Only show properties with handover_status 'PENDING' and no committed client
-    // Properties with 'IN_PROGRESS', 'COMPLETED', or committed to a client are unavailable
+    // Show properties with:
+    // 1. handover_status 'NOT_STARTED' (available for interest)
+    // 2. Properties with reservation_status 'RESERVED' (visible but marked as reserved)
+    // Hide properties with handover_status 'IN_PROGRESS' or 'COMPLETED'
     const { data: properties, error } = await supabase
       .from('properties')
       .select(
@@ -31,11 +33,13 @@ export async function GET(req: NextRequest) {
         lat,
         lng,
         created_at,
-        committed_client_id
+        committed_client_id,
+        reservation_status,
+        reserved_by,
+        reserved_date
       `
       )
-      .eq('handover_status', 'PENDING')
-      .is('committed_client_id', null)
+      .or('handover_status.eq.NOT_STARTED,reservation_status.eq.RESERVED')
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -44,7 +48,7 @@ export async function GET(req: NextRequest) {
     }
 
     console.log(
-      `🏠 Marketplace API: Found ${properties?.length || 0} available properties (PENDING handover status, no commitment)`
+      `🏠 Marketplace API: Found ${properties?.length || 0} available properties (NOT_STARTED or RESERVED)`
     )
     if (properties && properties.length > 0) {
       console.log(
