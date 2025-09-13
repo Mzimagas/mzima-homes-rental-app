@@ -1,13 +1,14 @@
 'use client'
 
 interface ClientNavigationProps {
-  activeTab: 'profile' | 'saved-properties' | 'my-properties' | 'completed'
-  onTabChange: (tab: 'profile' | 'saved-properties' | 'my-properties' | 'completed') => void
+  activeTab: 'profile' | 'saved-properties' | 'reserved' | 'my-properties' | 'completed'
+  onTabChange: (tab: 'profile' | 'saved-properties' | 'reserved' | 'my-properties' | 'completed') => void
 }
 
 export default function ClientNavigation({ activeTab, onTabChange }: ClientNavigationProps) {
   const tabs = [
     { id: 'saved-properties', label: 'Saved Properties', icon: '💾' },
+    { id: 'reserved', label: 'Reserved', icon: '🔒' },
     { id: 'my-properties', label: 'My Properties', icon: '🏠' },
     { id: 'completed', label: 'Completed Projects', icon: '✅' },
     { id: 'profile', label: 'Profile', icon: '👤' },

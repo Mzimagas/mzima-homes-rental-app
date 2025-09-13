@@ -119,6 +119,17 @@ export async function POST(req: NextRequest) {
           status: 'already_committed',
         },
       })
+    } else if (existingInterest.status === 'RESERVED') {
+      // Already reserved, return success
+      return NextResponse.json({
+        success: true,
+        message: 'Property already reserved',
+        reservation: {
+          property_id: validatedData.propertyId,
+          client_id: client.id,
+          status: 'already_reserved',
+        },
+      })
     }
     // If status is ACTIVE, continue with existing interest
 

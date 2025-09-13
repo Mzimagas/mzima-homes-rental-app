@@ -11,6 +11,7 @@ import ProfileTab from './components/ProfileTab'
 
 import CompletedProjectsTab from './components/CompletedProjectsTab'
 import SavedPropertiesTab from './components/SavedPropertiesTab'
+import ReservedPropertiesTab from './components/ReservedPropertiesTab'
 import MyPropertiesTab from './components/MyPropertiesTab'
 
 interface ClientProperty {
@@ -54,7 +55,7 @@ export default function ClientPortalPage() {
   const [error, setError] = useState<string | null>(null)
   const [showWelcome, setShowWelcome] = useState(false)
   const [activeTab, setActiveTab] = useState<
-    'profile' | 'saved-properties' | 'my-properties' | 'completed'
+    'profile' | 'saved-properties' | 'reserved' | 'my-properties' | 'completed'
   >('saved-properties')
 
   const { user, signOut } = useAuth()
@@ -241,11 +242,18 @@ export default function ClientPortalPage() {
             />
           )}
 
+          {activeTab === 'reserved' && (
+            <ReservedPropertiesTab
+              properties={clientData.properties.filter((p) => p.status === 'RESERVED')}
+              onRefresh={loadClientData}
+            />
+          )}
+
           {activeTab === 'my-properties' && (
             <MyPropertiesTab
               properties={clientData.properties.filter(
                 (p) =>
-                  p.status === 'RESERVED' || p.status === 'COMMITTED' || p.status === 'IN_HANDOVER' || p.status === 'COMPLETED'
+                  p.status === 'COMMITTED' || p.status === 'IN_HANDOVER' || p.status === 'COMPLETED'
               )}
               onRefresh={loadClientData}
             />
