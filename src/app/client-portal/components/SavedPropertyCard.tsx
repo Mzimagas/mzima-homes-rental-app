@@ -141,30 +141,101 @@ export default function SavedPropertyCard({
             {/* Action Buttons Section */}
             <div className="lg:w-80 lg:pl-6">
               <div className="space-y-3">
-                {/* Top Row - View Maps and Remove buttons (same width) */}
+                {/* First Row - View Maps and Move to My Properties */}
                 <div className="flex space-x-2">
                   {/* View on Maps Button */}
-                  {property.lat && property.lng && (
-                    <button
-                      onClick={() => {
+                  <button
+                    onClick={() => {
+                      if (property.lat && property.lng) {
                         const url = `https://www.google.com/maps?q=${property.lat},${property.lng}`
                         window.open(url, '_blank')
-                      }}
-                      className="flex-1 bg-gradient-to-r from-emerald-300 to-green-400 hover:from-emerald-400 hover:to-green-500 text-white px-4 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg"
-                      title="View on Maps"
-                    >
-                      <div className="flex items-center justify-center space-x-2">
+                      } else {
+                        alert('Location coordinates not available for this property')
+                      }
+                    }}
+                    className="flex-1 bg-gradient-to-r from-emerald-300 to-green-400 hover:from-emerald-400 hover:to-green-500 text-white px-4 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                    title="View on Maps"
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>View Maps</span>
+                    </div>
+                  </button>
+
+                  {/* Move to My Properties Button */}
+                  <button
+                    onClick={handleMoveToMyProperties}
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      {loading ? (
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                      ) : (
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path
                             fillRule="evenodd"
-                            d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
                             clipRule="evenodd"
                           />
                         </svg>
-                        <span>View Maps</span>
-                      </div>
-                    </button>
-                  )}
+                      )}
+                      <span>Move to My Properties</span>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Second Row - Due Diligence and Remove */}
+                <div className="flex space-x-2">
+                  {/* Due Diligence Button */}
+                  <button
+                    onClick={() => setShowDueDiligence(!showDueDiligence)}
+                    className="flex-1 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 px-4 py-3 rounded-lg transition-all duration-200 font-medium border border-blue-200 hover:border-blue-300"
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>{showDueDiligence ? 'Hide' : 'Due Diligence'}</span>
+                      {dueDiligenceCompleted && (
+                        <svg
+                          className="w-4 h-4 text-green-600"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
 
                   {/* Remove from Saved Button */}
                   <button
@@ -189,72 +260,6 @@ export default function SavedPropertyCard({
                     </div>
                   </button>
                 </div>
-
-                {/* Move to My Properties Button */}
-                <button
-                  onClick={handleMoveToMyProperties}
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    {loading ? (
-                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                    <span>Move to My Properties</span>
-                  </div>
-                </button>
-
-                {/* Due Diligence Button */}
-                <button
-                  onClick={() => setShowDueDiligence(!showDueDiligence)}
-                  className="w-full bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 px-4 py-2 rounded-lg transition-all duration-200 font-medium border border-blue-200 hover:border-blue-300"
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span>{showDueDiligence ? 'Hide' : 'Due Diligence'}</span>
-                    {dueDiligenceCompleted && (
-                      <svg
-                        className="w-4 h-4 text-green-600"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                </button>
               </div>
             </div>
           </div>

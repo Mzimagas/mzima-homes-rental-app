@@ -41,6 +41,9 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
     try {
       setLoading(true)
 
+      // Add a small delay to ensure session is synced
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
       const response = await fetch('/api/clients/commit-property', {
         method: 'POST',
         headers: {
@@ -52,6 +55,36 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+
+        // If authentication error, try to refresh and retry once
+        if (response.status === 401) {
+          console.log('Authentication error, attempting to refresh session...')
+
+          // Wait a bit longer and try again
+          await new Promise((resolve) => setTimeout(resolve, 500))
+
+          const retryResponse = await fetch('/api/clients/commit-property', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ propertyId }),
+          })
+
+          if (!retryResponse.ok) {
+            const retryErrorData = await retryResponse
+              .json()
+              .catch(() => ({ error: 'Unknown error' }))
+            throw new Error(retryErrorData.error || 'Failed to commit to property after retry')
+          }
+
+          // Retry succeeded
+          onRefresh()
+          alert('Property moved to My Properties successfully!')
+          return
+        }
+
         throw new Error(errorData.error || 'Failed to commit to property')
       }
 
@@ -61,7 +94,7 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
       // Show success message
       alert('Property moved to My Properties successfully!')
     } catch (error) {
-      // Error committing to property
+      console.error('Error committing to property:', error)
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to commit to property'}`)
     } finally {
       setLoading(false)
@@ -76,6 +109,9 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
     try {
       setLoading(true)
 
+      // Add a small delay to ensure session is synced
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
       const response = await fetch('/api/clients/remove-interest', {
         method: 'POST',
         headers: {
@@ -87,6 +123,36 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+
+        // If authentication error, try to refresh and retry once
+        if (response.status === 401) {
+          console.log('Authentication error, attempting to refresh session...')
+
+          // Wait a bit longer and try again
+          await new Promise((resolve) => setTimeout(resolve, 500))
+
+          const retryResponse = await fetch('/api/clients/remove-interest', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ propertyId }),
+          })
+
+          if (!retryResponse.ok) {
+            const retryErrorData = await retryResponse
+              .json()
+              .catch(() => ({ error: 'Unknown error' }))
+            throw new Error(retryErrorData.error || 'Failed to remove property after retry')
+          }
+
+          // Retry succeeded
+          onRefresh()
+          alert('Property removed from saved properties successfully!')
+          return
+        }
+
         throw new Error(errorData.error || 'Failed to remove property')
       }
 
@@ -96,7 +162,7 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
       // Show success message
       alert('Property removed from saved properties successfully!')
     } catch (error) {
-      // Error removing property
+      console.error('Error removing property:', error)
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to remove property'}`)
     } finally {
       setLoading(false)
