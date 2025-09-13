@@ -1,15 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import Image from 'next/image'
 import { formatCurrency } from '../../../lib/export-utils'
-import {
-  useTabState,
-  TabNavigation,
-  TabContent,
-  HANDOVER_TABS,
-} from '../../../components/properties/utils/tab-utils'
-import ReadOnlyHandoverView from './ReadOnlyHandoverView'
+import InlineHandoverView from '../../../components/properties/components/InlineHandoverView'
+import { HandoverItem } from '../../../components/properties/types/property-management.types'
 
 interface ClientProperty {
   id: string
@@ -50,14 +45,10 @@ export default function ReservedPropertyCard({
 }: ReservedPropertyCardProps) {
   const [imageError, setImageError] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [handoverData, setHandoverData] = useState<HandoverItem | null>(null)
+  const [handoverLoading, setHandoverLoading] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const hasImage = property.images && property.images.length > 0
-
-  // Tab state for the inline handover view (same as ClientPropertyCard)
-  const { activeTab, setActiveTab } = useTabState({
-    defaultTab: 'details',
-    persistKey: `client-reserved-${property.id}`,
-  })
 
   // Calculate reservation expiry (72 hours from interest date)
   const reservationExpiry = new Date(property.interest_date)
@@ -65,6 +56,39 @@ export default function ReservedPropertyCard({
   const isExpired = new Date() > reservationExpiry
   const timeRemaining = reservationExpiry.getTime() - new Date().getTime()
   const hoursRemaining = Math.max(0, Math.floor(timeRemaining / (1000 * 60 * 60)))
+
+  // Fetch handover data when details are shown
+  const fetchHandoverData = async () => {
+    if (!showDetails || handoverData) return
+
+    try {
+      setHandoverLoading(true)
+      const response = await fetch(`/api/handover-pipeline?property_id=${property.id}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.handovers && data.handovers.length > 0) {
+          setHandoverData(data.handovers[0])
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching handover data:', error)
+    } finally {
+      setHandoverLoading(false)
+    }
+  }
+
+  // Fetch handover data when details are shown
+  React.useEffect(() => {
+    if (showDetails) {
+      fetchHandoverData()
+    }
+  }, [showDetails])
+
+  // Dummy handlers for InlineHandoverView (read-only mode)
+  const handleStageClick = () => {}
+  const handleStageUpdate = async () => {}
+  const handleClose = () => setShowDetails(false)
 
   return (
     <div className="bg-gradient-to-r from-white via-orange-50/50 to-orange-100/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-orange-200 hover:border-orange-300">
@@ -234,7 +258,25 @@ export default function ReservedPropertyCard({
       {/* Inline Handover View (when details are shown) */}
       {showDetails && (
         <div ref={cardRef} className="border-t border-orange-200 bg-white">
-          <ReadOnlyHandoverView propertyId={property.id} />
+          {handoverLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-gray-600">Loading handover details...</span>
+            </div>
+          ) : handoverData ? (
+            <InlineHandoverView
+              handover={handoverData}
+              onClose={handleClose}
+              onStageClick={handleStageClick}
+              onStageUpdate={handleStageUpdate}
+              readOnly={true}
+            />
+          ) : (
+            <div className="p-6 text-center text-gray-500">
+              <p>Handover process not yet started for this property.</p>
+              <p className="text-sm mt-2">Details will be available once the handover begins.</p>
+            </div>
+          )}
         </div>
       )}
     </div>
