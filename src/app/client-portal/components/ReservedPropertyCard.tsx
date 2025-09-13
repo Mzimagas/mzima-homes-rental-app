@@ -215,14 +215,7 @@ export default function ReservedPropertyCard({
                     day: 'numeric',
                   })}
                 </p>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                  <p className="text-orange-800 font-medium text-sm">
-                    ⏰ Reservation expires in 72 hours
-                  </p>
-                  <p className="text-orange-600 text-xs mt-1">
-                    Make a deposit to secure this property permanently
-                  </p>
-                </div>
+
               </div>
             </div>
 
@@ -243,6 +236,9 @@ export default function ReservedPropertyCard({
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
+                      })} at {new Date(property.interest_date).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
                       })}
                     </p>
                     <p className="text-xs text-orange-700">
