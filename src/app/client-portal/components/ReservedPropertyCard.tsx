@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { formatCurrency } from '../../../lib/export-utils'
 import InlineHandoverView from '../../../components/properties/components/InlineHandoverView'
@@ -130,6 +130,20 @@ export default function ReservedPropertyCard({
 
   const handleClose = () => setShowDetails(false)
 
+  // Click outside to close expanded view (same as ClientPropertyCard)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+        setShowDetails(false)
+      }
+    }
+
+    if (showDetails) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showDetails])
+
   return (
     <div className="bg-gradient-to-r from-white via-orange-50/50 to-orange-100/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-orange-200 hover:border-orange-300">
       {/* Horizontal Layout Container */}
@@ -226,7 +240,7 @@ export default function ReservedPropertyCard({
                   <p className="text-xs text-orange-700">
                     {isExpired
                       ? 'Reservation has expired. Contact support to renew.'
-                      : 'Complete handover process within 72 hours to secure this property.'
+                      : 'Start handover and sign agreement within 72 hours to secure this property.'
                     }
                   </p>
                 </div>
@@ -302,28 +316,30 @@ export default function ReservedPropertyCard({
         </button>
       </div>
 
-      {/* Inline Handover View (when details are shown) */}
+      {/* Enhanced Expanded Details - Full Width Mirror of InlineHandoverView */}
       {showDetails && (
-        <div ref={cardRef} className="border-t border-orange-200 bg-white">
-          {handoverLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-gray-600">Loading handover details...</span>
-            </div>
-          ) : handoverData ? (
-            <InlineHandoverView
-              handover={handoverData}
-              onClose={handleClose}
-              onStageClick={handleStageClick}
-              onStageUpdate={handleStageUpdate}
-              readOnly={true}
-            />
-          ) : (
-            <div className="p-6 text-center text-gray-500">
-              <p>Handover process not yet started for this property.</p>
-              <p className="text-sm mt-2">Details will be available once the handover begins.</p>
-            </div>
-          )}
+        <div ref={cardRef} className="mt-8 border-t-4 border-gradient-to-r from-orange-500 to-red-500 pt-8 bg-gradient-to-br from-orange-50/50 via-red-50/30 to-orange-50/50 rounded-b-2xl">
+          <div className="px-8 pb-8">
+            {handoverLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-gray-600">Loading handover details...</span>
+              </div>
+            ) : handoverData ? (
+              <InlineHandoverView
+                handover={handoverData}
+                onClose={handleClose}
+                onStageClick={handleStageClick}
+                onStageUpdate={handleStageUpdate}
+                readOnly={true}
+              />
+            ) : (
+              <div className="p-6 text-center text-gray-500">
+                <p>Handover process not yet started for this property.</p>
+                <p className="text-sm mt-2">Details will be available once the handover begins.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
