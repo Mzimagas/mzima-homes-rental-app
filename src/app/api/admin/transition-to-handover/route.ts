@@ -50,10 +50,20 @@ export async function POST(request: NextRequest) {
     const property = propertyResult.data
     const client = clientResult.data
 
-    // Check if property is already in handover
+    // Check if property is in correct state for handover transition
     if (property.handover_status === 'IN_PROGRESS' || property.handover_status === 'COMPLETED') {
       return NextResponse.json(
         { error: 'Property is already in handover process' },
+        { status: 400 }
+      )
+    }
+
+    // Property must be AWAITING_START to transition to handover
+    if (property.handover_status !== 'AWAITING_START') {
+      return NextResponse.json(
+        {
+          error: `Property must be in AWAITING_START status to begin handover. Current status: ${property.handover_status}. Please make the property available in marketplace first.`
+        },
         { status: 400 }
       )
     }
@@ -94,10 +104,10 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (handoverError) {
-        // Rollback property status
+        // Rollback property status to AWAITING_START
         await supabase
           .from('properties')
-          .update({ handover_status: 'NOT_STARTED' })
+          .update({ handover_status: 'AWAITING_START' })
           .eq('id', validatedData.propertyId)
         
         throw new Error(`Failed to create handover pipeline: ${handoverError.message}`)

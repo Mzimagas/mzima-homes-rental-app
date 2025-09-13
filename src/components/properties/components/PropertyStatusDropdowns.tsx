@@ -246,6 +246,7 @@ export default function PropertyStatusDropdowns({
           title={handoverDisabledReason || undefined}
         >
           <option value="Not Started">Not Started</option>
+          <option value="Awaiting Start">Awaiting Start</option>
           <option value="In Progress">In Progress</option>
           {/* Completed option only shown if already completed - prevents manual completion */}
           {property.handover_status === 'COMPLETED' && (

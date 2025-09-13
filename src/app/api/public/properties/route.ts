@@ -13,9 +13,9 @@ export async function GET(req: NextRequest) {
 
     // Get properties that are available for sale in marketplace
     // Show properties with:
-    // 1. handover_status 'NOT_STARTED' (available for interest)
+    // 1. handover_status 'AWAITING_START' (available for interest)
     // 2. Properties with reservation_status 'RESERVED' (visible but marked as reserved)
-    // Hide properties with handover_status 'IN_PROGRESS' or 'COMPLETED'
+    // Hide properties with handover_status 'NOT_STARTED', 'IN_PROGRESS' or 'COMPLETED'
     const { data: properties, error } = await supabase
       .from('properties')
       .select(
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
         reserved_date
       `
       )
-      .or('handover_status.eq.NOT_STARTED,reservation_status.eq.RESERVED')
+      .or('handover_status.eq.AWAITING_START,reservation_status.eq.RESERVED')
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     }
 
     console.log(
-      `🏠 Marketplace API: Found ${properties?.length || 0} available properties (NOT_STARTED or RESERVED)`
+      `🏠 Marketplace API: Found ${properties?.length || 0} available properties (AWAITING_START or RESERVED)`
     )
     if (properties && properties.length > 0) {
       console.log(

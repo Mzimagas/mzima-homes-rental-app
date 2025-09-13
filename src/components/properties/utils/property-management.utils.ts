@@ -115,11 +115,17 @@ export const getSubdivisionValue = (
 export const getHandoverValue = (
   property: PropertyWithLifecycle
 ): string => {
-  return property.handover_status === 'COMPLETED'
-    ? 'Handed Over'
-    : property.handover_status === 'IN_PROGRESS'
-      ? 'In Progress'
-      : 'Not Started'
+  switch (property.handover_status) {
+    case 'COMPLETED':
+      return 'Handed Over'
+    case 'IN_PROGRESS':
+      return 'In Progress'
+    case 'AWAITING_START':
+      return 'Awaiting Start'
+    case 'NOT_STARTED':
+    default:
+      return 'Not Started'
+  }
 }
 
 // Authentication error handling

@@ -4,7 +4,7 @@
  */
 
 export type SubdivisionStatusUpdate = 'NOT_STARTED' | 'SUB_DIVISION_STARTED' | 'SUBDIVIDED'
-export type HandoverStatusUpdate = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
+export type HandoverStatusUpdate = 'NOT_STARTED' | 'AWAITING_START' | 'IN_PROGRESS' | 'COMPLETED'
 
 export interface StatusUpdateResult {
   success: boolean
@@ -214,7 +214,8 @@ export class PropertyStatusUpdateService {
       return subdivisionMap[uiStatus] || uiStatus
     } else {
       const handoverMap: Record<string, string> = {
-        'Not Started': 'PENDING',
+        'Not Started': 'NOT_STARTED',
+        'Awaiting Start': 'AWAITING_START',
         'In Progress': 'IN_PROGRESS',
         'Handed Over': 'COMPLETED',
       }

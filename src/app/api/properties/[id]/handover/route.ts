@@ -143,8 +143,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       updateData.handover_date = handover_date || new Date().toISOString().split('T')[0]
     }
 
-    // Clear handover date when reverting to pending or in progress
-    if (handover_status === 'PENDING' || handover_status === 'IN_PROGRESS') {
+    // Clear handover date when reverting to not started, awaiting start, or in progress
+    if (handover_status === 'NOT_STARTED' || handover_status === 'AWAITING_START' || handover_status === 'IN_PROGRESS') {
       updateData.handover_date = null
     }
 

@@ -57,6 +57,33 @@ CREATE INDEX IF NOT EXISTS idx_client_deposits_client_id ON client_deposits(clie
 CREATE INDEX IF NOT EXISTS idx_client_deposits_property_id ON client_deposits(property_id);
 CREATE INDEX IF NOT EXISTS idx_client_deposits_deposit_date ON client_deposits(deposit_date);
 
+-- Add AWAITING_START status to handover_status options
+-- Add check constraint to ensure valid handover status values
+ALTER TABLE properties DROP CONSTRAINT IF EXISTS properties_handover_status_check;
+ALTER TABLE properties ADD CONSTRAINT properties_handover_status_check
+CHECK (handover_status IN ('NOT_STARTED', 'AWAITING_START', 'IN_PROGRESS', 'COMPLETED'));
+
+-- Add check constraint for reservation_status
+ALTER TABLE properties ADD CONSTRAINT properties_reservation_status_check
+CHECK (reservation_status IS NULL OR reservation_status IN ('RESERVED', 'COMMITTED'));
+
+-- Add index for handover_status
+CREATE INDEX IF NOT EXISTS idx_properties_handover_status ON properties(handover_status);
+
+-- Add comments for documentation
+COMMENT ON COLUMN properties.handover_status IS 'Current handover status: NOT_STARTED (hidden) → AWAITING_START (visible) → IN_PROGRESS (hidden) → COMPLETED (hidden)';
+COMMENT ON COLUMN properties.reservation_status IS 'Current reservation status (RESERVED, COMMITTED, etc.)';
+COMMENT ON COLUMN properties.reserved_by IS 'Client who reserved the property';
+COMMENT ON COLUMN properties.reserved_date IS 'Date when property was reserved';
+COMMENT ON TABLE client_deposits IS 'Tracks client deposits for property reservations';
+
+-- Status Flow Documentation:
+-- 1. NOT_STARTED: Property not ready for handover (hidden from marketplace)
+-- 2. AWAITING_START: Property ready for client interest (visible in marketplace)
+-- 3. RESERVED: Client expressed interest (visible in marketplace with reserved status)
+-- 4. IN_PROGRESS: Handover process started (hidden from marketplace)
+-- 5. COMPLETED: Handover completed (hidden from marketplace)
+
 -- Update existing RESERVED interests to have reservation_date
 UPDATE client_property_interests 
 SET reservation_date = updated_at 

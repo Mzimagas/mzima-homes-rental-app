@@ -144,27 +144,46 @@ export async function POST(req: NextRequest) {
 
     // Start transaction-like operations
     try {
-      // 1. Try to mark property as reserved (not fully committed yet)
-      try {
-        await supabase
-          .from('properties')
-          .update({
-            committed_client_id: client.id,
-            commitment_date: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            // Mark as reserved instead of fully committed
-            reservation_status: 'RESERVED',
-            reserved_by: client.id,
-            reserved_date: new Date().toISOString(),
-          })
-          .eq('id', validatedData.propertyId)
+      // 1. Get current property status to ensure proper state transition
+      const { data: currentProperty, error: propertyFetchError } = await supabase
+        .from('properties')
+        .select('handover_status, reservation_status')
+        .eq('id', validatedData.propertyId)
+        .single()
 
-        console.log('Property marked as reserved for client:', client.id)
-      } catch (propertyUpdateError) {
-        console.warn('Property reservation failed, continuing with interest update:', propertyUpdateError)
+      if (propertyFetchError) {
+        throw new Error(`Failed to fetch property status: ${propertyFetchError.message}`)
       }
 
-      // 2. Update client interest status to RESERVED (not fully committed yet)
+      // Ensure property is in AWAITING_START status for reservation
+      const updateData: any = {
+        committed_client_id: client.id,
+        commitment_date: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        reservation_status: 'RESERVED',
+        reserved_by: client.id,
+        reserved_date: new Date().toISOString(),
+      }
+
+      // If property is NOT_STARTED, move it to AWAITING_START first
+      if (currentProperty.handover_status === 'NOT_STARTED') {
+        updateData.handover_status = 'AWAITING_START'
+        console.log('Moving property from NOT_STARTED to AWAITING_START for reservation')
+      }
+
+      // 2. Mark property as reserved with proper status synchronization
+      const { error: propertyUpdateError } = await supabase
+        .from('properties')
+        .update(updateData)
+        .eq('id', validatedData.propertyId)
+
+      if (propertyUpdateError) {
+        throw new Error(`Failed to reserve property: ${propertyUpdateError.message}`)
+      }
+
+      console.log('Property marked as reserved for client:', client.id)
+
+      // 3. Update client interest status to RESERVED (not fully committed yet)
       const { data: updatedInterest, error: interestUpdateError } = await supabase
         .from('client_property_interests')
         .update({
@@ -181,7 +200,7 @@ export async function POST(req: NextRequest) {
         throw new Error(`Failed to update interest status: ${interestUpdateError.message}`)
       }
 
-      // 3. Deactivate all other interests for this property
+      // 4. Deactivate all other interests for this property
       const { error: deactivateError } = await supabase
         .from('client_property_interests')
         .update({
@@ -198,7 +217,7 @@ export async function POST(req: NextRequest) {
         // Don't fail the entire operation for this
       }
 
-      // 4. Create admin notification about property commitment
+      // 5. Create admin notification about property commitment
       await createAdminNotification(
         supabase,
         client.id,
