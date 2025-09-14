@@ -51,9 +51,10 @@ export default function SavedPropertyCard({
   const [imageError, setImageError] = useState(false)
   const [showDueDiligence, setShowDueDiligence] = useState(false)
   const [dueDiligenceCompleted, setDueDiligenceCompleted] = useState(false)
+  const [loading, setLoading] = useState(false)
   const hasImage = property.images && property.images.length > 0
 
-  const handleMoveToMyProperties = () => {
+  const handleMoveToMyProperties = async () => {
     if (!dueDiligenceCompleted) {
       const proceed = confirm(
         'We recommend completing due diligence before committing to this property. ' +
@@ -65,7 +66,21 @@ export default function SavedPropertyCard({
         return
       }
     }
-    onMoveToMyProperties(property.id)
+    setLoading(true)
+    try {
+      await onMoveToMyProperties(property.id)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRemoveFromSaved = async () => {
+    setLoading(true)
+    try {
+      await onRemoveFromSaved(property.id)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -245,7 +260,7 @@ export default function SavedPropertyCard({
 
                 {/* Remove Action */}
                 <button
-                  onClick={() => onRemoveFromSaved(property.id)}
+                  onClick={handleRemoveFromSaved}
                   disabled={loading}
                   className="w-full bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-700 px-4 py-2 rounded-lg transition-all duration-200 font-medium border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
