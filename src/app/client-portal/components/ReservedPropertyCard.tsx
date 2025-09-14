@@ -54,8 +54,8 @@ export default function ReservedPropertyCard({
   const [showDetails, setShowDetails] = useState(false)
   const [handoverData, setHandoverData] = useState<HandoverItem | null>(null)
   const [handoverLoading, setHandoverLoading] = useState(false)
-  const [agreementSigned, setAgreementSigned] = useState(false)
-  const [depositPaid, setDepositPaid] = useState(false)
+  const [agreementSigned, setAgreementSigned] = useState(!!(property as any).agreement_signed_at)
+  const [depositPaid, setDepositPaid] = useState(!!(property as any).deposit_paid_at)
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
   const hasImage = property.images && property.images.length > 0

@@ -55,7 +55,7 @@ export async function GET(
         )
       `)
       .eq('property_id', propertyId)
-      .eq('status', 'COMMITTED')
+      .in('status', ['COMMITTED', 'CONVERTED'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()

@@ -37,7 +37,7 @@ interface InProgressTabProps {
 export default function InProgressTab({ properties, onRefresh }: InProgressTabProps) {
   // Categorize properties by their handover status
   const { committedProperties, inHandoverProperties, completedProperties } = useMemo(() => {
-    const committed = properties.filter((p) => p.status === 'COMMITTED')
+    const committed = properties.filter((p) => p.status === 'COMMITTED' || p.status === 'CONVERTED')
     const inHandover = properties.filter((p) => p.status === 'IN_HANDOVER')
     const completed = properties.filter((p) => p.status === 'COMPLETED')
 

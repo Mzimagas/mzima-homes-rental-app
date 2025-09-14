@@ -162,22 +162,11 @@ async function getClientProperties(supabase: any, clientId: string) {
         const imageUrls = (images || []).map((img) => img.image_url).filter(Boolean)
 
         // Determine property status and progress
-        let status: 'INTERESTED' | 'RESERVED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED' = 'INTERESTED'
+        let status: 'INTERESTED' | 'RESERVED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED' | 'CONVERTED' = 'INTERESTED'
         let progress = 0
         let currentStage = 'Interest Expressed'
 
-        // Check if client has reserved or committed to this property
-        // Check property reservation status first (takes precedence)
-        if (property.reservation_status === 'RESERVED' && property.reserved_by === clientId) {
-          status = 'RESERVED'
-          currentStage = 'Reserved - Awaiting Deposit'
-          progress = 25
-        } else if (interest.status === 'COMMITTED') {
-          status = 'COMMITTED'
-          currentStage = 'Committed - Ready for Handover'
-          progress = 50
-        }
-
+        // Handover status takes absolute precedence if exists
         if (handoverData) {
           if (handoverData.handover_status === 'COMPLETED') {
             status = 'COMPLETED'
@@ -187,6 +176,22 @@ async function getClientProperties(supabase: any, clientId: string) {
             status = 'IN_HANDOVER'
             progress = handoverData.overall_progress || 0
             currentStage = handoverData.current_stage || 'In Progress'
+          }
+        } else {
+          // Next precedence: interest status (client progression)
+          if (interest.status === 'CONVERTED') {
+            status = 'CONVERTED'
+            currentStage = 'Deposit Paid - Awaiting Handover Start'
+            progress = 60
+          } else if (interest.status === 'COMMITTED') {
+            status = 'COMMITTED'
+            currentStage = 'Committed - Ready for Handover'
+            progress = 50
+          } else if (property.reservation_status === 'RESERVED' && property.reserved_by === clientId) {
+            // Reservation status last (pre-commit)
+            status = 'RESERVED'
+            currentStage = 'Reserved - Awaiting Deposit'
+            progress = 25
           }
         }
 
@@ -214,6 +219,14 @@ async function getClientProperties(supabase: any, clientId: string) {
           main_image: imageUrls[0] || null,
           interest_date: status === 'RESERVED' ? property.reserved_date || interest.created_at : interest.created_at,
           status,
+          // Pass through agreement/payment fields for UI correctness
+          agreement_generated_at: interest.agreement_generated_at,
+          agreement_signed_at: interest.agreement_signed_at,
+          deposit_paid_at: interest.deposit_paid_at,
+          deposit_amount_kes: interest.deposit_amount_kes,
+          payment_method: interest.payment_method,
+          payment_reference: interest.payment_reference,
+          payment_verified_at: interest.payment_verified_at,
         })
       }
     }
