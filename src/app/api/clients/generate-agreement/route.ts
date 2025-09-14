@@ -84,13 +84,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Property not found' }, { status: 404 })
     }
 
-    // Check if client has reserved this property (ACTIVE or COMMITTED status)
+    // Check if client has reserved this property (ACTIVE, COMMITTED, or CONVERTED status)
     const { data: interest, error: interestError } = await supabase
       .from('client_property_interests')
       .select('id, status')
       .eq('client_id', client.id)
       .eq('property_id', propertyId)
-      .in('status', ['ACTIVE', 'COMMITTED'])
+      .in('status', ['ACTIVE', 'COMMITTED', 'CONVERTED'])
       .single()
 
     if (interestError || !interest) {
@@ -126,10 +126,11 @@ export async function POST(request: NextRequest) {
       agreementId: `AGR-${propertyId}-${client.id}-${Date.now()}`
     }
 
-    // Update client interest timestamp
+    // Update client interest with agreement generation timestamp
     const { error: updateError } = await supabase
       .from('client_property_interests')
       .update({
+        agreement_generated_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', interest.id)

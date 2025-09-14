@@ -90,13 +90,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Property not found' }, { status: 404 })
     }
 
-    // Check if client has a COMMITTED interest with signed agreement for this property
+    // Check if client has a COMMITTED or CONVERTED interest for this property
     const { data: interest, error: interestError } = await supabase
       .from('client_property_interests')
       .select('id, property_id, status, notes')
       .eq('client_id', client.id)
       .eq('property_id', propertyId)
-      .eq('status', 'COMMITTED')
+      .in('status', ['COMMITTED', 'CONVERTED'])
       .maybeSingle()
 
     if (interestError) {

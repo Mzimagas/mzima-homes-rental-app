@@ -70,13 +70,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Get client interest (ACTIVE or COMMITTED status)
+    // Get client interest (ACTIVE, COMMITTED, or CONVERTED status)
     const { data: interest, error: interestError } = await supabase
       .from('client_property_interests')
       .select('id, status')
       .eq('client_id', client.id)
       .eq('property_id', propertyId)
-      .in('status', ['ACTIVE', 'COMMITTED'])
+      .in('status', ['ACTIVE', 'COMMITTED', 'CONVERTED'])
       .single()
 
     if (interestError || !interest) {
@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
       .from('client_property_interests')
       .update({
         status: 'COMMITTED',
+        agreement_signed_at: new Date().toISOString(),
         notes: signatureNote,
         updated_at: new Date().toISOString()
       })

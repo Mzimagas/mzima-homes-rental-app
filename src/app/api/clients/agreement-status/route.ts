@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       .select('id, status, notes')
       .eq('client_id', client.id)
       .eq('property_id', propertyId)
-      .in('status', ['ACTIVE', 'COMMITTED'])
+      .in('status', ['ACTIVE', 'COMMITTED', 'CONVERTED'])
       .single()
 
     if (interestError || !interest) {
