@@ -141,12 +141,56 @@ export default function HandoverPipelineManager({
         .eq('handover_status', 'AWAITING_START')
         .order('name')
 
+      // Also load properties with IN_PROGRESS handover status that might not have pipeline records
+      const { data: inProgressProperties, error: inProgressError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('handover_status', 'IN_PROGRESS')
+        .order('name')
+
       if (propertiesError) {
         console.warn('Error loading properties with AWAITING_START handover status:', propertiesError)
       }
 
+      if (inProgressError) {
+        console.warn('Error loading properties with IN_PROGRESS handover status:', inProgressError)
+      }
+
       // Set properties awaiting start (these are properties ready to begin handover process)
       setPropertiesAwaitingStart(propertiesAwaitingStart || [])
+
+      // For IN_PROGRESS properties without pipeline records, create mock handover records
+      if (inProgressProperties && inProgressProperties.length > 0) {
+        const existingHandoverPropertyIds = new Set(handoverData?.map(h => h.property_id) || [])
+        const missingHandovers = inProgressProperties
+          .filter(prop => !existingHandoverPropertyIds.has(prop.id))
+          .map(prop => ({
+            id: `temp-${prop.id}`,
+            property_id: prop.id,
+            property_name: prop.name,
+            property_address: prop.physical_address || 'Address not available',
+            handover_status: 'IN_PROGRESS',
+            current_stage: 'Initial Handover Preparation',
+            overall_progress: 0,
+            buyer_name: 'Client Name Loading...',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            pipeline_stages: [],
+            asking_price_kes: prop.asking_price_kes || 0,
+            negotiated_price_kes: null,
+            expected_profit_kes: null,
+            expected_profit_percentage: null,
+            legal_representative: null,
+            risk_assessment: null,
+            property_condition_notes: null,
+            actual_completion_date: null,
+            client_id: null
+          }))
+
+        setHandovers([...(handoverData || []), ...missingHandovers])
+      } else {
+        setHandovers(handoverData || [])
+      }
 
       // Only use actual handover pipeline data (no synthetic records)
       const allHandovers = handoverData || []
@@ -207,13 +251,43 @@ export default function HandoverPipelineManager({
         .eq('handover_status', 'AWAITING_START')
         .order('name')
 
+      const { data: inProgressProperties, error: inProgressError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('handover_status', 'IN_PROGRESS')
+        .order('name')
+
       if (propertiesError) throw propertiesError
+      if (inProgressError) throw inProgressError
 
       // Set properties awaiting start
       setPropertiesAwaitingStart(propertiesAwaitingStart || [])
 
-      // No handovers to show when pipeline table doesn't exist
-      setHandovers([])
+      // Create mock handover records for IN_PROGRESS properties when pipeline table doesn't exist
+      const mockHandovers = (inProgressProperties || []).map(prop => ({
+        id: `temp-${prop.id}`,
+        property_id: prop.id,
+        property_name: prop.name,
+        property_address: prop.physical_address || 'Address not available',
+        handover_status: 'IN_PROGRESS',
+        current_stage: 'Initial Handover Preparation',
+        overall_progress: 0,
+        buyer_name: 'Client Name Loading...',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        pipeline_stages: [],
+        asking_price_kes: prop.asking_price_kes || 0,
+        negotiated_price_kes: null,
+        expected_profit_kes: null,
+        expected_profit_percentage: null,
+        legal_representative: null,
+        risk_assessment: null,
+        property_condition_notes: null,
+        actual_completion_date: null,
+        client_id: null
+      }))
+
+      setHandovers(mockHandovers)
     } catch (error) {
       console.error('Error loading properties with handover status:', error)
       setHandovers([])
