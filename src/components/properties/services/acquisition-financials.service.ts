@@ -52,21 +52,26 @@ export class AcquisitionFinancialsService {
       }
     }
 
-    // Get the auth token and CSRF token
+    // Get the auth token and (if needed) CSRF token
     const {
       data: { session },
     } = await supabase.auth.getSession()
     const token = session?.access_token
-    const csrfToken = getCsrfToken()
 
-    if (!csrfToken) {
+    const method = String((options as any).method || 'GET').toUpperCase()
+    const csrfToken = method === 'GET' ? null : getCsrfToken()
+
+    if (method !== 'GET' && !csrfToken) {
       throw new Error('CSRF token not found. Please refresh the page and try again.')
     }
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'x-csrf-token': csrfToken,
       ...options.headers,
+    }
+
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken
     }
 
     if (token) {
