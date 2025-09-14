@@ -28,8 +28,30 @@ export default function DepositPaymentSection({ property, agreementSigned, onDep
 
   // Use actual payment status from database instead of local state
   const depositPaid = !!property.deposit_paid_at
+  const paymentVerified = !!property.payment_verified_at
   const paymentReference = property.payment_reference || ''
   const depositAmount = property.deposit_amount_kes || ((property.asking_price_kes || 0) * 0.1) // Use actual deposit or 10% of asking price
+
+  // Determine payment status based on verification
+  const getPaymentStatus = () => {
+    if (paymentVerified) {
+      return 'Verified & Confirmed'
+    } else if (depositPaid) {
+      return 'Pending Admin Verification'
+    } else {
+      return 'Not Paid'
+    }
+  }
+
+  const getStatusColor = () => {
+    if (paymentVerified) {
+      return 'text-green-700'
+    } else if (depositPaid) {
+      return 'text-orange-700'
+    } else {
+      return 'text-gray-700'
+    }
+  }
 
   const handleMakePayment = async () => {
     if (!paymentMethod) {
@@ -220,22 +242,27 @@ export default function DepositPaymentSection({ property, agreementSigned, onDep
       ) : (
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+            <svg className={`w-5 h-5 ${paymentVerified ? 'text-green-600' : 'text-orange-600'}`} fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
-            <span className="text-sm font-medium text-green-800">Deposit Paid Successfully</span>
+            <span className={`text-sm font-medium ${paymentVerified ? 'text-green-800' : 'text-orange-800'}`}>
+              {paymentVerified ? 'Deposit Paid Successfully' : 'Deposit Payment Submitted'}
+            </span>
           </div>
-          <div className="bg-white border border-green-200 rounded-lg p-3">
-            <div className="space-y-1 text-xs text-green-700">
+          <div className={`bg-white border rounded-lg p-3 ${paymentVerified ? 'border-green-200' : 'border-orange-200'}`}>
+            <div className={`space-y-1 text-xs ${paymentVerified ? 'text-green-700' : 'text-orange-700'}`}>
               <p><strong>Amount:</strong> KES {depositAmount.toLocaleString()}</p>
-              <p><strong>Payment Method:</strong> {paymentMethod === 'mpesa' ? 'M-Pesa' : 'Bank Transfer'}</p>
+              <p><strong>Payment Method:</strong> {property.payment_method || 'Bank Transfer'}</p>
               <p><strong>Reference:</strong> {paymentReference}</p>
-              <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
-              <p><strong>Status:</strong> Verified & Confirmed</p>
+              <p><strong>Date:</strong> {property.deposit_paid_at ? new Date(property.deposit_paid_at).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+              <p><strong>Status:</strong> <span className={getStatusColor()}>{getPaymentStatus()}</span></p>
             </div>
           </div>
-          <p className="text-xs text-green-700">
-            Your deposit has been received and verified. The property will now move to &quot;My Properties&quot; and the handover process will begin.
+          <p className={`text-xs ${paymentVerified ? 'text-green-700' : 'text-orange-700'}`}>
+            {paymentVerified
+              ? 'Your deposit has been received and verified. The property will now move to "My Properties" and the handover process will begin.'
+              : 'Your deposit has been received and is pending admin verification. You will be notified once it has been approved.'
+            }
           </p>
         </div>
       )}
