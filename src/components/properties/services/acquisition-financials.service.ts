@@ -84,17 +84,20 @@ export class AcquisitionFinancialsService {
       credentials: 'same-origin',
     })
 
-    // Handle 403 errors with circuit breaker (but allow fallback for pipeline APIs)
-    if (response.status === 403) {
+    // Handle 401/403 errors
+    if (response.status === 401) {
+      // Only 401 should trip auth circuit breaker
       this.authFailure = true
       this.authFailureTime = Date.now()
-      console.warn('[AcquisitionFinancialsService] 403 detected, activating circuit breaker')
-
-      // For pipeline APIs, throw a specific error that can be caught for fallback
+      throw new Error('Authentication failed. Please sign in again.')
+    }
+    if (response.status === 403) {
+      // 403 Forbidden can be expected for some endpoints (e.g., costs for clients)
+      // Do NOT trip the circuit breaker; let callers fall back gracefully
       if (url.includes('/api/purchase-pipeline/')) {
+        // For pipeline APIs, throw a specific error that can be caught for fallback
         throw new Error('PIPELINE_API_FORBIDDEN')
       }
-
       throw new Error('Access denied. Please check your permissions or refresh the page.')
     }
 
