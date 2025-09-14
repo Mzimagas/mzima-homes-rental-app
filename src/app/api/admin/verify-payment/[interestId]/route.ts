@@ -86,10 +86,8 @@ export async function PATCH(
 
     if (verified) {
       updateData.payment_verified_at = new Date().toISOString()
-      // If verified, ensure status is IN_HANDOVER
-      if (interest.status !== 'IN_HANDOVER') {
-        updateData.status = 'IN_HANDOVER'
-      }
+      // Don't change status - preserve the existing workflow status
+      // Status should remain CONVERTED after payment verification
     }
 
     if (notes) {
@@ -153,15 +151,15 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      message: verified 
-        ? 'Payment verified successfully. Property will move to client\'s My Properties.'
+      message: verified
+        ? 'Payment verified successfully. Client can now proceed with handover process.'
         : 'Payment verification rejected.',
       interest: {
         id: interest.id,
         client_name: interest.clients.full_name,
         property_name: interest.properties.name,
         payment_verified_at: verified ? new Date().toISOString() : null,
-        status: verified && interest.status !== 'IN_HANDOVER' ? 'IN_HANDOVER' : interest.status,
+        status: interest.status, // Preserve existing status
       }
     })
 
