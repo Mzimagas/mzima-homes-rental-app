@@ -39,6 +39,14 @@ interface ClientProperty {
   main_image?: string
   interest_date: string
   status: 'INTERESTED' | 'RESERVED' | 'COMMITTED' | 'IN_HANDOVER' | 'COMPLETED'
+  // Payment tracking fields
+  deposit_amount_kes?: number | null
+  deposit_paid_at?: string | null
+  payment_method?: string | null
+  payment_reference?: string | null
+  payment_verified_at?: string | null
+  agreement_generated_at?: string | null
+  agreement_signed_at?: string | null
 }
 
 interface ClientData {

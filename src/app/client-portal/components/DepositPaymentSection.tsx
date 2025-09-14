@@ -6,6 +6,12 @@ interface ClientProperty {
   id: string
   name: string
   asking_price_kes: number | null
+  // Payment tracking fields
+  deposit_amount_kes?: number | null
+  deposit_paid_at?: string | null
+  payment_method?: string | null
+  payment_reference?: string | null
+  payment_verified_at?: string | null
 }
 
 interface DepositPaymentSectionProps {
@@ -18,11 +24,12 @@ export default function DepositPaymentSection({ property, agreementSigned, onDep
   const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'bank' | ''>('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [loading, setLoading] = useState(false)
-  const [depositPaid, setDepositPaid] = useState(false)
-  const [paymentReference, setPaymentReference] = useState('')
   const [showPaymentForm, setShowPaymentForm] = useState(false)
 
-  const depositAmount = (property.asking_price_kes || 0) * 0.1 // 10% deposit
+  // Use actual payment status from database instead of local state
+  const depositPaid = !!property.deposit_paid_at
+  const paymentReference = property.payment_reference || ''
+  const depositAmount = property.deposit_amount_kes || ((property.asking_price_kes || 0) * 0.1) // Use actual deposit or 10% of asking price
 
   const handleMakePayment = async () => {
     if (!paymentMethod) {
@@ -56,8 +63,7 @@ export default function DepositPaymentSection({ property, agreementSigned, onDep
       }
 
       const data = await response.json()
-      setPaymentReference(data.payment.reference)
-      setDepositPaid(true)
+      // Payment successful - trigger refresh to get updated data from database
       onDepositPaid()
       alert(`${data.message}\n\nReference: ${data.payment.reference}`)
     } catch (error) {

@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Create payment installment record for admin portal tracking
-      if (paymentResult.status === 'COMPLETED') {
+      if (paymentResult.status === 'COMPLETED' || paymentResult.status === 'PENDING_VERIFICATION') {
         // Get the next installment number for this property
         const { data: lastPayment } = await supabase
           .from('property_payment_installments')
@@ -270,8 +270,8 @@ export async function POST(request: NextRequest) {
         payment: paymentData,
         paymentResult,
         message: paymentResult.message,
-        nextSteps: paymentResult.status === 'COMPLETED'
-          ? 'Your deposit has been confirmed. The property will now move to My Properties and handover process will begin.'
+        nextSteps: (paymentResult.status === 'COMPLETED' || paymentResult.status === 'PENDING_VERIFICATION')
+          ? 'Your deposit has been processed. The property will now move to My Properties and handover process will begin.'
           : 'Your payment is being processed. You will receive confirmation once verified.'
       })
     } catch (error) {

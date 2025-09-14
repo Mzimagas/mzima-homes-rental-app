@@ -31,6 +31,11 @@ export async function GET(request: NextRequest) {
         contact_preference,
         created_at,
         updated_at,
+        deposit_amount_kes,
+        deposit_paid_at,
+        payment_method,
+        payment_reference,
+        payment_verified_at,
         clients:client_id (
           full_name,
           email,

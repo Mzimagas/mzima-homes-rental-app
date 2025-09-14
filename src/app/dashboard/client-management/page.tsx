@@ -14,6 +14,12 @@ interface ClientInterest {
   message?: string
   contact_preference: string
   created_at: string
+  // Payment tracking fields
+  deposit_amount_kes?: number | null
+  deposit_paid_at?: string | null
+  payment_method?: string | null
+  payment_reference?: string | null
+  payment_verified_at?: string | null
   client: {
     full_name: string
     email: string
@@ -49,7 +55,8 @@ export default function ClientManagementPage() {
   const [handoverRequests, setHandoverRequests] = useState<HandoverRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'interests' | 'handover-requests'>('interests')
+  const [activeTab, setActiveTab] = useState<'interests' | 'handover-requests' | 'pending-payments'>('interests')
+  const [verifyingPayment, setVerifyingPayment] = useState<string | null>(null)
 
   useEffect(() => {
     loadData()
@@ -111,6 +118,37 @@ export default function ClientManagementPage() {
     }
   }
 
+  const handleVerifyPayment = async (interestId: string, verified: boolean, notes?: string) => {
+    try {
+      setVerifyingPayment(interestId)
+
+      const response = await fetch(`/api/admin/verify-payment/${interestId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          verified,
+          notes,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert(result.message)
+        loadData() // Reload data to show updated status
+      } else {
+        alert(`Failed to ${verified ? 'verify' : 'reject'} payment: ${result.error}`)
+      }
+    } catch (err) {
+      console.error('Error verifying payment:', err)
+      alert(`Failed to ${verified ? 'verify' : 'reject'} payment`)
+    } finally {
+      setVerifyingPayment(null)
+    }
+  }
+
   const handleApproveHandoverRequest = async (requestId: string) => {
     try {
       const response = await fetch(`/api/admin/handover-requests/${requestId}/approve`, {
@@ -169,8 +207,18 @@ export default function ClientManagementPage() {
             Client Interests ({interests.length})
           </button>
           <button
-            onClick={() => setActiveTab('handover-requests')}
+            onClick={() => setActiveTab('pending-payments')}
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'pending-payments'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Pending Payments ({interests.filter(i => i.deposit_paid_at && !i.payment_verified_at).length})
+          </button>
+          <button
+            onClick={() => setActiveTab('handover-requests')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'handover-requests'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -209,6 +257,41 @@ export default function ClientManagementPage() {
                   onTransitionToHandover={handleTransitionToHandover}
                 />
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pending Payments Tab */}
+      {activeTab === 'pending-payments' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Pending Payment Verifications</h3>
+              <p className="text-sm text-gray-600">
+                Bank transfer deposits awaiting admin verification
+              </p>
+            </div>
+          </div>
+
+          {interests.filter(i => i.deposit_paid_at && !i.payment_verified_at).length === 0 ? (
+            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+              <div className="text-gray-400 text-6xl mb-4">💳</div>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">No Pending Payments</h3>
+              <p className="text-gray-600">All deposit payments have been verified</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6">
+              {interests
+                .filter(i => i.deposit_paid_at && !i.payment_verified_at)
+                .map((interest) => (
+                  <PendingPaymentCard
+                    key={interest.id}
+                    interest={interest}
+                    onVerifyPayment={handleVerifyPayment}
+                    isVerifying={verifyingPayment === interest.id}
+                  />
+                ))}
             </div>
           )}
         </div>
@@ -385,6 +468,122 @@ function HandoverRequestCard({
               Approve Handover
             </button>
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PendingPaymentCard({
+  interest,
+  onVerifyPayment,
+  isVerifying
+}: {
+  interest: ClientInterest
+  onVerifyPayment: (interestId: string, verified: boolean, notes?: string) => void
+  isVerifying: boolean
+}) {
+  const [notes, setNotes] = useState('')
+  const [showNotesInput, setShowNotesInput] = useState(false)
+
+  const handleVerify = (verified: boolean) => {
+    if (verified && showNotesInput && !notes.trim()) {
+      alert('Please add verification notes')
+      return
+    }
+    onVerifyPayment(interest.id, verified, notes.trim() || undefined)
+    setNotes('')
+    setShowNotesInput(false)
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+              <span className="text-yellow-600 font-semibold">💳</span>
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{interest.client.full_name}</h4>
+              <p className="text-sm text-gray-600">{interest.client.email}</p>
+            </div>
+            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+              Pending Verification
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <h5 className="font-medium text-gray-900 mb-2">Property Information</h5>
+              <p className="text-sm text-gray-600">Name: {interest.property.name}</p>
+              <p className="text-sm text-gray-600">Location: {interest.property.location}</p>
+              <p className="text-sm text-gray-600">
+                Price: {formatCurrency(interest.property.asking_price_kes)}
+              </p>
+            </div>
+
+            <div>
+              <h5 className="font-medium text-gray-900 mb-2">Payment Details</h5>
+              <p className="text-sm text-gray-600">
+                Amount: {formatCurrency(interest.deposit_amount_kes || 0)}
+              </p>
+              <p className="text-sm text-gray-600">
+                Method: {interest.payment_method === 'bank' ? 'Bank Transfer' : 'M-Pesa'}
+              </p>
+              <p className="text-sm text-gray-600">
+                Reference: {interest.payment_reference}
+              </p>
+              <p className="text-sm text-gray-600">
+                Paid: {interest.deposit_paid_at ? new Date(interest.deposit_paid_at).toLocaleDateString() : 'N/A'}
+              </p>
+            </div>
+          </div>
+
+          {showNotesInput && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Verification Notes
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="Add notes about the payment verification..."
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+        <div className="flex items-center space-x-2">
+          {!showNotesInput && (
+            <button
+              onClick={() => setShowNotesInput(true)}
+              className="text-sm text-blue-600 hover:text-blue-700"
+            >
+              Add Notes
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => handleVerify(false)}
+            disabled={isVerifying}
+            className="px-4 py-2 text-sm font-medium text-red-700 bg-red-100 border border-red-300 rounded-md hover:bg-red-200 disabled:opacity-50"
+          >
+            {isVerifying ? 'Processing...' : 'Reject'}
+          </button>
+          <button
+            onClick={() => handleVerify(true)}
+            disabled={isVerifying}
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50"
+          >
+            {isVerifying ? 'Processing...' : 'Verify Payment'}
+          </button>
         </div>
       </div>
     </div>

@@ -470,7 +470,7 @@ export default function MarketplacePage() {
           </p>
         </div>
 
-        {/* Property Grid */}
+        {/* Property List - Full Width Cards */}
         {filteredProperties.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">🏠</div>
@@ -478,7 +478,7 @@ export default function MarketplacePage() {
             <p className="text-gray-600">Try adjusting your search criteria</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-6">
             {filteredProperties.map((property) => (
               <PropertyCard
                 key={property.id}
@@ -524,121 +524,135 @@ function PropertyCard({
   const isReserved = property.reservation_status === 'RESERVED'
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      {/* Property Image */}
-      <div className="relative h-48 bg-gray-200 flex items-center justify-center">
-        {hasImage && !imageError ? (
-          <Image
-            src={property.main_image || property.images?.[0] || ''}
-            alt={property.name || 'Property'}
-            fill
-            className="object-cover"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-gray-400">
-            <div className="text-4xl mb-2">🏠</div>
-            <span className="text-sm">No Image Available</span>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
+      {/* Horizontal Layout Container */}
+      <div className="flex flex-col lg:flex-row">
+        {/* Property Image Section */}
+        <div className="relative lg:w-80 h-64 lg:h-auto bg-gray-200 flex items-center justify-center">
+          {hasImage && !imageError ? (
+            <Image
+              src={property.main_image || property.images?.[0] || ''}
+              alt={property.name || 'Property'}
+              fill
+              className="object-cover"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-gray-400">
+              <div className="text-4xl mb-2">🏠</div>
+              <span className="text-sm">No Image Available</span>
+            </div>
+          )}
+
+          {/* Property Type Badge */}
+          <div className="absolute top-2 right-2">
+            <span className="bg-blue-600 text-white px-2 py-1 rounded text-sm font-medium">
+              {property.property_type_display || property.property_type || 'Property'}
+            </span>
+            {property.is_new && (
+              <span className="ml-2 bg-yellow-400 text-white px-2 py-1 rounded text-xs font-semibold">NEW</span>
+            )}
           </div>
-        )}
-        <div className="absolute top-2 right-2">
-          <span className="bg-blue-600 text-white px-2 py-1 rounded text-sm font-medium">
-            {property.property_type_display || property.property_type || 'Property'}
-          </span>
-          {property.is_new ? (
-            <span className="ml-2 bg-yellow-400 text-white px-2 py-1 rounded text-xs font-semibold">NEW</span>
-          ) : null}
-        </div>
 
-        {/* Status Badges */}
-        <div className="absolute top-2 left-2 space-y-1">
-          {/* Reservation Status Badge */}
-          {isReserved && (
-            <div>
-              <span className="px-2 py-1 rounded text-sm font-medium bg-orange-600 text-white">
-                Reserved
-              </span>
-            </div>
-          )}
-
-          {/* Handover Status Badge */}
-          {property.handover_status_display && (
-            <div>
-              <span className={`px-2 py-1 rounded text-sm font-medium ${
-                property.handover_status === 'COMPLETED'
-                  ? 'bg-green-600 text-white'
-                  : property.handover_status === 'IN_PROGRESS'
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-gray-600 text-white'
-              }`}>
-                {property.handover_status_display}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Property Details */}
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          {property.name || 'Unnamed Property'}
-        </h3>
-
-        <div className="flex items-center justify-between text-gray-600 text-sm mb-2">
-          <span>📍 {property.location_display || property.location || 'Location not specified'}</span>
-          <GoogleMapsCardButton property={property} />
-        </div>
-
-        {/* Property Features */}
-        <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-          {property.area_display && (
-            <span className="flex items-center">
-              <span className="mr-1">📐</span>
-              {property.area_display}
-            </span>
-          )}
-          {property.bedrooms && (
-            <span className="flex items-center">
-              <span className="mr-1">🛏️</span>
-              {property.bedrooms} bed{property.bedrooms !== 1 ? 's' : ''}
-            </span>
-          )}
-          {property.bathrooms && (
-            <span className="flex items-center">
-              <span className="mr-1">🚿</span>
-              {property.bathrooms} bath{property.bathrooms !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-
-        {property.description && (
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-            {property.description}
-          </p>
-        )}
-
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-2xl font-bold text-green-600">
-              {property.asking_price_kes ? formatCurrency(property.asking_price_kes) : 'Price on request'}
-            </p>
-            <p className="text-sm text-gray-500">
-              {property.property_type_display || 'Property for sale'}
-            </p>
-            </div>
-            <div className="text-sm text-gray-600">
-              {typeof property.interest_count === 'number' && property.interest_count > 0 ? (
-                <span title="Total people interested">
-                  👥 {property.interest_count}
+          {/* Status Badges */}
+          <div className="absolute top-2 left-2 space-y-1">
+            {/* Reservation Status Badge */}
+            {isReserved && (
+              <div>
+                <span className="px-2 py-1 rounded text-sm font-medium bg-orange-600 text-white">
+                  Reserved
                 </span>
-              ) : (
-                <span className="text-gray-400">Be the first to express interest</span>
+              </div>
+            )}
+
+            {/* Handover Status Badge */}
+            {property.handover_status_display && (
+              <div>
+                <span className={`px-2 py-1 rounded text-sm font-medium ${
+                  property.handover_status === 'COMPLETED'
+                    ? 'bg-green-600 text-white'
+                    : property.handover_status === 'IN_PROGRESS'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-gray-600 text-white'
+                }`}>
+                  {property.handover_status_display}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Property Details Section */}
+        <div className="flex-1 p-6">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {property.name || 'Unnamed Property'}
+              </h3>
+
+              <div className="flex items-center justify-between text-gray-600 text-sm mb-3">
+                <span className="flex items-center">
+                  <span className="mr-1">📍</span>
+                  {property.location_display || property.location || 'Location not specified'}
+                </span>
+                <GoogleMapsCardButton property={property} />
+              </div>
+            </div>
+
+            {/* Property Features */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+              {property.area_display && (
+                <span className="flex items-center">
+                  <span className="mr-1">📐</span>
+                  {property.area_display}
+                </span>
+              )}
+              {property.bedrooms && (
+                <span className="flex items-center">
+                  <span className="mr-1">🛏️</span>
+                  {property.bedrooms} bed{property.bedrooms !== 1 ? 's' : ''}
+                </span>
+              )}
+              {property.bathrooms && (
+                <span className="flex items-center">
+                  <span className="mr-1">🚿</span>
+                  {property.bathrooms} bath{property.bathrooms !== 1 ? 's' : ''}
+                </span>
               )}
             </div>
-          </div>
-        </div>
 
-        <div className="flex space-x-2">
+            {/* Description */}
+            {property.description && (
+              <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                {property.description}
+              </p>
+            )}
+
+            {/* Price and Interest Section */}
+            <div className="flex-1 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-2xl font-bold text-green-600">
+                    {property.asking_price_kes ? formatCurrency(property.asking_price_kes) : 'Price on request'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {property.property_type_display || 'Property for sale'}
+                  </p>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {typeof property.interest_count === 'number' && property.interest_count > 0 ? (
+                    <span title="Total people interested">
+                      👥 {property.interest_count}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">Be the first to express interest</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
           <Link
             href={`/marketplace/property/${property.id}`}
             className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-center hover:bg-gray-200 transition-colors"
@@ -697,6 +711,8 @@ function PropertyCard({
               Express Interest
             </button>
           )}
+            </div>
+          </div>
         </div>
       </div>
   )

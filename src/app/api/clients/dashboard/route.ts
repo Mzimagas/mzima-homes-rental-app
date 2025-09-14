@@ -84,6 +84,13 @@ async function getClientProperties(supabase: any, clientId: string) {
         status,
         created_at,
         notes,
+        deposit_amount_kes,
+        deposit_paid_at,
+        payment_method,
+        payment_reference,
+        payment_verified_at,
+        agreement_generated_at,
+        agreement_signed_at,
         properties (
           id,
           name,
