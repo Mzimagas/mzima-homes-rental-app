@@ -198,8 +198,40 @@ export async function POST(request: NextRequest) {
         throw new Error(`Failed to update interest: ${interestUpdateError.message}`)
       }
 
-      // 2. If payment is completed, trigger transition to handover pipeline
+      // 2. Create payment installment record for admin portal tracking
       if (paymentResult.status === 'COMPLETED') {
+        // Get the next installment number for this property
+        const { data: lastPayment } = await supabase
+          .from('property_payment_installments')
+          .select('installment_number')
+          .eq('property_id', propertyId)
+          .order('installment_number', { ascending: false })
+          .limit(1)
+          .single()
+
+        const nextInstallmentNumber = (lastPayment?.installment_number || 0) + 1
+
+        // Create payment installment record
+        const { error: paymentInstallmentError } = await supabase
+          .from('property_payment_installments')
+          .insert({
+            property_id: propertyId,
+            installment_number: nextInstallmentNumber,
+            amount_kes: amount,
+            payment_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+            payment_reference: paymentReference,
+            payment_method: paymentMethod === 'mpesa' ? 'MOBILE_MONEY' : 'BANK_TRANSFER',
+            notes: `Deposit payment from client portal - ${client.full_name || client.email}`,
+            created_by: user.id,
+          })
+
+        if (paymentInstallmentError) {
+          console.error('Failed to create payment installment record:', paymentInstallmentError)
+          // Don't fail the transaction, but log the error
+        } else {
+          console.log('✅ Payment installment record created for admin portal')
+        }
+
         // Update property status to move to handover
         const { error: propertyUpdateError } = await supabase
           .from('properties')
