@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
           handover_status
         )
       `)
-      .eq('status', 'ACTIVE')
+      .in('status', ['ACTIVE', 'COMMITTED', 'RESERVED', 'CONVERTED'])
       .order('created_at', { ascending: false })
 
     if (error) {

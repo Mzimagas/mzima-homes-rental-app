@@ -189,7 +189,7 @@ export default function ClientPortalPage() {
   )
 
   const myProperties = useMemo(() =>
-    clientData?.properties.filter((p) => p.status === 'COMMITTED' || p.status === 'IN_HANDOVER') || [],
+    clientData?.properties.filter((p) => p.status === 'COMMITTED' || p.status === 'IN_HANDOVER' || p.status === 'CONVERTED') || [],
     [clientData?.properties]
   )
 

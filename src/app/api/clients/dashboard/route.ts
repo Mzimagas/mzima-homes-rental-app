@@ -116,7 +116,7 @@ async function getClientProperties(supabase: any, clientId: string) {
       `
       )
       .eq('client_id', clientId)
-      .in('status', ['ACTIVE', 'COMMITTED', 'RESERVED'])
+      .in('status', ['ACTIVE', 'COMMITTED', 'RESERVED', 'CONVERTED'])
 
     console.log('🔍 Property interests query result:', {
       clientId,
