@@ -244,7 +244,7 @@ export default function ReservedPropertyCard({
                     <p className="text-xs text-orange-700">
                       {isExpired
                         ? 'Reservation has expired. Contact support to renew.'
-                        : 'Start handover and sign agreement within 72 hours to secure this property.'
+                        : 'Hongera on your reservation! To commit the property, kindly review and sign the agreement, then proceed with the deposit payment. (View Details) If not finalized in time, the property may become available to other Home owners. Thank you.'
                       }
                     </p>
                   </div>
@@ -302,28 +302,30 @@ export default function ReservedPropertyCard({
         </div>
       </div>
 
-      {/* View Details Button - Bottom of Card */}
-      <div className="border-t border-orange-200 p-4 bg-orange-50/30">
-        <button
-          onClick={() => setShowDetails(!showDetails)}
-          className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-lg text-center transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg border-2 border-blue-700 hover:border-blue-800"
-        >
-          <div className="flex items-center justify-center space-x-2">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>{showDetails ? 'Hide Details' : 'View Details'}</span>
-          </div>
-        </button>
-      </div>
+      {/* View Details Section - Button and Expanded Details */}
+      <div ref={cardRef}>
+        {/* View Details Button - Bottom of Card */}
+        <div className="border-t border-orange-200 p-4 bg-orange-50/30">
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-lg text-center transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg border-2 border-blue-700 hover:border-blue-800"
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>{showDetails ? 'Hide Details' : 'View Details'}</span>
+            </div>
+          </button>
+        </div>
 
-      {/* Enhanced Expanded Details - Full Width Mirror of InlineHandoverView */}
-      {showDetails && (
-        <div ref={cardRef} className="mt-8 border-t-4 border-gradient-to-r from-teal-500 to-cyan-500 pt-8 bg-gradient-to-br from-teal-50/50 via-cyan-50/30 to-teal-50/50 rounded-b-2xl">
+        {/* Enhanced Expanded Details - Full Width Mirror of InlineHandoverView */}
+        {showDetails && (
+          <div className="mt-8 border-t-4 border-gradient-to-r from-teal-500 to-cyan-500 pt-8 bg-gradient-to-br from-teal-50/50 via-cyan-50/30 to-teal-50/50 rounded-b-2xl">
           <div className="px-8 pb-8">
             {handoverLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -345,8 +347,9 @@ export default function ReservedPropertyCard({
               </div>
             )}
           </div>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

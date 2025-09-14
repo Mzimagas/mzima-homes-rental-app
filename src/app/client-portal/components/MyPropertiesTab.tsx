@@ -60,14 +60,14 @@ export default function MyPropertiesTab({ properties, onRefresh }: MyPropertiesT
           <div className="text-gray-400 text-6xl mb-4">🏠</div>
           <h3 className="text-xl font-medium text-gray-900 mb-2">No Committed Properties</h3>
           <p className="text-gray-600 mb-4">
-            You haven&apos;t committed to any properties yet. Browse your saved properties and move
-            the ones you&apos;re serious about to this section.
+            You haven&apos;t committed to any properties yet. Check your reserved properties and
+            complete the handover process to move them to this section.
           </p>
           <button
-            onClick={() => (window.location.href = '/client-portal?tab=saved-properties')}
+            onClick={() => (window.location.href = '/client-portal?tab=reserved')}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            View Saved Properties
+            View Reserved Properties
           </button>
         </div>
       ) : (
