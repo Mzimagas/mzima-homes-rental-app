@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
         handover_status,
         sale_price_kes,
         handover_price_agreement_kes,
+        purchase_price_agreement_kes,
         notes,
         total_area_sqm,
         total_area_acres,
@@ -96,7 +97,7 @@ export async function GET(req: NextRequest) {
             location: property.physical_address,
             property_type: property.property_type,
             asking_price_kes:
-              property.handover_price_agreement_kes || property.sale_price_kes,
+              property.handover_price_agreement_kes || property.purchase_price_agreement_kes || property.sale_price_kes,
             description: property.notes,
             images: imageUrls,
             main_image: mainImage,
@@ -122,7 +123,7 @@ export async function GET(req: NextRequest) {
             location: property.physical_address,
             property_type: property.property_type,
             asking_price_kes:
-              property.handover_price_agreement_kes || property.sale_price_kes,
+              property.handover_price_agreement_kes || property.purchase_price_agreement_kes || property.sale_price_kes,
             description: property.notes,
             images: [],
             main_image: null,

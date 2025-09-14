@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const { propertyId, paymentMethod, phoneNumber, amount } = await request.json()
 
-    if (!propertyId || !paymentMethod || !amount) {
+    if (!propertyId || !paymentMethod || amount === undefined || amount === null) {
       return NextResponse.json({
         error: 'Property ID, payment method, and amount are required'
       }, { status: 400 })
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     // Get property details for validation
     const { data: property, error: propertyError } = await supabase
       .from('properties')
-      .select('id, name, sale_price_kes, handover_price_agreement_kes')
+      .select('id, name, sale_price_kes, handover_price_agreement_kes, purchase_price_agreement_kes')
       .eq('id', propertyId)
       .single()
 
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     // Validate deposit amount (should be 10% of property price)
     // Use same price logic as public properties API
-    const propertyPrice = property.handover_price_agreement_kes || property.sale_price_kes || 0
+    const propertyPrice = property.handover_price_agreement_kes || property.purchase_price_agreement_kes || property.sale_price_kes || 0
     const expectedDeposit = propertyPrice * 0.1
 
     console.log('Deposit validation:', {
