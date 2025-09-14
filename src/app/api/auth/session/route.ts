@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '../../../../lib/supabase-server'
+import { getServerSupabase } from '../../../../lib/supabase-server'
 
 // Sync Supabase auth session from client -> server cookies (SSR)
 export async function POST(request: NextRequest) {
   try {
     const { event, session } = await request.json()
-    const supabase = await createServerSupabaseClient()
+    const supabase = await getServerSupabase()
 
     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
       if (!session?.access_token || !session?.refresh_token) {

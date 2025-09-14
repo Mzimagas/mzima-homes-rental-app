@@ -21,7 +21,8 @@ export async function getServerSupabase() {
         cookieStore.set({ name, value, ...options })
       },
       remove(name: string, options?: CookieOptions) {
-        cookieStore.delete({ name, ...options })
+        // clearing = set empty value + expiry in the past
+        cookieStore.set({ name, value: '', ...options })
       },
     },
     headers: {

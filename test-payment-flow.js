@@ -19,12 +19,38 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function testPaymentFlow() {
-  console.log('🧪 COMPREHENSIVE PAYMENT FLOW TEST')
-  console.log('=====================================')
+  console.log('🧪 COMPREHENSIVE PAYMENT FLOW TEST - POST FIXES')
+  console.log('===============================================')
 
   try {
-    // 1. Check existing payment record
-    console.log('\n1️⃣ Checking existing payment record...')
+    // 1. Test API endpoint directly
+    console.log('\n1️⃣ Testing payment API endpoint...')
+
+    // Create a test payment via API
+    const testPaymentData = {
+      propertyId: 'bc424057-203c-477e-889d-d81cf0643fa0',
+      clientId: '914d7d97-2dfe-41dd-bfdf-68eae018d900',
+      amount: 25000,
+      paymentMethod: 'bank'
+    }
+
+    try {
+      const response = await fetch('http://localhost:3001/api/clients/make-deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testPaymentData)
+      })
+
+      const result = await response.json()
+      console.log('API Response:', response.status, result)
+    } catch (apiError) {
+      console.log('API test skipped (server may not be running):', apiError.message)
+    }
+
+    // 2. Check existing payment record
+    console.log('\n2️⃣ Checking existing payment record...')
     const { data: existingPayment, error: paymentError } = await supabase
       .from('client_property_interests')
       .select('id, deposit_amount_kes, deposit_paid_at, payment_method, payment_reference, payment_verified_at, status')
@@ -44,8 +70,8 @@ async function testPaymentFlow() {
     console.log(`   - Payment Verified At: ${existingPayment.payment_verified_at}`)
     console.log(`   - Status: ${existingPayment.status}`)
 
-    // 2. Test client dashboard API data retrieval
-    console.log('\n2️⃣ Testing client dashboard API...')
+    // 3. Test client dashboard API data retrieval
+    console.log('\n3️⃣ Testing client dashboard API...')
     const { data: clientData, error: clientError } = await supabase
       .from('client_property_interests')
       .select(`
@@ -80,8 +106,8 @@ async function testPaymentFlow() {
       console.log(`   - Status: ${property.status}`)
     })
 
-    // 3. Test admin verification workflow
-    console.log('\n3️⃣ Testing admin verification workflow...')
+    // 4. Test admin verification workflow
+    console.log('\n4️⃣ Testing admin verification workflow...')
     
     // Find unverified payments
     const unverifiedPayments = clientData.filter(p => p.deposit_paid_at && !p.payment_verified_at)
@@ -118,8 +144,8 @@ async function testPaymentFlow() {
       }
     }
 
-    // 4. Test payment status logic
-    console.log('\n4️⃣ Testing payment status logic...')
+    // 5. Test payment status logic
+    console.log('\n5️⃣ Testing payment status logic...')
     clientData.forEach((property, index) => {
       const depositPaid = !!property.deposit_paid_at
       const paymentVerified = !!property.payment_verified_at

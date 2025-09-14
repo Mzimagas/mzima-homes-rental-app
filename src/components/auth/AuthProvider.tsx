@@ -54,44 +54,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let isMounted = true;
 
-    // Always verify with Auth server (don't trust cached session)
-    supabase.auth.getUser().then(({ data, error }) => {
+    // Get the actual session with tokens
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (!isMounted) return;
       if (error) {
-        console.warn('⚠️ AuthProvider: Error getting user:', error);
+        console.warn('⚠️ AuthProvider: Error getting session:', error);
         setSession(null);
       } else {
-        // Create session-like object for backward compatibility
-        const session = data.user ? {
-          user: data.user,
-          access_token: '',
-          refresh_token: '',
-          expires_at: 0,
-          expires_in: 0,
-          token_type: 'bearer'
-        } as Session : null;
         setSession(session);
       }
       setLoading(false);
     });
 
-    // Subscribe to changes, but re-verify when it fires
+    // Subscribe to changes and sync with server
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, sess) => {
       if (!isMounted) return;
-      // Re-verify with Auth server instead of trusting the session object
-      const { data } = await supabase.auth.getUser();
-      const verifiedSession = data.user ? {
-        user: data.user,
-        access_token: '',
-        refresh_token: '',
-        expires_at: 0,
-        expires_in: 0,
-        token_type: 'bearer'
-      } as Session : null;
-      setSession(verifiedSession);
+      setSession(sess);
       setLoading(false);
       // sync server cookies so API routes can see the session
-      await syncServerSession(event, verifiedSession)
+      await syncServerSession(event, sess)
     });
 
     return () => {
