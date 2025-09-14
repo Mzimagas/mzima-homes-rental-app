@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '../../../../../lib/supabase/server'
+import { getServerSupabase } from '../../../../../lib/supabase/server'
 
 export async function PATCH(
   request: NextRequest,
@@ -8,7 +8,7 @@ export async function PATCH(
   try {
     console.log('🔍 Admin payment verification request for interest:', params.interestId)
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = await getServerSupabase()
 
     // Get current user session
     const {

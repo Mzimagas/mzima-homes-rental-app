@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '../../../../lib/supabase-server'
+import { getServerSupabase } from '../../../../lib/supabase-server'
 import { getUserDisplayName } from '../../../../lib/user-display-utils'
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🏠 Client Dashboard API - Loading client data')
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = await getServerSupabase()
 
     // Get the current authenticated user
     const {

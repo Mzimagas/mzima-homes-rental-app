@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '../../../../lib/supabase-server'
+import { getServerSupabase, getServiceSupabase } from '../../../../lib/supabase-server'
 
 export async function POST(request: NextRequest) {
   try {
     console.log('💳 Processing deposit payment...')
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = await getServerSupabase()
 
     // Get current user session
     const {
@@ -198,10 +198,12 @@ export async function POST(request: NextRequest) {
         throw new Error(`Failed to update interest: ${interestUpdateError.message}`)
       }
 
-      // 2. Create payment installment record for admin portal tracking
+      // 2. Create payment installment record for admin portal tracking using service role
       if (paymentResult.status === 'COMPLETED' || paymentResult.status === 'PENDING_VERIFICATION') {
+        const adminSupabase = getServiceSupabase()
+
         // Get the next installment number for this property
-        const { data: lastPayment } = await supabase
+        const { data: lastPayment } = await adminSupabase
           .from('property_payment_installments')
           .select('installment_number')
           .eq('property_id', propertyId)
@@ -211,8 +213,8 @@ export async function POST(request: NextRequest) {
 
         const nextInstallmentNumber = (lastPayment?.installment_number || 0) + 1
 
-        // Create payment installment record
-        const { error: paymentInstallmentError } = await supabase
+        // Create payment installment record using service role to bypass RLS
+        const { error: paymentInstallmentError } = await adminSupabase
           .from('property_payment_installments')
           .insert({
             property_id: propertyId,
@@ -246,11 +248,11 @@ export async function POST(request: NextRequest) {
           // Don't fail the transaction for property update issues
         }
 
-        // Update client interest status to IN_HANDOVER
+        // Update client interest status to CONVERTED (payment completed)
         const { error: statusUpdateError } = await supabase
           .from('client_property_interests')
           .update({
-            status: 'IN_HANDOVER',
+            status: 'CONVERTED',
             updated_at: new Date().toISOString(),
           })
           .eq('id', interest.id)
