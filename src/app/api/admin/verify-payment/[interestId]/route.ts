@@ -93,7 +93,7 @@ export async function PATCH(
     }
 
     if (notes) {
-      updateData.verification_notes = notes
+      updateData.notes = notes
     }
 
     const { error: updateError } = await supabase
