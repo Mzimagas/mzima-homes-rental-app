@@ -15,6 +15,7 @@ import {
 import HandoverDocumentsV2 from '../../../components/properties/components/HandoverDocumentsV2'
 import PropertyAcquisitionFinancials from '../../../components/properties/components/PropertyAcquisitionFinancials'
 import HandoverDetailsForm from '../../../components/properties/components/HandoverDetailsForm'
+import AgreementViewer from './AgreementViewer'
 
 interface ClientProperty {
   id: string
@@ -624,6 +625,12 @@ export default function ClientPropertyCard({ property, showReferralButton = fals
                       <p className="text-gray-600">Track document submission and approval status</p>
                     </div>
                   </div>
+
+                  {/* Agreement Viewer */}
+                  <div className="mb-6">
+                    <AgreementViewer propertyId={property.id} propertyName={property.name} />
+                  </div>
+
                   <HandoverDocumentsV2
                     propertyId={property.id}
                     propertyName={property.name}

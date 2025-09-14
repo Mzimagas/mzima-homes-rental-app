@@ -34,14 +34,23 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 }
 
 // Helper function to check property access
-async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
+// mode = 'read' allows clients with COMMITTED/CONVERTED interest to view installments
+// mode = 'write' restricts to property owner/landlord only
+async function checkPropertyAccess(
+  userId: string,
+  propertyId: string,
+  mode: 'read' | 'write' = 'read'
+): Promise<boolean> {
   try {
     const admin = createClient(supabaseUrl, serviceKey)
 
-    // Try the newer function signature first
+    // First, check if user is owner/landlord via RPC or direct ownership
     const { data, error } = await admin.rpc('get_user_accessible_properties', { user_uuid: userId })
 
-    if (error) {
+    let isOwner = false
+    if (!error && Array.isArray(data)) {
+      isOwner = data.some((p: any) => (typeof p === 'string' ? p === propertyId : p?.property_id === propertyId))
+    } else {
       // Fallback: Check if user owns the property directly
       const { data: property, error: propError } = await admin
         .from('properties')
@@ -49,31 +58,34 @@ async function checkPropertyAccess(userId: string, propertyId: string): Promise<
         .eq('id', propertyId)
         .eq('landlord_id', userId)
         .single()
-
-      if (propError) {
-        return false
-      }
-
-      return !!property
+      isOwner = !propError && !!property
     }
 
-    // Handle different function return formats
-    let hasAccess = false
-    if (Array.isArray(data)) {
-      // Check if data contains property_id field (newer format) or just UUIDs (older format)
-      hasAccess = data.some((p: any) => {
-        if (typeof p === 'string') {
-          // Old format: array of UUIDs
-          return p === propertyId
-        } else if (p && typeof p === 'object') {
-          // New format: array of objects with property_id field
-          return p.property_id === propertyId
-        }
-        return false
-      })
+    if (mode === 'write') {
+      return isOwner
     }
 
-    return hasAccess
+    // Read access: allow if owner OR client with committed/converted interest
+    if (isOwner) return true
+
+    // Map auth user -> client and verify interest on this property
+    const { data: client, error: clientErr } = await admin
+      .from('clients')
+      .select('id')
+      .eq('auth_user_id', userId)
+      .single()
+
+    if (clientErr || !client) return false
+
+    const { data: interest, error: interestErr } = await admin
+      .from('client_property_interests')
+      .select('id')
+      .eq('client_id', client.id)
+      .eq('property_id', propertyId)
+      .in('status', ['COMMITTED', 'CONVERTED'])
+      .maybeSingle()
+
+    return !interestErr && !!interest
   } catch (e) {
     return false
   }
@@ -101,7 +113,7 @@ export async function GET(req: NextRequest) {
       propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
-    const hasAccess = await checkPropertyAccess(userId, propertyId)
+    const hasAccess = await checkPropertyAccess(userId, propertyId, 'read')
     if (!hasAccess) return errors.forbidden()
 
     const admin = createClient(supabaseUrl, serviceKey)
@@ -140,7 +152,7 @@ export const POST = compose(
       propertiesIdx >= 0 && segments[propertiesIdx + 1] ? segments[propertiesIdx + 1] : undefined
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
-    const hasAccess = await checkPropertyAccess(userId, propertyId)
+    const hasAccess = await checkPropertyAccess(userId, propertyId, 'write')
     if (!hasAccess) return errors.forbidden()
 
     const json = await req.json().catch(() => ({}))

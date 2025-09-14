@@ -343,7 +343,7 @@ export default function ClientPortalPage() {
 
           {activeTab === 'purchase-pipeline' && (
             <InProgressTab
-              properties={[...myProperties, ...completedProperties]}
+              properties={myProperties}
               onRefresh={loadClientData}
             />
           )}
