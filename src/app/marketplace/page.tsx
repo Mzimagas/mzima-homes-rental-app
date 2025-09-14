@@ -715,5 +715,7 @@ function PropertyCard({
             </div>
           </div>
         </div>
+      </div>
+    </div>
   )
 }
