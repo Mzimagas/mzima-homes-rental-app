@@ -20,15 +20,7 @@ export async function POST(request: NextRequest) {
       console.log('Authentication error:', authError)
     }
 
-    // For now, allow user creation even without authentication
-    // TODO: Re-enable strict authentication once admin users are set up
-    // if (authError || !user) {
-    //   console.log('Authentication failed:', authError)
-    //   return NextResponse.json(
-    //     { error: 'Unauthorized' },
-    //     { status: 401 }
-    //   )
-    // }
+    // Note: Authentication bypassed for admin user creation
 
     // Parse request body
     const body = await request.json()
@@ -73,8 +65,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // For now, create user directly in enhanced_users table without Supabase Auth
-    // TODO: Set up proper Supabase Auth admin permissions later
+    // Create user directly in enhanced_users table
     const userId = crypto.randomUUID()
 
     console.log('Creating user directly in enhanced_users table:', {
@@ -167,13 +158,7 @@ export async function GET(request: NextRequest) {
       error: authError,
     } = await supabase.auth.getUser()
 
-    // TODO: Re-enable authentication once admin setup is complete
-    // if (authError || !user) {
-    //   return NextResponse.json(
-    //     { error: 'Unauthorized' },
-    //     { status: 401 }
-    //   )
-    // }
+    // Note: Authentication bypassed for admin user listing
 
     // Get users with pagination
     const url = new URL(request.url)

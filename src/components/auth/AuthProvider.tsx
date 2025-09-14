@@ -54,23 +54,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let isMounted = true;
 
-    // Initial fetch
-    supabase.auth.getSession().then(({ data, error }) => {
+    // Always verify with Auth server (don't trust cached session)
+    supabase.auth.getUser().then(({ data, error }) => {
       if (!isMounted) return;
       if (error) {
-        console.warn('⚠️ AuthProvider: Error getting initial session:', error);
+        console.warn('⚠️ AuthProvider: Error getting user:', error);
+        setSession(null);
+      } else {
+        // Create session-like object for backward compatibility
+        const session = data.user ? {
+          user: data.user,
+          access_token: '',
+          refresh_token: '',
+          expires_at: 0,
+          expires_in: 0,
+          token_type: 'bearer'
+        } as Session : null;
+        setSession(session);
       }
-      setSession(data.session ?? null);
       setLoading(false);
     });
 
-    // Subscribe to changes
+    // Subscribe to changes, but re-verify when it fires
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, sess) => {
       if (!isMounted) return;
-      setSession(sess ?? null);
+      // Re-verify with Auth server instead of trusting the session object
+      const { data } = await supabase.auth.getUser();
+      const verifiedSession = data.user ? {
+        user: data.user,
+        access_token: '',
+        refresh_token: '',
+        expires_at: 0,
+        expires_in: 0,
+        token_type: 'bearer'
+      } as Session : null;
+      setSession(verifiedSession);
       setLoading(false);
       // sync server cookies so API routes can see the session
-      await syncServerSession(event, sess)
+      await syncServerSession(event, verifiedSession)
     });
 
     return () => {
@@ -84,11 +105,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!supabase) {
         return { error: 'Supabase client not available' };
       }
-      const { error } = await supabase.auth.signOut();
-      return { error };
+
+      // Use server-side sign out to properly clear cookies
+      const response = await fetch('/api/auth/signout', {
+        method: 'POST',
+        credentials: 'include',
+        redirect: 'manual' // Don't follow redirects automatically
+      });
+
+      if (!response.ok && response.status !== 302) {
+        console.warn('AuthProvider signOut error', { status: response.status });
+        return { error: 'Unable to sign out at this time. Please try again.' };
+      }
+
+      console.log('AuthProvider signOut successful');
+
+      // Small delay to ensure auth state is cleared before redirect
+      setTimeout(() => {
+        window.location.href = '/auth/login?msg=signout';
+      }, 200);
+
+      return { error: null };
     } catch (error) {
       console.error('Sign out error:', error);
-      return { error };
+      return { error: error instanceof Error ? error.message : 'An unexpected error occurred during sign out. Please try again.' };
     }
   };
 

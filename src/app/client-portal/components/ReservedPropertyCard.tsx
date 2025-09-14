@@ -2,9 +2,12 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { formatCurrency } from '../../../lib/export-utils'
 import InlineHandoverView from '../../../components/properties/components/InlineHandoverView'
 import { HandoverItem } from '../../../components/properties/types/property-management.types'
+import AgreementReviewSection from './AgreementReviewSection'
+import DepositPaymentSection from './DepositPaymentSection'
 
 interface ClientProperty {
   id: string
@@ -37,6 +40,7 @@ interface ReservedPropertyCardProps {
   onCancelReservation: (propertyId: string) => void
   onPinLocation: (propertyId: string) => void
   showReferralButton?: boolean
+  isHomeTab?: boolean // True when displayed in its home tab (Reserved)
 }
 
 export default function ReservedPropertyCard({
@@ -44,11 +48,15 @@ export default function ReservedPropertyCard({
   onCancelReservation,
   onPinLocation,
   showReferralButton = false,
+  isHomeTab = true,
 }: ReservedPropertyCardProps) {
   const [imageError, setImageError] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [handoverData, setHandoverData] = useState<HandoverItem | null>(null)
   const [handoverLoading, setHandoverLoading] = useState(false)
+  const [agreementSigned, setAgreementSigned] = useState(false)
+  const [depositPaid, setDepositPaid] = useState(false)
+  const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
   const hasImage = property.images && property.images.length > 0
 
@@ -253,9 +261,28 @@ export default function ReservedPropertyCard({
                   </div>
                 </div>
 
-                {/* Secondary Actions */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* View Maps */}
+                {/* Agreement and Deposit Sections - Only show in home tab */}
+                {isHomeTab && (
+                  <>
+                    <AgreementReviewSection
+                      property={property}
+                      onAgreementSigned={() => setAgreementSigned(true)}
+                    />
+
+                    <DepositPaymentSection
+                      property={property}
+                      agreementSigned={agreementSigned}
+                      onDepositPaid={() => setDepositPaid(true)}
+                    />
+                  </>
+                )}
+
+                {/* Management buttons only show in home tab */}
+                {isHomeTab && (
+                  <>
+                    {/* Secondary Actions */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* View Maps */}
                   <button
                     onClick={() => {
                       if (property.lat && property.lng) {
@@ -296,14 +323,16 @@ export default function ReservedPropertyCard({
                       <span className="text-sm">Cancel</span>
                     </div>
                   </button>
-                </div>
+                    </div>
+                  </>
+                )}
 
-                {/* Small referral button - only shows when property appears outside its home tab */}
+                {/* Referral button always shows when needed */}
                 {showReferralButton && (
                   <button
                     onClick={() => {
                       // Navigate to reserved properties tab to manage this property
-                      window.location.href = `/client-portal?tab=reserved`
+                      router.push('/client-portal?tab=reserved')
                     }}
                     className="mt-2 text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-2 py-1 rounded border border-orange-200 transition-colors duration-200 flex items-center gap-1"
                     title="Go to Reserved tab to manage this property"
@@ -317,8 +346,9 @@ export default function ReservedPropertyCard({
         </div>
       </div>
 
-      {/* View Details Section - Button and Expanded Details */}
-      <div ref={cardRef}>
+      {/* View Details Section - Only show in home tab */}
+      {isHomeTab && (
+        <div ref={cardRef}>
         {/* View Details Button - Bottom of Card */}
         <div className="border-t border-orange-200 p-4 bg-orange-50/30">
           <button
@@ -366,7 +396,8 @@ export default function ReservedPropertyCard({
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

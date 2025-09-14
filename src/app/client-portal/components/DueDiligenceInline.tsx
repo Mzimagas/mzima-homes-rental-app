@@ -24,57 +24,22 @@ const INITIAL_STEPS: Omit<DueDiligenceStep, 'completed' | 'date' | 'notes'>[] = 
     id: 'land_registry_search',
     title: 'Conduct Official Search at Land Registry',
     description:
-      "Verify ownership and check for encumbrances (mortgages, caveats, disputes). Use eCitizen portal or visit registry with title deed, seller's KRA PIN, and national ID.",
-    required: true,
-  },
-  {
-    id: 'title_deed_verification',
-    title: 'Verify Title Deed Authenticity',
-    description:
-      'Ensure title deed is authentic and free from encumbrances. Check for registered caveats or cautions that may restrict property dealings.',
-    required: true,
-  },
-  {
-    id: 'seller_identity_verification',
-    title: "Verify Seller's Identity and Legal Standing",
-    description:
-      'Confirm seller is legitimate owner with legal capacity to sell. Check identification documents and legal standing.',
+      "Verify ownership and check for encumbrances (mortgages, caveats, disputes). Visit area Land Registry with title deed copy.",
     required: true,
   },
   {
     id: 'physical_inspection',
     title: 'Conduct Physical Property Inspection',
     description:
-      'Inspect property condition, boundaries, and structures. Engage licensed surveyor to confirm boundaries match official land maps.',
+      'Inspect property condition, boundaries, and structures. Engage licensed surveyor to confirm boundaries match official land maps. Take photos - recommended',
     required: true,
   },
   {
-    id: 'property_visit',
-    title: 'Property Site Visit',
+    id: 'seller_identity_verification',
+    title: "Verify Seller's Identity and Legal Standing",
     description:
-      'Visit the property personally to assess location, accessibility, neighborhood, and overall suitability.',
-    required: false,
-  },
-  {
-    id: 'valuation_assessment',
-    title: 'Property Valuation Assessment',
-    description:
-      'Get professional property valuation to ensure asking price is fair and reasonable for the market.',
-    required: false,
-  },
-  {
-    id: 'legal_consultation',
-    title: 'Legal Consultation',
-    description:
-      'Consult with a qualified lawyer specializing in property law to review all documentation and legal aspects.',
-    required: false,
-  },
-  {
-    id: 'financial_planning',
-    title: 'Financial Planning and Approval',
-    description:
-      'Ensure financing is in place, including deposit, mortgage approval (if applicable), and additional costs (legal fees, stamp duty).',
-    required: false,
+      'Confirm seller is legitimate owner with legal capacity to sell. Check identification documents and legal standing. Check for online reviews, ask friends etc.',
+    required: true,
   },
 ]
 
@@ -139,7 +104,7 @@ export default function DueDiligenceInline({
 
     const proceed = confirm(
       `You have completed due diligence for ${propertyName}. ` +
-        'Are you ready to move this property to "My Properties" and make a commitment?'
+        'Are you ready to reserve this property and move it to "Reserved"?'
     )
 
     if (proceed) {
@@ -160,8 +125,13 @@ export default function DueDiligenceInline({
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Due Diligence Checklist</h3>
           <p className="text-sm text-gray-600">
-            Complete these steps before committing to the property
+            Complete these essential steps before committing to the property
           </p>
+          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs text-blue-700">
+              💡 <strong>Tip:</strong> While not mandatory, save documents and photos from each step, this will help you maintain organized records for your property acquisition process.
+            </p>
+          </div>
         </div>
         <div className="text-right">
           <div className="text-sm font-medium text-gray-900">
@@ -235,7 +205,7 @@ export default function DueDiligenceInline({
         ))}
       </div>
 
-      {/* Move to My Properties Button (appears when all required steps are done) */}
+      {/* Move to Reserved Button (appears when all required steps are done) */}
       {completedRequiredSteps.length === requiredSteps.length && (
         <div className="border-t pt-4">
           <button
@@ -251,7 +221,7 @@ export default function DueDiligenceInline({
                   clipRule="evenodd"
                 />
               </svg>
-              <span>Due Diligence Complete - Move to My Properties</span>
+              <span>Due Diligence Complete - Move to Reserved</span>
             </div>
           </button>
         </div>

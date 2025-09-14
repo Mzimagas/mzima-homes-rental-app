@@ -1,18 +1,19 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { LoadingCard } from '../../components/ui/loading'
 import { ErrorCard } from '../../components/ui/error'
 import ClientWelcomeModal from './components/ClientWelcomeModal'
 import ClientNavigation from './components/ClientNavigation'
-import ProfileTab from './components/ProfileTab'
 
-import SavedPropertiesTab from './components/SavedPropertiesTab'
-import ReservedPropertiesTab from './components/ReservedPropertiesTab'
-import MyPropertiesRepositoryTab from './components/PropertiesTab'
-import InProgressTab from './components/InProgressTab'
+// Lazy load tab components for better performance
+const ProfileTab = lazy(() => import('./components/ProfileTab'))
+const SavedPropertiesTab = lazy(() => import('./components/SavedPropertiesTab'))
+const ReservedPropertiesTab = lazy(() => import('./components/ReservedPropertiesTab'))
+const MyPropertiesRepositoryTab = lazy(() => import('./components/PropertiesTab'))
+const InProgressTab = lazy(() => import('./components/InProgressTab'))
 
 interface ClientProperty {
   id: string
@@ -58,12 +59,15 @@ export default function ClientPortalPage() {
     'my-properties' | 'purchase-pipeline' | 'saved-properties' | 'reserved'
   >('my-properties')
   const [showProfile, setShowProfile] = useState(false)
+  const [dataFetched, setDataFetched] = useState(false)
 
   const { user, signOut } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const loadUserData = useCallback(async () => {
+    // Prevent duplicate API calls
+    if (dataFetched) return
     // Loading real user data
 
     try {
@@ -124,8 +128,9 @@ export default function ClientPortalPage() {
       })
     } finally {
       setLoading(false)
+      setDataFetched(true)
     }
-  }, [user])
+  }, [user, dataFetched])
 
   useEffect(() => {
     // Loading user data
@@ -164,6 +169,27 @@ export default function ClientPortalPage() {
     }
   }
 
+  // Memoized property filters for better performance
+  const savedProperties = useMemo(() =>
+    clientData?.properties.filter((p) => p.status === 'INTERESTED') || [],
+    [clientData?.properties]
+  )
+
+  const reservedProperties = useMemo(() =>
+    clientData?.properties.filter((p) => p.status === 'RESERVED') || [],
+    [clientData?.properties]
+  )
+
+  const myProperties = useMemo(() =>
+    clientData?.properties.filter((p) => p.status === 'COMMITTED' || p.status === 'IN_HANDOVER') || [],
+    [clientData?.properties]
+  )
+
+  const completedProperties = useMemo(() =>
+    clientData?.properties.filter((p) => p.status === 'COMPLETED') || [],
+    [clientData?.properties]
+  )
+
   const loadDemoData = () => {
     // Loading demo data
     setLoading(false)
@@ -185,9 +211,13 @@ export default function ClientPortalPage() {
       if (error) {
         // Logout failed
         alert(`Logout failed: ${error}`)
+      } else {
+        // Successful logout - redirect to home page
+        router.push('/')
       }
     } catch (error) {
       // Error signing out
+      console.error('Sign out error:', error)
     }
   }
 
@@ -269,14 +299,13 @@ export default function ClientPortalPage() {
 
         {/* Content */}
         <div className="mt-8">
-          {activeTab === 'my-properties' && (
-            <MyPropertiesRepositoryTab
-              savedProperties={clientData.properties.filter((p) => p.status === 'INTERESTED')}
-              reservedProperties={clientData.properties.filter((p) => p.status === 'RESERVED')}
-              myProperties={clientData.properties.filter(
-                (p) => p.status === 'COMMITTED' || p.status === 'IN_HANDOVER'
-              )}
-              completedProperties={clientData.properties.filter((p) => p.status === 'COMPLETED')}
+          <Suspense fallback={<LoadingCard />}>
+            {activeTab === 'my-properties' && (
+              <MyPropertiesRepositoryTab
+                savedProperties={savedProperties}
+                reservedProperties={reservedProperties}
+                myProperties={myProperties}
+                completedProperties={completedProperties}
               onRemoveFromSaved={(propertyId) => {
                 // Handle remove from saved
                 // TODO: Implement remove from saved functionality
@@ -306,27 +335,32 @@ export default function ClientPortalPage() {
 
           {activeTab === 'purchase-pipeline' && (
             <InProgressTab
-              properties={clientData.properties.filter(
-                (p) =>
-                  p.status === 'COMMITTED' || p.status === 'IN_HANDOVER' || p.status === 'COMPLETED'
-              )}
+              properties={[...myProperties, ...completedProperties]}
               onRefresh={loadClientData}
             />
           )}
 
           {activeTab === 'saved-properties' && (
             <SavedPropertiesTab
-              properties={clientData.properties.filter((p) => p.status === 'INTERESTED')}
+              properties={savedProperties}
               onRefresh={loadClientData}
+              onTabChange={(tab) => {
+                setActiveTab(tab)
+                // Update URL parameter
+                const newSearchParams = new URLSearchParams(searchParams.toString())
+                newSearchParams.set('tab', tab)
+                router.replace(`/client-portal?${newSearchParams.toString()}`)
+              }}
             />
           )}
 
           {activeTab === 'reserved' && (
             <ReservedPropertiesTab
-              properties={clientData.properties.filter((p) => p.status === 'RESERVED')}
+              properties={reservedProperties}
               onRefresh={loadClientData}
             />
           )}
+          </Suspense>
         </div>
 
         {/* Profile Modal */}

@@ -1,7 +1,7 @@
 // API endpoint to confirm user emails (development only)
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { compose, withCsrf } from '../../../../lib/api/middleware'
+
 import { z } from 'zod'
 import { errors } from '../../../../lib/api/errors'
 

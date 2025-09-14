@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getRatelimit } from '../../../../lib/upstash'
+
 import { compose, withCsrf, withRateLimit } from '../../../../lib/api/middleware'
 import { z } from 'zod'
 import { errors } from '../../../../lib/api/errors'

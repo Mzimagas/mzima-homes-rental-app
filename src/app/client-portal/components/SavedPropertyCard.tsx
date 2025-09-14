@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { formatCurrency } from '../../../lib/export-utils'
 import DueDiligenceInline from './DueDiligenceInline'
 
@@ -38,6 +39,7 @@ interface SavedPropertyCardProps {
   onDueDiligence: (propertyId: string) => void
   onViewMaps: (propertyId: string) => void
   showReferralButton?: boolean
+  isHomeTab?: boolean // True when displayed in its home tab (Saved Properties)
 }
 
 export default function SavedPropertyCard({
@@ -47,11 +49,13 @@ export default function SavedPropertyCard({
   onDueDiligence,
   onViewMaps,
   showReferralButton = false,
+  isHomeTab = true,
 }: SavedPropertyCardProps) {
   const [imageError, setImageError] = useState(false)
   const [showDueDiligence, setShowDueDiligence] = useState(false)
   const [dueDiligenceCompleted, setDueDiligenceCompleted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
   const hasImage = property.images && property.images.length > 0
 
   const handleMoveToMyProperties = async () => {
@@ -84,7 +88,7 @@ export default function SavedPropertyCard({
   }
 
   return (
-    <div className="bg-gradient-to-r from-white via-blue-50/50 to-blue-100/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-blue-200 hover:border-blue-300">
+    <div className="bg-gradient-to-r from-white via-purple-50/50 to-purple-100/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-purple-200 hover:border-purple-300">
       {/* Horizontal Layout Container */}
       <div className="flex flex-col lg:flex-row">
         {/* Property Image Section */}
@@ -160,11 +164,14 @@ export default function SavedPropertyCard({
             {/* Action Buttons Section */}
             <div className="lg:w-80 lg:pl-6">
               <div className="space-y-4">
-                {/* Primary Action - Move to My Properties (Top, Blue) */}
-                <button
+                {/* Management buttons only show in home tab */}
+                {isHomeTab && (
+                  <>
+                    {/* Primary Action - Reserve Property (Top, Orange) */}
+                    <button
                   onClick={handleMoveToMyProperties}
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 px-4 py-3 rounded-lg transition-all duration-200 font-medium border border-blue-200 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-700 px-4 py-3 rounded-lg transition-all duration-200 font-medium border border-orange-200 hover:border-orange-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center justify-center space-x-2">
                     {loading ? (
@@ -192,7 +199,7 @@ export default function SavedPropertyCard({
                         />
                       </svg>
                     )}
-                    <span className="text-sm">Move to My Properties</span>
+                    <span className="text-sm">Reserve Property</span>
                   </div>
                 </button>
 
@@ -244,20 +251,6 @@ export default function SavedPropertyCard({
                   </button>
                 </div>
 
-                {/* Small referral button - only shows when property appears outside its home tab */}
-                {showReferralButton && (
-                  <button
-                    onClick={() => {
-                      // Navigate to saved properties tab to manage this property
-                      window.location.href = `/client-portal?tab=saved-properties`
-                    }}
-                    className="mt-2 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 transition-colors duration-200 flex items-center gap-1"
-                    title="Go to Saved Properties tab to manage this property"
-                  >
-                    📋 Manage in Saved
-                  </button>
-                )}
-
                 {/* Remove Action */}
                 <button
                   onClick={handleRemoveFromSaved}
@@ -280,6 +273,22 @@ export default function SavedPropertyCard({
                     <span className="text-sm">Remove from Saved</span>
                   </div>
                 </button>
+                  </>
+                )}
+
+                {/* Referral button always shows when needed */}
+                {showReferralButton && (
+                  <button
+                    onClick={() => {
+                      // Navigate to saved properties tab to manage this property
+                      router.push('/client-portal?tab=saved-properties')
+                    }}
+                    className="mt-2 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 transition-colors duration-200 flex items-center gap-1"
+                    title="Go to Saved Properties tab to manage this property"
+                  >
+                    📋 Manage in Saved
+                  </button>
+                )}
               </div>
             </div>
           </div>

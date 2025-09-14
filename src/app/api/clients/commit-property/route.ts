@@ -33,16 +33,40 @@ export async function POST(req: NextRequest) {
       userId: user.id,
     })
 
-    // Get client information
-    const { data: client, error: clientError } = await supabase
+    // Get client information - first try from clients table, create if doesn't exist
+    let client: any = null;
+    const { data: clientRecord, error: clientError } = await supabase
       .from('clients')
       .select('id, full_name, email, phone')
       .eq('auth_user_id', user.id)
       .single()
 
-    if (clientError || !client) {
-      console.error('Client lookup error:', clientError)
-      return NextResponse.json({ error: 'Client profile not found' }, { status: 404 })
+    if (clientRecord) {
+      client = clientRecord;
+    } else {
+      // Create client record if it doesn't exist
+      console.log('No client record found, creating one for user:', user.id);
+      const { data: newClient, error: createError } = await supabase
+        .from('clients')
+        .insert([{
+          auth_user_id: user.id,
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+          email: user.email,
+          phone: user.user_metadata?.phone || null,
+          registration_source: 'marketplace',
+          status: 'ACTIVE',
+          email_verified: user.email_confirmed_at ? true : false,
+          phone_verified: false
+        }])
+        .select('id, full_name, email, phone')
+        .single();
+
+      if (createError) {
+        console.error('Failed to create client record:', createError);
+        return NextResponse.json({ error: 'Failed to create client profile' }, { status: 500 });
+      }
+
+      client = newClient;
     }
 
     // Skip property validation for now - just proceed with interest management
@@ -109,18 +133,7 @@ export async function POST(req: NextRequest) {
 
       interest = reactivatedInterest
     } else if (existingInterest.status === 'COMMITTED') {
-      // Already committed, return success
-      return NextResponse.json({
-        success: true,
-        message: 'Property already committed',
-        commitment: {
-          property_id: validatedData.propertyId,
-          client_id: client.id,
-          status: 'already_committed',
-        },
-      })
-    } else if (existingInterest.status === 'RESERVED') {
-      // Already reserved, return success
+      // Already committed/reserved, return success
       return NextResponse.json({
         success: true,
         message: 'Property already reserved',
@@ -183,11 +196,11 @@ export async function POST(req: NextRequest) {
 
       console.log('Property marked as reserved for client:', client.id)
 
-      // 3. Update client interest status to RESERVED (not fully committed yet)
+      // 3. Update client interest status to COMMITTED (property is reserved)
       const { data: updatedInterest, error: interestUpdateError } = await supabase
         .from('client_property_interests')
         .update({
-          status: 'RESERVED', // Use RESERVED instead of COMMITTED
+          status: 'COMMITTED', // Use COMMITTED when property is reserved
           updated_at: new Date().toISOString(),
           reservation_date: new Date().toISOString(),
         })

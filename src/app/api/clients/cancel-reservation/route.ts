@@ -1,44 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { createServerSupabaseClient } from '../../../../lib/supabase-server'
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🚫 Processing reservation cancellation...')
 
-    // Get session from cookies
-    const sessionCookie = request.cookies.get('supabase-auth-token')
-    if (!sessionCookie) {
+    const supabase = await createServerSupabaseClient()
+
+    // Get current user session
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      console.error('Authentication error:', authError)
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    // Parse session
-    let session
-    try {
-      session = JSON.parse(sessionCookie.value)
-    } catch (error) {
-      console.error('Session parsing error:', error)
-      return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
-    }
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 })
-    }
-
-    // Get client data
-    const { data: client, error: clientError } = await supabase
+    // Get client data - first try from clients table, create if doesn't exist
+    let client: any = null;
+    const { data: clientRecord, error: clientError } = await supabase
       .from('clients')
       .select('id, full_name, email')
-      .eq('user_id', session.user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
-    if (clientError || !client) {
-      console.error('Client lookup error:', clientError)
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+    if (clientRecord) {
+      client = clientRecord;
+    } else {
+      // Create client record if it doesn't exist
+      console.log('No client record found, creating one for user:', user.id);
+      const { data: newClient, error: createError } = await supabase
+        .from('clients')
+        .insert([{
+          auth_user_id: user.id,
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+          email: user.email,
+          phone: user.user_metadata?.phone || null,
+          registration_source: 'marketplace',
+          status: 'ACTIVE',
+          email_verified: user.email_confirmed_at ? true : false,
+          phone_verified: false
+        }])
+        .select('id, full_name, email')
+        .single();
+
+      if (createError) {
+        console.error('Failed to create client record:', createError);
+        return NextResponse.json({ error: 'Failed to create client profile' }, { status: 500 });
+      }
+
+      client = newClient;
     }
 
     // Parse request body

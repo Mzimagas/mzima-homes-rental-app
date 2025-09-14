@@ -20,11 +20,11 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Current user:', user.email, 'ID:', user.id)
     console.log('🔍 User metadata:', user.user_metadata)
 
-    // Check clients table
+    // Check clients table (using auth_user_id, not id)
     const { data: clientRecord, error: clientError } = await supabase
       .from('clients')
       .select('*')
-      .eq('id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     console.log('🔍 Clients table result:', { clientRecord, clientError })

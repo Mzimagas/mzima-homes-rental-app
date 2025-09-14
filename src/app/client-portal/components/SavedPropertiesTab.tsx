@@ -32,9 +32,10 @@ interface ClientProperty {
 interface SavedPropertiesTabProps {
   properties: ClientProperty[]
   onRefresh: () => void
+  onTabChange?: (tab: 'my-properties' | 'purchase-pipeline' | 'saved-properties' | 'reserved') => void
 }
 
-export default function SavedPropertiesTab({ properties, onRefresh }: SavedPropertiesTabProps) {
+export default function SavedPropertiesTab({ properties, onRefresh, onTabChange }: SavedPropertiesTabProps) {
   const [loading, setLoading] = useState(false)
 
   const handleMoveToMyProperties = async (propertyId: string) => {
@@ -81,7 +82,7 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
 
           // Retry succeeded
           onRefresh()
-          alert('Property reserved and moved to My Properties successfully!')
+          alert('Property reserved and moved to Reserved successfully!')
           return
         }
 
@@ -91,8 +92,15 @@ export default function SavedPropertiesTab({ properties, onRefresh }: SavedPrope
       // Refresh the data to show updated status
       onRefresh()
 
-      // Show success message
-      alert('Property reserved and moved to My Properties successfully!')
+      // Show success message and auto-switch to Reserved tab
+      alert('Property reserved and moved to Reserved successfully!')
+
+      // Automatically switch to Reserved tab to show the moved property
+      if (onTabChange) {
+        setTimeout(() => {
+          onTabChange('reserved')
+        }, 500) // Small delay to allow data refresh
+      }
     } catch (error) {
       console.error('Error committing to property:', error)
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to commit to property'}`)

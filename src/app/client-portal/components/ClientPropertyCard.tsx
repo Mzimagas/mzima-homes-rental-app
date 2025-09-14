@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { formatCurrency } from '../../../lib/export-utils'
 
 import {
@@ -44,12 +45,14 @@ interface ClientProperty {
 interface ClientPropertyCardProps {
   property: ClientProperty
   showReferralButton?: boolean
+  isHomeTab?: boolean // True when displayed in its home tab (Purchase Pipeline)
 }
 
-export default function ClientPropertyCard({ property, showReferralButton = false }: ClientPropertyCardProps) {
+export default function ClientPropertyCard({ property, showReferralButton = false, isHomeTab = true }: ClientPropertyCardProps) {
   const [showDetails, setShowDetails] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [showStartHandoverForm, setShowStartHandoverForm] = useState(false)
+  const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
   const hasImage = property.images && property.images.length > 0
 
@@ -312,58 +315,63 @@ export default function ClientPropertyCard({ property, showReferralButton = fals
                   </div>
                 )}
 
-                {/* Start Handover Button - For INTERESTED properties with PENDING handover status */}
-                {canStartHandover && (
-                  <button
-                    onClick={handleStartHandover}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg"
-                  >
-                    <div className="flex items-center justify-center space-x-2">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span>Start Handover</span>
-                    </div>
-                  </button>
-                )}
-
-                {property.status === 'IN_HANDOVER' && (
+                {/* Management buttons only show in home tab */}
+                {isHomeTab && (
                   <>
-                    <button
-                      onClick={() =>
-                        (window.location.href = `/client-portal/property/${property.id}`)
-                      }
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors font-medium"
-                    >
-                      <div className="flex items-center justify-center space-x-2">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span>Track Progress</span>
-                      </div>
-                    </button>
-
-                    {/* Small referral button - only shows when property appears outside its home tab */}
-                    {showReferralButton && (
+                    {/* Start Handover Button - For INTERESTED properties with PENDING handover status */}
+                    {canStartHandover && (
                       <button
-                        onClick={() =>
-                          (window.location.href = `/client-portal?tab=purchase-pipeline`)
-                        }
-                        className="mt-2 text-xs bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200 transition-colors duration-200 flex items-center gap-1"
-                        title="Go to Purchase Pipeline tab to manage this property"
+                        onClick={handleStartHandover}
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                       >
-                        🏢 Manage in Pipeline
+                        <div className="flex items-center justify-center space-x-2">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>Start Handover</span>
+                        </div>
                       </button>
                     )}
+
+                    {property.status === 'IN_HANDOVER' && (
+                      <>
+                        <button
+                          onClick={() =>
+                            router.push(`/client-portal/property/${property.id}`)
+                          }
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors font-medium"
+                        >
+                          <div className="flex items-center justify-center space-x-2">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span>Track Progress</span>
+                          </div>
+                        </button>
+                      </>
+                    )}
                   </>
+                )}
+
+                {/* Referral button always shows when needed */}
+                {showReferralButton && (
+                  <button
+                    onClick={() =>
+                      router.push('/client-portal?tab=purchase-pipeline')
+                    }
+                    className="mt-2 text-xs bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200 transition-colors duration-200 flex items-center gap-1"
+                    title="Go to Purchase Pipeline tab to manage this property"
+                  >
+                    🏢 Manage in Pipeline
+                  </button>
                 )}
               </div>
             </div>
@@ -371,27 +379,29 @@ export default function ClientPropertyCard({ property, showReferralButton = fals
         </div>
       </div>
 
-      {/* View Details Button - Bottom of Card */}
-      <div className="border-t border-blue-200 p-4 bg-blue-50/30">
-        <button
-          onClick={handleToggleDetails}
-          className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-lg text-center transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg border-2 border-blue-700 hover:border-blue-800"
-        >
-          <div className="flex items-center justify-center space-x-2">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>{showDetails ? 'Hide Details' : 'View Details'}</span>
+      {/* View Details Section - Only show in home tab */}
+      {isHomeTab && (
+        <>
+          <div className="border-t border-blue-200 p-4 bg-blue-50/30">
+            <button
+              onClick={handleToggleDetails}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-lg text-center transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg border-2 border-blue-700 hover:border-blue-800"
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{showDetails ? 'Hide Details' : 'View Details'}</span>
+              </div>
+            </button>
           </div>
-        </button>
-      </div>
 
-      {/* Enhanced Expanded Details - Full Width Mirror of InlineHandoverView */}
-      {showDetails && (
+          {/* Enhanced Expanded Details - Full Width Mirror of InlineHandoverView */}
+          {showDetails && (
         <div className="mt-8 border-t-4 border-gradient-to-r from-blue-500 to-purple-500 pt-8 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-purple-50/50 rounded-b-2xl">
           <div className="px-8 pb-8">
             <div className="flex items-center justify-between mb-8">
@@ -658,6 +668,8 @@ export default function ClientPropertyCard({ property, showReferralButton = fals
             </div>
           </div>
         </div>
+          )}
+        </>
       )}
 
       {/* Start Handover Form Modal */}

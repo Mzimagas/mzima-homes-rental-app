@@ -78,6 +78,7 @@ async function getClientProperties(supabase: any, clientId: string) {
       .from('client_property_interests')
       .select(
         `
+        id,
         property_id,
         interest_type,
         status,
@@ -96,6 +97,8 @@ async function getClientProperties(supabase: any, clientId: string) {
           lng,
           property_type,
           sale_price_kes,
+          purchase_price_agreement_kes,
+          handover_price_agreement_kes,
           notes,
           total_area_acres,
           total_area_sqm,
@@ -189,7 +192,7 @@ async function getClientProperties(supabase: any, clientId: string) {
           lng: property.lng,
           property_type: property.property_type || 'RESIDENTIAL',
           property_type_display: property.property_type || 'Residential',
-          asking_price_kes: property.sale_price_kes || 5000000,
+          asking_price_kes: property.handover_price_agreement_kes || property.purchase_price_agreement_kes || property.sale_price_kes,
           description: property.notes,
           total_area_acres: property.total_area_acres,
           total_area_sqm: property.total_area_sqm,
@@ -202,7 +205,7 @@ async function getClientProperties(supabase: any, clientId: string) {
           current_stage: currentStage,
           images: imageUrls,
           main_image: imageUrls[0] || null,
-          interest_date: interest.created_at,
+          interest_date: status === 'RESERVED' ? property.reserved_date || interest.created_at : interest.created_at,
           status,
         })
       }

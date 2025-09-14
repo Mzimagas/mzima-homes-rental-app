@@ -14,6 +14,7 @@ import HandoverStageModal from './HandoverStageModal'
 import PropertySearch from './PropertySearch'
 import InlineHandoverView from './InlineHandoverView'
 import HandoverDetailsForm from './HandoverDetailsForm'
+import PropertyProgressIndicator from './PropertyProgressIndicator'
 import { Property } from '../../../lib/types/database'
 import supabase from '../../../lib/supabase-client'
 import {
@@ -607,6 +608,16 @@ export default function HandoverPipelineManager({
                           <span>Asking: KES {property.asking_price_kes.toLocaleString()}</span>
                         )}
                       </div>
+
+                      {/* Enhanced Property Progress Indicator */}
+                      <div className="mt-4">
+                        <PropertyProgressIndicator
+                          propertyId={property.id}
+                          reservationStatus={property.reservation_status}
+                          handoverStatus={property.handover_status}
+                          compact={true}
+                        />
+                      </div>
                     </div>
                     <div className="flex justify-end">
                       <ViewOnGoogleMapsButton
@@ -671,8 +682,8 @@ export default function HandoverPipelineManager({
               No properties are currently in the handover pipeline.
             </p>
             <p className="text-sm text-gray-500 mb-4">
-              To start a handover, go to the Properties tab, set a property's handover status
-              to "In Progress", then complete the handover setup form.
+              To start a handover, go to the Properties tab, set a property&apos;s handover status
+              to &quot;In Progress&quot;, then complete the handover setup form.
             </p>
             <Button
               variant="secondary"

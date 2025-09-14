@@ -94,14 +94,14 @@ export async function GET(req: NextRequest) {
           return {
             ...property,
             location: property.physical_address,
-            property_type: property.property_type || 'RESIDENTIAL',
+            property_type: property.property_type,
             asking_price_kes:
-              property.handover_price_agreement_kes || property.sale_price_kes || 5000000,
-            description: property.notes || '',
+              property.handover_price_agreement_kes || property.sale_price_kes,
+            description: property.notes,
             images: imageUrls,
             main_image: mainImage,
             property_type_display: formatPropertyType(property.property_type),
-            location_display: property.physical_address || 'Location not specified',
+            location_display: property.physical_address,
             handover_status_display: formatHandoverStatus(property.handover_status),
             area_display: formatArea(property.total_area_acres, property.total_area_sqm),
             is_available_for_sale: true, // Only PENDING properties are available
@@ -120,14 +120,14 @@ export async function GET(req: NextRequest) {
           return {
             ...property,
             location: property.physical_address,
-            property_type: property.property_type || 'RESIDENTIAL',
+            property_type: property.property_type,
             asking_price_kes:
-              property.handover_price_agreement_kes || property.sale_price_kes || 5000000,
-            description: property.notes || '',
+              property.handover_price_agreement_kes || property.sale_price_kes,
+            description: property.notes,
             images: [],
             main_image: null,
             property_type_display: formatPropertyType(property.property_type),
-            location_display: property.physical_address || 'Location not specified',
+            location_display: property.physical_address,
             handover_status_display: formatHandoverStatus(property.handover_status),
             area_display: formatArea(property.total_area_acres, property.total_area_sqm),
             is_available_for_sale: true, // Only PENDING properties are available

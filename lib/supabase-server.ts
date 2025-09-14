@@ -1,13 +1,11 @@
 import { cookies, headers } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
-import type { Database } from '../lib/types/database'
 
-// Call this INSIDE a route handler or server component
-export async function createServerSupabaseClient() {
-  const cookieStore = await cookies() // <-- important: await!
+export function getServerSupabase() {
+  const cookieStore = cookies()
   const headerList = headers()
 
-  return createServerClient<Database>(
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -19,7 +17,6 @@ export async function createServerSupabaseClient() {
           cookieStore.set({ name, value, ...options })
         },
         remove(name: string, options: any) {
-          // clearing = set empty value + expiry in the past
           cookieStore.set({ name, value: '', ...options })
         },
       },
@@ -31,17 +28,9 @@ export async function createServerSupabaseClient() {
   )
 }
 
-export async function getServerUser() {
-  const supabase = await createServerSupabaseClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  return user
-}
-
 /** Auth guard helper */
 export async function requireUser() {
-  const supabase = await createServerSupabaseClient()
+  const supabase = getServerSupabase()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) {
     return { user: null as const, supabase, error: error ?? new Error('Unauthenticated') }

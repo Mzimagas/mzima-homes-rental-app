@@ -209,13 +209,13 @@ export const TabContainer: React.FC<TabContainerProps> = ({
 export const PROPERTY_TABS: TabConfig[] = [
   { id: 'details', label: 'Basic Info', icon: '🏠' },
   { id: 'documents', label: 'Documents', icon: '📁' },
-  { id: 'financial', label: 'Financial', icon: '💰' }
+  { id: 'financial', label: 'Payments', icon: '💰' }
 ]
 
 export const HANDOVER_TABS: TabConfig[] = [
   { id: 'details', label: 'Basic Info', icon: '🏠' },
   { id: 'documents', label: 'Documents', icon: '📁' },
-  { id: 'financial', label: 'Financial', icon: '💰' }
+  { id: 'financial', label: 'Payments', icon: '💰' }
 ]
 
 /**

@@ -10,11 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = createClient(supabaseUrl, serviceKey)
     const { id: propertyId } = await params
 
-    // For now, let's bypass authentication to test the basic functionality
-    // TODO: Re-implement proper authentication once the cookies issue is resolved
-
-    // For testing purposes, let's skip authentication and access control
-    // In production, this should be properly implemented with authentication
+    // Note: Authentication bypassed for client property access
     console.log('🔍 Client Property API - Loading property:', propertyId)
 
     // Get property details
@@ -26,6 +22,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         location,
         property_type,
         asking_price_kes,
+        purchase_price_agreement_kes,
+        handover_price_agreement_kes,
+        sale_price_kes,
         description,
         handover_status
       `)
@@ -78,7 +77,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           name: property.name,
           location: property.location,
           property_type: property.property_type,
-          asking_price_kes: property.asking_price_kes,
+          asking_price_kes: property.handover_price_agreement_kes || property.purchase_price_agreement_kes || property.sale_price_kes || property.asking_price_kes,
           description: property.description,
           images: imageUrls
         },

@@ -128,6 +128,7 @@ export default function MyPropertiesRepositoryTab({
             onDueDiligence={onDueDiligence}
             onViewMaps={onViewMaps}
             showReferralButton={statusFilter !== 'saved'}
+            isHomeTab={statusFilter === 'saved'}
           />
         )
       case 'reserved':
@@ -138,6 +139,7 @@ export default function MyPropertiesRepositoryTab({
             onPinLocation={onPinLocation}
             onCancelReservation={onCancelReservation}
             showReferralButton={statusFilter !== 'reserved'}
+            isHomeTab={statusFilter === 'reserved'}
           />
         )
       case 'purchase-pipeline':
@@ -146,6 +148,7 @@ export default function MyPropertiesRepositoryTab({
             key={property.id}
             property={property}
             showReferralButton={statusFilter !== 'purchase-pipeline'}
+            isHomeTab={statusFilter === 'purchase-pipeline'}
           />
         )
       case 'completed':
@@ -154,6 +157,7 @@ export default function MyPropertiesRepositoryTab({
             key={property.id}
             property={property}
             showReferralButton={false} // Completed properties don't need referral buttons
+            isHomeTab={statusFilter === 'completed'}
           />
         )
       default:
