@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
         .from('client_property_interests')
         .update({
           deposit_amount_kes: amount,
-          deposit_paid_at: paymentResult.status === 'COMPLETED' ? new Date().toISOString() : null,
+          deposit_paid_at: (paymentResult.status === 'COMPLETED' || paymentResult.status === 'PENDING_VERIFICATION') ? new Date().toISOString() : null,
           payment_method: paymentMethod,
           payment_reference: paymentReference,
           payment_data: paymentData,
