@@ -126,11 +126,7 @@ export const DynamicComponents = {
     ssr: false,
   }),
 
-  // CQRS Debug Panel
-  CQRSDebugPanel: dynamic(() => import('../../components/debug/SearchDebugPanel'), {
-    loading: LoadingSpinner,
-    ssr: false,
-  }),
+
 }
 
 // Route-based code splitting with enhanced optimization
