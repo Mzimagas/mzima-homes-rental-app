@@ -711,9 +711,9 @@ function PropertyCard({
               Express Interest
             </button>
           )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
   )
 }
