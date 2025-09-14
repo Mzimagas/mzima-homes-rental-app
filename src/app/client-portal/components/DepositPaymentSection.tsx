@@ -5,7 +5,7 @@ import { useState } from 'react'
 interface ClientProperty {
   id: string
   name: string
-  asking_price_kes: number
+  asking_price_kes: number | null
 }
 
 interface DepositPaymentSectionProps {
@@ -22,7 +22,7 @@ export default function DepositPaymentSection({ property, agreementSigned, onDep
   const [paymentReference, setPaymentReference] = useState('')
   const [showPaymentForm, setShowPaymentForm] = useState(false)
 
-  const depositAmount = property.asking_price_kes * 0.1 // 10% deposit
+  const depositAmount = (property.asking_price_kes || 0) * 0.1 // 10% deposit
 
   const handleMakePayment = async () => {
     if (!paymentMethod) {
@@ -105,7 +105,7 @@ export default function DepositPaymentSection({ property, agreementSigned, onDep
               </span>
             </div>
             <p className="text-xs text-gray-600">
-              10% of purchase price (KES {property.asking_price_kes.toLocaleString()})
+              10% of purchase price (KES {(property.asking_price_kes || 0).toLocaleString()})
             </p>
           </div>
 

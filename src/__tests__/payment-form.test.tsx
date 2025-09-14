@@ -14,12 +14,12 @@ const mockPaymentService = PaymentService as any
 describe('EnhancedPaymentForm', () => {
   const defaultProps = {
     isOpen: true,
-    onSuccess: jest.fn(),
-    onCancel: jest.fn(),
+    onSuccess: vi.fn(),
+    onCancel: vi.fn(),
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
 
     // Mock payment method info
     mockPaymentService.getPaymentMethodInfo.mockReturnValue({
