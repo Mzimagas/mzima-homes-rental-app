@@ -204,7 +204,7 @@ export default function MyPropertiesRepositoryTab({
             {
               key: 'purchase-pipeline',
               label: 'Purchase Pipeline',
-              color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200',
+              color: 'bg-green-100 text-green-700 hover:bg-green-200',
             },
             {
               key: 'reserved',
@@ -219,7 +219,7 @@ export default function MyPropertiesRepositoryTab({
             {
               key: 'completed',
               label: 'Completed',
-              color: 'bg-green-100 text-green-700 hover:bg-green-200',
+              color: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
             },
           ].map((filter) => (
             <button

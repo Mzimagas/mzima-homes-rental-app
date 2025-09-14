@@ -350,22 +350,15 @@ export default function ClientPropertyCard({ property }: ClientPropertyCardProps
                       </div>
                     </button>
 
+                    {/* Small referral button - only shows when property is in handover */}
                     <button
                       onClick={() =>
                         (window.location.href = `/dashboard/properties?property=${property.id}&tab=handover`)
                       }
-                      className="w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                      className="mt-2 text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-2 py-1 rounded border border-orange-200 transition-colors duration-200 flex items-center gap-1"
+                      title="Go to Handover Pipeline to manage this property"
                     >
-                      <div className="flex items-center justify-center space-x-2">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span>Manage in Handover</span>
-                      </div>
+                      🏗️ Manage in Pipeline
                     </button>
                   </>
                 )}
