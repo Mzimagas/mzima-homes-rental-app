@@ -331,23 +331,43 @@ export default function ClientPropertyCard({ property }: ClientPropertyCardProps
                 )}
 
                 {property.status === 'IN_HANDOVER' && (
-                  <button
-                    onClick={() =>
-                      (window.location.href = `/client-portal/property/${property.id}`)
-                    }
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors font-medium"
-                  >
-                    <div className="flex items-center justify-center space-x-2">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span>Track Progress</span>
-                    </div>
-                  </button>
+                  <>
+                    <button
+                      onClick={() =>
+                        (window.location.href = `/client-portal/property/${property.id}`)
+                      }
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors font-medium"
+                    >
+                      <div className="flex items-center justify-center space-x-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>Track Progress</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        (window.location.href = `/dashboard/properties?property=${property.id}&tab=handover`)
+                      }
+                      className="w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                    >
+                      <div className="flex items-center justify-center space-x-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fillRule="evenodd"
+                            d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>Manage in Handover</span>
+                      </div>
+                    </button>
+                  </>
                 )}
               </div>
             </div>

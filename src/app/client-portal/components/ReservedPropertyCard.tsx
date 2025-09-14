@@ -104,7 +104,7 @@ export default function ReservedPropertyCard({
         setHandoverData(createInitialHandoverData())
       }
     } catch (error) {
-      console.error('Error fetching handover data:', error)
+      // Error fetching handover data
       // On error, still provide initial structure so client can see the interface
       setHandoverData(createInitialHandoverData())
     } finally {
@@ -117,7 +117,7 @@ export default function ReservedPropertyCard({
     if (showDetails) {
       fetchHandoverData()
     }
-  }, [showDetails])
+  }, [showDetails, fetchHandoverData])
 
   // Read-only handlers for InlineHandoverView
   const handleStageClick = () => {
@@ -215,7 +215,6 @@ export default function ReservedPropertyCard({
                     day: 'numeric',
                   })}
                 </p>
-
               </div>
             </div>
 
@@ -232,25 +231,25 @@ export default function ReservedPropertyCard({
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs text-orange-700">
-                      Reserved on: {new Date(property.interest_date).toLocaleDateString('en-US', {
+                      Reserved on:{' '}
+                      {new Date(property.interest_date).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
-                        day: 'numeric'
-                      })} at {new Date(property.interest_date).toLocaleTimeString('en-US', {
+                        day: 'numeric',
+                      })}{' '}
+                      at{' '}
+                      {new Date(property.interest_date).toLocaleTimeString('en-US', {
                         hour: '2-digit',
-                        minute: '2-digit'
+                        minute: '2-digit',
                       })}
                     </p>
                     <p className="text-xs text-orange-700">
                       {isExpired
                         ? 'Reservation has expired. Contact support to renew.'
-                        : 'Hongera on your reservation! To commit the property, kindly review and sign the agreement, then proceed with the deposit payment. (View Details) If not finalized in time, the property may become available to other Home owners. Thank you.'
-                      }
+                        : 'Hongera on your reservation! To commit the property, kindly review and sign the agreement, then proceed with the deposit payment. (View Details) If not finalized in time, the property may become available to other Home owners. Thank you.'}
                     </p>
                   </div>
                 </div>
-
-
 
                 {/* Secondary Actions */}
                 <div className="grid grid-cols-2 gap-3">
@@ -296,6 +295,33 @@ export default function ReservedPropertyCard({
                     </div>
                   </button>
                 </div>
+
+                {/* Manage in Reserved Button */}
+                <button
+                  onClick={() => {
+                    // Navigate to handover pipeline for this property
+                    window.location.href = `/dashboard/properties?property=${property.id}&tab=handover`
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <span>Manage in Reserved</span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -326,27 +352,29 @@ export default function ReservedPropertyCard({
         {/* Enhanced Expanded Details - Full Width Mirror of InlineHandoverView */}
         {showDetails && (
           <div className="mt-8 border-t-4 border-gradient-to-r from-teal-500 to-cyan-500 pt-8 bg-gradient-to-br from-teal-50/50 via-cyan-50/30 to-teal-50/50 rounded-b-2xl">
-          <div className="px-8 pb-8">
-            {handoverLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-gray-600">Loading handover details...</span>
-              </div>
-            ) : handoverData ? (
-              <InlineHandoverView
-                handover={handoverData}
-                onClose={handleClose}
-                onStageClick={handleStageClick}
-                onStageUpdate={handleStageUpdate}
-                readOnly={true}
-              />
-            ) : (
-              <div className="p-6 text-center text-gray-500">
-                <p>Handover process not yet started for this property.</p>
-                <p className="text-sm mt-2">Details will be available once the handover begins.</p>
-              </div>
-            )}
-          </div>
+            <div className="px-8 pb-8">
+              {handoverLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Loading handover details...</span>
+                </div>
+              ) : handoverData ? (
+                <InlineHandoverView
+                  handover={handoverData}
+                  onClose={handleClose}
+                  onStageClick={handleStageClick}
+                  onStageUpdate={handleStageUpdate}
+                  readOnly={true}
+                />
+              ) : (
+                <div className="p-6 text-center text-gray-500">
+                  <p>Handover process not yet started for this property.</p>
+                  <p className="text-sm mt-2">
+                    Details will be available once the handover begins.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

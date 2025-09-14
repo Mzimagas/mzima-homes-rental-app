@@ -9,10 +9,10 @@ import ClientWelcomeModal from './components/ClientWelcomeModal'
 import ClientNavigation from './components/ClientNavigation'
 import ProfileTab from './components/ProfileTab'
 
-import CompletedProjectsTab from './components/CompletedProjectsTab'
 import SavedPropertiesTab from './components/SavedPropertiesTab'
 import ReservedPropertiesTab from './components/ReservedPropertiesTab'
-import MyPropertiesTab from './components/MyPropertiesTab'
+import MyPropertiesRepositoryTab from './components/PropertiesTab'
+import InProgressTab from './components/InProgressTab'
 
 interface ClientProperty {
   id: string
@@ -55,8 +55,9 @@ export default function ClientPortalPage() {
   const [error, setError] = useState<string | null>(null)
   const [showWelcome, setShowWelcome] = useState(false)
   const [activeTab, setActiveTab] = useState<
-    'profile' | 'saved-properties' | 'reserved' | 'my-properties' | 'completed'
-  >('saved-properties')
+    'my-properties' | 'purchase-pipeline' | 'saved-properties' | 'reserved'
+  >('my-properties')
+  const [showProfile, setShowProfile] = useState(false)
 
   const { user, signOut } = useAuth()
   const router = useRouter()
@@ -132,6 +133,17 @@ export default function ClientPortalPage() {
     // Check if this is a welcome redirect
     if (searchParams.get('welcome') === 'true') {
       setShowWelcome(true)
+    }
+
+    // Handle tab parameter from URL
+    const tabParam = searchParams.get('tab')
+    if (
+      tabParam &&
+      ['my-properties', 'purchase-pipeline', 'saved-properties', 'reserved'].includes(tabParam)
+    ) {
+      setActiveTab(
+        tabParam as 'my-properties' | 'purchase-pipeline' | 'saved-properties' | 'reserved'
+      )
     }
 
     // Load real user data if authenticated, otherwise demo data
@@ -219,6 +231,19 @@ export default function ClientPortalPage() {
                 Browse Properties
               </button>
               <button
+                onClick={() => setShowProfile(true)}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-700 font-medium"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>Profile</span>
+              </button>
+              <button
                 onClick={handleSignOut}
                 className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
               >
@@ -231,10 +256,64 @@ export default function ClientPortalPage() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Navigation */}
-        <ClientNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <ClientNavigation
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab)
+            // Update URL parameter
+            const newSearchParams = new URLSearchParams(searchParams.toString())
+            newSearchParams.set('tab', tab)
+            router.replace(`/client-portal?${newSearchParams.toString()}`)
+          }}
+        />
 
         {/* Content */}
         <div className="mt-8">
+          {activeTab === 'my-properties' && (
+            <MyPropertiesRepositoryTab
+              savedProperties={clientData.properties.filter((p) => p.status === 'INTERESTED')}
+              reservedProperties={clientData.properties.filter((p) => p.status === 'RESERVED')}
+              myProperties={clientData.properties.filter(
+                (p) => p.status === 'COMMITTED' || p.status === 'IN_HANDOVER'
+              )}
+              completedProperties={clientData.properties.filter((p) => p.status === 'COMPLETED')}
+              onRemoveFromSaved={(propertyId) => {
+                // Handle remove from saved
+                // TODO: Implement remove from saved functionality
+              }}
+              onMoveToMyProperties={(propertyId) => {
+                // Handle move to my properties
+                // TODO: Implement move to my properties functionality
+              }}
+              onDueDiligence={(propertyId) => {
+                // Handle due diligence
+                // TODO: Implement due diligence functionality
+              }}
+              onViewMaps={(propertyId) => {
+                // Handle view maps
+                // TODO: Implement view maps functionality
+              }}
+              onPinLocation={(propertyId) => {
+                // Handle pin location
+                // TODO: Implement pin location functionality
+              }}
+              onCancelReservation={(propertyId) => {
+                // Handle cancel reservation
+                // TODO: Implement cancel reservation functionality
+              }}
+            />
+          )}
+
+          {activeTab === 'purchase-pipeline' && (
+            <InProgressTab
+              properties={clientData.properties.filter(
+                (p) =>
+                  p.status === 'COMMITTED' || p.status === 'IN_HANDOVER' || p.status === 'COMPLETED'
+              )}
+              onRefresh={loadClientData}
+            />
+          )}
+
           {activeTab === 'saved-properties' && (
             <SavedPropertiesTab
               properties={clientData.properties.filter((p) => p.status === 'INTERESTED')}
@@ -248,23 +327,34 @@ export default function ClientPortalPage() {
               onRefresh={loadClientData}
             />
           )}
-
-          {activeTab === 'my-properties' && (
-            <MyPropertiesTab
-              properties={clientData.properties.filter(
-                (p) =>
-                  p.status === 'COMMITTED' || p.status === 'IN_HANDOVER' || p.status === 'COMPLETED'
-              )}
-              onRefresh={loadClientData}
-            />
-          )}
-
-          {activeTab === 'completed' && <CompletedProjectsTab properties={clientData.properties} />}
-
-          {activeTab === 'profile' && (
-            <ProfileTab clientData={clientData} onUpdate={loadClientData} />
-          )}
         </div>
+
+        {/* Profile Modal */}
+        {showProfile && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b">
+                <h2 className="text-xl font-semibold text-gray-900">Profile Settings</h2>
+                <button
+                  onClick={() => setShowProfile(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-6">
+                <ProfileTab clientData={clientData} onUpdate={loadClientData} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Welcome Modal */}
