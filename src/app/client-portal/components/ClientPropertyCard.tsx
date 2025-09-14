@@ -43,9 +43,10 @@ interface ClientProperty {
 
 interface ClientPropertyCardProps {
   property: ClientProperty
+  showReferralButton?: boolean
 }
 
-export default function ClientPropertyCard({ property }: ClientPropertyCardProps) {
+export default function ClientPropertyCard({ property, showReferralButton = false }: ClientPropertyCardProps) {
   const [showDetails, setShowDetails] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [showStartHandoverForm, setShowStartHandoverForm] = useState(false)
@@ -350,16 +351,18 @@ export default function ClientPropertyCard({ property }: ClientPropertyCardProps
                       </div>
                     </button>
 
-                    {/* Small referral button - only shows when property is in handover */}
-                    <button
-                      onClick={() =>
-                        (window.location.href = `/dashboard/properties?property=${property.id}&tab=handover`)
-                      }
-                      className="mt-2 text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-2 py-1 rounded border border-orange-200 transition-colors duration-200 flex items-center gap-1"
-                      title="Go to Handover Pipeline to manage this property"
-                    >
-                      🏗️ Manage in Pipeline
-                    </button>
+                    {/* Small referral button - only shows when property appears outside its home tab */}
+                    {showReferralButton && (
+                      <button
+                        onClick={() =>
+                          (window.location.href = `/client-portal?tab=purchase-pipeline`)
+                        }
+                        className="mt-2 text-xs bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200 transition-colors duration-200 flex items-center gap-1"
+                        title="Go to Purchase Pipeline tab to manage this property"
+                      >
+                        🏢 Manage in Pipeline
+                      </button>
+                    )}
                   </>
                 )}
               </div>

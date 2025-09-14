@@ -127,6 +127,7 @@ export default function MyPropertiesRepositoryTab({
             onMoveToMyProperties={onMoveToMyProperties}
             onDueDiligence={onDueDiligence}
             onViewMaps={onViewMaps}
+            showReferralButton={statusFilter !== 'saved'}
           />
         )
       case 'reserved':
@@ -136,12 +137,25 @@ export default function MyPropertiesRepositoryTab({
             property={property}
             onPinLocation={onPinLocation}
             onCancelReservation={onCancelReservation}
+            showReferralButton={statusFilter !== 'reserved'}
           />
         )
       case 'purchase-pipeline':
-        return <ClientPropertyCard key={property.id} property={property} />
+        return (
+          <ClientPropertyCard
+            key={property.id}
+            property={property}
+            showReferralButton={statusFilter !== 'purchase-pipeline'}
+          />
+        )
       case 'completed':
-        return <ClientPropertyCard key={property.id} property={property} />
+        return (
+          <ClientPropertyCard
+            key={property.id}
+            property={property}
+            showReferralButton={false} // Completed properties don't need referral buttons
+          />
+        )
       default:
         return null
     }

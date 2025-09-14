@@ -35,14 +35,18 @@ interface SavedPropertyCardProps {
   property: ClientProperty
   onMoveToMyProperties: (propertyId: string) => void
   onRemoveFromSaved: (propertyId: string) => void
-  loading: boolean
+  onDueDiligence: (propertyId: string) => void
+  onViewMaps: (propertyId: string) => void
+  showReferralButton?: boolean
 }
 
 export default function SavedPropertyCard({
   property,
   onMoveToMyProperties,
   onRemoveFromSaved,
-  loading,
+  onDueDiligence,
+  onViewMaps,
+  showReferralButton = false,
 }: SavedPropertyCardProps) {
   const [imageError, setImageError] = useState(false)
   const [showDueDiligence, setShowDueDiligence] = useState(false)
@@ -225,17 +229,19 @@ export default function SavedPropertyCard({
                   </button>
                 </div>
 
-                {/* Small referral button - only shows when property is saved */}
-                <button
-                  onClick={() => {
-                    // Navigate to marketplace with this property highlighted
-                    window.location.href = `/marketplace?property=${property.id}&highlight=saved`
-                  }}
-                  className="mt-2 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 transition-colors duration-200 flex items-center gap-1"
-                  title="View this property in the marketplace"
-                >
-                  📋 View in Marketplace
-                </button>
+                {/* Small referral button - only shows when property appears outside its home tab */}
+                {showReferralButton && (
+                  <button
+                    onClick={() => {
+                      // Navigate to saved properties tab to manage this property
+                      window.location.href = `/client-portal?tab=saved-properties`
+                    }}
+                    className="mt-2 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 transition-colors duration-200 flex items-center gap-1"
+                    title="Go to Saved Properties tab to manage this property"
+                  >
+                    📋 Manage in Saved
+                  </button>
+                )}
 
                 {/* Remove Action */}
                 <button

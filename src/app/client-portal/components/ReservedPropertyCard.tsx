@@ -35,13 +35,15 @@ interface ClientProperty {
 interface ReservedPropertyCardProps {
   property: ClientProperty
   onCancelReservation: (propertyId: string) => void
-  loading: boolean
+  onPinLocation: (propertyId: string) => void
+  showReferralButton?: boolean
 }
 
 export default function ReservedPropertyCard({
   property,
   onCancelReservation,
-  loading,
+  onPinLocation,
+  showReferralButton = false,
 }: ReservedPropertyCardProps) {
   const [imageError, setImageError] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
@@ -280,7 +282,7 @@ export default function ReservedPropertyCard({
                   {/* Cancel Reservation */}
                   <button
                     onClick={() => onCancelReservation(property.id)}
-                    disabled={loading}
+                    disabled={false}
                     className="bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 px-4 py-3 rounded-lg transition-all duration-200 font-medium border border-red-200 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="flex items-center justify-center space-x-2">
@@ -296,17 +298,17 @@ export default function ReservedPropertyCard({
                   </button>
                 </div>
 
-                {/* Small referral button - only shows when property is in handover pipeline */}
-                {handoverData && handoverData.handover_status === 'IN_PROGRESS' && (
+                {/* Small referral button - only shows when property appears outside its home tab */}
+                {showReferralButton && (
                   <button
                     onClick={() => {
-                      // Navigate to handover pipeline for this property
-                      window.location.href = `/dashboard/properties?property=${property.id}&tab=handover`
+                      // Navigate to reserved properties tab to manage this property
+                      window.location.href = `/client-portal?tab=reserved`
                     }}
                     className="mt-2 text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-2 py-1 rounded border border-orange-200 transition-colors duration-200 flex items-center gap-1"
-                    title="Go to Handover Pipeline to manage this property"
+                    title="Go to Reserved tab to manage this property"
                   >
-                    🏗️ Manage in Pipeline
+                    🏗️ Manage in Reserved
                   </button>
                 )}
               </div>
