@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '../../../../lib/supabase-server'
+import { getServerSupabase } from '../../../../lib/supabase-server'
 import { detectUserType } from '../../../../lib/user-type-detection'
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 User type API called')
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = await getServerSupabase()
 
     // Get the current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()

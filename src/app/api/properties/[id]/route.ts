@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { compose, withAuth, withCsrf, withRateLimit } from '../../../../lib/api/middleware'
 import { errors } from '../../../../lib/api/errors'
 import { createClient } from '@supabase/supabase-js'
-import { createServerSupabaseClient } from '../../../../lib/supabase-server'
+import { getServerSupabase, getServiceSupabase } from '../../../../lib/supabase-server'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -10,7 +10,7 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 async function resolveUserId(req: NextRequest): Promise<string | null> {
   // Primary: cookie-based session
   try {
-    const supabase = await createServerSupabaseClient()
+    const supabase = await getServerSupabase()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -32,7 +32,7 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 }
 
 async function getRoleForProperty(userId: string, propertyId: string) {
-  const admin = createClient(supabaseUrl, serviceKey)
+  const admin = getServiceSupabase()
 
   const { data: membership } = await admin
     .from('property_users')
@@ -47,7 +47,7 @@ async function getRoleForProperty(userId: string, propertyId: string) {
 async function checkActiveTenantsInProperty(
   propertyId: string
 ): Promise<{ hasActiveTenants: boolean; tenantCount: number }> {
-  const admin = createClient(supabaseUrl, serviceKey)
+  const admin = getServiceSupabase()
 
   // Get all units for this property
   const { data: units } = await admin.from('units').select('id').eq('property_id', propertyId)
@@ -95,7 +95,7 @@ async function handler(req: NextRequest) {
     if (!propertyId) return errors.badRequest('Missing property id in path')
 
     // Get property details
-    const admin = createClient(supabaseUrl, serviceKey)
+    const admin = getServiceSupabase()
     const { data: property, error: propertyError } = await admin
       .from('properties')
       .select('id, name, landlord_id')
@@ -182,7 +182,7 @@ export const PATCH = compose(
       return errors.badRequest('No fields to update')
     }
 
-    const admin = createClient(supabaseUrl, serviceKey)
+    const admin = getServiceSupabase()
 
     // Load existing property
     const { data: existing, error: loadErr } = await admin
