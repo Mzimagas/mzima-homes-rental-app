@@ -104,11 +104,12 @@ export const PATCH = compose(
       return errors.internal('Failed to fetch current property data')
     }
 
-    // Update the property price
+    // Update the property price and mirror to purchase price for consistency
     const { error: updateError } = await admin
       .from('properties')
       .update({
         handover_price_agreement_kes: parsed.data.handover_price_agreement_kes,
+        purchase_price_agreement_kes: parsed.data.handover_price_agreement_kes,
         updated_at: new Date().toISOString(),
       })
       .eq('id', propertyId)

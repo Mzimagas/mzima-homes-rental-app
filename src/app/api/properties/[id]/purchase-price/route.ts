@@ -180,11 +180,12 @@ export const PATCH = compose(
       }
     }
 
-    // Update the purchase price
+    // Update the purchase price and mirror to handover price for consistency
     const { data: updatedProperty, error: updateError } = await admin
       .from('properties')
       .update({
         purchase_price_agreement_kes: newPrice,
+        handover_price_agreement_kes: newPrice,
         purchase_price_last_updated_at: new Date().toISOString(),
         purchase_price_last_updated_by: userId,
       })

@@ -81,7 +81,7 @@ export const GET = compose(
     // Get property basic info
     const { data: property, error: propertyError } = await admin
       .from('properties')
-      .select('id, name, handover_price_agreement_kes')
+      .select('id, name, handover_price_agreement_kes, purchase_price_agreement_kes')
       .eq('id', propertyId)
       .single()
 
@@ -89,8 +89,8 @@ export const GET = compose(
       return errors.notFound('Property not found')
     }
 
-    // Get data from database
-    const handoverPrice = property.handover_price_agreement_kes || 0
+    // Compute a single effective agreement price used across cards and payments
+    const handoverPrice = (property.handover_price_agreement_kes ?? property.purchase_price_agreement_kes) || 0
 
     // Fetch handover costs from database
     const { data: costEntries, error: costsError } = await admin
