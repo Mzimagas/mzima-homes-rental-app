@@ -6,23 +6,27 @@ import { useDebounce } from '../../hooks/useDebounce'
 
 interface MarketplaceSearchProps {
   onSearchChange: (searchTerm: string) => void
+  onTypeChange: (type: string) => void
   onSizeFilterChange: (sizeFilter: string) => void
   placeholder?: string
   resultsCount?: number
   totalCount?: number
   className?: string
   searchTerm: string
+  selectedType: string
   selectedSizeFilter: string
 }
 
 export default function MarketplaceSearch({
   onSearchChange,
+  onTypeChange,
   onSizeFilterChange,
   placeholder = 'Search properties by name, location, description...',
   resultsCount,
   totalCount,
   className = '',
   searchTerm,
+  selectedType,
   selectedSizeFilter,
 }: MarketplaceSearchProps) {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
@@ -42,11 +46,15 @@ export default function MarketplaceSearch({
     setLocalSearchTerm('')
   }
 
-  const landSizeFilters = [
-    { value: 'all', label: 'All Sizes' },
-    { value: '50x100', label: '50 x 100 (≈0.1 Ha)' },
-    { value: '100x100', label: '100 x 100 (≈0.2 Ha)' },
-    { value: 'half_acre', label: 'Half Acre (≈0.2 Ha)' },
+  const propertyTypes = [
+    { value: 'all', label: 'All Types' },
+    { value: 'HOME', label: 'Home' },
+    { value: 'HOSTEL', label: 'Hostel' },
+    { value: 'STALL', label: 'Stall' },
+    { value: 'RESIDENTIAL_LAND', label: 'Residential Land' },
+    { value: 'COMMERCIAL_LAND', label: 'Commercial Land' },
+    { value: 'AGRICULTURAL_LAND', label: 'Agricultural Land' },
+    { value: 'MIXED_USE_LAND', label: 'Mixed Use Land' },
   ]
 
   const showResultsCount = resultsCount !== undefined && totalCount !== undefined
@@ -84,30 +92,31 @@ export default function MarketplaceSearch({
             </div>
           </div>
 
-          {/* Land Size Filter */}
+          {/* Property Type Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Land Size
+              Property Type
             </label>
             <select
-              value={selectedSizeFilter}
-              onChange={(e) => onSizeFilterChange(e.target.value)}
+              value={selectedType}
+              onChange={(e) => onTypeChange(e.target.value)}
               className="w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
             >
-              {landSizeFilters.map((size) => (
-                <option key={size.value} value={size.value}>
-                  {size.label}
+              {propertyTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Quick Filter Buttons */}
+        {/* Quick Filter Buttons - Land Size Based */}
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => {
               setLocalSearchTerm('')
+              onTypeChange('all')
               onSizeFilterChange('all')
             }}
             className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-full hover:bg-gray-100 transition-colors"
@@ -122,7 +131,7 @@ export default function MarketplaceSearch({
                 : 'text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100'
             }`}
           >
-            📐 50 x 100
+            🏡 50 x 100
           </button>
           <button
             onClick={() => onSizeFilterChange('100x100')}
@@ -132,17 +141,17 @@ export default function MarketplaceSearch({
                 : 'text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100'
             }`}
           >
-            📏 100 x 100
+            🌱 100 x 100
           </button>
           <button
-            onClick={() => onSizeFilterChange('half_acre')}
+            onClick={() => onSizeFilterChange('half-acre')}
             className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-              selectedSizeFilter === 'half_acre'
+              selectedSizeFilter === 'half-acre'
                 ? 'text-purple-700 bg-purple-50 border border-purple-200'
                 : 'text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100'
             }`}
           >
-            🏞️ Half Acre
+            🏢 Half Acre
           </button>
         </div>
 
@@ -161,18 +170,19 @@ export default function MarketplaceSearch({
                     <span className="text-gray-500"> for &quot;{localSearchTerm}&quot;</span>
                   </span>
                 )
-              ) : selectedSizeFilter !== 'all' ? (
+              ) : selectedType !== 'all' ? (
                 <span>
-                  Showing {resultsCount} {landSizeFilters.find(s => s.value === selectedSizeFilter)?.label.toLowerCase()} properties
+                  Showing {resultsCount} {propertyTypes.find(t => t.value === selectedType)?.label.toLowerCase()} properties
                 </span>
               ) : (
                 <span>Showing all {totalCount} available properties</span>
               )}
             </div>
-            {(localSearchTerm || selectedSizeFilter !== 'all') && (
+            {(localSearchTerm || selectedType !== 'all' || selectedSizeFilter !== 'all') && (
               <button
                 onClick={() => {
                   setLocalSearchTerm('')
+                  onTypeChange('all')
                   onSizeFilterChange('all')
                 }}
                 className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
