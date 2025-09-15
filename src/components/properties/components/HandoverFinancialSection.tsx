@@ -493,16 +493,17 @@ export default function HandoverFinancialSection({
       {/* Enhanced Handover Price Management */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="text-lg font-semibold text-blue-900 mb-3">
-          Purchase Price in Sales Agreement
+          Purchase Price in Sales Agreement - Handover
         </h4>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-sm text-gray-600">Current Purchase Price</div>
+              <div className="text-sm text-gray-600">Current Handover Sale Price</div>
               <div className="text-2xl font-bold text-gray-900">
                 {formatCurrency(
                   property?.handover_price_agreement_kes ||
-                    financial_summary?.handover_price_agreement_kes
+                    financial_summary?.handover_price_agreement_kes ||
+                    0
                 )}
               </div>
             </div>
