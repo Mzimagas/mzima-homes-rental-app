@@ -412,6 +412,21 @@ export default function SecurePurchaseForm({
               </FormField>
 
               <FormField
+                name="sellerIdNumber"
+                label="National ID Number *"
+                error={errors.sellerIdNumber?.message}
+              >
+                {({ id }) => (
+                  <TextField
+                    id={id}
+                    {...register('sellerIdNumber')}
+                    placeholder="National ID or Passport number"
+                    className="w-full"
+                  />
+                )}
+              </FormField>
+
+              <FormField
                 name="sellerPhone"
                 label="Phone Number"
                 error={errors.sellerPhone?.message}
@@ -559,15 +574,15 @@ export default function SecurePurchaseForm({
 
                     <div className="lg:col-span-2">
                       <FormField
-                        name="brokerLicenseNumber"
-                        label="License Number (if applicable)"
-                        error={errors.brokerLicenseNumber?.message}
+                        name="brokerIdNumber"
+                        label="ID Number (if applicable)"
+                        error={errors.brokerIdNumber?.message}
                       >
                         {({ id }) => (
                           <TextField
                             id={id}
-                            {...register('brokerLicenseNumber')}
-                            placeholder="Professional license number"
+                            {...register('brokerIdNumber')}
+                            placeholder="National ID or other identification"
                             className="w-full"
                           />
                         )}

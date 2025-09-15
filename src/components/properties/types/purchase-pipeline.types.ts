@@ -112,6 +112,7 @@ export const purchasePipelineSchema = z.object({
 
   // Seller Information
   sellerName: z.string().min(1, 'Seller name is required'),
+  sellerIdNumber: z.string().min(1, 'Seller National ID is required'),
   sellerPhone: z
     .string()
     .regex(phoneRegex, 'Enter a valid phone number')
@@ -137,7 +138,7 @@ export const purchasePipelineSchema = z.object({
     .optional()
     .or(z.literal('')),
   brokerCompany: z.string().max(120).optional().or(z.literal('')),
-  brokerLicenseNumber: z.string().max(50).optional().or(z.literal('')),
+  brokerIdNumber: z.string().max(50).optional().or(z.literal('')),
   isBrokerInvolved: z.boolean().default(false),
 
   // Financial Information
