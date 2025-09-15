@@ -64,10 +64,15 @@ export default function HandoverPipelineManager({
 
   // Filter handovers and properties based on search term
   const filteredHandovers = useMemo(() => {
+    console.log('🔍 Filtering handovers:', {
+      totalHandovers: handovers.length,
+      searchTerm,
+      handoverNames: handovers.map(h => h.property_name)
+    })
     if (!searchTerm.trim()) return handovers
 
     const lower = searchTerm.toLowerCase()
-    return handovers.filter((handover) => {
+    const filtered = handovers.filter((handover) => {
       return (
         handover.property_name.toLowerCase().includes(lower) ||
         (handover.property_address?.toLowerCase().includes(lower) ?? false) ||
@@ -77,6 +82,8 @@ export default function HandoverPipelineManager({
         (handover.property_condition_notes?.toLowerCase().includes(lower) ?? false)
       )
     })
+    console.log('🔍 Filtered handovers:', filtered.map(h => h.property_name))
+    return filtered
   }, [handovers, searchTerm])
 
   const filteredPropertiesAwaitingStart = useMemo(() => {
@@ -162,39 +169,76 @@ export default function HandoverPipelineManager({
       // Set properties awaiting start (these are properties ready to begin handover process)
       setPropertiesAwaitingStart(propertiesAwaitingStart || [])
 
-      // For IN_PROGRESS properties without pipeline records, create mock handover records
+      // For IN_PROGRESS properties without pipeline records, create proper handover records from client data
       if (inProgressProperties && inProgressProperties.length > 0) {
         const existingHandoverPropertyIds = new Set(handoverData?.map((h) => h.property_id) || [])
-        const missingHandovers = inProgressProperties
-          .filter((prop) => !existingHandoverPropertyIds.has(prop.id))
-          .map((prop) => ({
-            id: `temp-${prop.id}`,
-            property_id: prop.id,
-            property_name: prop.name,
-            property_address: prop.physical_address || 'Address not available',
-            handover_status: 'IN_PROGRESS',
-            current_stage: 'Initial Handover Preparation',
-            overall_progress: 0,
-            buyer_name: 'Client Name Loading...',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            pipeline_stages: [],
-            asking_price_kes:
-              prop.handover_price_agreement_kes ||
-              prop.purchase_price_agreement_kes ||
-              prop.sale_price_kes ||
-              0,
-            negotiated_price_kes: null,
-            expected_profit_kes: null,
-            expected_profit_percentage: null,
-            legal_representative: null,
-            risk_assessment: null,
-            property_condition_notes: null,
-            actual_completion_date: null,
-            client_id: null,
-          }))
 
-        setHandovers([...(handoverData || []), ...missingHandovers])
+
+        // Get missing properties that need handover records
+        const missingProperties = inProgressProperties.filter((prop) => !existingHandoverPropertyIds.has(prop.id))
+
+        // Create proper handover records from client interest data
+        const missingHandovers = await Promise.all(
+          missingProperties.map(async (prop) => {
+            // Get client interest data for this property
+            const { data: clientInterest } = await supabase
+              .from('client_property_interests')
+              .select(`
+                *,
+                clients:client_id (
+                  full_name,
+                  email,
+                  phone
+                )
+              `)
+              .eq('property_id', prop.id)
+              .eq('status', 'CONVERTED')
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .single()
+
+            const client = clientInterest?.clients
+
+            return {
+              id: `temp-${prop.id}`,
+              property_id: prop.id,
+              property_name: prop.name,
+              property_address: prop.physical_address || 'Address not available',
+              handover_status: 'IN_PROGRESS',
+              current_stage: clientInterest?.agreement_signed_at ? 'Agreement Execution' :
+                           clientInterest?.deposit_paid_at ? 'Deposit Collection' :
+                           'Initial Handover Preparation',
+              overall_progress: clientInterest?.agreement_signed_at ? 60 :
+                              clientInterest?.deposit_paid_at ? 40 : 10,
+              buyer_name: client?.full_name || 'Client Name Loading...',
+              buyer_contact: client?.phone || '',
+              buyer_email: client?.email || '',
+              buyer_address: '', // Not available in current schema
+              client_id: clientInterest?.client_id || null,
+              created_at: clientInterest?.created_at || new Date().toISOString(),
+              updated_at: clientInterest?.updated_at || new Date().toISOString(),
+              pipeline_stages: [],
+              asking_price_kes: prop.asking_price_kes || prop.sale_price_kes || 0,
+              negotiated_price_kes: clientInterest?.payment_data?.propertyPrice || null,
+              deposit_received_kes: clientInterest?.deposit_amount_kes || null,
+              expected_profit_kes: null,
+              expected_profit_percentage: null,
+              legal_representative: 'To be assigned',
+              risk_assessment: null,
+              property_condition_notes: null,
+              actual_completion_date: null,
+              // Additional client portal specific fields
+              reservation_date: clientInterest?.reservation_date,
+              deposit_paid_at: clientInterest?.deposit_paid_at,
+              agreement_signed_at: clientInterest?.agreement_signed_at,
+              payment_reference: clientInterest?.payment_reference,
+              payment_verified_at: clientInterest?.payment_verified_at,
+            }
+          })
+        )
+
+        const finalHandovers = [...(handoverData || []), ...missingHandovers]
+        setHandovers(finalHandovers)
       } else {
         setHandovers(handoverData || [])
       }
