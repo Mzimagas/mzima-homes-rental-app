@@ -169,7 +169,9 @@ export async function POST(request: NextRequest) {
         negotiated_price_kes: interest.payment_data?.propertyPrice || null,
         deposit_received_kes: interest.deposit_amount_kes || null,
         target_completion_date: null, // Can be set later
-        legal_representative: 'To be assigned',
+        legal_representative: interest.agreement_signed_at
+          ? 'Agreement signed - legal processing required'
+          : 'To be assigned',
         created_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -183,6 +185,15 @@ export async function POST(request: NextRequest) {
         agreement_signed_at: interest.agreement_signed_at,
         payment_reference: interest.payment_reference,
         payment_verified_at: interest.payment_verified_at,
+        payment_method: interest.payment_method || null,
+        // Auto-populate property condition notes if available
+        property_condition_notes: interest.notes
+          ? `Client notes: ${interest.notes}`
+          : 'Property condition to be assessed',
+        // Set initial risk assessment based on client data completeness
+        risk_assessment: (client.full_name && client.phone && client.email && interest.deposit_amount_kes)
+          ? 'Low risk - complete client profile and deposit received'
+          : 'Medium risk - verify client details and payment status',
       }
 
       const { data: handover, error: handoverError } = await supabase

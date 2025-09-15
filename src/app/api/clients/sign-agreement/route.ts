@@ -117,6 +117,23 @@ export async function POST(request: NextRequest) {
       console.log('Continuing with signature processing despite update error')
     }
 
+    // Auto-update handover details with agreement information
+    try {
+      const { onAgreementSignedUpdateHandover } = await import('../../../../services/handoverDetailsAutoUpdateService')
+
+      const updateResult = await onAgreementSignedUpdateHandover(client, interest, signatureData)
+
+      if (updateResult.success) {
+        console.log('✅ Handover details auto-updated with agreement info:', updateResult)
+      } else {
+        console.warn('⚠️ Failed to auto-update handover details:', updateResult.error)
+        // Don't fail the agreement signing if handover update fails
+      }
+    } catch (updateError) {
+      console.warn('⚠️ Handover details auto-update error:', updateError)
+      // Don't fail the agreement signing if handover update fails
+    }
+
     // TODO: Send notification to admin about signed agreement
     // TODO: Generate signed agreement PDF for storage
 

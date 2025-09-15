@@ -284,6 +284,30 @@ export async function POST(request: NextRequest) {
           console.warn('⚠️ Auto-transition to handover error:', transitionError)
           // Don't fail the deposit payment if transition fails
         }
+
+        // Auto-update handover details with deposit information
+        try {
+          const { onDepositPaidUpdateHandover } = await import('../../../../services/handoverDetailsAutoUpdateService')
+
+          const depositData = {
+            amount,
+            paidAt: new Date().toISOString(),
+            paymentReference,
+            paymentMethod,
+          }
+
+          const updateResult = await onDepositPaidUpdateHandover(client, interest, depositData)
+
+          if (updateResult.success) {
+            console.log('✅ Handover details auto-updated with deposit info:', updateResult)
+          } else {
+            console.warn('⚠️ Failed to auto-update handover details:', updateResult.error)
+            // Don't fail the deposit payment if handover update fails
+          }
+        } catch (updateError) {
+          console.warn('⚠️ Handover details auto-update error:', updateError)
+          // Don't fail the deposit payment if handover update fails
+        }
       }
 
       console.log('✅ Deposit payment processed successfully')
