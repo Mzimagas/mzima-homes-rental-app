@@ -94,28 +94,71 @@ export const purchasePipelineSchema = z.object({
   propertyType: PropertyTypeEnum.refine((val) => val !== undefined, {
     message: 'Please select a property type',
   }),
+
+  // Buyer Information (will transfer to registered_title_owner when complete)
+  buyerName: z.string().min(1, 'Buyer name is required'),
+  buyerPhone: z
+    .string()
+    .regex(phoneRegex, 'Enter a valid phone number')
+    .optional()
+    .or(z.literal('')),
+  buyerEmail: z
+    .string()
+    .email('Enter a valid email address')
+    .optional()
+    .or(z.literal('')),
+  buyerAddress: z.string().max(500).optional().or(z.literal('')),
+  buyerIdNumber: z.string().max(50).optional().or(z.literal('')),
+
+  // Seller Information
   sellerName: z.string().min(1, 'Seller name is required'),
   sellerPhone: z
     .string()
     .regex(phoneRegex, 'Enter a valid phone number')
     .optional()
     .or(z.literal('')),
-  // Broker information
-  brokerName: z.string().optional(),
-  brokerContact: z.string().optional(),
+  sellerEmail: z
+    .string()
+    .email('Enter a valid email address')
+    .optional()
+    .or(z.literal('')),
+  sellerAddress: z.string().max(500).optional().or(z.literal('')),
+
+  // Broker/Witness Information
+  brokerName: z.string().max(120).optional().or(z.literal('')),
+  brokerPhone: z
+    .string()
+    .regex(phoneRegex, 'Enter a valid phone number')
+    .optional()
+    .or(z.literal('')),
+  brokerEmail: z
+    .string()
+    .email('Enter a valid email address')
+    .optional()
+    .or(z.literal('')),
+  brokerCompany: z.string().max(120).optional().or(z.literal('')),
+  brokerLicenseNumber: z.string().max(50).optional().or(z.literal('')),
+  isBrokerInvolved: z.boolean().default(false),
+
+  // Financial Information
   askingPrice: z.number().positive('Asking price must be positive').optional(),
   negotiatedPrice: z.number().positive('Negotiated price must be positive').optional(),
   depositPaid: z.number().min(0, 'Deposit cannot be negative').optional(),
+
+  // Legal and Administrative
   targetCompletionDate: z.string().optional(),
   legalRepresentative: z.string().optional(),
   financingSource: z.string().optional(),
   contractReference: z.string().optional(),
   titleDeedStatus: z.string().optional(),
   surveyStatus: z.string().optional(),
+
+  // Investment Analysis
   expectedRentalIncome: z.number().min(0, 'Expected rental income cannot be negative').optional(),
   expectedRoi: z.number().min(0).max(100, 'ROI must be between 0-100%').optional(),
   riskAssessment: z.string().optional(),
   propertyConditionNotes: z.string().optional(),
+
   // Coordinates (optional but captured when available)
   lat: z
     .number({ invalid_type_error: 'Latitude must be a number' })
@@ -127,6 +170,7 @@ export const purchasePipelineSchema = z.object({
     .min(-180, 'Longitude must be >= -180')
     .max(180, 'Longitude must be <= 180')
     .optional(),
+
   // Succession fields
   isSuccessionPurchase: z.boolean().default(false),
   deceasedOwnerName: z.string().max(120).optional().or(z.literal('')),
