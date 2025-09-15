@@ -77,7 +77,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           name: property.name,
           location: property.location,
           property_type: property.property_type,
-          asking_price_kes: property.handover_price_agreement_kes || property.purchase_price_agreement_kes || property.sale_price_kes || property.asking_price_kes,
+          asking_price_kes: property.handover_price_agreement_kes || null, // Only show price if handover sale price is set
           description: property.description,
           images: imageUrls
         },

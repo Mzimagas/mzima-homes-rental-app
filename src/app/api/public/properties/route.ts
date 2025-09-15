@@ -97,8 +97,7 @@ export async function GET(req: NextRequest) {
             ...property,
             location: property.physical_address,
             property_type: property.property_type,
-            asking_price_kes:
-              property.handover_price_agreement_kes || property.purchase_price_agreement_kes || property.sale_price_kes,
+            asking_price_kes: property.handover_price_agreement_kes || null, // Only show price if handover sale price is set
             description: property.marketing_description || property.notes,
             images: imageUrls,
             main_image: mainImage,
