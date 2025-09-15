@@ -11,6 +11,7 @@ import { ErrorCard } from '../../components/ui/error'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { useToast } from '../../components/ui/Toast'
 import { GoogleMapsCardButton } from '../../components/ui/GoogleMapsButton'
+import MarketplacePropertyDetails from './components/MarketplacePropertyDetails'
 
 interface MarketplaceProperty extends Property {
   images?: string[]
@@ -51,6 +52,7 @@ export default function MarketplacePage() {
   }>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState<string>('all')
   const [priceRange, setPriceRange] = useState<string>('all')
@@ -514,11 +516,21 @@ export default function MarketplacePage() {
                 onRemoveInterest={handleRemoveInterest}
                 hasInterest={interests[property.id]?.hasInterest || false}
                 isAuthenticated={!!user}
+                onViewDetails={setSelectedPropertyId}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Inline Property Details Modal */}
+      {selectedPropertyId && (
+        <MarketplacePropertyDetails
+          property={properties.find(p => p.id === selectedPropertyId)!}
+          isOpen={!!selectedPropertyId}
+          onClose={() => setSelectedPropertyId(null)}
+        />
+      )}
     </div>
   )
 }
@@ -529,6 +541,7 @@ interface PropertyCardProps {
   onRemoveInterest: (propertyId: string) => void
   hasInterest: boolean
   isAuthenticated: boolean
+  onViewDetails: (propertyId: string) => void
 }
 
 function PropertyCard({
@@ -537,6 +550,7 @@ function PropertyCard({
   onRemoveInterest,
   hasInterest,
   isAuthenticated,
+  onViewDetails,
 }: PropertyCardProps) {
   const [imageError, setImageError] = useState(false)
   const hasImage = property.main_image || (property.images && property.images.length > 0)
@@ -679,12 +693,12 @@ function PropertyCard({
 
               {/* Action Buttons */}
               <div className="flex space-x-2">
-                <Link
-                  href={`/marketplace/property/${property.id}`}
+                <button
+                  onClick={() => onViewDetails(property.id)}
                   className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-md text-center hover:bg-gray-200 transition-colors min-h-[44px] flex items-center justify-center"
                 >
                   View Details
-                </Link>
+                </button>
 
                 {isSold ? (
                   <button

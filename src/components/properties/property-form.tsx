@@ -32,7 +32,7 @@ export default function PropertyForm({
   onSuccess,
   onCancel,
 }: PropertyFormProps) {
-  const { showToast } = useToast()
+  const { show: showToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const {
@@ -112,19 +112,19 @@ export default function PropertyForm({
         throw new Error(result.error || 'Failed to save property')
       }
 
-      showToast({
-        type: 'success',
-        message: property ? 'Property updated successfully' : 'Property created successfully',
-      })
+      showToast(
+        property ? 'Property updated successfully' : 'Property created successfully',
+        { variant: 'success' }
+      )
 
       reset()
       onClose()
       onSuccess?.(result.data?.id || property?.id)
     } catch (error: any) {
-            showToast({
-        type: 'error',
-        message: error.message || 'Failed to save property',
-      })
+      showToast(
+        error.message || 'Failed to save property',
+        { variant: 'error' }
+      )
     } finally {
       setIsSubmitting(false)
     }
