@@ -37,8 +37,8 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  // Refresh session cookies
-  await supabase.auth.getSession()
+  // Use getUser() instead of getSession() for better security
+  await supabase.auth.getUser()
 
   return res
 }

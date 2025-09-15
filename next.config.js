@@ -95,6 +95,11 @@ const nextConfig = {
 
   // Bundle optimization
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Disable filesystem caching in dev if webpack cache warnings are problematic
+    if (dev && process.env.NEXT_DISABLE_WEBPACK_CACHE === 'true') {
+      config.cache = false
+    }
+
     // Strip console logs in production
     if (!dev && !isServer) {
       config.optimization.minimizer = config.optimization.minimizer || []

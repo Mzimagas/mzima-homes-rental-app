@@ -1,9 +1,9 @@
 import { cookies, headers } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
-export function getServerSupabase() {
-  const cookieStore = cookies()
-  const headerList = headers()
+export async function getServerSupabase() {
+  const cookieStore = await cookies()
+  const headerList = await headers()
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +30,7 @@ export function getServerSupabase() {
 
 /** Auth guard helper */
 export async function requireUser() {
-  const supabase = getServerSupabase()
+  const supabase = await getServerSupabase()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) {
     return { user: null as const, supabase, error: error ?? new Error('Unauthenticated') }

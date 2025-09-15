@@ -11,7 +11,8 @@ async function getUserId(req: NextRequest): Promise<string | null> {
 
   // For development, let's try a more direct approach
   // Check if we're in development and can use a test user
-  if (process.env.NODE_ENV === 'development') {
+  const allowDevBypass = process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true'
+  if (allowDevBypass) {
     console.log('🔍 getUserId: Development mode - checking for test user')
 
     try {

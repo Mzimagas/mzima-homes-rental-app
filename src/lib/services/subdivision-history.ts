@@ -43,6 +43,13 @@ export class SubdivisionHistoryService {
   static async getSubdivisionHistory(propertyId: string): Promise<SubdivisionHistoryEntry[]> {
     try {
       const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        throw new Error('No authentication available')
+      }
+
+      const {
         data: { session },
       } = await supabase.auth.getSession()
       if (!session?.access_token) {
@@ -82,6 +89,13 @@ export class SubdivisionHistoryService {
    */
   static async recordSubdivisionHistory(params: RecordSubdivisionHistoryParams): Promise<string> {
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        throw new Error('No authentication available')
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession()

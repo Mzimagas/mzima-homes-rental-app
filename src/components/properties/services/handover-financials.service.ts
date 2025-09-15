@@ -78,6 +78,14 @@ export class HandoverFinancialsService {
     url: string,
     options: import('../../../lib/types/fetch').FetchOptions = {}
   ) {
+    // Verify user authentication first
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      throw new Error('Authentication required')
+    }
+
     // Get the auth token and CSRF token
     const {
       data: { session },
