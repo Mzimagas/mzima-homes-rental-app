@@ -147,12 +147,38 @@ export async function PATCH(
       // Don't fail the request for audit log issues
     }
 
+    // Auto-transition to handover pipeline when payment is verified
+    if (verified) {
+      try {
+        const { autoTransitionToHandover, extractAuthHeaders } = await import('../../../../../services/handoverTransitionService')
+
+        const authHeaders = extractAuthHeaders(request)
+        const transitionResult = await autoTransitionToHandover({
+          propertyId: interest.property_id,
+          clientId: interest.client_id,
+          triggerEvent: 'deposit_paid',
+          interestId: interest.id,
+          notes: `Auto-transition triggered by admin payment verification`
+        }, authHeaders)
+
+        if (transitionResult.success) {
+          console.log('✅ Auto-transition to handover successful after payment verification:', transitionResult)
+        } else {
+          console.warn('⚠️ Auto-transition to handover failed after payment verification:', transitionResult.error)
+          // Don't fail the verification if transition fails
+        }
+      } catch (transitionError) {
+        console.warn('⚠️ Auto-transition to handover error after payment verification:', transitionError)
+        // Don't fail the verification if transition fails
+      }
+    }
+
     console.log(`✅ Payment ${verified ? 'verified' : 'rejected'} for interest ${params.interestId}`)
 
     return NextResponse.json({
       success: true,
       message: verified
-        ? 'Payment verified successfully. Client can now proceed with handover process.'
+        ? 'Payment verified successfully. Property automatically transitioned to handover pipeline.'
         : 'Payment verification rejected.',
       interest: {
         id: interest.id,

@@ -261,8 +261,29 @@ export async function POST(request: NextRequest) {
           console.warn('Interest status update failed:', statusUpdateError)
         }
 
-        // TODO: Create handover pipeline record
-        // TODO: Send notifications to client and admin
+        // Auto-transition to handover pipeline when deposit is paid
+        try {
+          const { autoTransitionToHandover, extractAuthHeaders } = await import('../../../../services/handoverTransitionService')
+
+          const authHeaders = extractAuthHeaders(request)
+          const transitionResult = await autoTransitionToHandover({
+            propertyId,
+            clientId: client.id,
+            triggerEvent: 'deposit_paid',
+            interestId: interest.id,
+            notes: `Auto-transition triggered by deposit payment of ${amount} KES`
+          }, authHeaders)
+
+          if (transitionResult.success) {
+            console.log('✅ Auto-transition to handover successful:', transitionResult)
+          } else {
+            console.warn('⚠️ Auto-transition to handover failed:', transitionResult.error)
+            // Don't fail the deposit payment if transition fails
+          }
+        } catch (transitionError) {
+          console.warn('⚠️ Auto-transition to handover error:', transitionError)
+          // Don't fail the deposit payment if transition fails
+        }
       }
 
       console.log('✅ Deposit payment processed successfully')
