@@ -20,8 +20,7 @@ export const propertySchema = z
     lng: z.number().gte(-180).lte(180).optional(),
     notes: z.string().max(1000).optional().or(z.literal('')),
     marketing_description: z.string().max(2000).optional().or(z.literal('')),
-    default_billing_day: z.number().int().min(1).max(31).optional(),
-    default_align_billing_to_start: z.boolean().default(true),
+    registered_title_owner: z.string().max(500).optional().or(z.literal('')),
 
   })
   .refine(

@@ -293,6 +293,8 @@ export interface PropertyWithLifecycle extends Property {
   total_area_sqm?: number
   total_area_acres?: number
   purchase_price_agreement_kes?: number
+  registered_title_owner?: string
+  marketing_description?: string
 
   // Property acquisition financial data
   acquisition_financials?: PropertyAcquisitionFinancials

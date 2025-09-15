@@ -90,8 +90,7 @@ export async function GET(req: NextRequest) {
         lng,
         notes,
         marketing_description,
-        default_billing_day,
-        default_align_billing_to_start,
+        registered_title_owner,
         created_at,
         updated_at
       `
@@ -156,8 +155,7 @@ export const POST = compose(
         lng: parsed.data.lng,
         notes: parsed.data.notes,
         marketing_description: parsed.data.marketing_description,
-        default_billing_day: parsed.data.default_billing_day,
-        default_align_billing_to_start: parsed.data.default_align_billing_to_start,
+        registered_title_owner: parsed.data.registered_title_owner,
         landlord_id: userId, // Set the creator as the landlord
         property_source: 'DIRECT_ADDITION',
         lifecycle_status: 'ACTIVE',

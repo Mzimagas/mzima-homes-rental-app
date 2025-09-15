@@ -25,7 +25,7 @@ interface PropertySearchProps {
 
 export default function PropertySearch({
   onSearchChange,
-  placeholder = 'Search properties by name, address, type, or notes...',
+  placeholder = 'Search properties by name, address, type, notes, or title owner...',
   resultsCount,
   totalCount,
   className = '',

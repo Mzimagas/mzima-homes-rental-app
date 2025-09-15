@@ -53,13 +53,11 @@ export default function PropertyForm({
           lng: property.lng || undefined,
           notes: property.notes || '',
           marketing_description: property.marketing_description || '',
-          default_billing_day: property.default_billing_day || undefined,
-          default_align_billing_to_start: property.default_align_billing_to_start ?? true,
+          registered_title_owner: property.registered_title_owner || '',
 
         }
       : {
           property_type: 'HOME',
-          default_align_billing_to_start: true,
 
         },
   })
@@ -77,14 +75,12 @@ export default function PropertyForm({
           lat: property.lat || undefined,
           lng: property.lng || undefined,
           notes: property.notes || '',
-          default_billing_day: property.default_billing_day || undefined,
-          default_align_billing_to_start: property.default_align_billing_to_start ?? true,
+          registered_title_owner: property.registered_title_owner || '',
 
         })
       } else {
         reset({
           property_type: 'HOME',
-          default_align_billing_to_start: true,
 
         })
       }
@@ -250,55 +246,30 @@ export default function PropertyForm({
             </div>
           </div>
 
-          {/* Billing Configuration Section */}
+          {/* Legal Information Section */}
           <div className="space-y-6">
             <div className="border-b border-gray-200 pb-4">
-              <h3 className="text-lg font-medium text-gray-900">Billing Configuration</h3>
-              <p className="text-sm text-gray-600 mt-1">Set default billing preferences for this property</p>
+              <h3 className="text-lg font-medium text-gray-900">Legal Information</h3>
+              <p className="text-sm text-gray-600 mt-1">Property ownership and legal details</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                name="default_billing_day"
-                label="Default Billing Day (1-31)"
-                error={errors.default_billing_day?.message}
-              >
-                {({ id }) => (
-                  <TextField
+            {/* Registered Title Owner */}
+            <FormField name="registered_title_owner" label="Registered Title Owner(s)" error={errors.registered_title_owner?.message}>
+              {({ id }) => (
+                <div className="space-y-2">
+                  <textarea
                     id={id}
-                    {...register('default_billing_day', { valueAsNumber: true })}
-                    type="number"
-                    min="1"
-                    max="31"
-                    placeholder="e.g., 1 for 1st of month"
-                    className="w-full"
+                    {...register('registered_title_owner')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    rows={3}
+                    placeholder="Enter the name(s) of the registered title owner(s) as they appear on the title deed..."
                   />
-                )}
-              </FormField>
-
-              <div className="space-y-2">
-                <FormField name="default_align_billing_to_start" label="Billing Alignment">
-                  {({ id }) => (
-                    <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <input
-                        id={id}
-                        type="checkbox"
-                        {...register('default_align_billing_to_start')}
-                        className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <div>
-                        <label htmlFor={id} className="text-sm font-medium text-gray-700">
-                          Align billing to lease start date
-                        </label>
-                        <p className="text-xs text-gray-600 mt-1">
-                          When enabled, billing will start from the lease start date regardless of the billing day
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </FormField>
-              </div>
-            </div>
+                  <p className="text-xs text-gray-500">
+                    Enter the full legal name(s) of the property owner(s) as registered on the title deed. For multiple owners, separate names with commas.
+                  </p>
+                </div>
+              )}
+            </FormField>
           </div>
 
 

@@ -387,7 +387,8 @@ export function filterBySearchTerm(
       (property.physical_address?.toLowerCase().includes(lower) ?? false) ||
       (property.property_type?.toLowerCase().includes(lower) ?? false) ||
       (property.notes?.toLowerCase().includes(lower) ?? false) ||
-      (property.acquisition_notes?.toLowerCase().includes(lower) ?? false)
+      (property.acquisition_notes?.toLowerCase().includes(lower) ?? false) ||
+      (property.registered_title_owner?.toLowerCase().includes(lower) ?? false)
     )
   })
 }

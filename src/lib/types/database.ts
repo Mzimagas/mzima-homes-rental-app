@@ -38,8 +38,8 @@ export interface Property {
   lat?: number | null
   lng?: number | null
   notes?: string | null
-  default_billing_day?: number | null
-  default_align_billing_to_start?: boolean
+  marketing_description?: string | null
+  registered_title_owner?: string | null
   created_at?: string
 }
 

@@ -95,12 +95,11 @@ export const PATCH = compose(
         lng: parsed.data.lng,
         notes: parsed.data.notes,
         marketing_description: parsed.data.marketing_description,
-        default_billing_day: parsed.data.default_billing_day,
-        default_align_billing_to_start: parsed.data.default_align_billing_to_start,
+        registered_title_owner: parsed.data.registered_title_owner,
         updated_at: new Date().toISOString(),
       })
       .eq('id', propertyId)
-      .select('id, name, physical_address, property_type, lat, lng, notes, marketing_description, default_billing_day, default_align_billing_to_start, updated_at')
+      .select('id, name, physical_address, property_type, lat, lng, notes, marketing_description, registered_title_owner, updated_at')
       .single()
 
     if (updateError) {

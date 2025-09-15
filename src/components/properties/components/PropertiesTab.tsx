@@ -225,7 +225,7 @@ export default function PropertiesTab({
         <div ref={searchRef}>
           <PropertySearch
             onSearchChange={handleSearchTerm}
-            placeholder="Search properties by name, address, type, or notes..."
+            placeholder="Search properties by name, address, type, notes, or title owner..."
             resultsCount={filteredCount}
             totalCount={totalCount}
             showFilterToggle={true}

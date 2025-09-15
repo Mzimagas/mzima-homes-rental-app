@@ -103,7 +103,7 @@ export default function UnitAdditionCard({
         <div className="mb-6">
           <PropertySearch
             onSearchChange={setSearchTerm}
-            placeholder="Search properties by name, address, type, or notes..."
+            placeholder="Search properties by name, address, type, notes, or title owner..."
             resultsCount={filteredProperties.length}
             totalCount={properties.length}
             compact={true}
