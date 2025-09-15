@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
         handover_price_agreement_kes,
         purchase_price_agreement_kes,
         notes,
+        marketing_description,
         total_area_sqm,
         total_area_acres,
         lat,
@@ -98,7 +99,7 @@ export async function GET(req: NextRequest) {
             property_type: property.property_type,
             asking_price_kes:
               property.handover_price_agreement_kes || property.purchase_price_agreement_kes || property.sale_price_kes,
-            description: property.notes,
+            description: property.marketing_description || property.notes,
             images: imageUrls,
             main_image: mainImage,
             property_type_display: formatPropertyType(property.property_type),
@@ -124,7 +125,7 @@ export async function GET(req: NextRequest) {
             property_type: property.property_type,
             asking_price_kes:
               property.handover_price_agreement_kes || property.purchase_price_agreement_kes || property.sale_price_kes,
-            description: property.notes,
+            description: property.marketing_description || property.notes,
             images: [],
             main_image: null,
             property_type_display: formatPropertyType(property.property_type),

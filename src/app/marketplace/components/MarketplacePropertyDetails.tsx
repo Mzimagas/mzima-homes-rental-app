@@ -16,6 +16,7 @@ interface MarketplaceProperty {
   location?: string
   description?: string
   notes?: string
+  marketing_description?: string
   asking_price_kes?: number
   area_display?: string
   total_area_acres?: number
@@ -84,17 +85,17 @@ export default function MarketplacePropertyDetails({
   }
 
   const getPropertyDescription = () => {
-    // Prioritize notes field for marketing description, fallback to description
-    const marketingText = property.notes || property.description
-    
+    // Prioritize marketing_description field, then notes, then description
+    const marketingText = property.marketing_description || property.notes || property.description
+
     if (marketingText && marketingText.trim()) {
       return marketingText
     }
-    
-    // Generate a basic description from available data
+
+    // Generate a basic description from available data only if no admin content exists
     const type = property.property_type_display || property.property_type || 'Property'
     const location = property.location_display || property.location || 'Prime location'
-    
+
     return `Beautiful ${type.toLowerCase()} located in ${location}. This property offers excellent value and potential for the discerning buyer.`
   }
 
@@ -229,37 +230,50 @@ export default function MarketplacePropertyDetails({
 
             {/* Key Details */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Property Type:</span>
-                    <span className="font-medium">{property.property_type_display || property.property_type || 'N/A'}</span>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Details</h3>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <div className="space-y-4">
+                  {/* Property Type */}
+                  <div className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Property Type</span>
+                    <span className="text-gray-900 font-semibold">
+                      {property.property_type_display || property.property_type || 'N/A'}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Price:</span>
-                    <span className="font-bold text-blue-600">
+
+                  {/* Price */}
+                  <div className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Price</span>
+                    <span className="text-blue-600 font-bold text-lg">
                       {property.asking_price_kes ? formatCurrency(property.asking_price_kes) : 'Price on request'}
                     </span>
                   </div>
+
+                  {/* Total Area */}
                   {property.total_area_acres && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Area:</span>
-                      <span className="font-medium">{property.total_area_acres} acres</span>
+                    <div className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
+                      <span className="text-gray-600 font-medium">Total Area</span>
+                      <span className="text-gray-900 font-semibold">{property.total_area_acres} acres</span>
                     </div>
                   )}
-                </div>
-                <div className="space-y-3">
+
+                  {/* Address */}
                   {property.physical_address && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Address:</span>
-                      <span className="font-medium text-right">{property.physical_address}</span>
+                    <div className="flex items-start justify-between py-2 border-b border-gray-200 last:border-b-0">
+                      <span className="text-gray-600 font-medium">Address</span>
+                      <span className="text-gray-900 font-semibold text-right max-w-xs">
+                        {property.physical_address}
+                      </span>
                     </div>
                   )}
+
+                  {/* Interest Level */}
                   {typeof property.interest_count === 'number' && property.interest_count > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Interest Level:</span>
-                      <span className="font-medium">👥 {property.interest_count} interested</span>
+                    <div className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
+                      <span className="text-gray-600 font-medium">Interest Level</span>
+                      <span className="text-gray-900 font-semibold">
+                        👥 {property.interest_count} interested
+                      </span>
                     </div>
                   )}
                 </div>

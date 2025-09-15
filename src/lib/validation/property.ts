@@ -19,6 +19,7 @@ export const propertySchema = z
     lat: z.number().gte(-90).lte(90).optional(),
     lng: z.number().gte(-180).lte(180).optional(),
     notes: z.string().max(1000).optional().or(z.literal('')),
+    marketing_description: z.string().max(2000).optional().or(z.literal('')),
     default_billing_day: z.number().int().min(1).max(31).optional(),
     default_align_billing_to_start: z.boolean().default(true),
 

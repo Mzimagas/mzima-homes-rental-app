@@ -24,6 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         total_area_sqm,
         sale_price_kes,
         description,
+        marketing_description,
         bedrooms,
         bathrooms,
         parking_spaces,
@@ -91,8 +92,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       ...property,
       // Map physical_address to location for frontend compatibility
       location: property.physical_address,
-      // Use actual data only
-      description: property.description,
+      // Use actual data only - prioritize marketing_description
+      description: property.marketing_description || property.description,
       property_type: property.property_type,
       size_sqm: property.total_area_sqm,
       asking_price_kes: property.sale_price_kes || property.handover_price_agreement_kes,

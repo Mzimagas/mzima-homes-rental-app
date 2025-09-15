@@ -89,6 +89,7 @@ export async function GET(req: NextRequest) {
         lat,
         lng,
         notes,
+        marketing_description,
         default_billing_day,
         default_align_billing_to_start,
         created_at,
@@ -154,6 +155,7 @@ export const POST = compose(
         lat: parsed.data.lat,
         lng: parsed.data.lng,
         notes: parsed.data.notes,
+        marketing_description: parsed.data.marketing_description,
         default_billing_day: parsed.data.default_billing_day,
         default_align_billing_to_start: parsed.data.default_align_billing_to_start,
         landlord_id: userId, // Set the creator as the landlord

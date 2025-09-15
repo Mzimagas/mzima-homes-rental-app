@@ -52,6 +52,7 @@ export default function PropertyForm({
           lat: property.lat || undefined,
           lng: property.lng || undefined,
           notes: property.notes || '',
+          marketing_description: property.marketing_description || '',
           default_billing_day: property.default_billing_day || undefined,
           default_align_billing_to_start: property.default_align_billing_to_start ?? true,
 
@@ -94,7 +95,7 @@ export default function PropertyForm({
     try {
       setIsSubmitting(true)
 
-      const url = property ? `/api/properties/${property.id}` : '/api/properties'
+      const url = property ? `/api/properties/${property.id}/update` : '/api/properties'
       const method = property ? 'PATCH' : 'POST'
 
       const response = await fetch(url, {
@@ -306,19 +307,42 @@ export default function PropertyForm({
           <div className="space-y-6">
             <div className="border-b border-gray-200 pb-4">
               <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
-              <p className="text-sm text-gray-600 mt-1">Add any additional notes or details about this property</p>
+              <p className="text-sm text-gray-600 mt-1">Add property descriptions and internal notes</p>
             </div>
 
-            {/* Notes */}
-            <FormField name="notes" label="Notes" error={errors.notes?.message}>
+            {/* Marketing Description */}
+            <FormField name="marketing_description" label="Marketing Description" error={errors.marketing_description?.message}>
               {({ id }) => (
-                <textarea
-                  id={id}
-                  {...register('notes')}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  rows={4}
-                  placeholder="Enter any additional notes, special instructions, or important details about this property..."
-                />
+                <div className="space-y-2">
+                  <textarea
+                    id={id}
+                    {...register('marketing_description')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    rows={5}
+                    placeholder="Write a compelling description that highlights the property's unique features, advantages, and selling points. This will be displayed to potential buyers in the marketplace..."
+                  />
+                  <p className="text-xs text-gray-500">
+                    This description will be shown to clients in the marketplace. Focus on the property's unique features, location advantages, and investment potential.
+                  </p>
+                </div>
+              )}
+            </FormField>
+
+            {/* Internal Notes */}
+            <FormField name="notes" label="Internal Notes" error={errors.notes?.message}>
+              {({ id }) => (
+                <div className="space-y-2">
+                  <textarea
+                    id={id}
+                    {...register('notes')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    rows={3}
+                    placeholder="Internal notes, special instructions, or administrative details (not visible to clients)..."
+                  />
+                  <p className="text-xs text-gray-500">
+                    Internal notes for staff use only. These are not displayed to clients.
+                  </p>
+                </div>
               )}
             </FormField>
           </div>
