@@ -169,10 +169,12 @@ export default function HandoverPipelineManager({
       // Set properties awaiting start (these are properties ready to begin handover process)
       setPropertiesAwaitingStart(propertiesAwaitingStart || [])
 
+      // Prepare a combined list we will enhance and display
+      let combinedHandovers: any[] = handoverData || []
+
       // For IN_PROGRESS properties without pipeline records, create proper handover records from client data
       if (inProgressProperties && inProgressProperties.length > 0) {
         const existingHandoverPropertyIds = new Set(handoverData?.map((h) => h.property_id) || [])
-
 
         // Get missing properties that need handover records
         const missingProperties = inProgressProperties.filter((prop) => !existingHandoverPropertyIds.has(prop.id))
@@ -198,18 +200,22 @@ export default function HandoverPipelineManager({
               .single()
 
             const client = clientInterest?.clients
+            const hasAgreement = Boolean(clientInterest?.agreement_signed_at)
+            const hasDeposit = Boolean(clientInterest?.deposit_paid_at)
+
+            // Map progress signals to a numeric stage index (1-based):
+            // 1 = Initial Prep, 2 = Deposit, 3 = Agreement (heuristic mapping)
+            const currentStageNum = hasAgreement ? 3 : hasDeposit ? 2 : 1
 
             return {
               id: `temp-${prop.id}`,
               property_id: prop.id,
               property_name: prop.name,
               property_address: prop.physical_address || 'Address not available',
+              property_type: prop.property_type,
               handover_status: 'IN_PROGRESS',
-              current_stage: clientInterest?.agreement_signed_at ? 'Agreement Execution' :
-                           clientInterest?.deposit_paid_at ? 'Deposit Collection' :
-                           'Initial Handover Preparation',
-              overall_progress: clientInterest?.agreement_signed_at ? 60 :
-                              clientInterest?.deposit_paid_at ? 40 : 10,
+              current_stage: currentStageNum,
+              overall_progress: hasAgreement ? 60 : hasDeposit ? 40 : 10,
               buyer_name: client?.full_name || 'Client Name Loading...',
               buyer_contact: client?.phone || '',
               buyer_email: client?.email || '',
@@ -237,14 +243,11 @@ export default function HandoverPipelineManager({
           })
         )
 
-        const finalHandovers = [...(handoverData || []), ...missingHandovers]
-        setHandovers(finalHandovers)
-      } else {
-        setHandovers(handoverData || [])
+        combinedHandovers = [...(handoverData || []), ...missingHandovers]
       }
 
-      // Only use actual handover pipeline data (no synthetic records)
-      const allHandovers = handoverData || []
+      // Use the combined list (actual + synthesized for gaps)
+      const allHandovers = combinedHandovers
 
       // Get unique property IDs from all handover data
       const propertyIds = allHandovers
