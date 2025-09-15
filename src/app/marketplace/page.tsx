@@ -46,7 +46,9 @@ export default function MarketplacePage() {
   const router = useRouter()
   const { user } = useAuth()
   const [properties, setProperties] = useState<MarketplaceProperty[]>([])
-  const [interests, setInterests] = useState<{ [key: string]: { hasInterest: boolean; totalInterested?: number; othersInterested?: number } }>({})
+  const [interests, setInterests] = useState<{
+    [key: string]: { hasInterest: boolean; totalInterested?: number; othersInterested?: number }
+  }>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -120,7 +122,7 @@ export default function MarketplacePage() {
     }
 
     try {
-      const propertyIds = (propertiesToCheck || properties).map(p => p.id)
+      const propertyIds = (propertiesToCheck || properties).map((p) => p.id)
       if (propertyIds.length === 0) return
 
       const response = await fetch('/api/clients/interest-status', {
@@ -147,10 +149,12 @@ export default function MarketplacePage() {
       const data = await response.json()
 
       // Update interests state based on response
-      const newInterests: { [key: string]: { hasInterest: boolean; totalInterested?: number; othersInterested?: number } } = {}
+      const newInterests: {
+        [key: string]: { hasInterest: boolean; totalInterested?: number; othersInterested?: number }
+      } = {}
       if (data.interests) {
         // Handle the keyed response format from the API
-        Object.keys(data.interests).forEach(propertyId => {
+        Object.keys(data.interests).forEach((propertyId) => {
           const it = data.interests[propertyId]
           newInterests[propertyId] = {
             hasInterest: !!it.hasInterest,
@@ -161,7 +165,11 @@ export default function MarketplacePage() {
       } else if (Array.isArray(data)) {
         // Handle array format (fallback)
         data.forEach((item: any) => {
-          newInterests[item.property_id] = { hasInterest: !!item.has_interest, totalInterested: 0, othersInterested: 0 }
+          newInterests[item.property_id] = {
+            hasInterest: !!item.has_interest,
+            totalInterested: 0,
+            othersInterested: 0,
+          }
         })
       }
 
@@ -185,11 +193,16 @@ export default function MarketplacePage() {
       if (priceRange === 'all') return true
       const price = property.asking_price_kes || 0
       switch (priceRange) {
-        case 'under-5m': return price < 5000000
-        case '5m-10m': return price >= 5000000 && price < 10000000
-        case '10m-20m': return price >= 10000000 && price < 20000000
-        case 'over-20m': return price >= 20000000
-        default: return true
+        case 'under-5m':
+          return price < 5000000
+        case '5m-10m':
+          return price >= 5000000 && price < 10000000
+        case '10m-20m':
+          return price >= 10000000 && price < 20000000
+        case 'over-20m':
+          return price >= 20000000
+        default:
+          return true
       }
     })()
 
@@ -202,8 +215,8 @@ export default function MarketplacePage() {
       userId: user?.id,
       userType: typeof user,
       userKeys: user ? Object.keys(user) : 'null',
-      hasId: !!(user?.id),
-      currentInterestState: interests[propertyId]
+      hasId: !!user?.id,
+      currentInterestState: interests[propertyId],
     })
 
     // Check if user already has interest before making API call
@@ -217,7 +230,9 @@ export default function MarketplacePage() {
     if (!user || !user.id) {
       console.log('User not authenticated, redirecting to login')
       // Redirect to login with property context
-      router.push(`/auth/login?redirectTo=/marketplace&property=${propertyId}&action=express-interest`)
+      router.push(
+        `/auth/login?redirectTo=/marketplace&property=${propertyId}&action=express-interest`
+      )
       return
     }
 
@@ -246,7 +261,7 @@ export default function MarketplacePage() {
       console.log('API Response:', {
         status: response.status,
         statusText: response.statusText,
-        data: responseData
+        data: responseData,
       })
 
       if (!response.ok) {
@@ -255,7 +270,7 @@ export default function MarketplacePage() {
           status: response.status,
           statusText: response.statusText,
           error: responseData?.error || 'Unknown error',
-          success: responseData?.success || false
+          success: responseData?.success || false,
         }
         console.error('API Error Response:', JSON.stringify(errorDetails))
 
@@ -266,14 +281,19 @@ export default function MarketplacePage() {
         }
 
         // Show user-friendly error message
-        const errorMessage = responseData?.error || `HTTP ${response.status}: ${response.statusText}`
+        const errorMessage =
+          responseData?.error || `HTTP ${response.status}: ${response.statusText}`
         if (response.status === 400 && /already expressed interest/i.test(errorMessage)) {
           // Soft-handle duplicate interest: inform and optimistically toggle UI
           console.log('🔄 Duplicate interest detected, updating UI state')
           showToast('Already in your properties', { variant: 'info' })
           setInterests((prev) => ({
             ...prev,
-            [propertyId]: { hasInterest: true, totalInterested: (prev[propertyId]?.totalInterested ?? 1), othersInterested: Math.max(0, (prev[propertyId]?.totalInterested ?? 1) - 1) }
+            [propertyId]: {
+              hasInterest: true,
+              totalInterested: prev[propertyId]?.totalInterested ?? 1,
+              othersInterested: Math.max(0, (prev[propertyId]?.totalInterested ?? 1) - 1),
+            },
           }))
           // Refresh interests to get accurate state from server
           await loadInterests()
@@ -291,11 +311,15 @@ export default function MarketplacePage() {
         [propertyId]: {
           hasInterest: true,
           totalInterested: (prev[propertyId]?.totalInterested ?? 0) + 1,
-          othersInterested: Math.max(0, (prev[propertyId]?.totalInterested ?? 0))
-        }
+          othersInterested: Math.max(0, prev[propertyId]?.totalInterested ?? 0),
+        },
       }))
       // Also bump the count shown on the card immediately
-      setProperties((prev) => prev.map(p => p.id === propertyId ? { ...p, interest_count: (p.interest_count ?? 0) + 1 } : p))
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId ? { ...p, interest_count: (p.interest_count ?? 0) + 1 } : p
+        )
+      )
 
       // Refresh interests to get accurate state from server
       await loadInterests()
@@ -306,7 +330,6 @@ export default function MarketplacePage() {
 
       // Don't redirect automatically - let user stay on marketplace
       // They can navigate to client portal if they want
-
     } catch (error) {
       console.error('Error expressing interest:', error)
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to express interest'}`)
@@ -333,7 +356,13 @@ export default function MarketplacePage() {
       }
 
       // Optimistically decrement the public count on the card
-      setProperties((prev) => prev.map(p => p.id === propertyId ? { ...p, interest_count: Math.max(0, (p.interest_count ?? 0) - 1) } : p))
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId
+            ? { ...p, interest_count: Math.max(0, (p.interest_count ?? 0) - 1) }
+            : p
+        )
+      )
       // Refresh the interests state to update button states
       await loadInterests()
       console.log('Interest removed successfully!')
@@ -370,7 +399,9 @@ export default function MarketplacePage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Mzima Homes Marketplace</h1>
-              <p className="text-gray-600 mt-1">Properties ready for handover • Discover your dream property</p>
+              <p className="text-gray-600 mt-1">
+                Properties ready for handover • Discover your dream property
+              </p>
             </div>
             <div className="flex items-center space-x-4">
               {user ? (
@@ -404,10 +435,10 @@ export default function MarketplacePage() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 md:py-8">
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6 md:mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search Properties
@@ -417,17 +448,15 @@ export default function MarketplacePage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by name, location..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Property Type
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
               >
                 <option value="all">All Types</option>
                 <option value="RESIDENTIAL">Residential</option>
@@ -437,13 +466,11 @@ export default function MarketplacePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price Range
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
               <select
                 value={priceRange}
                 onChange={(e) => setPriceRange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
               >
                 <option value="all">All Prices</option>
                 <option value="under-5m">Under KES 5M</option>
@@ -509,26 +536,27 @@ function PropertyCard({
   onExpressInterest,
   onRemoveInterest,
   hasInterest,
-  isAuthenticated
+  isAuthenticated,
 }: PropertyCardProps) {
   const [imageError, setImageError] = useState(false)
   const hasImage = property.main_image || (property.images && property.images.length > 0)
 
   // Determine if property is sold (has deposit or marked as sold)
-  const isSold = property.sale_status === 'SOLD' ||
-                 property.sale_status === 'UNDER_CONTRACT' ||
-                 property.deposit_received ||
-                 property.handover_status === 'COMPLETED'
+  const isSold =
+    property.sale_status === 'SOLD' ||
+    property.sale_status === 'UNDER_CONTRACT' ||
+    property.deposit_received ||
+    property.handover_status === 'COMPLETED'
 
   // Determine if property is reserved
   const isReserved = property.reservation_status === 'RESERVED'
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
+    <div className="bg-gradient-to-r from-white via-blue-50/50 to-blue-100/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-blue-200 hover:border-blue-300">
       {/* Horizontal Layout Container */}
       <div className="flex flex-col lg:flex-row">
         {/* Property Image Section */}
-        <div className="relative lg:w-80 h-64 lg:h-auto bg-gray-200 flex items-center justify-center">
+        <div className="relative lg:w-72 h-48 lg:h-auto bg-gray-200 flex items-center justify-center">
           {hasImage && !imageError ? (
             <Image
               src={property.main_image || property.images?.[0] || ''}
@@ -550,48 +578,48 @@ function PropertyCard({
               {property.property_type_display || property.property_type || 'Property'}
             </span>
             {property.is_new && (
-              <span className="ml-2 bg-yellow-400 text-white px-2 py-1 rounded text-xs font-semibold">NEW</span>
+              <span className="ml-2 bg-yellow-400 text-white px-2 py-1 rounded text-xs font-semibold">
+                NEW
+              </span>
             )}
           </div>
 
-          {/* Status Badges */}
-          <div className="absolute top-2 left-2 space-y-1">
-            {/* Reservation Status Badge */}
-            {isReserved && (
-              <div>
-                <span className="px-2 py-1 rounded text-sm font-medium bg-orange-600 text-white">
-                  Reserved
-                </span>
-              </div>
-            )}
-
-            {/* Handover Status Badge */}
-            {property.handover_status_display && (
-              <div>
-                <span className={`px-2 py-1 rounded text-sm font-medium ${
+          {/* Status Badge - Show only status that won't be shown in action buttons */}
+          <div className="absolute top-2 left-2">
+            {/* Show handover status or available - Reserved/Sold will be shown in action buttons */}
+            {!isSold &&
+            !isReserved &&
+            property.handover_status_display &&
+            property.handover_status !== 'NOT_STARTED' ? (
+              <span
+                className={`px-2 py-1 rounded text-sm font-medium ${
                   property.handover_status === 'COMPLETED'
                     ? 'bg-green-600 text-white'
                     : property.handover_status === 'IN_PROGRESS'
-                    ? 'bg-orange-600 text-white'
-                    : 'bg-gray-600 text-white'
-                }`}>
-                  {property.handover_status_display}
-                </span>
-              </div>
-            )}
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-600 text-white'
+                }`}
+              >
+                {property.handover_status_display}
+              </span>
+            ) : !isSold && !isReserved ? (
+              <span className="px-2 py-1 rounded text-sm font-medium bg-green-600 text-white">
+                Available Now
+              </span>
+            ) : null}
           </div>
         </div>
 
         {/* Property Details Section */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-4">
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="mb-4">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <div className="mb-3">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
                 {property.name || 'Unnamed Property'}
               </h3>
 
-              <div className="flex items-center justify-between text-gray-600 text-sm mb-3">
+              <div className="flex items-center justify-between text-gray-600 text-sm mb-2">
                 <span className="flex items-center">
                   <span className="mr-1">📍</span>
                   {property.location_display || property.location || 'Location not specified'}
@@ -601,7 +629,7 @@ function PropertyCard({
             </div>
 
             {/* Property Features */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-3">
               {property.area_display && (
                 <span className="flex items-center">
                   <span className="mr-1">📐</span>
@@ -624,27 +652,25 @@ function PropertyCard({
 
             {/* Description */}
             {property.description && (
-              <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                {property.description}
-              </p>
+              <p className="text-gray-600 text-sm mb-3 line-clamp-2">{property.description}</p>
             )}
 
             {/* Price and Interest Section */}
             <div className="flex-1 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-2xl font-bold text-green-600">
-                    {property.asking_price_kes ? formatCurrency(property.asking_price_kes) : 'Price on request'}
+                  <p className="text-xl font-bold text-blue-600">
+                    {property.asking_price_kes
+                      ? formatCurrency(property.asking_price_kes)
+                      : 'Price on request'}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs text-gray-500">
                     {property.property_type_display || 'Property for sale'}
                   </p>
                 </div>
                 <div className="text-sm text-gray-600">
                   {typeof property.interest_count === 'number' && property.interest_count > 0 ? (
-                    <span title="Total people interested">
-                      👥 {property.interest_count}
-                    </span>
+                    <span title="Total people interested">👥 {property.interest_count}</span>
                   ) : (
                     <span className="text-gray-400">Be the first to express interest</span>
                   )}
@@ -652,65 +678,74 @@ function PropertyCard({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex space-x-3">
-          <Link
-            href={`/marketplace/property/${property.id}`}
-            className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-center hover:bg-gray-200 transition-colors"
-          >
-            View Details
-          </Link>
-
-          {isSold ? (
-            <button
-              disabled
-              className="flex-1 bg-gray-400 text-white px-4 py-2 rounded-md cursor-not-allowed"
-            >
-              Sold
-            </button>
-          ) : isReserved ? (
-            <button
-              disabled
-              className="flex-1 bg-orange-500 text-white px-4 py-2 rounded-md cursor-not-allowed"
-            >
-              Reserved
-            </button>
-          ) : isAuthenticated ? (
-            hasInterest ? (
-              <div className="flex-1 flex space-x-1">
+              <div className="flex space-x-2">
                 <Link
-                  href="/client-portal?tab=properties"
-                  className="flex-1 bg-green-600 text-white px-3 py-2 rounded-md text-center hover:bg-green-700 transition-colors text-sm"
+                  href={`/marketplace/property/${property.id}`}
+                  className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-md text-center hover:bg-gray-200 transition-colors min-h-[44px] flex items-center justify-center"
                 >
-                  View Property
+                  View Details
                 </Link>
-                <button
-                  onClick={() => onRemoveInterest(property.id)}
-                  className="px-3 py-2 inline-flex items-center justify-center rounded-md border border-red-300 text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-400 transition-colors"
-                  title="Remove from My Properties"
-                  aria-label="Remove from My Properties"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                  <span className="ml-2 hidden sm:inline">Remove</span>
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => onExpressInterest(property.id)}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Express Interest
-              </button>
-            )
-          ) : (
-            <button
-              onClick={() => onExpressInterest(property.id)}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Express Interest
-            </button>
-          )}
+
+                {isSold ? (
+                  <button
+                    disabled
+                    className="flex-1 bg-gray-400 text-white px-4 py-3 rounded-md cursor-not-allowed min-h-[44px] flex items-center justify-center"
+                  >
+                    Sold
+                  </button>
+                ) : isReserved ? (
+                  <button
+                    disabled
+                    className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-md cursor-not-allowed min-h-[44px] flex items-center justify-center"
+                  >
+                    Reserved
+                  </button>
+                ) : isAuthenticated ? (
+                  hasInterest ? (
+                    <div className="flex-1 flex space-x-1">
+                      <Link
+                        href="/client-portal?tab=properties"
+                        className="flex-1 bg-blue-600 text-white px-3 py-3 rounded-md text-center hover:bg-blue-700 transition-colors text-sm min-h-[44px] flex items-center justify-center"
+                      >
+                        View Property
+                      </Link>
+                      <button
+                        onClick={() => onRemoveInterest(property.id)}
+                        className="px-3 py-3 inline-flex items-center justify-center rounded-md border border-red-300 text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-400 transition-colors min-h-[44px] min-w-[44px]"
+                        title="Remove from My Properties"
+                        aria-label="Remove from My Properties"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="h-4 w-4"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span className="ml-2 hidden sm:inline">Remove</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => onExpressInterest(property.id)}
+                      className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition-colors min-h-[44px] flex items-center justify-center"
+                    >
+                      Express Interest
+                    </button>
+                  )
+                ) : (
+                  <button
+                    onClick={() => onExpressInterest(property.id)}
+                    className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition-colors min-h-[44px] flex items-center justify-center"
+                  >
+                    Express Interest
+                  </button>
+                )}
               </div>
             </div>
           </div>

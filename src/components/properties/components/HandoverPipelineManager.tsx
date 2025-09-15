@@ -149,7 +149,10 @@ export default function HandoverPipelineManager({
         .order('name')
 
       if (propertiesError) {
-        console.warn('Error loading properties with AWAITING_START handover status:', propertiesError)
+        console.warn(
+          'Error loading properties with AWAITING_START handover status:',
+          propertiesError
+        )
       }
 
       if (inProgressError) {
@@ -161,10 +164,10 @@ export default function HandoverPipelineManager({
 
       // For IN_PROGRESS properties without pipeline records, create mock handover records
       if (inProgressProperties && inProgressProperties.length > 0) {
-        const existingHandoverPropertyIds = new Set(handoverData?.map(h => h.property_id) || [])
+        const existingHandoverPropertyIds = new Set(handoverData?.map((h) => h.property_id) || [])
         const missingHandovers = inProgressProperties
-          .filter(prop => !existingHandoverPropertyIds.has(prop.id))
-          .map(prop => ({
+          .filter((prop) => !existingHandoverPropertyIds.has(prop.id))
+          .map((prop) => ({
             id: `temp-${prop.id}`,
             property_id: prop.id,
             property_name: prop.name,
@@ -176,7 +179,11 @@ export default function HandoverPipelineManager({
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             pipeline_stages: [],
-            asking_price_kes: prop.asking_price_kes || 0,
+            asking_price_kes:
+              prop.handover_price_agreement_kes ||
+              prop.purchase_price_agreement_kes ||
+              prop.sale_price_kes ||
+              0,
             negotiated_price_kes: null,
             expected_profit_kes: null,
             expected_profit_percentage: null,
@@ -184,7 +191,7 @@ export default function HandoverPipelineManager({
             risk_assessment: null,
             property_condition_notes: null,
             actual_completion_date: null,
-            client_id: null
+            client_id: null,
           }))
 
         setHandovers([...(handoverData || []), ...missingHandovers])
@@ -264,7 +271,7 @@ export default function HandoverPipelineManager({
       setPropertiesAwaitingStart(propertiesAwaitingStart || [])
 
       // Create mock handover records for IN_PROGRESS properties when pipeline table doesn't exist
-      const mockHandovers = (inProgressProperties || []).map(prop => ({
+      const mockHandovers = (inProgressProperties || []).map((prop) => ({
         id: `temp-${prop.id}`,
         property_id: prop.id,
         property_name: prop.name,
@@ -276,7 +283,11 @@ export default function HandoverPipelineManager({
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         pipeline_stages: [],
-        asking_price_kes: prop.asking_price_kes || 0,
+        asking_price_kes:
+          prop.handover_price_agreement_kes ||
+          prop.purchase_price_agreement_kes ||
+          prop.sale_price_kes ||
+          0,
         negotiated_price_kes: null,
         expected_profit_kes: null,
         expected_profit_percentage: null,
@@ -284,7 +295,7 @@ export default function HandoverPipelineManager({
         risk_assessment: null,
         property_condition_notes: null,
         actual_completion_date: null,
-        client_id: null
+        client_id: null,
       }))
 
       setHandovers(mockHandovers)
@@ -332,9 +343,7 @@ export default function HandoverPipelineManager({
         expected_profit_percentage: data.expectedProfitPercentage || null,
       }
 
-      const { error } = await supabase
-        .from('handover_pipeline')
-        .insert([handoverData])
+      const { error } = await supabase.from('handover_pipeline').insert([handoverData])
 
       if (error) throw error
 
@@ -651,9 +660,12 @@ export default function HandoverPipelineManager({
       {filteredPropertiesAwaitingStart.length > 0 && (
         <div className="mb-8">
           <div className="mb-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Properties Ready to Start Handover</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Properties Ready to Start Handover
+            </h3>
             <p className="text-sm text-gray-600">
-              These properties have been marked for handover but need details captured before pipeline stages begin.
+              These properties have been marked for handover but need details captured before
+              pipeline stages begin.
             </p>
           </div>
           <div className="grid gap-4">
@@ -707,11 +719,7 @@ export default function HandoverPipelineManager({
                 <PropertyCardFooter>
                   <div className="flex space-x-2">
                     {property.reservation_status === 'RESERVED' ? (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        disabled
-                      >
+                      <Button variant="secondary" size="sm" disabled>
                         🔒 Reserved
                       </Button>
                     ) : (
@@ -881,7 +889,7 @@ export default function HandoverPipelineManager({
             id: editingHandover.property_id,
             name: editingHandover.property_name,
             physical_address: editingHandover.property_address,
-            asking_price_kes: editingHandover.asking_price_kes
+            asking_price_kes: editingHandover.asking_price_kes,
           }}
           handover={editingHandover}
           mode="edit"
@@ -923,7 +931,7 @@ export default function HandoverPipelineManager({
           property={{
             id: selectedPropertyForStart.id,
             name: selectedPropertyForStart.name,
-            physical_address: selectedPropertyForStart.physical_address || undefined
+            physical_address: selectedPropertyForStart.physical_address || undefined,
           }}
           mode="start"
           context="admin"

@@ -85,7 +85,6 @@ const PROPERTY_TYPE_OPTIONS = [
 
 const PRESET_FILTERS = [
   { key: 'active', label: 'Active Properties', icon: '🟢' },
-  { key: 'purchase', label: 'Purchase Pipeline', icon: '🏢' },
   { key: 'subdivision', label: 'Subdivision', icon: '📐' },
   { key: 'handover', label: 'Handover', icon: '🤝' },
   { key: 'completed', label: 'Completed', icon: '✅' },
@@ -212,7 +211,9 @@ export default function PropertyFilterPanel({
               {PRESET_FILTERS.map((preset) => (
                 <button
                   key={preset.key}
-                  onClick={() => onApplyPreset(preset.key)}
+                  onClick={() =>
+                    onApplyPreset(preset.key as 'active' | 'subdivision' | 'handover' | 'completed')
+                  }
                   className="flex items-center space-x-2 px-3 py-2 text-sm border border-gray-200 rounded-md hover:bg-gray-50 transition-colors touch-manipulation min-h-[44px]"
                 >
                   <span>{preset.icon}</span>
