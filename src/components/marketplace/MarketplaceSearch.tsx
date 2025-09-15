@@ -144,14 +144,14 @@ export default function MarketplaceSearch({
             🌱 100 x 100
           </button>
           <button
-            onClick={() => onSizeFilterChange('half-acre')}
+            onClick={() => onSizeFilterChange('above-half-acre')}
             className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-              selectedSizeFilter === 'half-acre'
+              selectedSizeFilter === 'above-half-acre'
                 ? 'text-purple-700 bg-purple-50 border border-purple-200'
                 : 'text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100'
             }`}
           >
-            🏢 Half Acre
+            🏢 Above Half Acre
           </button>
         </div>
 

@@ -194,8 +194,8 @@ export default function MarketplacePage() {
     // 100 x 100 feet ≈ 0.23 acres (allowing some tolerance)
     if (acres >= 0.18 && acres <= 0.30) return '100x100'
 
-    // Half acre and above (0.5+ acres)
-    if (acres >= 0.45) return 'half-acre'
+    // Above half acre (greater than 0.5 acres)
+    if (acres > 0.5) return 'above-half-acre'
 
     return 'other'
   }
