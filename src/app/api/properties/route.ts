@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { compose, withAuth, withCsrf, withRateLimit } from '../../../lib/api/middleware'
 import { errors } from '../../../lib/api/errors'
 import { createClient } from '@supabase/supabase-js'
-import { createServerSupabaseClient } from '../../../lib/supabase-server'
+import { getServerSupabase, getServiceSupabase } from '../../../lib/supabase-server'
 import { propertySchema } from '../../../lib/validation/property'
 import { memoryCache, CacheKeys, CacheTTL } from '../../../lib/cache/memory-cache'
 
@@ -12,10 +12,10 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 async function getUserId(req: NextRequest): Promise<string | null> {
   try {
     // Primary: cookie-based session
-    const supabase = createServerSupabaseClient()
+    const supabase = await getServerSupabase()
     const {
       data: { user },
-    } = await (await supabase).auth.getUser()
+    } = await supabase.auth.getUser()
     if (user) return user.id
   } catch {}
 
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const admin = createClient(supabaseUrl, serviceKey)
+    const admin = getServiceSupabase()
 
     // Get user's accessible properties
     const { data: accessibleProperties, error: accessError } = await admin.rpc(
@@ -142,7 +142,7 @@ export const POST = compose(
     const userId = await getUserId(req)
     if (!userId) return errors.unauthorized()
 
-    const admin = createClient(supabaseUrl, serviceKey)
+    const admin = getServiceSupabase()
 
     // Create the property
     const { data: property, error: propertyError } = await admin

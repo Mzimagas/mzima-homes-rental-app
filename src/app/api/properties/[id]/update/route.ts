@@ -1,29 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { compose, withAuth, withCsrf, withRateLimit } from '../../../../../lib/api/middleware'
 import { errors } from '../../../../../lib/api/errors'
-import { createClient } from '@supabase/supabase-js'
+import { getServerSupabase, getServiceSupabase } from '../../../../../lib/supabase-server'
 import { propertySchema } from '../../../../../lib/validation/property'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-async function getUserId(req: NextRequest): Promise<string | null> {
-  try {
-    const authHeader = req.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) return null
-
-    const token = authHeader.substring(7)
-    const admin = createClient(supabaseUrl, serviceKey)
-    const { data: { user } } = await admin.auth.getUser(token)
-    return user?.id || null
-  } catch {
-    return null
-  }
-}
 
 async function checkPropertyAccess(userId: string, propertyId: string): Promise<boolean> {
   try {
-    const admin = createClient(supabaseUrl, serviceKey)
+    const admin = getServiceSupabase()
     const { data } = await admin
       .from('property_users')
       .select('role, status')
@@ -45,8 +28,19 @@ export const PATCH = compose(
   withAuth
 )(async (req: NextRequest) => {
   try {
-    const userId = await getUserId(req)
-    if (!userId) return errors.unauthorized()
+    const supabase = await getServerSupabase()
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+
+    if (error) {
+      console.error('auth.getUser error:', error)
+    }
+
+    if (!user) {
+      return errors.unauthorized()
+    }
 
     // Extract property id from path
     const segments = req.nextUrl.pathname.split('/').filter(Boolean)
@@ -58,7 +52,7 @@ export const PATCH = compose(
     }
 
     // Check property access
-    const hasAccess = await checkPropertyAccess(userId, propertyId)
+    const hasAccess = await checkPropertyAccess(user.id, propertyId)
     if (!hasAccess) {
       return errors.forbidden('Access denied to this property')
     }
@@ -71,7 +65,7 @@ export const PATCH = compose(
       return errors.validation(parsed.error.flatten())
     }
 
-    const admin = createClient(supabaseUrl, serviceKey)
+    const admin = getServiceSupabase()
 
     // Verify property exists
     const { data: existingProperty, error: fetchError } = await admin

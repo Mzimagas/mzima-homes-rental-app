@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { errors } from './errors'
 import { getRatelimit } from '../upstash'
-import { createServerSupabaseClient } from '../supabase-server'
+import { getServerSupabase } from '../supabase-server'
 import { createClient } from '@supabase/supabase-js'
 
 export type Handler = (req: NextRequest) => Promise<NextResponse> | NextResponse
@@ -36,7 +36,7 @@ export function withAuth(handler: Handler): Handler {
   return async (req: NextRequest) => {
     // Primary: cookie-based session
     try {
-      const supabase = await createServerSupabaseClient()
+      const supabase = await getServerSupabase()
       const {
         data: { user },
       } = await supabase.auth.getUser()

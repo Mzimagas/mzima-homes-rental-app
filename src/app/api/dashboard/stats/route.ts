@@ -1,105 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { createServerSupabaseClient } from '../../../../lib/supabase-server'
+import { NextResponse } from 'next/server'
+import { getServerSupabase, getServiceSupabase } from '../../../../lib/supabase-server'
 import { memoryCache, CacheKeys, CacheTTL } from '../../../../lib/cache/memory-cache'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-async function getUserId(req: NextRequest): Promise<string | null> {
-  console.log('🔍 getUserId: Starting authentication check')
-
-  // For development, let's try a more direct approach
-  // Check if we're in development and can use a test user
-  const allowDevBypass = process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true'
-  if (allowDevBypass) {
-    console.log('🔍 getUserId: Development mode - checking for test user')
-
-    try {
-      // Try to get any user from the database as a fallback for development
-      const admin = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-      const { data: users, error } = await admin.auth.admin.listUsers()
-
-      if (!error && users && users.users.length > 0) {
-        const testUser = users.users[0]
-        console.log('✅ getUserId: Using first available user for development:', testUser.id)
-        return testUser.id
-      }
-    } catch (devError) {
-      console.log('❌ getUserId: Development fallback failed:', devError)
-    }
-  }
-
+// GET /api/dashboard/stats - Minimal dashboard statistics
+export async function GET() {
+  console.log('📊 Dashboard stats API called')
   try {
-    // Primary: cookie-based session
-    console.log('🔍 getUserId: Trying cookie-based session')
-    const supabase = createServerSupabaseClient()
-    const {
-      data: { user },
-      error: sessionError
-    } = await (await supabase).auth.getUser()
-
-    console.log('🔍 getUserId: Cookie session result:', {
-      hasUser: !!user,
-      userId: user?.id,
-      error: sessionError?.message
-    })
-
-    if (user) {
-      console.log('✅ getUserId: Found user via cookie session:', user.id)
-      return user.id
-    }
-  } catch (cookieError) {
-    console.log('❌ getUserId: Cookie session error:', cookieError)
-  }
-
-  // Fallback: Bearer token in Authorization header
-  try {
-    console.log('🔍 getUserId: Trying Bearer token')
-    const authHeader = req.headers.get('authorization')
-    console.log('🔍 getUserId: Auth header:', authHeader ? 'present' : 'missing')
-
-    if (!authHeader?.startsWith('Bearer ')) {
-      console.log('❌ getUserId: No Bearer token found')
-      return null
-    }
-
-    const token = authHeader.substring(7)
-    const anonClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    const supabase = await getServerSupabase()
     const {
       data: { user },
       error,
-    } = await anonClient.auth.getUser(token)
+    } = await supabase.auth.getUser()
 
-    console.log('🔍 getUserId: Bearer token result:', {
-      hasUser: !!user,
-      userId: user?.id,
-      error: error?.message
-    })
+    if (error) {
+      console.error('auth.getUser error:', error)
+    }
 
-    return error ? null : user?.id || null
-  } catch (bearerError) {
-    console.log('❌ getUserId: Bearer token error:', bearerError)
-    return null
-  }
-}
-
-// GET /api/dashboard/stats - Minimal dashboard statistics
-export async function GET(req: NextRequest) {
-  console.log('📊 Dashboard stats API called')
-  try {
-    const userId = await getUserId(req)
-    console.log('📊 Dashboard stats: userId result:', userId)
-
-    if (!userId) {
-      console.log('❌ Dashboard stats: No user ID found, returning 401')
+    if (!user) {
+      console.log('❌ Dashboard stats: No user found, returning 401')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('✅ Dashboard stats: User authenticated:', userId)
+    console.log('✅ Dashboard stats: User authenticated:', user.id)
 
     // Check cache first
-    const cacheKey = CacheKeys.dashboardStats(userId)
+    const cacheKey = CacheKeys.dashboardStats(user.id)
     const cachedStats = memoryCache.get(cacheKey)
 
     if (cachedStats) {
@@ -113,11 +38,11 @@ export async function GET(req: NextRequest) {
     }
 
     console.log('📊 Computing dashboard stats from database (optimized)')
-    const admin = createClient(supabaseUrl, serviceKey)
+    const admin = getServiceSupabase()
 
     // Use optimized database function for stats
     const { data: statsData, error: statsError } = await admin.rpc('get_rental_dashboard_stats', {
-      user_id: userId
+      user_id: user.id
     })
 
     if (statsError) {
@@ -167,7 +92,7 @@ export async function GET(req: NextRequest) {
 
     // Use optimized function for recent activity
     const { data: activityData, error: activityError } = await admin.rpc('get_recent_activity', {
-      user_id: userId,
+      user_id: user.id,
       limit_param: 5
     })
 
@@ -204,7 +129,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Cache the computed stats
-    memoryCache.set(cacheKey, stats, CacheTTL.DASHBOARD_STATS)
+    memoryCache.set(CacheKeys.dashboardStats(user.id), stats, CacheTTL.DASHBOARD_STATS)
 
     return NextResponse.json(stats, {
       headers: {

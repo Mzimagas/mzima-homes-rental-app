@@ -12,6 +12,7 @@ import { useAuth } from '../../components/auth/AuthProvider'
 import { useToast } from '../../components/ui/Toast'
 import { GoogleMapsCardButton } from '../../components/ui/GoogleMapsButton'
 import MarketplacePropertyDetails from './components/MarketplacePropertyDetails'
+import MarketplaceSearch from '../../components/marketplace/MarketplaceSearch'
 
 interface MarketplaceProperty extends Property {
   images?: string[]
@@ -55,7 +56,6 @@ export default function MarketplacePage() {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState<string>('all')
-  const [priceRange, setPriceRange] = useState<string>('all')
 
   useEffect(() => {
     loadProperties()
@@ -187,28 +187,12 @@ export default function MarketplacePage() {
     const matchesSearch =
       property.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      property.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.marketing_description?.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesType = selectedType === 'all' || property.property_type === selectedType
 
-    const matchesPrice = (() => {
-      if (priceRange === 'all') return true
-      const price = property.asking_price_kes || 0
-      switch (priceRange) {
-        case 'under-5m':
-          return price < 5000000
-        case '5m-10m':
-          return price >= 5000000 && price < 10000000
-        case '10m-20m':
-          return price >= 10000000 && price < 20000000
-        case 'over-20m':
-          return price >= 20000000
-        default:
-          return true
-      }
-    })()
-
-    return matchesSearch && matchesType && matchesPrice
+    return matchesSearch && matchesType
   })
 
   const handleExpressInterest = async (propertyId: string) => {
@@ -438,66 +422,16 @@ export default function MarketplacePage() {
       </header>
 
       <div className="container mx-auto px-4 py-6 md:py-8">
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6 md:mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Properties
-              </label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name, location..."
-                className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
-              >
-                <option value="all">All Types</option>
-                <option value="RESIDENTIAL">Residential</option>
-                <option value="COMMERCIAL">Commercial</option>
-                <option value="LAND">Land</option>
-                <option value="APARTMENT">Apartment</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-              <select
-                value={priceRange}
-                onChange={(e) => setPriceRange(e.target.value)}
-                className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
-              >
-                <option value="all">All Prices</option>
-                <option value="under-5m">Under KES 5M</option>
-                <option value="5m-10m">KES 5M - 10M</option>
-                <option value="10m-20m">KES 10M - 20M</option>
-                <option value="over-20m">Over KES 20M</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={loadProperties}
-                className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Refresh
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Results Summary */}
-        <div className="mb-6">
-          <p className="text-gray-600">
-            Showing {filteredProperties.length} of {properties.length} properties
-          </p>
-        </div>
+        {/* Enhanced Search and Filters */}
+        <MarketplaceSearch
+          onSearchChange={setSearchTerm}
+          onTypeChange={setSelectedType}
+          searchTerm={searchTerm}
+          selectedType={selectedType}
+          resultsCount={filteredProperties.length}
+          totalCount={properties.length}
+          className="mb-6 md:mb-8"
+        />
 
         {/* Property List - Full Width Cards */}
         {filteredProperties.length === 0 ? (
@@ -685,6 +619,10 @@ function PropertyCard({
                 <div className="text-sm text-gray-600">
                   {typeof property.interest_count === 'number' && property.interest_count > 0 ? (
                     <span title="Total people interested">👥 {property.interest_count}</span>
+                  ) : isReserved || isSold ? (
+                    <span className="text-gray-400">
+                      {isReserved ? 'Reserved by interested party' : 'Property sold'}
+                    </span>
                   ) : (
                     <span className="text-gray-400">Be the first to express interest</span>
                   )}
