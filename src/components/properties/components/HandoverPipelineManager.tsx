@@ -261,7 +261,7 @@ export default function HandoverPipelineManager({
         try {
           const { data: propertiesData, error: propertiesError } = await supabase
             .from('properties')
-            .select('id, lat, lng, physical_address')
+            .select('id, lat, lng, physical_address, purchase_price_agreement_kes, handover_price_agreement_kes')
             .in('id', propertyIds)
 
           if (propertiesError) {
@@ -284,6 +284,8 @@ export default function HandoverPipelineManager({
           property_lat: property?.lat || null,
           property_lng: property?.lng || null,
           property_physical_address: property?.physical_address || handover.property_address,
+          // Use property's purchase price as the canonical agreement price
+          property_purchase_price_agreement_kes: property?.purchase_price_agreement_kes || property?.handover_price_agreement_kes || null,
         }
       })
 
@@ -737,7 +739,11 @@ export default function HandoverPipelineManager({
                       <p className="text-gray-600 mb-2">{property.physical_address}</p>
                       <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                         <span>Type: {property.property_type}</span>
-                        {property.asking_price_kes && (
+                        {/* Show Purchase Price in Sales Agreement from property record */}
+                        {(property.purchase_price_agreement_kes || property.handover_price_agreement_kes) && (
+                          <span>Purchase Price: KES {(property.purchase_price_agreement_kes || property.handover_price_agreement_kes).toLocaleString()}</span>
+                        )}
+                        {property.asking_price_kes && !(property.purchase_price_agreement_kes || property.handover_price_agreement_kes) && (
                           <span>Asking: KES {property.asking_price_kes.toLocaleString()}</span>
                         )}
                       </div>
@@ -861,8 +867,9 @@ export default function HandoverPipelineManager({
                     <p className="text-gray-600 mb-2">{handover.property_address}</p>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                       <span>Buyer: {handover.buyer_name || 'Not specified'}</span>
-                      {handover.asking_price_kes && (
-                        <span>Asking: KES {handover.asking_price_kes.toLocaleString()}</span>
+                      {/* Show Purchase Price in Sales Agreement from property record */}
+                      {(handover as any).property_purchase_price_agreement_kes && (
+                        <span>Purchase Price: KES {(handover as any).property_purchase_price_agreement_kes.toLocaleString()}</span>
                       )}
                       {handover.negotiated_price_kes && (
                         <span>

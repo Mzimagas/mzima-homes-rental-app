@@ -501,8 +501,8 @@ export default function HandoverFinancialSection({
               <div className="text-sm text-gray-600">Current Purchase Price</div>
               <div className="text-2xl font-bold text-gray-900">
                 {formatCurrency(
-                  property?.handover_price_agreement_kes ?? property?.purchase_price_agreement_kes ??
-                  financial_summary?.handover_price_agreement_kes
+                  property?.handover_price_agreement_kes ||
+                    financial_summary?.handover_price_agreement_kes
                 )}
               </div>
             </div>
