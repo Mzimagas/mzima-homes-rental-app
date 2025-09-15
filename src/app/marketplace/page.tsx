@@ -55,7 +55,7 @@ export default function MarketplacePage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedType, setSelectedType] = useState<string>('all')
+  const [selectedSizeFilter, setSelectedSizeFilter] = useState<string>('all')
 
   useEffect(() => {
     loadProperties()
@@ -183,6 +183,31 @@ export default function MarketplacePage() {
     }
   }
 
+  // Helper function to check if property matches land size filter
+  const matchesLandSize = (property: MarketplaceProperty, sizeFilter: string): boolean => {
+    if (sizeFilter === 'all') return true
+
+    const areaInSqm = property.total_area_sqm || 0
+    const areaInAcres = property.total_area_acres || 0
+
+    switch (sizeFilter) {
+      case '50x100':
+        // 50x100 feet ≈ 464.5 sqm ≈ 0.115 acres
+        // Allow range: 400-600 sqm or 0.09-0.15 acres
+        return (areaInSqm >= 400 && areaInSqm <= 600) || (areaInAcres >= 0.09 && areaInAcres <= 0.15)
+      case '100x100':
+        // 100x100 feet ≈ 929 sqm ≈ 0.23 acres
+        // Allow range: 800-1100 sqm or 0.18-0.28 acres
+        return (areaInSqm >= 800 && areaInSqm <= 1100) || (areaInAcres >= 0.18 && areaInAcres <= 0.28)
+      case 'half_acre':
+        // Half acre ≈ 2023 sqm ≈ 0.5 acres
+        // Allow range: 1800-2500 sqm or 0.4-0.6 acres
+        return (areaInSqm >= 1800 && areaInSqm <= 2500) || (areaInAcres >= 0.4 && areaInAcres <= 0.6)
+      default:
+        return true
+    }
+  }
+
   const filteredProperties = properties.filter((property) => {
     const matchesSearch =
       property.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -190,9 +215,9 @@ export default function MarketplacePage() {
       property.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.marketing_description?.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesType = selectedType === 'all' || property.property_type === selectedType
+    const matchesSize = matchesLandSize(property, selectedSizeFilter)
 
-    return matchesSearch && matchesType
+    return matchesSearch && matchesSize
   })
 
   const handleExpressInterest = async (propertyId: string) => {
@@ -425,9 +450,9 @@ export default function MarketplacePage() {
         {/* Enhanced Search and Filters */}
         <MarketplaceSearch
           onSearchChange={setSearchTerm}
-          onTypeChange={setSelectedType}
+          onSizeFilterChange={setSelectedSizeFilter}
           searchTerm={searchTerm}
-          selectedType={selectedType}
+          selectedSizeFilter={selectedSizeFilter}
           resultsCount={filteredProperties.length}
           totalCount={properties.length}
           className="mb-6 md:mb-8"

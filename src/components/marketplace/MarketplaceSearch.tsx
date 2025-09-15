@@ -6,24 +6,24 @@ import { useDebounce } from '../../hooks/useDebounce'
 
 interface MarketplaceSearchProps {
   onSearchChange: (searchTerm: string) => void
-  onTypeChange: (type: string) => void
+  onSizeFilterChange: (sizeFilter: string) => void
   placeholder?: string
   resultsCount?: number
   totalCount?: number
   className?: string
   searchTerm: string
-  selectedType: string
+  selectedSizeFilter: string
 }
 
 export default function MarketplaceSearch({
   onSearchChange,
-  onTypeChange,
+  onSizeFilterChange,
   placeholder = 'Search properties by name, location, description...',
   resultsCount,
   totalCount,
   className = '',
   searchTerm,
-  selectedType,
+  selectedSizeFilter,
 }: MarketplaceSearchProps) {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
   const debouncedSearchTerm = useDebounce(localSearchTerm, 300)
@@ -42,15 +42,11 @@ export default function MarketplaceSearch({
     setLocalSearchTerm('')
   }
 
-  const propertyTypes = [
-    { value: 'all', label: 'All Types' },
-    { value: 'HOME', label: 'Home' },
-    { value: 'HOSTEL', label: 'Hostel' },
-    { value: 'STALL', label: 'Stall' },
-    { value: 'RESIDENTIAL_LAND', label: 'Residential Land' },
-    { value: 'COMMERCIAL_LAND', label: 'Commercial Land' },
-    { value: 'AGRICULTURAL_LAND', label: 'Agricultural Land' },
-    { value: 'MIXED_USE_LAND', label: 'Mixed Use Land' },
+  const landSizeFilters = [
+    { value: 'all', label: 'All Sizes' },
+    { value: '50x100', label: '50 x 100 (≈0.1 Ha)' },
+    { value: '100x100', label: '100 x 100 (≈0.2 Ha)' },
+    { value: 'half_acre', label: 'Half Acre (≈0.2 Ha)' },
   ]
 
   const showResultsCount = resultsCount !== undefined && totalCount !== undefined
@@ -88,19 +84,19 @@ export default function MarketplaceSearch({
             </div>
           </div>
 
-          {/* Property Type Filter */}
+          {/* Land Size Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Property Type
+              Land Size
             </label>
             <select
-              value={selectedType}
-              onChange={(e) => onTypeChange(e.target.value)}
+              value={selectedSizeFilter}
+              onChange={(e) => onSizeFilterChange(e.target.value)}
               className="w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
             >
-              {propertyTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
+              {landSizeFilters.map((size) => (
+                <option key={size.value} value={size.value}>
+                  {size.label}
                 </option>
               ))}
             </select>
@@ -112,41 +108,41 @@ export default function MarketplaceSearch({
           <button
             onClick={() => {
               setLocalSearchTerm('')
-              onTypeChange('all')
+              onSizeFilterChange('all')
             }}
             className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-full hover:bg-gray-100 transition-colors"
           >
             🏠 All Properties
           </button>
           <button
-            onClick={() => onTypeChange('HOME')}
+            onClick={() => onSizeFilterChange('50x100')}
             className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-              selectedType === 'HOME'
+              selectedSizeFilter === '50x100'
                 ? 'text-blue-700 bg-blue-50 border border-blue-200'
                 : 'text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100'
             }`}
           >
-            🏡 Homes
+            📐 50 x 100
           </button>
           <button
-            onClick={() => onTypeChange('RESIDENTIAL_LAND')}
+            onClick={() => onSizeFilterChange('100x100')}
             className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-              selectedType === 'RESIDENTIAL_LAND'
+              selectedSizeFilter === '100x100'
                 ? 'text-green-700 bg-green-50 border border-green-200'
                 : 'text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100'
             }`}
           >
-            🌱 Land
+            📏 100 x 100
           </button>
           <button
-            onClick={() => onTypeChange('COMMERCIAL_LAND')}
+            onClick={() => onSizeFilterChange('half_acre')}
             className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-              selectedType === 'COMMERCIAL_LAND'
+              selectedSizeFilter === 'half_acre'
                 ? 'text-purple-700 bg-purple-50 border border-purple-200'
                 : 'text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100'
             }`}
           >
-            🏢 Commercial
+            🏞️ Half Acre
           </button>
         </div>
 
@@ -165,19 +161,19 @@ export default function MarketplaceSearch({
                     <span className="text-gray-500"> for &quot;{localSearchTerm}&quot;</span>
                   </span>
                 )
-              ) : selectedType !== 'all' ? (
+              ) : selectedSizeFilter !== 'all' ? (
                 <span>
-                  Showing {resultsCount} {propertyTypes.find(t => t.value === selectedType)?.label.toLowerCase()} properties
+                  Showing {resultsCount} {landSizeFilters.find(s => s.value === selectedSizeFilter)?.label.toLowerCase()} properties
                 </span>
               ) : (
                 <span>Showing all {totalCount} available properties</span>
               )}
             </div>
-            {(localSearchTerm || selectedType !== 'all') && (
+            {(localSearchTerm || selectedSizeFilter !== 'all') && (
               <button
                 onClick={() => {
                   setLocalSearchTerm('')
-                  onTypeChange('all')
+                  onSizeFilterChange('all')
                 }}
                 className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
               >
