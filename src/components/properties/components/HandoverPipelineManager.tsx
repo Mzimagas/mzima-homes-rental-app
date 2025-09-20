@@ -67,7 +67,7 @@ export default function HandoverPipelineManager({
     console.log('🔍 Filtering handovers:', {
       totalHandovers: handovers.length,
       searchTerm,
-      handoverNames: handovers.map(h => h.property_name)
+      handoverNames: handovers.map((h) => h.property_name),
     })
     if (!searchTerm.trim()) return handovers
 
@@ -82,7 +82,10 @@ export default function HandoverPipelineManager({
         (handover.property_condition_notes?.toLowerCase().includes(lower) ?? false)
       )
     })
-    console.log('🔍 Filtered handovers:', filtered.map(h => h.property_name))
+    console.log(
+      '🔍 Filtered handovers:',
+      filtered.map((h) => h.property_name)
+    )
     return filtered
   }, [handovers, searchTerm])
 
@@ -177,7 +180,9 @@ export default function HandoverPipelineManager({
         const existingHandoverPropertyIds = new Set(handoverData?.map((h) => h.property_id) || [])
 
         // Get missing properties that need handover records
-        const missingProperties = inProgressProperties.filter((prop) => !existingHandoverPropertyIds.has(prop.id))
+        const missingProperties = inProgressProperties.filter(
+          (prop) => !existingHandoverPropertyIds.has(prop.id)
+        )
 
         // Create proper handover records from client interest data
         const missingHandovers = await Promise.all(
@@ -185,14 +190,16 @@ export default function HandoverPipelineManager({
             // Get client interest data for this property
             const { data: clientInterest } = await supabase
               .from('client_property_interests')
-              .select(`
+              .select(
+                `
                 *,
                 clients:client_id (
                   full_name,
                   email,
                   phone
                 )
-              `)
+              `
+              )
               .eq('property_id', prop.id)
               .eq('status', 'CONVERTED')
               .order('updated_at', { ascending: false })
@@ -261,7 +268,9 @@ export default function HandoverPipelineManager({
         try {
           const { data: propertiesData, error: propertiesError } = await supabase
             .from('properties')
-            .select('id, lat, lng, physical_address, purchase_price_agreement_kes, handover_price_agreement_kes')
+            .select(
+              'id, lat, lng, physical_address, purchase_price_agreement_kes, handover_price_agreement_kes'
+            )
             .in('id', propertyIds)
 
           if (propertiesError) {
@@ -578,6 +587,60 @@ export default function HandoverPipelineManager({
     setShowHandoverStageModal(true)
   }
 
+  const handleMarketplaceStatusChange = async (handoverId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/handover/${handoverId}/marketplace-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          marketplace_status: mapMarketplaceStatusToEnum(newStatus),
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update marketplace status')
+      }
+
+      // Refresh handover data
+      await loadHandovers()
+
+      console.log(`Marketplace status updated to ${newStatus} for handover ${handoverId}`)
+    } catch (error) {
+      console.error('Error updating marketplace status:', error)
+      alert(
+        `Failed to update marketplace status: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  const getMarketplaceStatusValue = (handover: any): string => {
+    if (!handover.marketplace_status) return 'Not Listed'
+
+    const statusMap: Record<string, string> = {
+      NOT_LISTED: 'Not Listed',
+      AVAILABLE: 'Available',
+      RESERVED: 'Reserved',
+      UNDER_CONTRACT: 'Under Contract',
+      SOLD: 'Sold',
+    }
+
+    return statusMap[handover.marketplace_status] || handover.marketplace_status
+  }
+
+  const mapMarketplaceStatusToEnum = (displayValue: string): string => {
+    const mapping: Record<string, string> = {
+      'Not Listed': 'NOT_LISTED',
+      Available: 'AVAILABLE',
+      Reserved: 'RESERVED',
+      'Under Contract': 'UNDER_CONTRACT',
+      Sold: 'SOLD',
+    }
+    return mapping[displayValue] || 'NOT_LISTED'
+  }
+
   const onHandoverSubmit = async (values: HandoverPipelineFormValues) => {
     try {
       const {
@@ -741,11 +804,18 @@ export default function HandoverPipelineManager({
                         <span>Type: {property.property_type}</span>
                         {/* Show Handover Sale Price from property record */}
                         {property.handover_price_agreement_kes ? (
-                          <span>Sale Price: KES {property.handover_price_agreement_kes.toLocaleString()}</span>
+                          <span>
+                            Sale Price: KES {property.handover_price_agreement_kes.toLocaleString()}
+                          </span>
                         ) : property.asking_price_kes ? (
                           <span>Asking: KES {property.asking_price_kes.toLocaleString()}</span>
                         ) : (
-                          <span className="text-orange-600" title="Set handover sale price in handover Financial tab">Sale Price: Not Set</span>
+                          <span
+                            className="text-orange-600"
+                            title="Set handover sale price in handover Financial tab"
+                          >
+                            Sale Price: Not Set
+                          </span>
                         )}
                       </div>
 
@@ -870,9 +940,17 @@ export default function HandoverPipelineManager({
                       <span>Buyer: {handover.buyer_name || 'Not specified'}</span>
                       {/* Show Handover Sale Price from property record */}
                       {(handover as any).property_handover_price_agreement_kes ? (
-                        <span>Sale Price: KES {(handover as any).property_handover_price_agreement_kes.toLocaleString()}</span>
+                        <span>
+                          Sale Price: KES{' '}
+                          {(handover as any).property_handover_price_agreement_kes.toLocaleString()}
+                        </span>
                       ) : (
-                        <span className="text-orange-600" title="Set handover sale price in handover Financial tab">Sale Price: Not Set</span>
+                        <span
+                          className="text-orange-600"
+                          title="Set handover sale price in handover Financial tab"
+                        >
+                          Sale Price: Not Set
+                        </span>
                       )}
                       {handover.negotiated_price_kes && (
                         <span>
@@ -880,6 +958,33 @@ export default function HandoverPipelineManager({
                         </span>
                       )}
                       <span>Progress: {handover.overall_progress}%</span>
+                    </div>
+
+                    {/* Marketplace Status Dropdown */}
+                    <div className="mt-3">
+                      <label className="block text-xs text-gray-500 mb-1">Marketplace Status</label>
+                      <select
+                        value={getMarketplaceStatusValue(handover)}
+                        onChange={(e) => handleMarketplaceStatusChange(handover.id, e.target.value)}
+                        className="w-full text-xs border border-gray-300 rounded px-2 py-1 bg-white max-w-xs"
+                      >
+                        <option value="Not Listed">Not Listed</option>
+                        <option value="Available">Available</option>
+                        <option value="Reserved">Reserved</option>
+                        <option value="Under Contract">Under Contract</option>
+                        <option value="Sold">Sold</option>
+                      </select>
+
+                      {/* Status-specific information */}
+                      {handover.marketplace_status === 'AVAILABLE' && (
+                        <div className="text-xs text-green-600 mt-1">✅ Visible in marketplace</div>
+                      )}
+                      {handover.marketplace_status === 'RESERVED' && (
+                        <div className="text-xs text-orange-600 mt-1">🔒 Reserved by client</div>
+                      )}
+                      {handover.marketplace_status === 'SOLD' && (
+                        <div className="text-xs text-purple-600 mt-1">🎉 Transaction completed</div>
+                      )}
                     </div>
                   </div>
 

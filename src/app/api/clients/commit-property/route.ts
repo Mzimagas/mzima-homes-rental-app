@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Get client information - first try from clients table, create if doesn't exist
-    let client: any = null;
+    let client: any = null
     const { data: clientRecord, error: clientError } = await supabase
       .from('clients')
       .select('id, full_name, email, phone')
@@ -42,35 +42,42 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (clientRecord) {
-      client = clientRecord;
+      client = clientRecord
     } else {
       // Create client record if it doesn't exist
-      console.log('No client record found, creating one for user:', user.id);
+      console.log('No client record found, creating one for user:', user.id)
       const { data: newClient, error: createError } = await supabase
         .from('clients')
-        .insert([{
-          auth_user_id: user.id,
-          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-          email: user.email,
-          phone: user.user_metadata?.phone || null,
-          registration_source: 'marketplace',
-          status: 'ACTIVE',
-          email_verified: user.email_confirmed_at ? true : false,
-          phone_verified: false
-        }])
+        .insert([
+          {
+            auth_user_id: user.id,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            email: user.email,
+            phone: user.user_metadata?.phone || null,
+            registration_source: 'marketplace',
+            status: 'ACTIVE',
+            email_verified: user.email_confirmed_at ? true : false,
+            phone_verified: false,
+          },
+        ])
         .select('id, full_name, email, phone')
-        .single();
+        .single()
 
       if (createError) {
-        console.error('Failed to create client record:', createError);
-        return NextResponse.json({ error: 'Failed to create client profile' }, { status: 500 });
+        console.error('Failed to create client record:', createError)
+        return NextResponse.json({ error: 'Failed to create client profile' }, { status: 500 })
       }
 
-      client = newClient;
+      client = newClient
     }
 
     // Skip property validation for now - just proceed with interest management
-    console.log('Processing commitment for property:', validatedData.propertyId, 'client:', client.id)
+    console.log(
+      'Processing commitment for property:',
+      validatedData.propertyId,
+      'client:',
+      client.id
+    )
 
     // Check for existing interest
     const { data: existingInterest, error: existingInterestError } = await supabase
@@ -102,10 +109,7 @@ export async function POST(req: NextRequest) {
 
       if (createError) {
         console.error('Error creating interest:', createError)
-        return NextResponse.json(
-          { error: 'Failed to create property interest' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to create property interest' }, { status: 500 })
       }
 
       interest = newInterest
@@ -125,10 +129,7 @@ export async function POST(req: NextRequest) {
 
       if (reactivateError) {
         console.error('Error reactivating interest:', reactivateError)
-        return NextResponse.json(
-          { error: 'Failed to reactivate interest' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to reactivate interest' }, { status: 500 })
       }
 
       interest = reactivatedInterest
@@ -147,10 +148,7 @@ export async function POST(req: NextRequest) {
     // If status is ACTIVE, continue with existing interest
 
     if (!interest) {
-      return NextResponse.json(
-        { error: 'Unable to establish property interest' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Unable to establish property interest' }, { status: 500 })
     }
 
     // Skip property availability checks for now - just proceed with commitment
@@ -160,7 +158,7 @@ export async function POST(req: NextRequest) {
       // 1. Get current property status to ensure proper state transition
       const { data: currentProperty, error: propertyFetchError } = await supabase
         .from('properties')
-        .select('handover_status, reservation_status')
+        .select('marketplace_status, handover_status, reservation_status')
         .eq('id', validatedData.propertyId)
         .single()
 
@@ -168,21 +166,19 @@ export async function POST(req: NextRequest) {
         throw new Error(`Failed to fetch property status: ${propertyFetchError.message}`)
       }
 
-      // Ensure property is in AWAITING_START status for reservation
+      // Use marketplace status for reservation logic
       const updateData: any = {
         committed_client_id: client.id,
         commitment_date: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        reservation_status: 'RESERVED',
+        marketplace_status: 'RESERVED', // Use marketplace status instead of reservation_status
         reserved_by: client.id,
         reserved_date: new Date().toISOString(),
       }
 
-      // If property is NOT_STARTED, move it to AWAITING_START first
-      if (currentProperty.handover_status === 'NOT_STARTED') {
-        updateData.handover_status = 'AWAITING_START'
-        console.log('Moving property from NOT_STARTED to AWAITING_START for reservation')
-      }
+      // Keep handover status separate from marketplace visibility
+      // Only update handover status if it's truly needed for the handover workflow
+      console.log('Reserving property via marketplace status change to RESERVED')
 
       // 2. Mark property as reserved with proper status synchronization
       const { error: propertyUpdateError } = await supabase

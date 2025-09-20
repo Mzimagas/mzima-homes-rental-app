@@ -65,43 +65,40 @@ export default function PropertyStatusDropdowns({
   )
 
   // Actual subdivision save function
-  const confirmSubdivisionChange = useCallback(
-    async () => {
-      if (!pendingSubdivisionChange) return
+  const confirmSubdivisionChange = useCallback(async () => {
+    if (!pendingSubdivisionChange) return
 
-      try {
-        const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
-          property.id,
-          pendingSubdivisionChange,
-          undefined
-        )
+    try {
+      const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
+        property.id,
+        pendingSubdivisionChange,
+        undefined
+      )
 
-        if (!result.success) {
-          alert(`Failed to update subdivision status: ${result.error}`)
-          return
-        }
-
-        if (result.warnings && result.warnings.length > 0) {
-          console.log('Subdivision update warnings:', result.warnings)
-        }
-
-        // Close confirmation dialog
-        setShowSubdivisionConfirm(false)
-        setPendingSubdivisionChange(null)
-
-        // Refresh the UI
-        if (onRefresh) {
-          onRefresh()
-        } else {
-          window.location.reload()
-        }
-      } catch (error) {
-        console.error('Error updating subdivision status:', error)
-        alert('Failed to update subdivision status. Please try again.')
+      if (!result.success) {
+        alert(`Failed to update subdivision status: ${result.error}`)
+        return
       }
-    },
-    [property.id, pendingSubdivisionChange, onRefresh]
-  )
+
+      if (result.warnings && result.warnings.length > 0) {
+        console.log('Subdivision update warnings:', result.warnings)
+      }
+
+      // Close confirmation dialog
+      setShowSubdivisionConfirm(false)
+      setPendingSubdivisionChange(null)
+
+      // Refresh the UI
+      if (onRefresh) {
+        onRefresh()
+      } else {
+        window.location.reload()
+      }
+    } catch (error) {
+      console.error('Error updating subdivision status:', error)
+      alert('Failed to update subdivision status. Please try again.')
+    }
+  }, [property.id, pendingSubdivisionChange, onRefresh])
 
   const handleHandoverChange = useCallback(
     (value: string) => {
@@ -120,47 +117,44 @@ export default function PropertyStatusDropdowns({
   )
 
   // Actual handover save function
-  const confirmHandoverChange = useCallback(
-    async () => {
-      if (!pendingHandoverChange) return
+  const confirmHandoverChange = useCallback(async () => {
+    if (!pendingHandoverChange) return
 
-      try {
-        const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
-          property.id,
-          undefined,
-          pendingHandoverChange
-        )
+    try {
+      const result = await PropertyStatusUpdateService.updatePropertyStatusFromUI(
+        property.id,
+        undefined,
+        pendingHandoverChange
+      )
 
-        if (!result.success) {
-          alert(`Failed to update handover status: ${result.error}`)
-          return
-        }
-
-        if (result.warnings && result.warnings.length > 0) {
-          console.log('Handover update warnings:', result.warnings)
-          // Show important warnings to user
-          if (result.warnings.some((w) => w.includes('locked'))) {
-            alert(`Handover updated successfully. ${result.warnings.join(' ')}`)
-          }
-        }
-
-        // Close confirmation dialog
-        setShowHandoverConfirm(false)
-        setPendingHandoverChange(null)
-
-        // Refresh the UI
-        if (onRefresh) {
-          onRefresh()
-        } else {
-          window.location.reload()
-        }
-      } catch (error) {
-        console.error('Error updating handover status:', error)
-        alert('Failed to update handover status. Please try again.')
+      if (!result.success) {
+        alert(`Failed to update handover status: ${result.error}`)
+        return
       }
-    },
-    [property.id, pendingHandoverChange, onRefresh]
-  )
+
+      if (result.warnings && result.warnings.length > 0) {
+        console.log('Handover update warnings:', result.warnings)
+        // Show important warnings to user
+        if (result.warnings.some((w) => w.includes('locked'))) {
+          alert(`Handover updated successfully. ${result.warnings.join(' ')}`)
+        }
+      }
+
+      // Close confirmation dialog
+      setShowHandoverConfirm(false)
+      setPendingHandoverChange(null)
+
+      // Refresh the UI
+      if (onRefresh) {
+        onRefresh()
+      } else {
+        window.location.reload()
+      }
+    } catch (error) {
+      console.error('Error updating handover status:', error)
+      alert('Failed to update handover status. Please try again.')
+    }
+  }, [property.id, pendingHandoverChange, onRefresh])
 
   // Calculate if dropdowns should be disabled
   const isSubdivisionDisabled =
@@ -281,7 +275,7 @@ export default function PropertyStatusDropdowns({
             <h3 className="text-lg font-semibold mb-4">Confirm Subdivision Status Change</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to change the subdivision status to{' '}
-              <strong>"{pendingSubdivisionChange}"</strong>?
+              <strong>&quot;{pendingSubdivisionChange}&quot;</strong>?
             </p>
             <p className="text-sm text-gray-500 mb-6">
               This action will update the property status and may affect related processes.
@@ -314,7 +308,7 @@ export default function PropertyStatusDropdowns({
             <h3 className="text-lg font-semibold mb-4">Confirm Handover Status Change</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to change the handover status to{' '}
-              <strong>"{pendingHandoverChange}"</strong>?
+              <strong>&quot;{pendingHandoverChange}&quot;</strong>?
             </p>
             <p className="text-sm text-gray-500 mb-6">
               This action will update the property status and may affect related processes.
